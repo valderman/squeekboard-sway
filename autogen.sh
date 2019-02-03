@@ -13,11 +13,6 @@ PKG_NAME="eekboard"
     exit 1
 }
 
-which gnome-autogen.sh || {
-    echo "You need to install gnome-common from the GNOME CVS"
-    exit 1
-}
-
 ACLOCAL_FLAGS="$ACLOCAL_FLAGS -I m4"
 REQUIRED_AUTOMAKE_VERSION=1.10
 REQUIRED_AUTOCONF_VERSION=2.60
