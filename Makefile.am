@@ -19,6 +19,8 @@
 ACLOCAL_AMFLAGS = -I m4
 SUBDIRS = eek eekboard src tests bindings docs po data examples
 DISTCHECK_CONFIGURE_FLAGS = --enable-gtk-doc --enable-introspection
+AUTOMAKE_OPTIONS = foreign # allow README.md to exist
+
 
 GITIGNOREFILES =				\
 	INSTALL					\
