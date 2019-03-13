@@ -270,13 +270,13 @@ main (int argc, char **argv)
     }
 #endif  /* HAVE_IBUS */
 
-#ifdef HAVE_XTEST
+//#ifdef HAVE_XTEST
     if (!client_enable_xtest (client)) {
         g_printerr ("Can't init xtest\n");
         g_object_unref (client);
         exit (1);
     }
-#endif  /* HAVE_XTEST */
+//#endif  /* HAVE_XTEST */
 
     if (!opt_focus) {
         g_object_get (client, "context", &context, NULL);

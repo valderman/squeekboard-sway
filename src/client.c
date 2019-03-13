@@ -91,10 +91,8 @@ struct _Client {
     AtspiDeviceListener *keystroke_listener;
 #endif  /* HAVE_ATSPI */
 
-#ifdef HAVE_XTEST
     guint modifier_keycodes[8]; 
     XkbDescRec *xkb;
-#endif  /* HAVE_XTEST */
 
     GSettings *settings;
 };
@@ -845,7 +843,6 @@ on_xkl_state_changed (XklEngine           *xklengine,
         eekboard_context_set_group (client->context, value, NULL);
 }
 
-#ifdef HAVE_XTEST
 /* The following functions for keyboard mapping change are direct
    translation of the code in Caribou (in libcaribou/xadapter.vala):
 
@@ -888,12 +885,13 @@ replace_keycode (Client *client,
     guint old_keysym;
     int keysyms_per_keycode;
     KeySym *syms;
-
+return TRUE; // FIXME: no xkb allocated at the moment, pretending all is fine
     g_return_val_if_fail (client->xkb->min_key_code <= keycode &&
                           keycode <= client->xkb->max_key_code,
                           FALSE);
     g_return_val_if_fail (keysym != NULL, FALSE);
-
+/*
+ * Switch keyboard mapping?
     syms = XGetKeyboardMapping (xdisplay, keycode, 1, &keysyms_per_keycode);
     old_keysym = syms[0];
     syms[0] = *keysym;
@@ -901,7 +899,7 @@ replace_keycode (Client *client,
     XSync (xdisplay, False);
     XFree (syms);
     *keysym = old_keysym;
-
+*/
     return TRUE;
 }
 
@@ -934,6 +932,16 @@ get_keycode_from_gdk_keymap (Client *client,
     return TRUE;
 }
 
+int WaylandFakeKeyEvent(
+    Display* dpy,
+    unsigned int keycode,
+    Bool is_press,
+    unsigned long delay
+) {
+    printf("Sending fake event %d press %d delay %d\n", keycode, is_press, delay);
+}
+
+/* never actually used? */
 static void
 send_fake_modifier_key_event (Client         *client,
                               EekModifierType modifiers,
@@ -946,14 +954,14 @@ send_fake_modifier_key_event (Client         *client,
     for (i = 0; i < G_N_ELEMENTS(client->modifier_keycodes); i++) {
         if (modifiers & (1 << i)) {
             guint keycode = client->modifier_keycodes[i];
-
+            printf("Trying to send a modifier %d press %d\n", i, is_pressed);
             g_return_if_fail (keycode > 0);
 
-            XTestFakeKeyEvent (xdisplay,
+            WaylandFakeKeyEvent (xdisplay,
                                keycode,
                                is_pressed,
                                CurrentTime);
-            XSync (xdisplay, False);
+            //XSync (xdisplay, False);
         }
     }
 }
@@ -998,10 +1006,10 @@ send_fake_key_event (Client  *client,
     modifiers |= keyboard_modifiers;
 
     send_fake_modifier_key_event (client, modifiers, TRUE);
-    XTestFakeKeyEvent (xdisplay, keycode, TRUE, 20);
-    XSync (xdisplay, False);
-    XTestFakeKeyEvent (xdisplay, keycode, FALSE, 20);
-    XSync (xdisplay, False);
+    WaylandFakeKeyEvent (xdisplay, keycode, TRUE, 20);
+    //XSync (xdisplay, False);
+    WaylandFakeKeyEvent (xdisplay, keycode, FALSE, 20);
+    // XSync (xdisplay, False);
     send_fake_modifier_key_event (client, modifiers, FALSE);
 
     if (old_keysym != xkeysym)
@@ -1086,6 +1094,8 @@ on_key_activated (EekboardContext *context,
     send_fake_key_events (client, symbol, modifiers);
 }
 
+#if 0
+/* Finds the first key code for each modifier and saves it in modifier_keycodes */
 static void
 update_modifier_keycodes (Client *client)
 {
@@ -1107,14 +1117,15 @@ update_modifier_keycodes (Client *client)
     }
     XFreeModifiermap (mods);
 }
-
+#endif
 gboolean
 client_enable_xtest (Client *client)
 {
-    GdkDisplay *display = gdk_display_get_default ();
-    Display *xdisplay = GDK_DISPLAY_XDISPLAY (display);
+    //GdkDisplay *display = gdk_display_get_default ();
+    //Display *xdisplay = GDK_DISPLAY_XDISPLAY (display);
     int opcode, event_base, error_base, major_version, minor_version;
 
+    /* FIXME: need at least to fetch an xkb keymap (but what for?)
     g_assert (display);
 
     if (!XTestQueryExtension (xdisplay,
@@ -1136,7 +1147,7 @@ client_enable_xtest (Client *client)
     g_assert (client->xkb);
 
     update_modifier_keycodes (client);
-
+*/
     client->key_activated_handler =
         g_signal_connect (client->context, "key-activated",
                           G_CALLBACK(on_key_activated), client);
@@ -1147,9 +1158,9 @@ client_enable_xtest (Client *client)
 void
 client_disable_xtest (Client *client)
 {
-    if (client->xkb) {
-        XkbFreeKeyboard (client->xkb, 0, TRUE);	/* free_all = TRUE */
-        client->xkb = NULL;
-    }
+    //if (client->xkb) {
+      //  XkbFreeKeyboard (client->xkb, 0, TRUE);	/* free_all = TRUE */
+        //client->xkb = NULL;
+    //}
 }
-#endif  /* HAVE_XTEST */
+//#endif  /* HAVE_XTEST */
