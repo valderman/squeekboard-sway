@@ -12,5 +12,5 @@ build_automake:
   tags:
     - librem5
   script:
-    - ./autogen.sh
+    - ./autogen.sh --enable-vala=no --enable-xtest=no
     - make
