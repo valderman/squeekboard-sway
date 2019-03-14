@@ -170,7 +170,8 @@ eekboard_context_service_real_create_keyboard (EekboardContextService *self,
             eekboard_xkl_config_rec_from_string (&keyboard_type[4]);
 
         if (display == NULL)
-            display = XOpenDisplay (NULL);
+            //display = XOpenDisplay (NULL);
+            return NULL; // FIXME: replace with wl display
 
         error = NULL;
         layout = eek_xkl_layout_new (display, &error);
