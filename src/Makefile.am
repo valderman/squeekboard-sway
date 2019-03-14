@@ -18,7 +18,6 @@
 
 bin_PROGRAMS =					\
 	eekboard				\
-	eekboard-server				\
 	$(NULL)
 
 libexec_PROGRAMS =				\
@@ -63,40 +62,6 @@ eekboard_SOURCES =				\
 	client-main.c				\
 	$(NULL)
 
-eekboard_server_CFLAGS =				\
-	-I$(top_srcdir)					\
-	$(GIO2_CFLAGS)					\
-	$(GTK_CFLAGS)					\
-	$(LIBXKLAVIER_CFLAGS)				\
-	-DTHEMESDIR=\"$(pkgdatadir)/themes\"		\
-	$(NULL)
-
-eekboard_server_LDADD =				\
-	$(top_builddir)/eekboard/libeekboard.la	\
-	$(top_builddir)/eek/libeek.la		\
-	$(top_builddir)/eek/libeek-gtk.la	\
-	$(top_builddir)/eek/libeek-xkl.la	\
-	$(GIO2_LIBS)				\
-	$(GTK_LIBS)				\
-	$(LIBXKLAVIER_LIBS)			\
-	$(NULL)
-
-if ENABLE_XDOCK
-eekboard_server_CFLAGS += $(XDOCK_CFLAGS)
-eekboard_server_LDADD += $(XDOCK_LIBS)
-endif
-
-eekboard_server_headers =			\
-	server-service.h			\
-	server-context-service.h		\
-	$(NULL)
-
-eekboard_server_SOURCES =			\
-	server-service.c			\
-	server-context-service.c		\
-	server-main.c				\
-	$(NULL)
-
 eekboard_setup_CFLAGS = \
 	-I$(top_srcdir)					\
 	$(GIO2_CFLAGS)					\
@@ -125,7 +90,6 @@ dist_pkgdata_DATA = preferences-dialog.ui
 
 noinst_HEADERS =				\
 	$(eekboard_headers)			\
-	$(eekboard_server_headers)		\
 	$(eekboard_setup_headers)		\
 	$(NULL)
 
