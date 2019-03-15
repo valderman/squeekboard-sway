@@ -29,6 +29,7 @@
 #include "config.h"
 #endif  /* HAVE_CONFIG_H */
 
+#include "eekboard/key-emitter.h"
 #include "eekboard/eekboard-context-service.h"
 #include "eekboard/eekboard-xklutil.h"
 #include "eek/eek-xkl.h"
@@ -62,6 +63,7 @@ static guint signals[LAST_SIGNAL] = { 0, };
 struct _EekboardContextServicePrivate {
     GDBusConnection *connection;
     GDBusNodeInfo *introspection_data;
+
     guint registration_id;
     char *object_path;
     char *client_name;
@@ -166,6 +168,7 @@ eekboard_context_service_real_create_keyboard (EekboardContextService *self,
     GError *error;
 
     if (g_str_has_prefix (keyboard_type, "xkb:")) {
+        /* TODO: Depends on xklavier
         XklConfigRec *rec =
             eekboard_xkl_config_rec_from_string (&keyboard_type[4]);
 
@@ -186,6 +189,8 @@ eekboard_context_service_real_create_keyboard (EekboardContextService *self,
             g_object_unref (layout);
             return NULL;
         }
+        */
+        return NULL;
     } else {
         error = NULL;
         layout = eek_xml_layout_new (keyboard_type, &error);
@@ -719,9 +724,20 @@ on_key_released (EekKeyboard *keyboard,
         g_source_remove (context->priv->repeat_timeout_id);
         context->priv->repeat_timeout_id = 0;
 
+        guint keycode = eek_key_get_keycode (key);
+        EekSymbol *symbol = eek_key_get_symbol_with_fallback (key, 0, 0);
+
+        guint modifiers = eek_keyboard_get_modifiers (context->priv->keyboard);
         /* KeyActivated signal has not been emitted in repeat handler */
-        emit_key_activated_dbus_signal (context,
-                                        context->priv->repeat_key);
+
+
+        // Insert
+        EekboardContext ec = {0};
+        Client c = {&ec, 0, {0}};
+
+        emit_key_activated(&ec, keycode, symbol, modifiers, &c);
+        //emit_key_activated_dbus_signal (context,
+          //                              context->priv->repeat_key);
     }
 }
 

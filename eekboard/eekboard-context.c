@@ -29,7 +29,7 @@
 #endif  /* HAVE_CONFIG_H */
 
 #include "eekboard/eekboard-context.h"
-#include "eekboard/eekboard-marshalers.h"
+//#include "eekboard/eekboard-marshalers.h"
 
 #define I_(string) g_intern_static_string (string)
 
@@ -251,6 +251,7 @@ eekboard_context_class_init (EekboardContextClass *klass)
      * The ::key-activated signal is emitted each time a key is
      * pressed in @context.
      */
+    /*
     signals[KEY_ACTIVATED] =
         g_signal_new (I_("key-activated"),
                       G_TYPE_FROM_CLASS(gobject_class),
@@ -264,7 +265,7 @@ eekboard_context_class_init (EekboardContextClass *klass)
                       G_TYPE_UINT,
                       G_TYPE_OBJECT,
                       G_TYPE_UINT);
-
+*/
     /**
      * EekboardContext::destroyed:
      * @context: an #EekboardContext

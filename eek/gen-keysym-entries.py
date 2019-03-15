@@ -2,6 +2,7 @@
 
 # Copyright (C) 2010-2011 Daiki Ueno <ueno@unixuser.org>
 # Copyright (C) 2010-2011 Red Hat, Inc.
+# Copyright (C) 2019      Purism, SPC
 
 # This library is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public License
@@ -21,12 +22,17 @@
 import sys
 import re
 
-if len(sys.argv) != 2:
-    print >> sys.stderr, "Usage: %s TABLE-NAME" % sys.argv[0]
+if len(sys.argv) > 3:
+    print >> sys.stderr, "Usage: %s TABLE-NAME [INPUT_FILE]" % sys.argv[0]
     sys.exit(-1)
 
+if len(sys.argv) < 3:
+    in_stream = sys.stdin
+else:
+    in_stream = open(sys.argv[2])
+
 table = dict()
-for line in sys.stdin:
+for line in in_stream:
     line = line.decode('UTF-8')
     match = re.match(r'\s*(0x[0-9A-F]+)\s+(\S*)\s+(\S*)', line, re.I)
     if match:

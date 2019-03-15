@@ -12,9 +12,6 @@ build_automake:
   tags:
     - librem5
   script:
-    - ./autogen.sh --enable-vala=no --enable-xtest=no --prefix=`pwd`/../eekboard-install/
-    - make
-    - make install
     - mkdir -p ../build
     - PKG_CONFIG_PATH=`pwd`/../eekboard-install/lib/pkgconfig/ meson ../build/ --prefix=`pwd`/../squeekboard-install/
     - cd ../build
