@@ -3,6 +3,30 @@
 
 *Squeekboard* is a virtual keyboard supporting Wayland, built primarily for the *Librem 5* phone.
 
+Features
+--------
+
+### Present
+
+- GTK3
+- Custom xml-defined keyboards
+- DBus interface to show and hide
+
+### Temporarily dropped
+
+- Picking up layouts from gsettings
+- A settings interface
+
+### TODO
+
+- Use Wayland virtual keyboard protocol
+- Use Wayland text input protocol
+- Use Wayland input method protocol
+- Become a Wayland layer shell
+- Remove eekboard-client
+- Use sm.puri.OSK0 DBus interface
+- Pick up DBus interface files from /usr/share
+
 Building
 --------
 
