@@ -1,35 +1,24 @@
-eekboard - an easy to use virtual keyboard toolkit
-==================================================
+*squeekboard* - a Wayland virtual keyboard
+========================================
 
-eekboard is a virtual keyboard software package, including a set of
-tools to implement desktop virtual keyboards.
-
-*squeekboard* is the Wayland support branch.
+*Squeekboard* is a virtual keyboard supporting Wayland, built primarily for the *Librem 5* phone.
 
 Building
 --------
 
 ### Dependencies
 
-REQUIRED: GLib2, GTK-3.0, PangoCairo, libxklavier, libcroco
-OPTIONAL: libXtst, at-spi2-core, IBus, Clutter, Clutter-Gtk, Python, Vala, gobject-introspection, libcanberra
+See `.gitlab-ci.yml`.
 
 ### Build from git repo
 
 ```
-$ git clone git://github.com/ueno/eekboard.git
+$ git clone https://source.puri.sm/Librem5/eekboard.git
 $ cd eekboard
-$ ./autogen.sh --prefix=/usr --enable-gtk-doc
-$ make
-$ sudo make install
-```
-
-### Build from tarball
-
-```
-$ ./configure --prefix=/usr
-$ make
-$ sudo make install
+$ mkdir ../build
+$ meson ../build/
+$ cd ../build
+$ ninja install
 ```
 
 Running
@@ -37,7 +26,10 @@ Running
 
 ```
 $ rootston
+# if you used --prefix in your meson command, include the following command
 $ export GSETTINGS_SCHEMA_DIR=$YOUR_PREFIX/share/glib-2.0/schemas
-$ eekboard-server &
-$ eekboard
+$ cd ../build/
+$ src/squeekboard
+$ busctl call --user org.fedorahosted.Eekboard /org/fedorahosted/Eekboard org.fedorahosted.Eekboard ShowKeyboard
+$ busctl call --user org.fedorahosted.Eekboard /org/fedorahosted/Eekboard org.fedorahosted.Eekboard HideKeyboard
 ```
