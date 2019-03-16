@@ -122,6 +122,7 @@ int WaylandFakeKeyEvent(
     unsigned long delay
 ) {
     printf("Sending fake event %d press %d delay %d\n", keycode, is_press, delay);
+    return 0;
 }
 
 static void

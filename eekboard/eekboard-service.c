@@ -30,6 +30,8 @@
 
 #include "eekboard/eekboard-service.h"
 
+#include <stdio.h>
+
 enum {
     PROP_0,
     PROP_OBJECT_PATH,
@@ -210,6 +212,25 @@ eekboard_service_constructed (GObject *object)
             g_error_free (error);
         }
     }
+
+    // CreateContext
+    EekboardServiceClass *klass = EEKBOARD_SERVICE_GET_CLASS(service);
+
+    EekboardContextService *context;
+
+    g_assert (klass->create_context);
+    context = klass->create_context (service, "client_name", "object_path");
+    g_object_set_data_full (G_OBJECT(context),
+                            "owner", g_strdup ("sender"),
+                            (GDestroyNotify)g_free);
+    g_hash_table_insert (service->priv->context_hash,
+                         "object_path",
+                         context);
+
+    // PushContext
+    service->priv->context_stack = g_slist_prepend (service->priv->context_stack,
+                                           g_object_ref (context));
+    eekboard_context_service_enable (context);
 }
 
 static void
@@ -383,37 +404,10 @@ handle_method_call (GDBusConnection       *connection,
     EekboardServiceClass *klass = EEKBOARD_SERVICE_GET_CLASS(service);
 
     if (g_strcmp0 (method_name, "CreateContext") == 0) {
-        const gchar *client_name;
-        gchar *object_path;
-        static gint context_id = 0;
-        EekboardContextService *context;
-
-        g_variant_get (parameters, "(&s)", &client_name);
-        object_path = g_strdup_printf (EEKBOARD_CONTEXT_SERVICE_PATH, context_id++);
-        g_assert (klass->create_context);
-        context = klass->create_context (service, client_name, object_path);
-        g_object_set_data_full (G_OBJECT(context),
-                                "owner", g_strdup (sender),
-                                (GDestroyNotify)g_free);
-        g_hash_table_insert (service->priv->context_hash,
-                             object_path,
-                             context);
-
-        /* the vanished callback is called when clients are disconnected */
-        g_bus_watch_name_on_connection (service->priv->connection,
-                                        sender,
-                                        G_BUS_NAME_WATCHER_FLAGS_NONE,
-                                        NULL,
-                                        service_name_vanished_callback,
-                                        service,
-                                        NULL);
-
-        g_signal_connect (G_OBJECT(context), "destroyed",
-                          G_CALLBACK(context_destroyed_cb), service);
-
+        printf("Ignoring CreateContext call\n");
         g_dbus_method_invocation_return_value (invocation,
                                                g_variant_new ("(s)",
-                                                              object_path));
+                                                              "object_path"));
         return;
     }
 
@@ -482,6 +476,7 @@ handle_method_call (GDBusConnection       *connection,
         } else {
             service->priv->visible = TRUE;
         }
+        g_dbus_method_invocation_return_value (invocation, NULL);
         return;
     }
 
@@ -491,6 +486,7 @@ handle_method_call (GDBusConnection       *connection,
         } else {
             service->priv->visible = FALSE;
         }
+        g_dbus_method_invocation_return_value (invocation, NULL);
         return;
     }
 

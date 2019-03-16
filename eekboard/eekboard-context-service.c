@@ -31,8 +31,8 @@
 
 #include "eekboard/key-emitter.h"
 #include "eekboard/eekboard-context-service.h"
-#include "eekboard/eekboard-xklutil.h"
-#include "eek/eek-xkl.h"
+//#include "eekboard/eekboard-xklutil.h"
+//#include "eek/eek-xkl.h"
 
 #define CSW 640
 #define CSH 480
@@ -350,28 +350,42 @@ eekboard_context_service_finalize (GObject *object)
         finalize (object);
 }
 
+// declaration for eekboard_context_service_constructed
+static void
+emit_group_changed_signal (EekboardContextService *context,
+                           gint                    group);
+
 static void
 eekboard_context_service_constructed (GObject *object)
 {
     EekboardContextService *context = EEKBOARD_CONTEXT_SERVICE (object);
+    EekboardContextServiceClass *klass = EEKBOARD_CONTEXT_SERVICE_GET_CLASS(context);
+    static guint keyboard_id = 0;
+    const gchar *keyboard_type = "us"; // TODO: fetch from gsettings
+    EekKeyboard *keyboard;
+// create a keyboard
+    keyboard = klass->create_keyboard (context, keyboard_type);
+    eek_keyboard_set_modifier_behavior (keyboard,
+                                        EEK_MODIFIER_BEHAVIOR_LATCH);
 
-    if (context->priv->connection && context->priv->object_path) {
-        GError *error = NULL;
-        context->priv->registration_id = g_dbus_connection_register_object
-            (context->priv->connection,
-             context->priv->object_path,
-             context->priv->introspection_data->interfaces[0],
-             &interface_vtable,
-             context,
-             NULL,
-             &error);
+    keyboard_id++;
+    g_hash_table_insert (context->priv->keyboard_hash,
+                         GUINT_TO_POINTER(keyboard_id),
+                         keyboard);
+    g_object_set_data (G_OBJECT(keyboard),
+                       "keyboard-id",
+                       GUINT_TO_POINTER(keyboard_id));
+// set as current
+    if (context->priv->keyboard)
+        disconnect_keyboard_signals (context);
 
-        if (context->priv->registration_id == 0) {
-            g_warning ("failed to register context object: %s",
-                       error->message);
-            g_error_free (error);
-        }
-    }
+    context->priv->keyboard = keyboard;
+    connect_keyboard_signals (context);
+    gint group;
+    group = eek_element_get_group (EEK_ELEMENT(context->priv->keyboard));
+    emit_group_changed_signal (context, group);
+
+    g_object_notify (G_OBJECT(context), "keyboard");
 }
 
 static void
@@ -570,6 +584,7 @@ static void
 emit_visibility_changed_signal (EekboardContextService *context,
                                 gboolean                visible)
 {
+    return; // FIXME: update Visible property
     if (context->priv->connection && context->priv->enabled) {
         GError *error = NULL;
         gboolean retval;
@@ -772,38 +787,6 @@ handle_method_call (GDBusConnection       *connection,
         context->priv->repeat_timeout_id = 0;
     }
 
-    if (g_strcmp0 (method_name, "AddKeyboard") == 0) {
-        const gchar *keyboard_type;
-        static guint keyboard_id = 0;
-        EekKeyboard *keyboard;
-
-        g_variant_get (parameters, "(&s)", &keyboard_type);
-        keyboard = klass->create_keyboard (context, keyboard_type);
-
-        if (keyboard == NULL) {
-            g_dbus_method_invocation_return_error (invocation,
-                                                   G_IO_ERROR,
-                                                   G_IO_ERROR_FAILED_HANDLED,
-                                                   "can't create a keyboard");
-            return;
-        }
-
-        eek_keyboard_set_modifier_behavior (keyboard,
-                                            EEK_MODIFIER_BEHAVIOR_LATCH);
-
-        keyboard_id++;
-        g_hash_table_insert (context->priv->keyboard_hash,
-                             GUINT_TO_POINTER(keyboard_id),
-                             keyboard);
-        g_object_set_data (G_OBJECT(keyboard),
-                           "keyboard-id",
-                           GUINT_TO_POINTER(keyboard_id));
-        g_dbus_method_invocation_return_value (invocation,
-                                               g_variant_new ("(u)",
-                                                              keyboard_id));
-        return;
-    }
-
     if (g_strcmp0 (method_name, "RemoveKeyboard") == 0) {
         guint keyboard_id, current_keyboard_id;
 
@@ -823,43 +806,6 @@ handle_method_call (GDBusConnection       *connection,
         g_hash_table_remove (context->priv->keyboard_hash,
                              GUINT_TO_POINTER(keyboard_id));
         g_dbus_method_invocation_return_value (invocation, NULL);
-        return;
-    }
-
-    if (g_strcmp0 (method_name, "SetKeyboard") == 0) {
-        EekKeyboard *keyboard;
-        guint keyboard_id;
-        gint group;
-
-        g_variant_get (parameters, "(u)", &keyboard_id);
-
-        keyboard = g_hash_table_lookup (context->priv->keyboard_hash,
-                                        GUINT_TO_POINTER(keyboard_id));
-        if (!keyboard) {
-            g_dbus_method_invocation_return_error (invocation,
-                                                   G_IO_ERROR,
-                                                   G_IO_ERROR_FAILED_HANDLED,
-                                                   "no such keyboard");
-            return;
-        }
-
-        if (keyboard == context->priv->keyboard) {
-            g_dbus_method_invocation_return_value (invocation, NULL);
-            return;
-        }
-
-        if (context->priv->keyboard)
-            disconnect_keyboard_signals (context);
-
-        context->priv->keyboard = keyboard;
-        connect_keyboard_signals (context);
-
-        g_dbus_method_invocation_return_value (invocation, NULL);
-
-        group = eek_element_get_group (EEK_ELEMENT(context->priv->keyboard));
-        emit_group_changed_signal (context, group);
-
-        g_object_notify (G_OBJECT(context), "keyboard");
         return;
     }
 
@@ -979,24 +925,7 @@ eekboard_context_service_enable (EekboardContextService *context)
     g_return_if_fail (context->priv->connection);
 
     if (!context->priv->enabled) {
-        gboolean retval;
-
         context->priv->enabled = TRUE;
-
-        error = NULL;
-        retval = g_dbus_connection_emit_signal (context->priv->connection,
-                                                NULL,
-                                                context->priv->object_path,
-                                                EEKBOARD_CONTEXT_SERVICE_INTERFACE,
-                                                "Enabled",
-                                                NULL,
-                                                &error);
-        if (!retval) {
-            g_warning ("failed to emit Enabled signal: %s",
-                       error->message);
-            g_error_free (error);
-            g_assert_not_reached ();
-        }
         g_signal_emit (context, signals[ENABLED], 0);
     }
 }
