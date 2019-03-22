@@ -355,16 +355,50 @@ static void
 emit_group_changed_signal (EekboardContextService *context,
                            gint                    group);
 
+
+static void
+settings_get_layout(GSettings *settings, char **type, char **layout)
+{
+    GVariant *inputs = g_settings_get_value(settings, "sources");
+    guint32 index;
+    g_settings_get(settings, "current", "u", &index);
+
+    GVariantIter *iter;
+    g_variant_get(inputs, "a(ss)", &iter);
+
+    for (unsigned i = 0;
+         g_variant_iter_loop(iter, "(ss)", type, layout);
+         i++) {
+        if (i == index) {
+            //printf("Found layout %s %s\n", *type, *layout);
+            break;
+        }
+    }
+    g_variant_iter_free(iter);
+}
+
+
 static void
 eekboard_context_service_constructed (GObject *object)
 {
     EekboardContextService *context = EEKBOARD_CONTEXT_SERVICE (object);
     EekboardContextServiceClass *klass = EEKBOARD_CONTEXT_SERVICE_GET_CLASS(context);
     static guint keyboard_id = 0;
-    const gchar *keyboard_type = "us"; // TODO: fetch from gsettings
+    g_autofree gchar *keyboard_type = NULL;
+    g_autofree gchar *keyboard_layout = NULL;
+
+    settings_get_layout(context->priv->settings, &keyboard_type, &keyboard_layout);
+
+    if (!keyboard_type) {
+        keyboard_type = g_strdup("us");
+    }
+    if (!keyboard_layout) {
+        keyboard_layout = g_strdup("undefined");
+    }
+
     EekKeyboard *keyboard;
 // create a keyboard
-    keyboard = klass->create_keyboard (context, keyboard_type);
+    keyboard = klass->create_keyboard (context, keyboard_layout);
     eek_keyboard_set_modifier_behavior (keyboard,
                                         EEK_MODIFIER_BEHAVIOR_LATCH);
 
@@ -564,7 +598,7 @@ eekboard_context_service_init (EekboardContextService *self)
                                NULL,
                                (GDestroyNotify)g_object_unref);
 
-    self->priv->settings = g_settings_new ("org.fedorahosted.eekboard");
+    self->priv->settings = g_settings_new ("org.gnome.desktop.input-sources");
 }
 
 static void
@@ -668,9 +702,11 @@ static gboolean on_repeat_timeout (EekboardContextService *context);
 static gboolean
 on_repeat_timeout (EekboardContextService *context)
 {
-    guint delay;
+    guint delay = 500; // ms
 
-    g_settings_get (context->priv->settings, "repeat-interval", "u", &delay);
+    // hardcoding; needs to connect to yet another settings path because
+    // org.gnome.desktop.input-sources doesn't control repeating
+    //g_settings_get (context->priv->settings, "repeat-interval", "u", &delay);
 
     emit_key_activated_dbus_signal (context, context->priv->repeat_key);
 
@@ -692,6 +728,10 @@ on_repeat_timeout_init (EekboardContextService *context)
     eek_keyboard_set_modifiers (context->priv->keyboard, 0);
     
     /* reschedule repeat timeout only when "repeat" option is set */
+    /* TODO: org.gnome.desktop.input-sources doesn't have repeat info.
+     * In addition, repeat is only useful when the keyboard is not in text
+     * input mode */
+    /*
     if (g_settings_get_boolean (context->priv->settings, "repeat")) {
         guint delay;
 
@@ -700,7 +740,7 @@ on_repeat_timeout_init (EekboardContextService *context)
             g_timeout_add (delay,
                            (GSourceFunc)on_repeat_timeout,
                            context);
-    } else
+    } else */
         context->priv->repeat_timeout_id = 0;
 
     return FALSE;
@@ -712,9 +752,10 @@ on_key_pressed (EekKeyboard *keyboard,
                 gpointer     user_data)
 {
     EekboardContextService *context = user_data;
-    guint delay;
+    guint delay = 500;
 
-    g_settings_get (context->priv->settings, "repeat-delay", "u", &delay);
+    // org.gnome.desktop.input-sources doesn't have delay info
+    //g_settings_get (context->priv->settings, "repeat-delay", "u", &delay);
 
     if (context->priv->repeat_timeout_id) {
         g_source_remove (context->priv->repeat_timeout_id);
@@ -919,8 +960,6 @@ handle_method_call (GDBusConnection       *connection,
 void
 eekboard_context_service_enable (EekboardContextService *context)
 {
-    GError *error;
-
     g_return_if_fail (EEKBOARD_IS_CONTEXT_SERVICE(context));
     g_return_if_fail (context->priv->connection);
 

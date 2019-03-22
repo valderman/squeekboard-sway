@@ -48,7 +48,6 @@ struct _ServerContextService {
 
     gulong notify_visible_handler;
 
-    GSettings *settings;
     gdouble size_constraint_landscape[2];
     gdouble size_constraint_portrait[2];
 };
@@ -277,7 +276,7 @@ update_widget (ServerContextService *context)
     EekKeyboard *keyboard;
     const gchar *client_name;
     EekBounds bounds;
-    gchar *theme_name, *theme_filename, *theme_path;
+    gchar *theme_path;
     EekTheme *theme;
     
     if (context->widget) {
@@ -285,12 +284,7 @@ update_widget (ServerContextService *context)
         context->widget = NULL;
     }
 
-    theme_name = g_settings_get_string (context->settings, "theme");
-    theme_filename = g_strdup_printf ("%s.css", theme_name);
-    g_free (theme_name);
-
-    theme_path = g_build_filename (THEMESDIR, theme_filename, NULL);
-    g_free (theme_filename);
+    theme_path = g_build_filename (THEMESDIR, "default.css", NULL);
 
     theme = eek_theme_new (theme_path, NULL, NULL);
     g_free (theme_path);
@@ -472,22 +466,6 @@ server_context_service_init (ServerContextService *context)
                       "notify::fullscreen",
                       G_CALLBACK(on_notify_fullscreen),
                       context);
-
-    context->settings = g_settings_new ("org.fedorahosted.eekboard");
-    g_settings_bind_with_mapping (context->settings, "size-constraint-landscape",
-                                  context, "size-constraint-landscape",
-                                  G_SETTINGS_BIND_GET,
-                                  (GSettingsBindGetMapping)g_value_set_variant,
-                                  NULL,
-                                  NULL,
-                                  NULL);
-    g_settings_bind_with_mapping (context->settings, "size-constraint-portrait",
-                                  context, "size-constraint-portrait",
-                                  G_SETTINGS_BIND_GET,
-                                  (GSettingsBindGetMapping)g_value_set_variant,
-                                  NULL,
-                                  NULL,
-                                  NULL);
 }
 
 ServerContextService *
