@@ -198,7 +198,13 @@ eekboard_context_service_real_create_keyboard (EekboardContextService *self,
             g_warning ("can't create keyboard %s: %s",
                        keyboard_type, error->message);
             g_error_free (error);
-            return NULL;
+            error = NULL;
+            layout = eek_xml_layout_new ("us", &error);
+            if (layout == NULL) {
+                g_error ("failed to create fallback layout: %s", error->message);
+                g_error_free (error);
+                return NULL;
+            }
         }
     }
     keyboard = eek_keyboard_new (layout, CSW, CSH);
