@@ -14,7 +14,6 @@ Features
 
 ### Temporarily dropped
 
-- Picking up layouts from gsettings
 - A settings interface
 
 ### TODO
@@ -50,8 +49,6 @@ Running
 
 ```
 $ rootston
-# if you used --prefix in your meson command, include the following command
-$ export GSETTINGS_SCHEMA_DIR=$YOUR_PREFIX/share/glib-2.0/schemas
 $ cd ../build/
 $ src/squeekboard
 $ busctl call --user org.fedorahosted.Eekboard /org/fedorahosted/Eekboard org.fedorahosted.Eekboard ShowKeyboard
