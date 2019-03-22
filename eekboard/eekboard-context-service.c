@@ -138,14 +138,6 @@ static const gchar introspection_xml[] =
 static void connect_keyboard_signals (EekboardContextService *context);
 static void disconnect_keyboard_signals
                                      (EekboardContextService *context);
-static void handle_method_call       (GDBusConnection        *connection,
-                                      const gchar            *sender,
-                                      const gchar            *object_path,
-                                      const gchar            *interface_name,
-                                      const gchar            *method_name,
-                                      GVariant               *parameters,
-                                      GDBusMethodInvocation  *invocation,
-                                      gpointer                user_data);
 static void emit_visibility_changed_signal
                                      (EekboardContextService *context,
                                       gboolean                visible);
@@ -349,12 +341,6 @@ eekboard_context_service_finalize (GObject *object)
         finalize (object);
 }
 
-// declaration for eekboard_context_service_constructed
-static void
-emit_group_changed_signal (EekboardContextService *context,
-                           gint                    group);
-
-
 static void
 settings_get_layout(GSettings *settings, char **type, char **layout)
 {
@@ -378,9 +364,7 @@ settings_get_layout(GSettings *settings, char **type, char **layout)
 
 
 static void
-eekboard_context_service_constructed (GObject *object)
-{
-    EekboardContextService *context = EEKBOARD_CONTEXT_SERVICE (object);
+settings_update_layout(EekboardContextService *context) {
     EekboardContextServiceClass *klass = EEKBOARD_CONTEXT_SERVICE_GET_CLASS(context);
     static guint keyboard_id = 0;
     g_autofree gchar *keyboard_type = NULL;
@@ -395,30 +379,49 @@ eekboard_context_service_constructed (GObject *object)
         keyboard_layout = g_strdup("undefined");
     }
 
-    EekKeyboard *keyboard;
+    EekKeyboard *keyboard = g_hash_table_lookup(context->priv->keyboard_hash,
+                                                GUINT_TO_POINTER(keyboard_id));
 // create a keyboard
-    keyboard = klass->create_keyboard (context, keyboard_layout);
-    eek_keyboard_set_modifier_behavior (keyboard,
-                                        EEK_MODIFIER_BEHAVIOR_LATCH);
+    if (!keyboard) {
+        keyboard = klass->create_keyboard (context, keyboard_layout);
+        eek_keyboard_set_modifier_behavior (keyboard,
+                                            EEK_MODIFIER_BEHAVIOR_LATCH);
 
-    keyboard_id++;
-    g_hash_table_insert (context->priv->keyboard_hash,
-                         GUINT_TO_POINTER(keyboard_id),
-                         keyboard);
-    g_object_set_data (G_OBJECT(keyboard),
-                       "keyboard-id",
-                       GUINT_TO_POINTER(keyboard_id));
+        g_hash_table_insert (context->priv->keyboard_hash,
+                             GUINT_TO_POINTER(keyboard_id),
+                             keyboard);
+        g_object_set_data (G_OBJECT(keyboard),
+                           "keyboard-id",
+                           GUINT_TO_POINTER(keyboard_id));
+        keyboard_id++;
+    }
 // set as current
     if (context->priv->keyboard)
         disconnect_keyboard_signals (context);
 
     context->priv->keyboard = keyboard;
     connect_keyboard_signals (context);
-    gint group;
-    group = eek_element_get_group (EEK_ELEMENT(context->priv->keyboard));
-    emit_group_changed_signal (context, group);
+    // TODO: this used to save the group, why?
+    //group = eek_element_get_group (EEK_ELEMENT(context->priv->keyboard));
 
     g_object_notify (G_OBJECT(context), "keyboard");
+}
+
+static gboolean
+settings_handle_layout_changed(GSettings *s,
+                               gpointer keys, gint n_keys,
+                               gpointer user_data) {
+    EekboardContextService *context = user_data;
+    settings_update_layout(context);
+    return TRUE;
+}
+
+
+static void
+eekboard_context_service_constructed (GObject *object)
+{
+    EekboardContextService *context = EEKBOARD_CONTEXT_SERVICE (object);
+    settings_update_layout(context);
 }
 
 static void
@@ -598,6 +601,13 @@ eekboard_context_service_init (EekboardContextService *self)
                                (GDestroyNotify)g_object_unref);
 
     self->priv->settings = g_settings_new ("org.gnome.desktop.input-sources");
+    gulong conn_id = g_signal_connect(self->priv->settings, "change-event",
+                                      G_CALLBACK(settings_handle_layout_changed),
+                                      self);
+    if (conn_id == 0) {
+        g_warning ("Could not connect to gsettings updates, layout"
+                   " changing unavailable");
+    }
 }
 
 static void
@@ -631,30 +641,6 @@ emit_visibility_changed_signal (EekboardContextService *context,
                                                 &error);
         if (!retval) {
             g_warning ("failed to emit VisibilityChanged signal: %s",
-                       error->message);
-            g_error_free (error);
-            g_assert_not_reached ();
-        }
-    }
-}
-
-static void
-emit_group_changed_signal (EekboardContextService *context,
-                           gint                    group)
-{
-    if (context->priv->connection && context->priv->enabled) {
-        GError *error = NULL;
-        gboolean retval;
-
-        retval = g_dbus_connection_emit_signal (context->priv->connection,
-                                                NULL,
-                                                context->priv->object_path,
-                                                EEKBOARD_CONTEXT_SERVICE_INTERFACE,
-                                                "GroupChanged",
-                                                g_variant_new ("(i)", group),
-                                                &error);
-        if (!retval) {
-            g_warning ("failed to emit GroupChanged signal: %s",
                        error->message);
             g_error_free (error);
             g_assert_not_reached ();
@@ -791,8 +777,6 @@ on_key_released (EekKeyboard *keyboard,
         Client c = {&ec, 0, {0}};
 
         emit_key_activated(&ec, keycode, symbol, modifiers, &c);
-        //emit_key_activated_dbus_signal (context,
-          //                              context->priv->repeat_key);
     }
 }
 
