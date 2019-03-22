@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Copyright (C) 2010-2011 Daiki Ueno <ueno@unixuser.org>
 # Copyright (C) 2010-2011 Red Hat, Inc.
@@ -23,7 +23,7 @@ import sys
 import re
 
 if len(sys.argv) > 3:
-    print >> sys.stderr, "Usage: %s TABLE-NAME [INPUT_FILE]" % sys.argv[0]
+    print("Usage: %s TABLE-NAME [INPUT_FILE]" % sys.argv[0], file=sys.stderr)
     sys.exit(-1)
 
 if len(sys.argv) < 3:
@@ -33,7 +33,6 @@ else:
 
 table = dict()
 for line in in_stream:
-    line = line.decode('UTF-8')
     match = re.match(r'\s*(0x[0-9A-F]+)\s+(\S*)\s+(\S*)', line, re.I)
     if match:
         table[int(match.group(1), 16)] = (match.group(2), match.group(3))
@@ -44,7 +43,7 @@ sys.stdout.write("static const EekKeysymEntry %s[] = {\n" %
 for index, (keysym, (l, c)) in enumerate([(keysym, table[keysym])
                                           for keysym in sorted(table.keys())]):
     sys.stdout.write("    { 0x%X, %s, %s }" %
-                     (keysym, l.encode('UTF-8'), c.encode('UTF-8')))
+                     (keysym, l, c))
     if index < len(table) - 1:
         sys.stdout.write(",")
     sys.stdout.write("\n")

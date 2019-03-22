@@ -14,7 +14,7 @@ marshalers = gnome.genmarshal(
   internal: true,
 )
 
-python = find_program('python2')
+python = find_program('python3')
 
 gen_keysym_entries_special = generator(
   python,
