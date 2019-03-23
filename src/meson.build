@@ -1,3 +1,9 @@
+gnome = import('gnome')
+dbus_src = gnome.gdbus_codegen(
+    'sm.puri.OSK0',
+    '../data/dbus/sm.puri.OSK0.xml'
+)
+
 sources = [
   'server-service.c',
   'server-context-service.c',
@@ -23,6 +29,7 @@ sources = [
   '../eek/eek-theme-node.c',
   '../eek/eek-types.c',
   '../eek/eek-xml-layout.c',
+  dbus_src,
   enums,
   keysym_entries,
   marshalers,

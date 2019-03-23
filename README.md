@@ -51,6 +51,13 @@ Running
 $ rootston
 $ cd ../build/
 $ src/squeekboard
-$ busctl call --user org.fedorahosted.Eekboard /org/fedorahosted/Eekboard org.fedorahosted.Eekboard ShowKeyboard
-$ busctl call --user org.fedorahosted.Eekboard /org/fedorahosted/Eekboard org.fedorahosted.Eekboard HideKeyboard
+```
+
+### Testing
+
+```
+$ busctl call --user sm.puri.OSK0 /sm/puri/OSK0 sm.puri.OSK0 SetVisible b true
+$ busctl call --user sm.puri.OSK0 /sm/puri/OSK0 sm.puri.OSK0 SetVisible b false
+$ gsettings set org.gnome.desktop.input-sources sources "[('xkb', 'us'), ('xkb', 'ru')]"
+$ gsettings set org.gnome.desktop.input-sources current 1
 ```

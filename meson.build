@@ -10,6 +10,7 @@ project(
 prefix = get_option('prefix')
 datadir = join_paths(prefix, get_option('datadir'))
 pkgdatadir = join_paths(datadir, meson.project_name())
+dbusdir = join_paths(datadir, 'dbus-1/interfaces')
 
 subdir('data')
 subdir('eek')

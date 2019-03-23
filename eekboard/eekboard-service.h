@@ -24,8 +24,8 @@
 
 G_BEGIN_DECLS
 
-#define EEKBOARD_SERVICE_PATH "/org/fedorahosted/Eekboard"
-#define EEKBOARD_SERVICE_INTERFACE "org.fedorahosted.Eekboard"
+#define EEKBOARD_SERVICE_PATH "/sm/puri/OSK0"
+#define EEKBOARD_SERVICE_INTERFACE "sm.puri.OSK0"
 
 #define EEKBOARD_TYPE_SERVICE (eekboard_service_get_type())
 #define EEKBOARD_SERVICE(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), EEKBOARD_TYPE_SERVICE, EekboardService))

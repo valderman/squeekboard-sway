@@ -30,6 +30,8 @@
 
 #include "eekboard/eekboard-service.h"
 
+#include "sm.puri.OSK0.h"
+
 #include <stdio.h>
 
 enum {
@@ -51,6 +53,7 @@ static guint signals[LAST_SIGNAL] = { 0, };
 
 struct _EekboardServicePrivate {
     GDBusConnection *connection;
+    SmPuriOSK0 *dbus_interface;
     GDBusNodeInfo *introspection_data;
     guint registration_id;
     char *object_path;
@@ -61,40 +64,6 @@ struct _EekboardServicePrivate {
 };
 
 G_DEFINE_TYPE (EekboardService, eekboard_service, G_TYPE_OBJECT);
-
-static const gchar introspection_xml[] =
-    "<node>"
-    "  <interface name='org.fedorahosted.Eekboard'>"
-    "    <method name='CreateContext'>"
-    "      <arg direction='in' type='s' name='client_name'/>"
-    "      <arg direction='out' type='s' name='object_path'/>"
-    "    </method>"
-    "    <method name='PushContext'>"
-    "      <arg direction='in' type='s' name='object_path'/>"
-    "    </method>"
-    "    <method name='PopContext'/>"
-    "    <method name='ShowKeyboard'/>"
-    "    <method name='HideKeyboard'/>"
-    "    <method name='Destroy'/>"
-    /* signals */
-    "  </interface>"
-    "</node>";
-
-static void handle_method_call (GDBusConnection       *connection,
-                                const gchar           *sender,
-                                const gchar           *object_path,
-                                const gchar           *interface_name,
-                                const gchar           *method_name,
-                                GVariant              *parameters,
-                                GDBusMethodInvocation *invocation,
-                                gpointer               user_data);
-
-static const GDBusInterfaceVTable interface_vtable =
-{
-  handle_method_call,
-  NULL,
-  NULL
-};
 
 static void
 eekboard_service_set_property (GObject      *object,
@@ -190,26 +159,46 @@ eekboard_service_finalize (GObject *object)
     G_OBJECT_CLASS (eekboard_service_parent_class)->finalize (object);
 }
 
+static gboolean
+handle_set_visible(SmPuriOSK0 *object, GDBusMethodInvocation *invocation,
+                   gboolean arg_visible, gpointer user_data) {
+    EekboardService *service = user_data;
+    if (arg_visible) {
+        if (service->priv->context_stack) {
+            eekboard_context_service_show_keyboard (service->priv->context_stack->data);
+        } else {
+            service->priv->visible = TRUE;
+        }
+    } else {
+        if (service->priv->context_stack) {
+            eekboard_context_service_hide_keyboard (service->priv->context_stack->data);
+        } else {
+            service->priv->visible = FALSE;
+        }
+    }
+    sm_puri_osk0_complete_set_visible(object, invocation);
+    return TRUE;
+}
+
 static void
 eekboard_service_constructed (GObject *object)
 {
     EekboardService *service = EEKBOARD_SERVICE(object);
+
+    service->priv->dbus_interface = sm_puri_osk0_skeleton_new();
+    sm_puri_osk0_set_visible(service->priv->dbus_interface, FALSE); // TODO: use actual value
+    g_signal_connect(service->priv->dbus_interface, "handle-set-visible",
+                     G_CALLBACK(handle_set_visible), service);
+
     if (service->priv->connection && service->priv->object_path) {
         GError *error = NULL;
 
-        service->priv->registration_id = g_dbus_connection_register_object
-            (service->priv->connection,
-             service->priv->object_path,
-             service->priv->introspection_data->interfaces[0],
-             &interface_vtable,
-             object,
-             NULL,
-             &error);
-
-        if (service->priv->registration_id == 0) {
-            g_warning ("failed to register context object: %s",
-                       error->message);
-            g_error_free (error);
+        if (!g_dbus_interface_skeleton_export(G_DBUS_INTERFACE_SKELETON(service->priv->dbus_interface),
+                                              service->priv->connection,
+                                              service->priv->object_path,
+                                              &error)) {
+            g_warning("Error registering dbus object: %s\n", error->message);
+            g_clear_error(&error);
         }
     }
 
@@ -299,18 +288,7 @@ eekboard_service_class_init (EekboardServiceClass *klass)
 static void
 eekboard_service_init (EekboardService *self)
 {
-    GError *error;
-
     self->priv = EEKBOARD_SERVICE_GET_PRIVATE(self);
-
-    error = NULL;
-    self->priv->introspection_data =
-        g_dbus_node_info_new_for_xml (introspection_xml, &error);
-    if (self->priv->introspection_data == NULL) {
-        g_warning ("failed to parse D-Bus XML: %s", error->message);
-        g_error_free (error);
-        g_assert_not_reached ();
-    }
 
     self->priv->context_hash =
         g_hash_table_new_full (g_str_hash,
@@ -333,170 +311,6 @@ remove_context_from_stack (EekboardService        *service,
     }
     if (service->priv->context_stack)
         eekboard_context_service_enable (service->priv->context_stack->data);
-}
-
-static void
-service_name_vanished_callback (GDBusConnection *connection,
-                                const gchar     *name,
-                                gpointer         user_data)
-{
-    EekboardService *service = user_data;
-    GSList *head;
-    GHashTableIter iter;
-    gpointer k, v;
-
-    g_hash_table_iter_init (&iter, service->priv->context_hash);
-    while (g_hash_table_iter_next (&iter, &k, &v)) {
-        const gchar *owner = g_object_get_data (G_OBJECT(v), "owner");
-        if (g_strcmp0 (owner, name) == 0)
-            g_hash_table_iter_remove (&iter);
-    }
-
-    for (head = service->priv->context_stack; head; ) {
-        const gchar *owner = g_object_get_data (G_OBJECT(head->data), "owner");
-        GSList *next = g_slist_next (head);
-
-        if (g_strcmp0 (owner, name) == 0) {
-            service->priv->context_stack =
-                g_slist_remove_link (service->priv->context_stack, head);
-            g_object_unref (head->data);
-            g_slist_free1 (head);
-        }
-
-        head = next;
-    }
-
-    if (service->priv->context_stack)
-        eekboard_context_service_enable (service->priv->context_stack->data);
-}
-
-static void
-context_destroyed_cb (EekboardContextService *context, EekboardService *service)
-{
-    gchar *object_path = NULL;
-
-    remove_context_from_stack (service, context);
-
-    g_object_get (G_OBJECT(context), "object-path", &object_path, NULL);
-    g_hash_table_remove (service->priv->context_hash, object_path);
-    g_free (object_path);
-}
-
-static void
-on_notify_visible (GObject *object, GParamSpec *spec, gpointer user_data)
-{
-    EekboardService *service = user_data;
-
-    g_object_get (object, "visible", &service->priv->visible, NULL);
-}
-
-static void
-handle_method_call (GDBusConnection       *connection,
-                    const gchar           *sender,
-                    const gchar           *object_path,
-                    const gchar           *interface_name,
-                    const gchar           *method_name,
-                    GVariant              *parameters,
-                    GDBusMethodInvocation *invocation,
-                    gpointer               user_data)
-{
-    EekboardService *service = user_data;
-    EekboardServiceClass *klass = EEKBOARD_SERVICE_GET_CLASS(service);
-
-    if (g_strcmp0 (method_name, "CreateContext") == 0) {
-        printf("Ignoring CreateContext call\n");
-        g_dbus_method_invocation_return_value (invocation,
-                                               g_variant_new ("(s)",
-                                                              "object_path"));
-        return;
-    }
-
-    if (g_strcmp0 (method_name, "PushContext") == 0) {
-        const gchar *object_path;
-        EekboardContextService *context;
-
-        g_variant_get (parameters, "(&s)", &object_path);
-        context = g_hash_table_lookup (service->priv->context_hash, object_path);
-        if (!context) {
-            g_dbus_method_invocation_return_error (invocation,
-                                                   G_IO_ERROR,
-                                                   G_IO_ERROR_FAILED_HANDLED,
-                                                   "context not found");
-            return;
-        }
-        if (service->priv->context_stack)
-            eekboard_context_service_disable (service->priv->context_stack->data);
-        service->priv->context_stack = g_slist_prepend (service->priv->context_stack,
-                                               g_object_ref (context));
-        eekboard_context_service_enable (context);
-        g_signal_connect (context, "notify::visible",
-                          G_CALLBACK(on_notify_visible), service);
-        if (service->priv->visible)
-            eekboard_context_service_show_keyboard (context);
-
-        g_dbus_method_invocation_return_value (invocation, NULL);
-        return;
-    }
-
-    if (g_strcmp0 (method_name, "PopContext") == 0) {
-        if (service->priv->context_stack) {
-            EekboardContextService *context = service->priv->context_stack->data;
-            gchar *object_path;
-            const gchar *owner;
-
-            g_object_get (G_OBJECT(context), "object-path", &object_path, NULL);
-            owner = g_object_get_data (G_OBJECT(context), "owner");
-            if (g_strcmp0 (owner, sender) != 0) {
-                g_dbus_method_invocation_return_error
-                    (invocation,
-                     G_IO_ERROR,
-                     G_IO_ERROR_FAILED_HANDLED,
-                     "context at %s not owned by %s",
-                     object_path, sender);
-                return;
-            }
-            g_free (object_path);
-                
-            g_signal_handlers_disconnect_by_func (context,
-                                                  G_CALLBACK(on_notify_visible),
-                                                  service);
-            eekboard_context_service_disable (context);
-            service->priv->context_stack = g_slist_next (service->priv->context_stack);
-            if (service->priv->context_stack)
-                eekboard_context_service_enable (service->priv->context_stack->data);
-        }
-
-        g_dbus_method_invocation_return_value (invocation, NULL);
-        return;
-    }
-
-    if (g_strcmp0 (method_name, "ShowKeyboard") == 0) {
-        if (service->priv->context_stack) {
-            eekboard_context_service_show_keyboard (service->priv->context_stack->data);
-        } else {
-            service->priv->visible = TRUE;
-        }
-        g_dbus_method_invocation_return_value (invocation, NULL);
-        return;
-    }
-
-    if (g_strcmp0 (method_name, "HideKeyboard") == 0) {
-        if (service->priv->context_stack) {
-            eekboard_context_service_hide_keyboard (service->priv->context_stack->data);
-        } else {
-            service->priv->visible = FALSE;
-        }
-        g_dbus_method_invocation_return_value (invocation, NULL);
-        return;
-    }
-
-    if (g_strcmp0 (method_name, "Destroy") == 0) {
-        g_signal_emit (service, signals[DESTROYED], 0);
-        g_dbus_method_invocation_return_value (invocation, NULL);
-        return;
-    }
-
-    g_return_if_reached ();
 }
 
 /**
