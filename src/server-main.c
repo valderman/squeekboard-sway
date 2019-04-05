@@ -1,6 +1,9 @@
 /* 
  * Copyright (C) 2010-2011 Daiki Ueno <ueno@unixuser.org>
  * Copyright (C) 2010-2011 Red Hat, Inc.
+ * Copyright (C) 2018-2019 Purism SPC
+ * SPDX-License-Identifier: GPL-3.0+
+ * Author: Guido Günther <agx@sigxcpu.org>
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,20 +33,14 @@
 
 #include "server-service.h"
 #include "eek/eek.h"
+#include "wayland.h"
+
+#include <gdk/gdkwayland.h>
 
 static gboolean opt_system = FALSE;
-static gboolean opt_session = FALSE;
 static gchar *opt_address = NULL;
 
-static const GOptionEntry options[] = {
-    {"system", 'y', 0, G_OPTION_ARG_NONE, &opt_system,
-     N_("Connect to the system bus")},
-    {"session", 'e', 0, G_OPTION_ARG_NONE, &opt_session,
-     N_("Connect to the session bus")},
-    {"address", 'a', 0, G_OPTION_ARG_STRING, &opt_address,
-     N_("Connect to the given D-Bus address")},
-    {NULL}
-};
+// D-Bus
 
 static void
 on_name_acquired (GDBusConnection *connection,
@@ -68,6 +65,44 @@ on_destroyed (ServerService *service,
 
     g_main_loop_quit (loop);
 }
+
+// Wayland
+
+static void
+registry_handle_global (void *data,
+                        struct wl_registry *registry,
+                        uint32_t name,
+                        const char *interface,
+                        uint32_t version)
+{
+    struct squeak_wayland *wayland = data;
+
+    if (!strcmp (interface, zwlr_layer_shell_v1_interface.name)) {
+        wayland->layer_shell = wl_registry_bind (registry, name,
+            &zwlr_layer_shell_v1_interface, 1);
+    } else if (!strcmp (interface, "wl_output")) {
+        struct wl_output *output = wl_registry_bind (registry, name,
+            &wl_output_interface, 2);
+        g_ptr_array_add (wayland->outputs, output);
+    } else if (!strcmp(interface, "wl_seat")) {
+        wayland->seat = wl_registry_bind(registry, name,
+            &wl_seat_interface, 1);
+    }
+}
+
+
+static void
+registry_handle_global_remove (void *data,
+                               struct wl_registry *registry,
+                               uint32_t name)
+{
+  // TODO
+}
+
+static const struct wl_registry_listener registry_listener = {
+  registry_handle_global,
+  registry_handle_global_remove
+};
 
 int
 main (int argc, char **argv)
@@ -131,6 +166,20 @@ main (int argc, char **argv)
         break;
     }
 
+    // Set up Wayland
+    gdk_set_allowed_backends ("wayland");
+    GdkDisplay *gdk_display = gdk_display_get_default ();
+    struct wl_display *display = gdk_wayland_display_get_wl_display (gdk_display);
+
+    if (display == NULL) {
+        g_error ("Failed to get display: %m\n");
+    }
+
+    struct squeak_wayland wayland;
+    squeak_wayland_init (&wayland);
+    struct wl_registry *registry = wl_display_get_registry (display);
+    wl_registry_add_listener (registry, &registry_listener, &wayland);
+    squeak_wayland_set_global(&wayland);
     service = server_service_new (EEKBOARD_SERVICE_PATH, connection);
 
     if (service == NULL) {
@@ -161,5 +210,6 @@ main (int argc, char **argv)
     g_object_unref (connection);
     g_main_loop_unref (loop);
 
+    squeak_wayland_deinit (&wayland);
     return 0;
 }

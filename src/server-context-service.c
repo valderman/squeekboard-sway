@@ -26,6 +26,8 @@
 #include <gdk/gdkx.h>
 
 #include "eek/eek-gtk.h"
+#include "eek/layersurface.h"
+#include "wayland.h"
 
 #include "server-context-service.h"
 
@@ -298,7 +300,20 @@ update_widget (ServerContextService *context)
     gtk_widget_set_has_tooltip (context->widget, TRUE);
 
     if (!context->window) {
-        context->window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
+        context->window = GTK_WIDGET(g_object_new (
+            PHOSH_TYPE_LAYER_SURFACE,
+            "layer-shell", squeak_wayland->layer_shell,
+            "wl-output", g_ptr_array_index(squeak_wayland->outputs, 0), // TODO: select output as needed,
+            "height", 200,
+            "anchor", ZWLR_LAYER_SURFACE_V1_ANCHOR_BOTTOM
+                      | ZWLR_LAYER_SURFACE_V1_ANCHOR_LEFT
+                      | ZWLR_LAYER_SURFACE_V1_ANCHOR_RIGHT,
+            "layer", ZWLR_LAYER_SHELL_V1_LAYER_TOP,
+            "kbd-interactivity", FALSE,
+            "exclusive-zone", 200,
+            //"namespace", "phosh home",
+            NULL
+        ));
         g_signal_connect (context->window, "destroy",
                           G_CALLBACK(on_destroy), context);
         context->notify_visible_handler =

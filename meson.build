@@ -13,5 +13,6 @@ pkgdatadir = join_paths(datadir, meson.project_name())
 dbusdir = join_paths(datadir, 'dbus-1/interfaces')
 
 subdir('data')
+subdir('protocols')
 subdir('eek')
 subdir('src')

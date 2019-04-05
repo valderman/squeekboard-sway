@@ -8,6 +8,7 @@ sources = [
   'server-service.c',
   'server-context-service.c',
   'server-main.c',
+  'wayland.c',
   '../eek/eek.c',
   '../eek/eek-container.c',
   '../eek/eek-element.c',
@@ -29,6 +30,7 @@ sources = [
   '../eek/eek-theme-node.c',
   '../eek/eek-types.c',
   '../eek/eek-xml-layout.c',
+  '../eek/layersurface.c',
   dbus_src,
   enums,
   keysym_entries,
@@ -38,6 +40,7 @@ sources = [
   '../eekboard/eekboard-context.c',
   '../eekboard/eekboard-service.c',
 #  '../eekboard/eekboard-xklutil.c',
+  wl_proto_sources,
 ]
 
 cc = meson.get_compiler('c')
@@ -48,6 +51,7 @@ deps = [
   dependency('gio-2.0', version: '>=2.26.0'),
   dependency('gtk+-3.0', version: '>=3.0'),
   dependency('libcroco-0.6'),
+  dependency('wayland-client', version: '>=1.14'),
   cc.find_library('m'),
 #  dependency('libxklavier'), # FIXME remove
 ]
