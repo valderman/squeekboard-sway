@@ -648,40 +648,6 @@ emit_visibility_changed_signal (EekboardContextService *context,
     }
 }
 
-static void
-emit_key_activated_dbus_signal (EekboardContextService *context,
-                                EekKey                 *key)
-{
-    if (context->priv->connection && context->priv->enabled) {
-        guint keycode = eek_key_get_keycode (key);
-        EekSymbol *symbol = eek_key_get_symbol_with_fallback (key, 0, 0);
-        guint modifiers = eek_keyboard_get_modifiers (context->priv->keyboard);
-        GVariant *variant;
-        GError *error;
-        gboolean retval;
-
-        variant = eek_serializable_serialize (EEK_SERIALIZABLE(symbol));
-
-        error = NULL;
-        retval = g_dbus_connection_emit_signal (context->priv->connection,
-                                                NULL,
-                                                context->priv->object_path,
-                                                EEKBOARD_CONTEXT_SERVICE_INTERFACE,
-                                                "KeyActivated",
-                                                g_variant_new ("(uvu)",
-                                                               keycode,
-                                                               variant,
-                                                               modifiers),
-                                                &error);
-        if (!retval) {
-            g_warning ("failed to emit KeyActivated signal: %s",
-                       error->message);
-            g_error_free (error);
-            g_assert_not_reached ();
-        }
-    }
-}
-
 static gboolean on_repeat_timeout (EekboardContextService *context);
 
 static gboolean
@@ -692,8 +658,6 @@ on_repeat_timeout (EekboardContextService *context)
     // hardcoding; needs to connect to yet another settings path because
     // org.gnome.desktop.input-sources doesn't control repeating
     //g_settings_get (context->priv->settings, "repeat-interval", "u", &delay);
-
-    emit_key_activated_dbus_signal (context, context->priv->repeat_key);
 
     context->priv->repeat_timeout_id =
         g_timeout_add (delay,
@@ -706,8 +670,6 @@ on_repeat_timeout (EekboardContextService *context)
 static gboolean
 on_repeat_timeout_init (EekboardContextService *context)
 {
-    emit_key_activated_dbus_signal (context, context->priv->repeat_key);
-
     /* FIXME: clear modifiers for further key repeat; better not
        depend on modifier behavior is LATCH */
     eek_keyboard_set_modifiers (context->priv->keyboard, 0);
