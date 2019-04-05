@@ -251,8 +251,6 @@ set_geometry (ServerContextService *context)
 
         gtk_window_set_decorated (GTK_WINDOW(context->window), FALSE);
         gtk_window_set_resizable (GTK_WINDOW(context->window), FALSE);
-        gtk_window_set_opacity (GTK_WINDOW(context->window), 0.8);
-
         g_signal_connect_after (context->window, "realize",
                                 G_CALLBACK(on_realize_set_dock),
                                 context);
@@ -273,10 +271,50 @@ set_geometry (ServerContextService *context)
 }
 
 static void
+make_window (ServerContextService *context) {
+    if (context->window) {
+        g_error("Window already present");
+        return;
+    }
+    context->window = GTK_WIDGET(g_object_new (
+        PHOSH_TYPE_LAYER_SURFACE,
+        "layer-shell", squeak_wayland->layer_shell,
+        "wl-output", g_ptr_array_index(squeak_wayland->outputs, 0), // TODO: select output as needed,
+        "height", 200,
+        "anchor", ZWLR_LAYER_SURFACE_V1_ANCHOR_BOTTOM
+                  | ZWLR_LAYER_SURFACE_V1_ANCHOR_LEFT
+                  | ZWLR_LAYER_SURFACE_V1_ANCHOR_RIGHT,
+        "layer", ZWLR_LAYER_SHELL_V1_LAYER_TOP,
+        "kbd-interactivity", FALSE,
+        "exclusive-zone", 200,
+        //"namespace", "phosh home",
+        NULL
+    ));
+    g_signal_connect (context->window, "destroy",
+                      G_CALLBACK(on_destroy), context);
+    context->notify_visible_handler =
+        g_signal_connect (context->window, "notify::visible",
+                          G_CALLBACK(on_notify_visible), context);
+
+    gtk_widget_set_can_focus (context->window, FALSE);
+    g_object_set (G_OBJECT(context->window), "accept_focus", FALSE, NULL);
+    const gchar *client_name = eekboard_context_service_get_client_name (EEKBOARD_CONTEXT_SERVICE(context));
+    gtk_window_set_title (GTK_WINDOW(context->window),
+                          client_name ? client_name : _("Keyboard"));
+    gtk_window_set_icon_name (GTK_WINDOW(context->window), "eekboard");
+    gtk_window_set_keep_above (GTK_WINDOW(context->window), TRUE);
+}
+
+static void
+destroy_window (ServerContextService *context) {
+    context->window = NULL;
+}
+
+
+static void
 update_widget (ServerContextService *context)
 {
     EekKeyboard *keyboard;
-    const gchar *client_name;
     EekBounds bounds;
     gchar *theme_path;
     EekTheme *theme;
@@ -298,36 +336,6 @@ update_widget (ServerContextService *context)
     g_object_unref (theme);
 
     gtk_widget_set_has_tooltip (context->widget, TRUE);
-
-    if (!context->window) {
-        context->window = GTK_WIDGET(g_object_new (
-            PHOSH_TYPE_LAYER_SURFACE,
-            "layer-shell", squeak_wayland->layer_shell,
-            "wl-output", g_ptr_array_index(squeak_wayland->outputs, 0), // TODO: select output as needed,
-            "height", 200,
-            "anchor", ZWLR_LAYER_SURFACE_V1_ANCHOR_BOTTOM
-                      | ZWLR_LAYER_SURFACE_V1_ANCHOR_LEFT
-                      | ZWLR_LAYER_SURFACE_V1_ANCHOR_RIGHT,
-            "layer", ZWLR_LAYER_SHELL_V1_LAYER_TOP,
-            "kbd-interactivity", FALSE,
-            "exclusive-zone", 200,
-            //"namespace", "phosh home",
-            NULL
-        ));
-        g_signal_connect (context->window, "destroy",
-                          G_CALLBACK(on_destroy), context);
-        context->notify_visible_handler =
-            g_signal_connect (context->window, "notify::visible",
-                              G_CALLBACK(on_notify_visible), context);
-
-        gtk_widget_set_can_focus (context->window, FALSE);
-        g_object_set (G_OBJECT(context->window), "accept_focus", FALSE, NULL);
-        client_name = eekboard_context_service_get_client_name (EEKBOARD_CONTEXT_SERVICE(context));
-        gtk_window_set_title (GTK_WINDOW(context->window),
-                              client_name ? client_name : _("Keyboard"));
-        gtk_window_set_icon_name (GTK_WINDOW(context->window), "eekboard");
-        gtk_window_set_keep_above (GTK_WINDOW(context->window), TRUE);
-    }
     gtk_container_add (GTK_CONTAINER(context->window), context->widget);
     set_geometry (context);
 }
@@ -337,10 +345,8 @@ server_context_service_real_show_keyboard (EekboardContextService *_context)
 {
     ServerContextService *context = SERVER_CONTEXT_SERVICE(_context);
 
-    if (!context->window)
-        update_widget (context);
-    g_assert (context->window);
-    gtk_widget_show_all (context->window);
+    make_window (context);
+    update_widget (context);
 
     EEKBOARD_CONTEXT_SERVICE_CLASS (server_context_service_parent_class)->
         show_keyboard (_context);
@@ -351,8 +357,9 @@ server_context_service_real_hide_keyboard (EekboardContextService *_context)
 {
     ServerContextService *context = SERVER_CONTEXT_SERVICE(_context);
 
-    if (context->window)
-        gtk_widget_hide (context->window);
+    gtk_widget_hide (context->window);
+    gtk_container_remove(GTK_CONTAINER(context->window), context->widget);
+    destroy_window (context);
 
     EEKBOARD_CONTEXT_SERVICE_CLASS (server_context_service_parent_class)->
         hide_keyboard (_context);
