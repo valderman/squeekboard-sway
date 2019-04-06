@@ -21,7 +21,7 @@ emit_key_activated (EekboardContext *context,
                   guint            keycode,
                   EekSymbol       *symbol,
                   guint            modifiers,
-                  Client *client);
+                  Client *client, gboolean pressed);
 
 gboolean
 client_enable_xtest (Client *client);

@@ -694,6 +694,24 @@ on_repeat_timeout_init (EekboardContextService *context)
 }
 
 static void
+on_key_activated(EekKeyboard *keyboard,
+                 EekKey      *key,
+                 EekboardContextService *context,
+                 gboolean pressed)
+{
+    guint keycode = eek_key_get_keycode (key);
+    EekSymbol *symbol = eek_key_get_symbol_with_fallback (key, 0, 0);
+
+    guint modifiers = eek_keyboard_get_modifiers (context->priv->keyboard);
+
+    // Insert
+    EekboardContext ec = {0};
+    Client c = {&ec, 0, {0}};
+
+    emit_key_activated(&ec, keycode, symbol, modifiers, &c, pressed);
+}
+
+static void
 on_key_pressed (EekKeyboard *keyboard,
                 EekKey      *key,
                 gpointer     user_data)
@@ -714,6 +732,7 @@ on_key_pressed (EekKeyboard *keyboard,
         g_timeout_add (delay,
                        (GSourceFunc)on_repeat_timeout_init,
                        context);
+    on_key_activated(keyboard, key, context, TRUE);
 }
 
 static void
@@ -726,20 +745,8 @@ on_key_released (EekKeyboard *keyboard,
     if (context->priv->repeat_timeout_id > 0) {
         g_source_remove (context->priv->repeat_timeout_id);
         context->priv->repeat_timeout_id = 0;
-
-        guint keycode = eek_key_get_keycode (key);
-        EekSymbol *symbol = eek_key_get_symbol_with_fallback (key, 0, 0);
-
-        guint modifiers = eek_keyboard_get_modifiers (context->priv->keyboard);
-        /* KeyActivated signal has not been emitted in repeat handler */
-
-
-        // Insert
-        EekboardContext ec = {0};
-        Client c = {&ec, 0, {0}};
-
-        emit_key_activated(&ec, keycode, symbol, modifiers, &c);
     }
+    on_key_activated(keyboard, key, context, FALSE);
 }
 
 static void

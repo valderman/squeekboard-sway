@@ -151,7 +151,8 @@ send_fake_modifier_key_event (Client         *client,
 static void
 send_fake_key_event (Client  *client,
                      guint    xkeysym,
-                     guint    keyboard_modifiers)
+                     guint    keyboard_modifiers,
+                     gboolean pressed)
 {
     GdkDisplay *display = gdk_display_get_default ();
     Display *xdisplay = NULL; // GDK_DISPLAY_XDISPLAY (display);
@@ -188,10 +189,7 @@ send_fake_key_event (Client  *client,
     modifiers |= keyboard_modifiers;
 
     send_fake_modifier_key_event (client, modifiers, TRUE);
-    WaylandFakeKeyEvent (xdisplay, keycode, TRUE, 20);
-    //XSync (xdisplay, False);
-    WaylandFakeKeyEvent (xdisplay, keycode, FALSE, 20);
-    // XSync (xdisplay, False);
+    WaylandFakeKeyEvent (xdisplay, keycode, pressed, 0);
     send_fake_modifier_key_event (client, modifiers, FALSE);
 
     if (old_keysym != xkeysym)
@@ -201,7 +199,8 @@ send_fake_key_event (Client  *client,
 static void
 send_fake_key_events (Client    *client,
                       EekSymbol *symbol,
-                      guint      keyboard_modifiers)
+                      guint      keyboard_modifiers,
+                      gboolean   pressed)
 {
     /* Ignore modifier keys */
     if (eek_symbol_is_modifier (symbol))
@@ -237,16 +236,17 @@ send_fake_key_events (Client    *client,
 
     if (EEK_IS_KEYSYM(symbol)) {
         guint xkeysym = eek_keysym_get_xkeysym (EEK_KEYSYM(symbol));
-        send_fake_key_event (client, xkeysym, keyboard_modifiers);
+        send_fake_key_event (client, xkeysym, keyboard_modifiers, pressed);
     }
 }
 
 void
 emit_key_activated (EekboardContext *context,
-                  guint            keycode,
-                  EekSymbol       *symbol,
-                  guint            modifiers,
-                  Client *client)
+                    guint            keycode,
+                    EekSymbol       *symbol,
+                    guint            modifiers,
+                    Client *client,
+                    gboolean pressed)
 {
     /* FIXME: figure out how to deal with Client after key presses go through
     if (g_strcmp0 (eek_symbol_get_name (symbol), "cycle-keyboard") == 0) {
@@ -275,7 +275,7 @@ emit_key_activated (EekboardContext *context,
         return;
     }
 */
-    send_fake_key_events (client, symbol, modifiers);
+    send_fake_key_events (client, symbol, modifiers, pressed);
 }
 
 /* Finds the first key code for each modifier and saves it in modifier_keycodes */
