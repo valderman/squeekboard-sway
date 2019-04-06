@@ -199,14 +199,20 @@ static gboolean
 eek_gtk_keyboard_real_button_press_event (GtkWidget      *self,
                                           GdkEventButton *event)
 {
+    if (event->type != GDK_BUTTON_PRESS
+            || event->button != 1) {
+        return TRUE;
+    }
     EekGtkKeyboardPrivate *priv = EEK_GTK_KEYBOARD_GET_PRIVATE(self);
     EekKey *key;
 
     key = eek_renderer_find_key_by_position (priv->renderer,
                                              (gdouble)event->x,
                                              (gdouble)event->y);
-    if (key)
+    if (key) {
         g_signal_emit_by_name (key, "pressed", priv->keyboard);
+    }
+    // TODO: send time
     return TRUE;
 }
 
@@ -214,12 +220,17 @@ static gboolean
 eek_gtk_keyboard_real_button_release_event (GtkWidget      *self,
                                             GdkEventButton *event)
 {
+    if (event->type != GDK_BUTTON_RELEASE
+            || event->button != 1) {
+        return TRUE;
+    }
     EekGtkKeyboardPrivate *priv = EEK_GTK_KEYBOARD_GET_PRIVATE(self);
     GList *list, *head;
 
     list = eek_keyboard_get_pressed_keys (priv->keyboard);
-    for (head = list; head; head = g_list_next (head))
+    for (head = list; head; head = g_list_next (head)) {
         g_signal_emit_by_name (head->data, "released", priv->keyboard);
+    }
     g_list_free (list);
 
     return TRUE;
