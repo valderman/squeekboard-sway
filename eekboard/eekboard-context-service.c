@@ -77,6 +77,7 @@ struct _EekboardContextServicePrivate {
 
     gulong key_pressed_handler;
     gulong key_released_handler;
+    gulong key_cancelled_handler;
 
     EekKey *repeat_key;
     guint repeat_timeout_id;
@@ -621,6 +622,12 @@ disconnect_keyboard_signals (EekboardContextService *context)
                                        context->priv->key_released_handler))
         g_signal_handler_disconnect (context->priv->keyboard,
                                      context->priv->key_released_handler);
+
+    if (g_signal_handler_is_connected (context->priv->keyboard,
+                                       context->priv->key_cancelled_handler)) {
+        g_signal_handler_disconnect (context->priv->keyboard,
+                                     context->priv->key_cancelled_handler);
+    }
 }
 
 static void
@@ -750,6 +757,15 @@ on_key_released (EekKeyboard *keyboard,
 }
 
 static void
+on_key_cancelled (EekKeyboard *keyboard,
+                 EekKey      *key,
+                 gpointer     user_data)
+{
+    on_key_released(keyboard, key, user_data);
+    // TODO: special handling when composing text via text-input? text may not be committed until button released
+}
+
+static void
 connect_keyboard_signals (EekboardContextService *context)
 {
     context->priv->key_pressed_handler =
@@ -759,6 +775,10 @@ connect_keyboard_signals (EekboardContextService *context)
     context->priv->key_released_handler =
         g_signal_connect (context->priv->keyboard, "key-released",
                           G_CALLBACK(on_key_released),
+                          context);
+    context->priv->key_cancelled_handler =
+        g_signal_connect (context->priv->keyboard, "key-cancelled",
+                          G_CALLBACK(on_key_cancelled),
                           context);
 }
 
