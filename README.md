@@ -44,6 +44,14 @@ $ cd ../build
 $ ninja install
 ```
 
+For development, alter the `meson` call:
+
+```
+$ meson ../build/ --prefix=../install
+```
+
+and don't skip `ninja install` before running. The last step is necessary in order to find the keyboard definition files.
+
 Running
 -------
 
