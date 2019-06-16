@@ -18,9 +18,9 @@
 #ifndef SERVER_CONTEXT_SERVICE_H
 #define SERVER_CONTEXT_SERVICE_H 1
 
-G_BEGIN_DECLS
-
 #include "eekboard/eekboard-service.h"
+
+G_BEGIN_DECLS
 
 #define SERVER_TYPE_CONTEXT_SERVICE (server_context_service_get_type())
 #define SERVER_CONTEXT_SERVICE(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), SERVER_TYPE_CONTEXT_SERVICE, ServerContextService))

@@ -365,7 +365,7 @@ static void
 eek_keyboard_finalize (GObject *object)
 {
     EekKeyboardPrivate *priv = EEK_KEYBOARD_GET_PRIVATE(object);
-    gint i;
+    guint i;
 
     g_list_free (priv->pressed_keys);
     g_list_free_full (priv->locked_keys,

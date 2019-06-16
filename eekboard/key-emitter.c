@@ -121,7 +121,7 @@ int WaylandFakeKeyEvent(
     Bool is_press,
     unsigned long delay
 ) {
-    printf("Sending fake event %d press %d delay %d\n", keycode, is_press, delay);
+    printf("Sending fake event %d press %d delay %ld\n", keycode, is_press, delay);
     return 0;
 }
 
@@ -132,12 +132,12 @@ send_fake_modifier_key_event (Client         *client,
 {
     GdkDisplay *display = gdk_display_get_default ();
     Display *xdisplay = NULL; //GDK_DISPLAY_XDISPLAY (display);
-    gint i;
+    unsigned long i;
 
     for (i = 0; i < G_N_ELEMENTS(client->modifier_keycodes); i++) {
         if (modifiers & (1 << i)) {
             guint keycode = client->modifier_keycodes[i];
-            printf("Trying to send a modifier %d press %ld\n", i, is_pressed);
+            printf("Trying to send a modifier %ld press %d\n", i, is_pressed);
             g_return_if_fail (keycode > 0);
 
             WaylandFakeKeyEvent (xdisplay,
@@ -177,8 +177,8 @@ send_fake_key_event (Client  *client,
     }
 
     /* Clear level shift modifiers */
-    keyboard_modifiers &= ~EEK_SHIFT_MASK;
-    keyboard_modifiers &= ~EEK_LOCK_MASK;
+    keyboard_modifiers &= (unsigned)~EEK_SHIFT_MASK;
+    keyboard_modifiers &= (unsigned)~EEK_LOCK_MASK;
     /* FIXME: may need to remap ISO_Level3_Shift and NumLock */
 #if 0
     keyboard_modifiers &= ~EEK_MOD5_MASK;
