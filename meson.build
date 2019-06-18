@@ -7,6 +7,13 @@ project(
     default_options: [ 'warning_level=1', 'buildtype=debugoptimized', 'c_std=gnu11' ],
 )
 
+if get_option('buildtype').startswith('debug')
+    add_project_arguments('-DDEBUG=1', language : 'c')
+endif
+if get_option('buildtype') != 'plain'
+    add_project_arguments('-fstack-protector-strong', language: 'c')
+endif
+
 prefix = get_option('prefix')
 datadir = join_paths(prefix, get_option('datadir'))
 pkgdatadir = join_paths(datadir, meson.project_name())
