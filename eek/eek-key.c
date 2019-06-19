@@ -47,7 +47,6 @@ enum {
 };
 
 enum {
-    PRESSED,
     RELEASED,
     LOCKED,
     UNLOCKED,
@@ -73,17 +72,6 @@ struct _EekKeyPrivate
     gboolean is_pressed;
     gboolean is_locked;
 };
-
-static void
-eek_key_real_pressed (EekKey *self)
-{
-    EekKeyPrivate *priv = EEK_KEY_GET_PRIVATE(self);
-
-    priv->is_pressed = TRUE;
-#if DEBUG
-    g_debug ("pressed %X", eek_key_get_keycode (self));
-#endif
-}
 
 static void
 eek_key_real_released (EekKey *self)
@@ -218,7 +206,6 @@ eek_key_class_init (EekKeyClass *klass)
     gobject_class->finalize     = eek_key_finalize;
 
     /* signals */
-    klass->pressed = eek_key_real_pressed;
     klass->released = eek_key_real_released;
     klass->locked = eek_key_real_locked;
     klass->unlocked = eek_key_real_unlocked;
@@ -283,25 +270,6 @@ eek_key_class_init (EekKeyClass *klass)
                                 0, G_MAXULONG, 0,
                                 G_PARAM_READWRITE);
     g_object_class_install_property (gobject_class, PROP_OREF, pspec);
-
-    /**
-     * EekKey::pressed:
-     * @key: an #EekKey
-     *
-     * The ::pressed signal is emitted each time @key is shifted to
-     * the pressed state.  The class handler runs before signal
-     * handlers to allow signal handlers to read the status of @key
-     * with eek_key_is_pressed().
-     */
-    signals[PRESSED] =
-        g_signal_new (I_("pressed"),
-                      G_TYPE_FROM_CLASS(gobject_class),
-                      G_SIGNAL_RUN_FIRST,
-                      G_STRUCT_OFFSET(EekKeyClass, pressed),
-                      NULL,
-                      NULL,
-                      g_cclosure_marshal_VOID__VOID,
-                      G_TYPE_NONE, 0);
 
     /**
      * EekKey::released:
@@ -672,4 +640,10 @@ eek_key_is_locked (EekKey *key)
 {
     g_return_val_if_fail (EEK_IS_KEY(key), FALSE);
     return key->priv->is_locked;
+}
+
+void eek_key_set_pressed(EekKey *key, gboolean value)
+{
+    g_return_if_fail (EEK_IS_KEY(key));
+    key->priv->is_pressed = value;
 }

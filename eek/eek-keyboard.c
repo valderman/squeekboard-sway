@@ -47,7 +47,6 @@ enum {
 };
 
 enum {
-    KEY_PRESSED,
     KEY_RELEASED,
     KEY_LOCKED,
     KEY_UNLOCKED,
@@ -278,6 +277,8 @@ void eek_keyboard_press_key(EekKeyboard *keyboard, EekKey *key, guint32 timestam
     EekSymbol *symbol;
     EekModifierType modifier;
 
+    eek_key_set_pressed(key, TRUE);
+
     priv->pressed_keys = g_list_prepend (priv->pressed_keys, key);
 
     symbol = eek_key_get_symbol_with_fallback (key, 0, 0);
@@ -299,9 +300,6 @@ void eek_keyboard_press_key(EekKeyboard *keyboard, EekKey *key, guint32 timestam
     Client c = {&ec, 0, {0}};
 
     emit_key_activated(&ec, keycode, symbol, modifiers, &c, TRUE, timestamp);
-
-    g_log("squeek", G_LOG_LEVEL_DEBUG, "emit EekKeyboard key-pressed");
-    g_signal_emit (keyboard, signals[KEY_PRESSED], 0, key, timestamp);
 }
 
 static void
@@ -468,27 +466,6 @@ eek_keyboard_class_init (EekKeyboardClass *klass)
     g_object_class_install_property (gobject_class,
                                      PROP_MODIFIER_BEHAVIOR,
                                      pspec);
-
-    /**
-     * EekKeyboard::key-pressed:
-     * @keyboard: an #EekKeyboard
-     * @key: an #EekKey
-     *
-     * The ::key-pressed signal is emitted each time a key in @keyboard
-     * is shifted to the pressed state.
-     */
-    signals[KEY_PRESSED] =
-        g_signal_new (I_("key-pressed"),
-                      G_TYPE_FROM_CLASS(gobject_class),
-                      G_SIGNAL_RUN_LAST,
-                      0,
-                      NULL,
-                      NULL,
-                      _eek_marshal_VOID__OBJECT_UINT,
-                      G_TYPE_NONE,
-                      2,
-                      EEK_TYPE_KEY,
-                      G_TYPE_UINT);
 
     /**
      * EekKeyboard::key-released:

@@ -74,7 +74,6 @@ struct _EekKeyClass
 
     /*< public >*/
     /* signals */
-    void (* pressed)   (EekKey *key);
     void (* released)  (EekKey *key);
     void (* locked)    (EekKey *key);
     void (* unlocked)  (EekKey *key);
@@ -113,6 +112,8 @@ guint            eek_key_get_oref            (EekKey          *key);
 
 gboolean         eek_key_is_pressed          (EekKey          *key);
 gboolean         eek_key_is_locked           (EekKey          *key);
+void             eek_key_set_pressed         (EekKey          *key,
+                                              gboolean         value);
 
 G_END_DECLS
 #endif  /* EEK_KEY_H */
