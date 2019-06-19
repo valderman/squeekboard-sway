@@ -719,30 +719,6 @@ on_key_activated(EekKeyboard *keyboard,
 }
 
 static void
-on_key_pressed (EekKeyboard *keyboard,
-                EekKey      *key,
-                gpointer     user_data)
-{
-    EekboardContextService *context = user_data;
-    guint delay = 500;
-
-    // org.gnome.desktop.input-sources doesn't have delay info
-    //g_settings_get (context->priv->settings, "repeat-delay", "u", &delay);
-
-    if (context->priv->repeat_timeout_id) {
-        g_source_remove (context->priv->repeat_timeout_id);
-        context->priv->repeat_timeout_id = 0;
-    }
-
-    context->priv->repeat_key = key;
-    context->priv->repeat_timeout_id =
-        g_timeout_add (delay,
-                       (GSourceFunc)on_repeat_timeout_init,
-                       context);
-    on_key_activated(keyboard, key, context, TRUE);
-}
-
-static void
 on_key_released (EekKeyboard *keyboard,
                  EekKey      *key,
                  gpointer     user_data)
@@ -768,10 +744,6 @@ on_key_cancelled (EekKeyboard *keyboard,
 static void
 connect_keyboard_signals (EekboardContextService *context)
 {
-    context->priv->key_pressed_handler =
-        g_signal_connect (context->priv->keyboard, "key-pressed",
-                          G_CALLBACK(on_key_pressed),
-                          context);
     context->priv->key_released_handler =
         g_signal_connect (context->priv->keyboard, "key-released",
                           G_CALLBACK(on_key_released),

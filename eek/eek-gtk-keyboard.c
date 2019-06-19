@@ -211,7 +211,7 @@ eek_gtk_keyboard_real_button_press_event (GtkWidget      *self,
                                              (gdouble)event->y);
     if (key) {
         g_log("squeek", G_LOG_LEVEL_DEBUG, "emit EekKey pressed");
-        g_signal_emit_by_name (key, "pressed");
+        g_signal_emit_by_name (key, "pressed"); // TODO: set the pressed property on the key instead
         eek_keyboard_press_key(priv->keyboard, key);
     }
     // TODO: send time

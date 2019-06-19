@@ -115,14 +115,6 @@ eek_section_real_get_row (EekSection     *self,
 }
 
 static void
-on_pressed (EekKey     *key,
-            EekSection *section)
-{
-    g_log("squeek", G_LOG_LEVEL_DEBUG, "emit EekSection key-pressed");
-    g_signal_emit (section, signals[KEY_PRESSED], 0, key);
-}
-
-static void
 on_released (EekKey     *key,
              EekSection *section)
 {
@@ -298,7 +290,6 @@ static void
 eek_section_real_child_added (EekContainer *self,
                               EekElement   *element)
 {
-    g_signal_connect (element, "pressed", G_CALLBACK(on_pressed), self);
     g_signal_connect (element, "released", G_CALLBACK(on_released), self);
     g_signal_connect (element, "locked", G_CALLBACK(on_locked), self);
     g_signal_connect (element, "unlocked", G_CALLBACK(on_unlocked), self);
@@ -309,7 +300,6 @@ static void
 eek_section_real_child_removed (EekContainer *self,
                                 EekElement   *element)
 {
-    g_signal_handlers_disconnect_by_func (element, on_pressed, self);
     g_signal_handlers_disconnect_by_func (element, on_released, self);
     g_signal_handlers_disconnect_by_func (element, on_locked, self);
     g_signal_handlers_disconnect_by_func (element, on_unlocked, self);
@@ -354,28 +344,6 @@ eek_section_class_init (EekSectionClass *klass)
     g_object_class_install_property (gobject_class,
                                      PROP_ANGLE,
                                      pspec);
-
-    /**
-     * EekSection::key-pressed:
-     * @section: an #EekSection
-     * @key: an #EekKey
-     *
-     * The ::key-pressed signal is emitted each time a key in @section
-     * is shifted to the pressed state.
-     */
-    signals[KEY_PRESSED] =
-        g_signal_new (I_("key-pressed"),
-                      G_TYPE_FROM_CLASS(gobject_class),
-                      G_SIGNAL_RUN_LAST,
-                      // FIXME: this handler seems to be unnecessary complexity. Either remove or justify
-                      // G_STRUCT_OFFSET(EekSectionClass, key_pressed),
-                      0,
-                      NULL,
-                      NULL,
-                      g_cclosure_marshal_VOID__OBJECT,
-                      G_TYPE_NONE,
-                      1,
-                      EEK_TYPE_KEY);
 
     /**
      * EekSection::key-released:

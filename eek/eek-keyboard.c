@@ -36,6 +36,7 @@
 #include "eek-key.h"
 #include "eek-symbol.h"
 #include "eek-enumtypes.h"
+#include "eekboard/key-emitter.h"
 
 enum {
     PROP_0,
@@ -94,15 +95,6 @@ eek_modifier_key_free (EekModifierKey *modkey)
 void eek_keyboard_press_key(EekKeyboard *keyboard, EekKey *key) {
     g_log("squeek", G_LOG_LEVEL_DEBUG, "emit EekKeyboard key-pressed");
     g_signal_emit (keyboard, signals[KEY_PRESSED], 0, key);
-}
-
-static void
-on_key_pressed (EekSection  *section,
-                EekKey      *key,
-                EekKeyboard *keyboard)
-{
-    g_log("squeek", G_LOG_LEVEL_DEBUG, "DO NOT emit EekKeyboard key-pressed");
-    //g_signal_emit (keyboard, signals[KEY_PRESSED], 0, key);
 }
 
 static void
@@ -304,6 +296,16 @@ eek_keyboard_real_key_pressed (EekKeyboard *self,
         set_modifiers_with_key (self, key, priv->modifiers | modifier);
         set_level_from_modifiers (self);
     }
+
+    // "Borrowed" from eek-context-service; doesn't influence the state but forwards the event
+
+    guint keycode = eek_key_get_keycode (key);
+    guint modifiers = eek_keyboard_get_modifiers (self);
+    // Insert
+    EekboardContext ec = {0};
+    Client c = {&ec, 0, {0}};
+
+    emit_key_activated(&ec, keycode, symbol, modifiers, &c, TRUE);
 }
 
 static void
@@ -396,8 +398,6 @@ static void
 eek_keyboard_real_child_added (EekContainer *self,
                                EekElement   *element)
 {
-    g_signal_connect (element, "key-pressed",
-                      G_CALLBACK(on_key_pressed), self);
     g_signal_connect (element, "key-released",
                       G_CALLBACK(on_key_released), self);
     g_signal_connect (element, "key-locked",
@@ -414,7 +414,6 @@ static void
 eek_keyboard_real_child_removed (EekContainer *self,
                                  EekElement   *element)
 {
-    g_signal_handlers_disconnect_by_func (element, on_key_pressed, self);
     g_signal_handlers_disconnect_by_func (element, on_key_released, self);
     g_signal_handlers_disconnect_by_func (element, on_key_locked, self);
     g_signal_handlers_disconnect_by_func (element, on_key_unlocked, self);
