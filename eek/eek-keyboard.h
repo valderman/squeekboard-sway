@@ -86,7 +86,8 @@ struct _EekKeyboardClass
 
     /* signals */
     void        (* key_pressed)         (EekKeyboard *self,
-                                         EekKey      *key);
+                                         EekKey      *key,
+                                         guint32      timestamp);
     void        (* key_released)        (EekKeyboard *self,
                                          EekKey      *key);
 
@@ -190,7 +191,7 @@ EekModifierKey     *eek_modifier_key_copy
 void                eek_modifier_key_free
                                      (EekModifierKey      *modkey);
 
-void eek_keyboard_press_key(EekKeyboard *keyboard, EekKey *key);
+void eek_keyboard_press_key(EekKeyboard *keyboard, EekKey *key, guint32 timestamp);
 
 G_END_DECLS
 #endif  /* EEK_KEYBOARD_H */

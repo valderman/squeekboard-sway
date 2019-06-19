@@ -715,7 +715,7 @@ on_key_activated(EekKeyboard *keyboard,
     EekboardContext ec = {0};
     Client c = {&ec, 0, {0}};
 
-    emit_key_activated(&ec, keycode, symbol, modifiers, &c, pressed);
+    emit_key_activated(&ec, keycode, symbol, modifiers, &c, pressed, 0);
 }
 
 static void

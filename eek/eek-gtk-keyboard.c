@@ -72,7 +72,7 @@ struct _EekGtkKeyboardPrivate
 
 static EekColor * color_from_gdk_color    (GdkColor    *gdk_color);
 static void       on_key_pressed          (EekKeyboard *keyboard,
-                                           EekKey      *key,
+                                           EekKey      *key, guint32 timestamp,
                                            gpointer     user_data);
 static void       on_key_released         (EekKeyboard *keyboard,
                                            EekKey      *key,
@@ -212,7 +212,7 @@ eek_gtk_keyboard_real_button_press_event (GtkWidget      *self,
     if (key) {
         g_log("squeek", G_LOG_LEVEL_DEBUG, "emit EekKey pressed");
         g_signal_emit_by_name (key, "pressed"); // TODO: set the pressed property on the key instead
-        eek_keyboard_press_key(priv->keyboard, key);
+        eek_keyboard_press_key(priv->keyboard, key, event->time);
     }
     // TODO: send time
     return TRUE;
@@ -584,8 +584,11 @@ render_released_key (GtkWidget *widget,
 static void
 on_key_pressed (EekKeyboard *keyboard,
                 EekKey      *key,
+                guint32      timestamp,
                 gpointer     user_data)
 {
+    (void)keyboard;
+    (void)timestamp;
     GtkWidget *widget = user_data;
     EekGtkKeyboardPrivate *priv = EEK_GTK_KEYBOARD_GET_PRIVATE(widget);
 

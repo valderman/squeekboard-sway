@@ -119,16 +119,17 @@ int WaylandFakeKeyEvent(
     Display* dpy,
     unsigned int keycode,
     Bool is_press,
-    unsigned long delay
+    uint32_t timestamp
 ) {
-    printf("Sending fake event %d press %d delay %ld\n", keycode, is_press, delay);
+    printf("%d: Sending fake event %d press %d\n", timestamp, keycode, is_press);
     return 0;
 }
 
 static void
 send_fake_modifier_key_event (Client         *client,
                               EekModifierType modifiers,
-                              gboolean        is_pressed)
+                              gboolean        is_pressed,
+                              uint32_t        timestamp)
 {
     GdkDisplay *display = gdk_display_get_default ();
     Display *xdisplay = NULL; //GDK_DISPLAY_XDISPLAY (display);
@@ -141,9 +142,9 @@ send_fake_modifier_key_event (Client         *client,
             g_return_if_fail (keycode > 0);
 
             WaylandFakeKeyEvent (xdisplay,
-                               keycode,
-                               is_pressed,
-                               CurrentTime);
+                                 keycode,
+                                 is_pressed,
+                                 timestamp);
         }
     }
 }
@@ -152,7 +153,8 @@ static void
 send_fake_key_event (Client  *client,
                      guint    xkeysym,
                      guint    keyboard_modifiers,
-                     gboolean pressed)
+                     gboolean pressed,
+                     uint32_t timestamp)
 {
     GdkDisplay *display = gdk_display_get_default ();
     Display *xdisplay = NULL; // GDK_DISPLAY_XDISPLAY (display);
@@ -188,9 +190,9 @@ send_fake_key_event (Client  *client,
 
     modifiers |= keyboard_modifiers;
 
-    send_fake_modifier_key_event (client, modifiers, TRUE);
-    WaylandFakeKeyEvent (xdisplay, keycode, pressed, 0);
-    send_fake_modifier_key_event (client, modifiers, FALSE);
+    send_fake_modifier_key_event (client, modifiers, TRUE, timestamp);
+    WaylandFakeKeyEvent (xdisplay, keycode, pressed, timestamp);
+    send_fake_modifier_key_event (client, modifiers, FALSE, timestamp);
 
     if (old_keysym != xkeysym)
         replace_keycode (client, keycode, &old_keysym);
@@ -200,7 +202,8 @@ static void
 send_fake_key_events (Client    *client,
                       EekSymbol *symbol,
                       guint      keyboard_modifiers,
-                      gboolean   pressed)
+                      gboolean   pressed,
+                      uint32_t   timestamp)
 {
     /* Ignore modifier keys */
     if (eek_symbol_is_modifier (symbol))
@@ -236,7 +239,7 @@ send_fake_key_events (Client    *client,
 
     if (EEK_IS_KEYSYM(symbol)) {
         guint xkeysym = eek_keysym_get_xkeysym (EEK_KEYSYM(symbol));
-        send_fake_key_event (client, xkeysym, keyboard_modifiers, pressed);
+        send_fake_key_event (client, xkeysym, keyboard_modifiers, pressed, timestamp);
     }
 }
 
@@ -245,8 +248,9 @@ emit_key_activated (EekboardContext *context,
                     guint            keycode,
                     EekSymbol       *symbol,
                     guint            modifiers,
-                    Client *client,
-                    gboolean pressed)
+                    Client  *client,
+                    gboolean pressed,
+                    uint32_t timestamp)
 {
     /* FIXME: figure out how to deal with Client after key presses go through
     if (g_strcmp0 (eek_symbol_get_name (symbol), "cycle-keyboard") == 0) {
@@ -275,7 +279,7 @@ emit_key_activated (EekboardContext *context,
         return;
     }
 */
-    send_fake_key_events (client, symbol, modifiers, pressed);
+    send_fake_key_events (client, symbol, modifiers, pressed, timestamp);
 }
 
 /* Finds the first key code for each modifier and saves it in modifier_keycodes */

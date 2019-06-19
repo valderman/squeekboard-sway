@@ -32,6 +32,7 @@
 #endif  /* HAVE_CONFIG_H */
 
 #include "eek-keyboard.h"
+#include "eek-marshalers.h"
 #include "eek-section.h"
 #include "eek-key.h"
 #include "eek-symbol.h"
@@ -92,9 +93,9 @@ eek_modifier_key_free (EekModifierKey *modkey)
     g_slice_free (EekModifierKey, modkey);
 }
 
-void eek_keyboard_press_key(EekKeyboard *keyboard, EekKey *key) {
+void eek_keyboard_press_key(EekKeyboard *keyboard, EekKey *key, guint32 timestamp) {
     g_log("squeek", G_LOG_LEVEL_DEBUG, "emit EekKeyboard key-pressed");
-    g_signal_emit (keyboard, signals[KEY_PRESSED], 0, key);
+    g_signal_emit (keyboard, signals[KEY_PRESSED], 0, key, timestamp);
 }
 
 static void
@@ -279,7 +280,8 @@ set_modifiers_with_key (EekKeyboard    *self,
 
 static void
 eek_keyboard_real_key_pressed (EekKeyboard *self,
-                               EekKey      *key)
+                               EekKey      *key,
+                               guint32      timestamp)
 {
     EekKeyboardPrivate *priv = EEK_KEYBOARD_GET_PRIVATE(self);
     EekSymbol *symbol;
@@ -305,7 +307,7 @@ eek_keyboard_real_key_pressed (EekKeyboard *self,
     EekboardContext ec = {0};
     Client c = {&ec, 0, {0}};
 
-    emit_key_activated(&ec, keycode, symbol, modifiers, &c, TRUE);
+    emit_key_activated(&ec, keycode, symbol, modifiers, &c, TRUE, timestamp);
 }
 
 static void
@@ -489,10 +491,11 @@ eek_keyboard_class_init (EekKeyboardClass *klass)
                       G_STRUCT_OFFSET(EekKeyboardClass, key_pressed),
                       NULL,
                       NULL,
-                      g_cclosure_marshal_VOID__OBJECT,
+                      _eek_marshal_VOID__OBJECT_UINT,
                       G_TYPE_NONE,
-                      1,
-                      EEK_TYPE_KEY);
+                      2,
+                      EEK_TYPE_KEY,
+                      G_TYPE_UINT);
 
     /**
      * EekKeyboard::key-released:

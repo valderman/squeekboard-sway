@@ -30,10 +30,6 @@
 #endif  /* HAVE_CONFIG_H */
 
 #include <string.h>
-#define DEBUG 0
-#if DEBUG
-#include <stdio.h>
-#endif
 
 #include "eek-key.h"
 #include "eek-section.h"

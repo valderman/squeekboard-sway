@@ -1,6 +1,7 @@
 #ifndef KEYEMITTER_H
 #define KEYEMITTER_H
 
+#include <inttypes.h>
 #include <glib.h>
 #include <X11/XKBlib.h>
 
@@ -18,10 +19,10 @@ typedef struct {
 
 void
 emit_key_activated (EekboardContext *context,
-                  guint            keycode,
-                  EekSymbol       *symbol,
-                  guint            modifiers,
-                  Client *client, gboolean pressed);
+                    guint            keycode,
+                    EekSymbol       *symbol,
+                    guint            modifiers,
+                    Client *client, gboolean pressed, uint32_t timestamp);
 
 gboolean
 client_enable_xtest (Client *client);
