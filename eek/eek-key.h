@@ -43,6 +43,9 @@ typedef struct _EekKeyPrivate EekKeyPrivate;
 /**
  * EekKey:
  *
+ * Contains information about the state of a key.
+ * TODO: rewrite as a plain struct
+ *
  * The #EekKey structure contains only private data and should only be
  * accessed using the provided API.
  */

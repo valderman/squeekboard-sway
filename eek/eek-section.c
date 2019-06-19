@@ -118,6 +118,7 @@ static void
 on_pressed (EekKey     *key,
             EekSection *section)
 {
+    g_log("squeek", G_LOG_LEVEL_DEBUG, "emit EekSection key-pressed");
     g_signal_emit (section, signals[KEY_PRESSED], 0, key);
 }
 
@@ -125,6 +126,7 @@ static void
 on_released (EekKey     *key,
              EekSection *section)
 {
+    g_log("squeek", G_LOG_LEVEL_DEBUG, "emit EekSection key-released");
     g_signal_emit (section, signals[KEY_RELEASED], 0, key);
 }
 
@@ -365,7 +367,9 @@ eek_section_class_init (EekSectionClass *klass)
         g_signal_new (I_("key-pressed"),
                       G_TYPE_FROM_CLASS(gobject_class),
                       G_SIGNAL_RUN_LAST,
-                      G_STRUCT_OFFSET(EekSectionClass, key_pressed),
+                      // FIXME: this handler seems to be unnecessary complexity. Either remove or justify
+                      // G_STRUCT_OFFSET(EekSectionClass, key_pressed),
+                      0,
                       NULL,
                       NULL,
                       g_cclosure_marshal_VOID__OBJECT,

@@ -188,5 +188,7 @@ EekModifierKey     *eek_modifier_key_copy
 void                eek_modifier_key_free
                                      (EekModifierKey      *modkey);
 
+void eek_keyboard_press_key(EekKeyboard *keyboard, EekKey *key);
+
 G_END_DECLS
 #endif  /* EEK_KEYBOARD_H */

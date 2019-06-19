@@ -210,7 +210,9 @@ eek_gtk_keyboard_real_button_press_event (GtkWidget      *self,
                                              (gdouble)event->x,
                                              (gdouble)event->y);
     if (key) {
-        g_signal_emit_by_name (key, "pressed", priv->keyboard);
+        g_log("squeek", G_LOG_LEVEL_DEBUG, "emit EekKey pressed");
+        g_signal_emit_by_name (key, "pressed");
+        eek_keyboard_press_key(priv->keyboard, key);
     }
     // TODO: send time
     return TRUE;
@@ -229,6 +231,7 @@ eek_gtk_keyboard_real_button_release_event (GtkWidget      *self,
 
     list = eek_keyboard_get_pressed_keys (priv->keyboard);
     for (head = list; head; head = g_list_next (head)) {
+        g_log("squeek", G_LOG_LEVEL_DEBUG, "emit EekKey released");
         g_signal_emit_by_name (head->data, "released", priv->keyboard);
     }
     g_list_free (list);
@@ -258,12 +261,14 @@ eek_gtk_keyboard_real_motion_notify_event (GtkWidget      *self,
             if (head->data == key)
                 found = TRUE;
             else
-                g_signal_emit_by_name (head->data, "cancelled", priv->keyboard);
+                g_signal_emit_by_name (head->data, "cancelled");
         }
         g_list_free (list);
 
-        if (!found)
-            g_signal_emit_by_name (key, "pressed", priv->keyboard);
+        if (!found) {
+            g_log("squeek", G_LOG_LEVEL_DEBUG, "emit EekKey pressed");
+            g_signal_emit_by_name (key, "pressed");
+        }
     }
     return TRUE;
 }
@@ -281,8 +286,10 @@ eek_gtk_keyboard_real_unmap (GtkWidget *self)
            EekKeyboard::key-released signal can remove elements from its
            internal copy */
         list = eek_keyboard_get_pressed_keys (priv->keyboard);
-        for (head = list; head; head = g_list_next (head))
-            g_signal_emit_by_name (head->data, "released", priv->keyboard);
+        for (head = list; head; head = g_list_next (head)) {
+            g_log("squeek", G_LOG_LEVEL_DEBUG, "emit EekKey released");
+            g_signal_emit_by_name (head->data, "released");
+        }
         g_list_free (list);
     }
 
@@ -399,6 +406,7 @@ eek_gtk_keyboard_dispose (GObject *object)
 
         list = eek_keyboard_get_pressed_keys (priv->keyboard);
         for (head = list; head; head = g_list_next (head)) {
+            g_log("squeek", G_LOG_LEVEL_DEBUG, "emit EekKey pressed");
             g_signal_emit_by_name (head->data, "released", priv->keyboard);
         }
         g_list_free (list);

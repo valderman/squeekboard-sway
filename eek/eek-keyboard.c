@@ -91,12 +91,18 @@ eek_modifier_key_free (EekModifierKey *modkey)
     g_slice_free (EekModifierKey, modkey);
 }
 
+void eek_keyboard_press_key(EekKeyboard *keyboard, EekKey *key) {
+    g_log("squeek", G_LOG_LEVEL_DEBUG, "emit EekKeyboard key-pressed");
+    g_signal_emit (keyboard, signals[KEY_PRESSED], 0, key);
+}
+
 static void
 on_key_pressed (EekSection  *section,
                 EekKey      *key,
                 EekKeyboard *keyboard)
 {
-    g_signal_emit (keyboard, signals[KEY_PRESSED], 0, key);
+    g_log("squeek", G_LOG_LEVEL_DEBUG, "DO NOT emit EekKeyboard key-pressed");
+    //g_signal_emit (keyboard, signals[KEY_PRESSED], 0, key);
 }
 
 static void
@@ -104,6 +110,7 @@ on_key_released (EekSection  *section,
                  EekKey      *key,
                  EekKeyboard *keyboard)
 {
+    g_log("squeek", G_LOG_LEVEL_DEBUG, "emit EekKeyboard key-released");
     g_signal_emit (keyboard, signals[KEY_RELEASED], 0, key);
 }
 
