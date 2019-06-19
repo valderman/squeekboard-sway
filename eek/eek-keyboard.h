@@ -85,9 +85,6 @@ struct _EekKeyboardClass
                                          guint        keycode);
 
     /* signals */
-    void        (* key_pressed)         (EekKeyboard *self,
-                                         EekKey      *key,
-                                         guint32      timestamp);
     void        (* key_released)        (EekKeyboard *self,
                                          EekKey      *key);
 

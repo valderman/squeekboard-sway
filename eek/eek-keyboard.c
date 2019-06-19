@@ -93,11 +93,6 @@ eek_modifier_key_free (EekModifierKey *modkey)
     g_slice_free (EekModifierKey, modkey);
 }
 
-void eek_keyboard_press_key(EekKeyboard *keyboard, EekKey *key, guint32 timestamp) {
-    g_log("squeek", G_LOG_LEVEL_DEBUG, "emit EekKeyboard key-pressed");
-    g_signal_emit (keyboard, signals[KEY_PRESSED], 0, key, timestamp);
-}
-
 static void
 on_key_released (EekSection  *section,
                  EekKey      *key,
@@ -278,12 +273,8 @@ set_modifiers_with_key (EekKeyboard    *self,
     priv->modifiers = modifiers;
 }
 
-static void
-eek_keyboard_real_key_pressed (EekKeyboard *self,
-                               EekKey      *key,
-                               guint32      timestamp)
-{
-    EekKeyboardPrivate *priv = EEK_KEYBOARD_GET_PRIVATE(self);
+void eek_keyboard_press_key(EekKeyboard *keyboard, EekKey *key, guint32 timestamp) {
+    EekKeyboardPrivate *priv = EEK_KEYBOARD_GET_PRIVATE(keyboard);
     EekSymbol *symbol;
     EekModifierType modifier;
 
@@ -295,19 +286,22 @@ eek_keyboard_real_key_pressed (EekKeyboard *self,
 
     modifier = eek_symbol_get_modifier_mask (symbol);
     if (priv->modifier_behavior == EEK_MODIFIER_BEHAVIOR_NONE) {
-        set_modifiers_with_key (self, key, priv->modifiers | modifier);
-        set_level_from_modifiers (self);
+        set_modifiers_with_key (keyboard, key, priv->modifiers | modifier);
+        set_level_from_modifiers (keyboard);
     }
 
     // "Borrowed" from eek-context-service; doesn't influence the state but forwards the event
 
     guint keycode = eek_key_get_keycode (key);
-    guint modifiers = eek_keyboard_get_modifiers (self);
+    guint modifiers = eek_keyboard_get_modifiers (keyboard);
     // Insert
     EekboardContext ec = {0};
     Client c = {&ec, 0, {0}};
 
     emit_key_activated(&ec, keycode, symbol, modifiers, &c, TRUE, timestamp);
+
+    g_log("squeek", G_LOG_LEVEL_DEBUG, "emit EekKeyboard key-pressed");
+    g_signal_emit (keyboard, signals[KEY_PRESSED], 0, key, timestamp);
 }
 
 static void
@@ -435,7 +429,6 @@ eek_keyboard_class_init (EekKeyboardClass *klass)
     klass->create_section = eek_keyboard_real_create_section;
 
     /* signals */
-    klass->key_pressed = eek_keyboard_real_key_pressed;
     klass->key_released = eek_keyboard_real_key_released;
     klass->key_cancelled = eek_keyboard_real_key_cancelled;
 
@@ -488,7 +481,7 @@ eek_keyboard_class_init (EekKeyboardClass *klass)
         g_signal_new (I_("key-pressed"),
                       G_TYPE_FROM_CLASS(gobject_class),
                       G_SIGNAL_RUN_LAST,
-                      G_STRUCT_OFFSET(EekKeyboardClass, key_pressed),
+                      0,
                       NULL,
                       NULL,
                       _eek_marshal_VOID__OBJECT_UINT,
