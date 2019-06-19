@@ -73,7 +73,7 @@ struct _EekGtkKeyboardPrivate
 static EekColor * color_from_gdk_color    (GdkColor    *gdk_color);
 static void       on_key_pressed          (EekKeyboard *keyboard,
                                            EekKey      *key, guint32 timestamp,
-                                           gpointer     user_data);
+                                           EekGtkKeyboard *self);
 static void       on_key_released         (EekKeyboard *keyboard,
                                            EekKey      *key,
                                            gpointer     user_data);
@@ -213,6 +213,7 @@ eek_gtk_keyboard_real_button_press_event (GtkWidget      *self,
         g_log("squeek", G_LOG_LEVEL_DEBUG, "emit EekKey pressed");
         g_signal_emit_by_name (key, "pressed"); // TODO: set the pressed property on the key instead
         eek_keyboard_press_key(priv->keyboard, key, event->time);
+        on_key_pressed(priv->keyboard, key, event->time, EEK_GTK_KEYBOARD(self));
     }
     // TODO: send time
     return TRUE;
@@ -327,9 +328,6 @@ eek_gtk_keyboard_set_keyboard (EekGtkKeyboard *self,
     EekGtkKeyboardPrivate *priv = EEK_GTK_KEYBOARD_GET_PRIVATE(self);
     priv->keyboard = g_object_ref (keyboard);
 
-    priv->key_pressed_handler =
-        g_signal_connect (priv->keyboard, "key-pressed",
-                          G_CALLBACK(on_key_pressed), self);
     priv->key_released_handler =
         g_signal_connect (priv->keyboard, "key-released",
                           G_CALLBACK(on_key_released), self);
@@ -585,18 +583,17 @@ static void
 on_key_pressed (EekKeyboard *keyboard,
                 EekKey      *key,
                 guint32      timestamp,
-                gpointer     user_data)
+                EekGtkKeyboard *self)
 {
     (void)keyboard;
     (void)timestamp;
-    GtkWidget *widget = user_data;
-    EekGtkKeyboardPrivate *priv = EEK_GTK_KEYBOARD_GET_PRIVATE(widget);
+    EekGtkKeyboardPrivate *priv = EEK_GTK_KEYBOARD_GET_PRIVATE(self);
 
     /* renderer may have not been set yet if the widget is a popup */
     if (!priv->renderer)
         return;
 
-    render_pressed_key (widget, key);
+    render_pressed_key (GTK_WIDGET(self), key);
 
 #if HAVE_LIBCANBERRA
     ca_gtk_play_for_widget (widget, 0,
