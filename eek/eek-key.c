@@ -49,7 +49,6 @@ enum {
 enum {
     LOCKED,
     UNLOCKED,
-    CANCELLED,
     LAST_SIGNAL
 };
 
@@ -91,17 +90,6 @@ eek_key_real_unlocked (EekKey *self)
     priv->is_locked = FALSE;
 #if DEBUG
     g_debug ("unlocked %X", eek_key_get_keycode (self));
-#endif
-}
-
-static void
-eek_key_real_cancelled (EekKey *self)
-{
-    EekKeyPrivate *priv = EEK_KEY_GET_PRIVATE(self);
-
-    priv->is_pressed = FALSE;
-#if DEBUG
-    g_debug ("cancelled %X", eek_key_get_keycode (self));
 #endif
 }
 
@@ -196,7 +184,6 @@ eek_key_class_init (EekKeyClass *klass)
     /* signals */
     klass->locked = eek_key_real_locked;
     klass->unlocked = eek_key_real_unlocked;
-    klass->cancelled = eek_key_real_cancelled;
 
     /**
      * EekKey:keycode:
@@ -289,23 +276,6 @@ eek_key_class_init (EekKeyClass *klass)
                       G_TYPE_FROM_CLASS(gobject_class),
                       G_SIGNAL_RUN_LAST,
                       G_STRUCT_OFFSET(EekKeyClass, unlocked),
-                      NULL,
-                      NULL,
-                      g_cclosure_marshal_VOID__VOID,
-                      G_TYPE_NONE, 0);
-
-    /**
-     * EekKey::cancelled:
-     * @key: an #EekKey
-     *
-     * The ::cancelled signal is emitted each time @key is shifted to
-     * the cancelled state.
-     */
-   signals[CANCELLED] =
-        g_signal_new (I_("cancelled"),
-                      G_TYPE_FROM_CLASS(gobject_class),
-                      G_SIGNAL_RUN_LAST,
-                      G_STRUCT_OFFSET(EekKeyClass, cancelled),
                       NULL,
                       NULL,
                       g_cclosure_marshal_VOID__VOID,

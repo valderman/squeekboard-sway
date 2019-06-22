@@ -76,7 +76,6 @@ struct _EekKeyClass
     /* signals */
     void (* locked)    (EekKey *key);
     void (* unlocked)  (EekKey *key);
-    void (* cancelled) (EekKey *key);
 };
 
 GType            eek_key_get_type            (void) G_GNUC_CONST;

@@ -253,14 +253,16 @@ eek_gtk_keyboard_real_motion_notify_event (GtkWidget      *self,
         for (head = list; head; head = g_list_next (head)) {
             if (head->data == key)
                 found = TRUE;
-            else
-                g_signal_emit_by_name (head->data, "cancelled");
+            else {
+                eek_keyboard_release_key(priv->keyboard, head->data, event->time);
+                on_key_released(key, EEK_GTK_KEYBOARD(self));
+            }
         }
         g_list_free (list);
 
         if (!found) {
-            g_log("squeek", G_LOG_LEVEL_DEBUG, "emit EekKey pressed");
-            g_signal_emit_by_name (key, "pressed");
+            eek_keyboard_press_key(priv->keyboard, key, event->time);
+            on_key_pressed(key, EEK_GTK_KEYBOARD(self));
         }
     }
     return TRUE;
