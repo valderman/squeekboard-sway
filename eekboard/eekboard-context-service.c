@@ -58,8 +58,6 @@ static guint signals[LAST_SIGNAL] = { 0, };
     (G_TYPE_INSTANCE_GET_PRIVATE ((obj), EEKBOARD_TYPE_CONTEXT_SERVICE, EekboardContextServicePrivate))
 
 struct _EekboardContextServicePrivate {
-    GDBusNodeInfo *introspection_data;
-
     gboolean enabled;
     gboolean visible;
     gboolean fullscreen;
@@ -67,6 +65,7 @@ struct _EekboardContextServicePrivate {
     EekKeyboard *keyboard; // currently used keyboard
     GHashTable *keyboard_hash; // a table of available keyboards, per layout
 
+    // TODO: make use of repeating buttons
     EekKey *repeat_key;
     guint repeat_timeout_id;
     gboolean repeat_triggered;
@@ -75,13 +74,6 @@ struct _EekboardContextServicePrivate {
 };
 
 G_DEFINE_TYPE (EekboardContextService, eekboard_context_service, G_TYPE_OBJECT);
-
-static void connect_keyboard_signals (EekboardContextService *context);
-static void disconnect_keyboard_signals
-                                     (EekboardContextService *context);
-static void emit_visibility_changed_signal
-                                     (EekboardContextService *context,
-                                      gboolean                visible);
 
 static Display *display = NULL;
 
@@ -142,14 +134,12 @@ eekboard_context_service_real_create_keyboard (EekboardContextService *self,
 static void
 eekboard_context_service_real_show_keyboard (EekboardContextService *self)
 {
-    gboolean visible = self->priv->visible;
     self->priv->visible = TRUE;
 }
 
 static void
 eekboard_context_service_real_hide_keyboard (EekboardContextService *self)
 {
-    gboolean visible = self->priv->visible;
     self->priv->visible = FALSE;
 }
 
@@ -220,15 +210,6 @@ eekboard_context_service_dispose (GObject *object)
 
     G_OBJECT_CLASS (eekboard_context_service_parent_class)->
         dispose (object);
-}
-
-static void
-eekboard_context_service_finalize (GObject *object)
-{
-    EekboardContextService *context = EEKBOARD_CONTEXT_SERVICE(object);
-
-    G_OBJECT_CLASS (eekboard_context_service_parent_class)->
-        finalize (object);
 }
 
 static void
@@ -327,7 +308,6 @@ eekboard_context_service_class_init (EekboardContextServiceClass *klass)
     gobject_class->set_property = eekboard_context_service_set_property;
     gobject_class->get_property = eekboard_context_service_get_property;
     gobject_class->dispose = eekboard_context_service_dispose;
-    gobject_class->finalize = eekboard_context_service_finalize;
 
     /**
      * EekboardContextService::enabled:
@@ -517,15 +497,10 @@ eekboard_context_service_enable (EekboardContextService *context)
 void
 eekboard_context_service_disable (EekboardContextService *context)
 {
-    GError *error;
-
     g_return_if_fail (EEKBOARD_IS_CONTEXT_SERVICE(context));
 
     if (context->priv->enabled) {
-        gboolean retval;
-
         context->priv->enabled = FALSE;
-
         g_signal_emit (context, signals[DISABLED], 0);
     }
 }
@@ -555,9 +530,6 @@ eekboard_context_service_hide_keyboard (EekboardContextService *context)
 void
 eekboard_context_service_destroy (EekboardContextService *context)
 {
-    gboolean retval;
-    GError *error;
-
     g_return_if_fail (EEKBOARD_IS_CONTEXT_SERVICE(context));
 
     if (context->priv->enabled) {
