@@ -111,14 +111,12 @@ eek_gtk_keyboard_real_draw (GtkWidget *self,
 {
     EekGtkKeyboardPrivate *priv = EEK_GTK_KEYBOARD_GET_PRIVATE(self);
     GtkAllocation allocation;
-    EekColor background;
     GList *list, *head;
 
     gtk_widget_get_allocation (self, &allocation);
 
     if (!priv->renderer) {
         PangoContext *pcontext;
-        EekColor *color;
 
         pcontext = gtk_widget_get_pango_context (self);
         priv->renderer = eek_gtk_renderer_new (priv->keyboard, pcontext, self);
@@ -465,13 +463,17 @@ render_pressed_key (GtkWidget *widget,
 {
     EekGtkKeyboardPrivate *priv = EEK_GTK_KEYBOARD_GET_PRIVATE(widget);
     EekBounds bounds, large_bounds;
-    cairo_t *cr;
-
-    cr = gdk_cairo_create (GDK_DRAWABLE (gtk_widget_get_window (widget)));
 
     eek_renderer_get_key_bounds (priv->renderer, key, &bounds, TRUE);
     magnify_bounds (widget, &bounds, &large_bounds, 1.5);
 
+    GdkWindow *window = GDK_DRAWABLE (gtk_widget_get_window (widget));
+    cairo_region_t *region = gdk_window_get_clip_region (window);
+
+    GdkDrawingContext *context = gdk_window_begin_draw_frame(
+        window, region
+    );
+    cairo_t *cr = gdk_drawing_context_get_cairo_context(context);
     cairo_save (cr);
     cairo_translate (cr, bounds.x, bounds.y);
     eek_renderer_render_key (priv->renderer, cr, key, 1.0, TRUE);
@@ -482,7 +484,8 @@ render_pressed_key (GtkWidget *widget,
     eek_renderer_render_key (priv->renderer, cr, key, 1.5, TRUE);
     cairo_restore (cr);
 
-    cairo_destroy (cr);
+    gdk_window_end_draw_frame(window, context);
+    cairo_region_destroy(region);
 }
 
 static void
