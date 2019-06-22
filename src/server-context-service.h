@@ -29,6 +29,7 @@ G_BEGIN_DECLS
 #define SERVER_IS_CONTEXT_SERVICE_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), SERVER_TYPE_CONTEXT_SERVICE))
 #define SERVER_CONTEXT_SERVICE_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS ((obj), SERVER_TYPE_CONTEXT_SERVICE, ServerContextServiceClass))
 
+/** Manages the liecycle of the window displaying layouts. */
 typedef struct _ServerContextService ServerContextService;
 
 ServerContextService *server_context_service_new ();

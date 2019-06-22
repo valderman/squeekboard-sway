@@ -43,6 +43,8 @@ typedef struct _EekboardContextServicePrivate EekboardContextServicePrivate;
 /**
  * EekboardContextService:
  *
+ * TODO: Restrict to managing keyboard layouts, and maybe button rerpeats.
+ *
  * The #EekboardContextService structure contains only private data
  * and should only be accessed using the provided API.
  */

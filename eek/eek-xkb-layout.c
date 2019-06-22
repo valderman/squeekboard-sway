@@ -31,14 +31,14 @@
 #include "config.h"
 #endif  /* HAVE_CONFIG_H */
 
+#include "eek-xkb-layout.h"
+
 #include <X11/keysym.h>
-#include <X11/XKBlib.h>
 #include <X11/extensions/XKBgeom.h>
 #include <string.h>
 #include <stdarg.h>
 #include <gio/gio.h>
 
-#include "eek-xkb-layout.h"
 #include "eek-keyboard.h"
 #include "eek-section.h"
 #include "eek-key.h"

@@ -25,7 +25,6 @@
 #ifndef EEK_XKB_LAYOUT_H
 #define EEK_XKB_LAYOUT_H 1
 
-#include <X11/Xlib.h>
 #include <X11/XKBlib.h>
 #include "eek-layout.h"
 
