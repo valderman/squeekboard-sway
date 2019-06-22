@@ -60,9 +60,7 @@ struct _EekboardServiceClass {
     GObjectClass parent_class;
 
     /*< public >*/
-    EekboardContextService *(*create_context) (EekboardService *self,
-                                               const gchar     *client_name,
-                                               const gchar     *object_path);
+    EekboardContextService *(*create_context) (EekboardService *self);
 
     /*< private >*/
     /* padding */

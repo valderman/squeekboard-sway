@@ -38,9 +38,7 @@
 #define CSH 480
 
 enum {
-    PROP_0,
-    PROP_OBJECT_PATH,
-    PROP_CLIENT_NAME,
+    PROP_0, // Magic: without this, keyboard is not useable in g_object_notify
     PROP_KEYBOARD,
     PROP_VISIBLE,
     PROP_FULLSCREEN,
@@ -220,16 +218,6 @@ eekboard_context_service_set_property (GObject      *object,
     EekboardContextService *context = EEKBOARD_CONTEXT_SERVICE(object);
 
     switch (prop_id) {
-    case PROP_OBJECT_PATH:
-        if (context->priv->object_path)
-            g_free (context->priv->object_path);
-        context->priv->object_path = g_value_dup_string (value);
-        break;
-    case PROP_CLIENT_NAME:
-        if (context->priv->client_name)
-            g_free (context->priv->client_name);
-        context->priv->client_name = g_value_dup_string (value);
-        break;
     case PROP_KEYBOARD:
         if (context->priv->keyboard)
             g_object_unref (context->priv->keyboard);
@@ -261,12 +249,6 @@ eekboard_context_service_get_property (GObject    *object,
     EekboardContextService *context = EEKBOARD_CONTEXT_SERVICE(object);
 
     switch (prop_id) {
-    case PROP_OBJECT_PATH:
-        g_value_set_string (value, context->priv->object_path);
-        break;
-    case PROP_CLIENT_NAME:
-        g_value_set_string (value, context->priv->client_name);
-        break;
     case PROP_KEYBOARD:
         g_value_set_object (value, context->priv->keyboard);
         break;
@@ -465,34 +447,6 @@ eekboard_context_service_class_init (EekboardContextServiceClass *klass)
                       g_cclosure_marshal_VOID__VOID,
                       G_TYPE_NONE,
                       0);
-
-    /**
-     * EekboardContextService:object-path:
-     *
-     * D-Bus object path.
-     */
-    pspec = g_param_spec_string ("object-path",
-                                 "Object-path",
-                                 "Object-path",
-                                 NULL,
-                                 G_PARAM_CONSTRUCT | G_PARAM_READWRITE);
-    g_object_class_install_property (gobject_class,
-                                     PROP_OBJECT_PATH,
-                                     pspec);
-
-    /**
-     * EekboardContextService:client-name:
-     *
-     * Name of a client who created this context service.
-     */
-    pspec = g_param_spec_string ("client-name",
-                                 "Client-name",
-                                 "Client-name",
-                                 NULL,
-                                 G_PARAM_READWRITE);
-    g_object_class_install_property (gobject_class,
-                                     PROP_CLIENT_NAME,
-                                     pspec);
 
     /**
      * EekboardContextService:keyboard:

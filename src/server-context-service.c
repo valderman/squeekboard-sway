@@ -491,11 +491,8 @@ server_context_service_init (ServerContextService *context)
 }
 
 ServerContextService *
-server_context_service_new (const gchar     *client_name,
-                            const gchar     *object_path)
+server_context_service_new ()
 {
     return g_object_new (SERVER_TYPE_CONTEXT_SERVICE,
-                         "client-name", client_name,
-                         "object-path", object_path,
                          NULL);
 }

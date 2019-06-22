@@ -31,8 +31,7 @@ G_BEGIN_DECLS
 
 typedef struct _ServerContextService ServerContextService;
 
-ServerContextService *server_context_service_new (const gchar     *client_name,
-                                                  const gchar     *object_path);
+ServerContextService *server_context_service_new ();
 
 G_END_DECLS
 #endif  /* SERVER_CONTEXT_SERVICE_H */

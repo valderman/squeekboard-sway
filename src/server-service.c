@@ -35,16 +35,10 @@ struct _ServerServiceClass {
 G_DEFINE_TYPE (ServerService, server_service, EEKBOARD_TYPE_SERVICE);
 
 static EekboardContextService *
-server_service_real_create_context (EekboardService *self,
-                                    const gchar     *client_name,
-                                    const gchar     *object_path)
+server_service_real_create_context (EekboardService *self)
 {
-    GDBusConnection *connection;
-    ServerContextService *context;
-
-    context = server_context_service_new (client_name, object_path);
-
-    return EEKBOARD_CONTEXT_SERVICE(context);
+    (void)self;
+    return EEKBOARD_CONTEXT_SERVICE(server_context_service_new ());
 }
 
 static void
