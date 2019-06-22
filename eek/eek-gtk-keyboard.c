@@ -94,7 +94,6 @@ static void       render_released_key     (GtkWidget   *widget,
 static void
 eek_gtk_keyboard_real_realize (GtkWidget      *self)
 {
-    gtk_widget_set_double_buffered (self, FALSE);
     gtk_widget_set_events (self,
                            GDK_EXPOSURE_MASK |
                            GDK_KEY_PRESS_MASK |
@@ -118,8 +117,6 @@ eek_gtk_keyboard_real_draw (GtkWidget *self,
     gtk_widget_get_allocation (self, &allocation);
 
     if (!priv->renderer) {
-        GtkStyle *style;
-        GtkStateType state;
         PangoContext *pcontext;
         EekColor *color;
 
@@ -131,29 +128,7 @@ eek_gtk_keyboard_real_draw (GtkWidget *self,
         eek_renderer_set_allocation_size (priv->renderer,
                                           allocation.width,
                                           allocation.height);
-
-        style = gtk_widget_get_style (self);
-        state = gtk_widget_get_state (self);
-
-        color = color_from_gdk_color (&style->text[state]);
-        eek_renderer_set_default_foreground_color (priv->renderer, color);
-        eek_color_free (color);
-
-        color = color_from_gdk_color (&style->base[state]);
-        eek_renderer_set_default_background_color (priv->renderer, color);
-        eek_color_free (color);
     }
-
-    /* blank background */
-    eek_renderer_get_background_color (priv->renderer,
-                                       EEK_ELEMENT(priv->keyboard),
-                                       &background);
-    cairo_set_source_rgba (cr,
-                           background.red,
-                           background.green,
-                           background.blue,
-                           background.alpha);
-    cairo_paint (cr);
 
     eek_renderer_render_keyboard (priv->renderer, cr);
 
