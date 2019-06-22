@@ -45,11 +45,8 @@ enum {
 };
 
 enum {
-    KEY_PRESSED,
-    KEY_RELEASED,
     KEY_LOCKED,
     KEY_UNLOCKED,
-    KEY_CANCELLED,
     LAST_SIGNAL
 };
 
@@ -115,14 +112,6 @@ eek_section_real_get_row (EekSection     *self,
 }
 
 static void
-on_released (EekKey     *key,
-             EekSection *section)
-{
-    g_log("squeek", G_LOG_LEVEL_DEBUG, "emit EekSection key-released");
-    g_signal_emit (section, signals[KEY_RELEASED], 0, key);
-}
-
-static void
 on_locked (EekKey     *key,
            EekSection *section)
 {
@@ -134,13 +123,6 @@ on_unlocked (EekKey     *key,
              EekSection *section)
 {
     g_signal_emit (section, signals[KEY_UNLOCKED], 0, key);
-}
-
-static void
-on_cancelled (EekKey     *key,
-             EekSection *section)
-{
-    g_signal_emit (section, signals[KEY_CANCELLED], 0, key);
 }
 
 static EekKey *
@@ -290,20 +272,16 @@ static void
 eek_section_real_child_added (EekContainer *self,
                               EekElement   *element)
 {
-    g_signal_connect (element, "released", G_CALLBACK(on_released), self);
     g_signal_connect (element, "locked", G_CALLBACK(on_locked), self);
     g_signal_connect (element, "unlocked", G_CALLBACK(on_unlocked), self);
-    g_signal_connect (element, "cancelled", G_CALLBACK(on_cancelled), self);
 }
 
 static void
 eek_section_real_child_removed (EekContainer *self,
                                 EekElement   *element)
 {
-    g_signal_handlers_disconnect_by_func (element, on_released, self);
     g_signal_handlers_disconnect_by_func (element, on_locked, self);
     g_signal_handlers_disconnect_by_func (element, on_unlocked, self);
-    g_signal_handlers_disconnect_by_func (element, on_cancelled, self);
 }
 
 static void
@@ -346,26 +324,6 @@ eek_section_class_init (EekSectionClass *klass)
                                      pspec);
 
     /**
-     * EekSection::key-released:
-     * @section: an #EekSection
-     * @key: an #EekKey
-     *
-     * The ::key-released signal is emitted each time a key in @section
-     * is shifted to the released state.
-     */
-    signals[KEY_RELEASED] =
-        g_signal_new (I_("key-released"),
-                      G_TYPE_FROM_CLASS(gobject_class),
-                      G_SIGNAL_RUN_LAST,
-                      G_STRUCT_OFFSET(EekSectionClass, key_released),
-                      NULL,
-                      NULL,
-                      g_cclosure_marshal_VOID__OBJECT,
-                      G_TYPE_NONE,
-                      1,
-                      EEK_TYPE_KEY);
-
-    /**
      * EekSection::key-locked:
      * @section: an #EekSection
      * @key: an #EekKey
@@ -398,26 +356,6 @@ eek_section_class_init (EekSectionClass *klass)
                       G_TYPE_FROM_CLASS(gobject_class),
                       G_SIGNAL_RUN_LAST,
                       G_STRUCT_OFFSET(EekSectionClass, key_unlocked),
-                      NULL,
-                      NULL,
-                      g_cclosure_marshal_VOID__OBJECT,
-                      G_TYPE_NONE,
-                      1,
-                      EEK_TYPE_KEY);
-
-    /**
-     * EekSection::key-cancelled:
-     * @section: an #EekSection
-     * @key: an #EekKey
-     *
-     * The ::key-cancelled signal is emitted each time a key in @section
-     * is shifted to the cancelled state.
-     */
-    signals[KEY_CANCELLED] =
-        g_signal_new (I_("key-cancelled"),
-                      G_TYPE_FROM_CLASS(gobject_class),
-                      G_SIGNAL_RUN_LAST,
-                      G_STRUCT_OFFSET(EekSectionClass, key_cancelled),
                       NULL,
                       NULL,
                       g_cclosure_marshal_VOID__OBJECT,

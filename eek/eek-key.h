@@ -74,7 +74,6 @@ struct _EekKeyClass
 
     /*< public >*/
     /* signals */
-    void (* released)  (EekKey *key);
     void (* locked)    (EekKey *key);
     void (* unlocked)  (EekKey *key);
     void (* cancelled) (EekKey *key);

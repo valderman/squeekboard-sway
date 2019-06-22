@@ -1,17 +1,17 @@
-/* 
+/*
  * Copyright (C) 2010-2011 Daiki Ueno <ueno@unixuser.org>
  * Copyright (C) 2010-2011 Red Hat, Inc.
- * 
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
  * as published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
@@ -61,31 +61,25 @@ struct _EekGtkKeyboardPrivate
 {
     EekRenderer *renderer;
     EekKeyboard *keyboard;
-    gulong key_pressed_handler;
-    gulong key_released_handler;
     gulong key_locked_handler;
     gulong key_unlocked_handler;
-    gulong key_cancelled_handler;
     gulong symbol_index_changed_handler;
     EekTheme *theme;
 };
 
 static EekColor * color_from_gdk_color    (GdkColor    *gdk_color);
-static void       on_key_pressed          (EekKeyboard *keyboard,
-                                           EekKey      *key, guint32 timestamp,
+static void       on_key_pressed          (EekKey      *key,
                                            EekGtkKeyboard *self);
-static void       on_key_released         (EekKeyboard *keyboard,
-                                           EekKey      *key,
-                                           gpointer     user_data);
+static void       on_key_released         (EekKey      *key,
+                                           EekGtkKeyboard *self);
 static void       on_key_locked          (EekKeyboard *keyboard,
                                            EekKey      *key,
                                            gpointer     user_data);
 static void       on_key_unlocked         (EekKeyboard *keyboard,
                                            EekKey      *key,
                                            gpointer     user_data);
-static void       on_key_cancelled        (EekKeyboard *keyboard,
-                                           EekKey      *key,
-                                           gpointer     user_data);
+static void       on_key_cancelled        (EekKey      *key,
+                                           EekGtkKeyboard *self);
 static void       on_symbol_index_changed (EekKeyboard *keyboard,
                                            gint         group,
                                            gint         level,
@@ -211,11 +205,12 @@ eek_gtk_keyboard_real_button_press_event (GtkWidget      *self,
                                              (gdouble)event->y);
     if (key) {
         eek_keyboard_press_key(priv->keyboard, key, event->time);
-        on_key_pressed(priv->keyboard, key, event->time, EEK_GTK_KEYBOARD(self));
+        on_key_pressed(key, EEK_GTK_KEYBOARD(self));
     }
     return TRUE;
 }
 
+// TODO: this belongs more in gtk_keyboard, with a way to find out which key to re-render
 static gboolean
 eek_gtk_keyboard_real_button_release_event (GtkWidget      *self,
                                             GdkEventButton *event)
@@ -225,12 +220,12 @@ eek_gtk_keyboard_real_button_release_event (GtkWidget      *self,
         return TRUE;
     }
     EekGtkKeyboardPrivate *priv = EEK_GTK_KEYBOARD_GET_PRIVATE(self);
-    GList *list, *head;
 
-    list = eek_keyboard_get_pressed_keys (priv->keyboard);
-    for (head = list; head; head = g_list_next (head)) {
-        g_log("squeek", G_LOG_LEVEL_DEBUG, "emit EekKey released");
-        g_signal_emit_by_name (head->data, "released", priv->keyboard);
+    GList *list = eek_keyboard_get_pressed_keys (priv->keyboard);
+    for (GList *head = list; head; head = g_list_next (head)) {
+        EekKey *key = EEK_KEY(head->data);
+        eek_keyboard_release_key(priv->keyboard, key, event->time);
+        on_key_released(key, EEK_GTK_KEYBOARD(self));
     }
     g_list_free (list);
 
@@ -325,18 +320,12 @@ eek_gtk_keyboard_set_keyboard (EekGtkKeyboard *self,
     EekGtkKeyboardPrivate *priv = EEK_GTK_KEYBOARD_GET_PRIVATE(self);
     priv->keyboard = g_object_ref (keyboard);
 
-    priv->key_released_handler =
-        g_signal_connect (priv->keyboard, "key-released",
-                          G_CALLBACK(on_key_released), self);
     priv->key_locked_handler =
         g_signal_connect (priv->keyboard, "key-locked",
                           G_CALLBACK(on_key_locked), self);
     priv->key_unlocked_handler =
         g_signal_connect (priv->keyboard, "key-unlocked",
                           G_CALLBACK(on_key_unlocked), self);
-    priv->key_cancelled_handler =
-        g_signal_connect (priv->keyboard, "key-cancelled",
-                          G_CALLBACK(on_key_cancelled), self);
     priv->symbol_index_changed_handler =
         g_signal_connect (priv->keyboard, "symbol-index-changed",
                           G_CALLBACK(on_symbol_index_changed), self);
@@ -373,14 +362,6 @@ eek_gtk_keyboard_dispose (GObject *object)
 
     if (priv->keyboard) {
         if (g_signal_handler_is_connected (priv->keyboard,
-                                           priv->key_pressed_handler))
-            g_signal_handler_disconnect (priv->keyboard,
-                                         priv->key_pressed_handler);
-        if (g_signal_handler_is_connected (priv->keyboard,
-                                           priv->key_released_handler))
-            g_signal_handler_disconnect (priv->keyboard,
-                                         priv->key_released_handler);
-        if (g_signal_handler_is_connected (priv->keyboard,
                                            priv->key_locked_handler))
             g_signal_handler_disconnect (priv->keyboard,
                                          priv->key_locked_handler);
@@ -389,14 +370,10 @@ eek_gtk_keyboard_dispose (GObject *object)
             g_signal_handler_disconnect (priv->keyboard,
                                          priv->key_unlocked_handler);
         if (g_signal_handler_is_connected (priv->keyboard,
-                                           priv->key_cancelled_handler))
-            g_signal_handler_disconnect (priv->keyboard,
-                                         priv->key_cancelled_handler);
-        if (g_signal_handler_is_connected (priv->keyboard,
                                            priv->symbol_index_changed_handler))
             g_signal_handler_disconnect (priv->keyboard,
                                          priv->symbol_index_changed_handler);
-            
+
         GList *list, *head;
 
         list = eek_keyboard_get_pressed_keys (priv->keyboard);
@@ -577,13 +554,9 @@ render_released_key (GtkWidget *widget,
 }
 
 static void
-on_key_pressed (EekKeyboard *keyboard,
-                EekKey      *key,
-                guint32      timestamp,
+on_key_pressed (EekKey      *key,
                 EekGtkKeyboard *self)
 {
-    (void)keyboard;
-    (void)timestamp;
     EekGtkKeyboardPrivate *priv = EEK_GTK_KEYBOARD_GET_PRIVATE(self);
 
     /* renderer may have not been set yet if the widget is a popup */
@@ -602,18 +575,16 @@ on_key_pressed (EekKeyboard *keyboard,
 }
 
 static void
-on_key_released (EekKeyboard *keyboard,
-                 EekKey      *key,
-                 gpointer     user_data)
+on_key_released (EekKey      *key,
+                 EekGtkKeyboard *self)
 {
-    GtkWidget *widget = user_data;
-    EekGtkKeyboardPrivate *priv = EEK_GTK_KEYBOARD_GET_PRIVATE(widget);
+    EekGtkKeyboardPrivate *priv = EEK_GTK_KEYBOARD_GET_PRIVATE(self);
 
     /* renderer may have not been set yet if the widget is a popup */
     if (!priv->renderer)
         return;
 
-    render_released_key (widget, key);
+    render_released_key (GTK_WIDGET(self), key);
 
 #if HAVE_LIBCANBERRA
     ca_gtk_play_for_widget (widget, 0,
@@ -625,18 +596,16 @@ on_key_released (EekKeyboard *keyboard,
 }
 
 static void
-on_key_cancelled (EekKeyboard *keyboard,
-                 EekKey      *key,
-                 gpointer     user_data)
+on_key_cancelled (EekKey      *key,
+                  EekGtkKeyboard *self)
 {
-    GtkWidget *widget = user_data;
-    EekGtkKeyboardPrivate *priv = EEK_GTK_KEYBOARD_GET_PRIVATE(widget);
+    EekGtkKeyboardPrivate *priv = EEK_GTK_KEYBOARD_GET_PRIVATE(self);
 
     /* renderer may have not been set yet if the widget is a popup */
     if (!priv->renderer)
         return;
 
-    render_released_key (widget, key);
+    render_released_key (self, key);
 }
 
 static void

@@ -84,10 +84,6 @@ struct _EekKeyboardClass
     EekKey     *(* find_key_by_keycode) (EekKeyboard *self,
                                          guint        keycode);
 
-    /* signals */
-    void        (* key_released)        (EekKeyboard *self,
-                                         EekKey      *key);
-
     /*< private >*/
     /* obsolete members moved to EekElement */
     gpointer symbol_index_changed;
@@ -97,8 +93,6 @@ struct _EekKeyboardClass
     void        (* key_locked)          (EekKeyboard *self,
                                          EekKey      *key);
     void        (* key_unlocked)        (EekKeyboard *self,
-                                         EekKey      *key);
-    void        (* key_cancelled)        (EekKeyboard *self,
                                          EekKey      *key);
 
     /*< private >*/
@@ -189,6 +183,7 @@ void                eek_modifier_key_free
                                      (EekModifierKey      *modkey);
 
 void eek_keyboard_press_key(EekKeyboard *keyboard, EekKey *key, guint32 timestamp);
+void eek_keyboard_release_key(EekKeyboard *keyboard, EekKey *key, guint32 timestamp);
 
 G_END_DECLS
 #endif  /* EEK_KEYBOARD_H */

@@ -701,57 +701,8 @@ on_repeat_timeout_init (EekboardContextService *context)
 }
 
 static void
-on_key_activated(EekKeyboard *keyboard,
-                 EekKey      *key,
-                 EekboardContextService *context,
-                 gboolean pressed)
-{
-    guint keycode = eek_key_get_keycode (key);
-    EekSymbol *symbol = eek_key_get_symbol_with_fallback (key, 0, 0);
-
-    guint modifiers = eek_keyboard_get_modifiers (context->priv->keyboard);
-
-    // Insert
-    EekboardContext ec = {0};
-    Client c = {&ec, 0, {0}};
-
-    emit_key_activated(&ec, keycode, symbol, modifiers, &c, pressed, 0);
-}
-
-static void
-on_key_released (EekKeyboard *keyboard,
-                 EekKey      *key,
-                 gpointer     user_data)
-{
-    EekboardContextService *context = user_data;
-
-    if (context->priv->repeat_timeout_id > 0) {
-        g_source_remove (context->priv->repeat_timeout_id);
-        context->priv->repeat_timeout_id = 0;
-    }
-    on_key_activated(keyboard, key, context, FALSE);
-}
-
-static void
-on_key_cancelled (EekKeyboard *keyboard,
-                 EekKey      *key,
-                 gpointer     user_data)
-{
-    on_key_released(keyboard, key, user_data);
-    // TODO: special handling when composing text via text-input? text may not be committed until button released
-}
-
-static void
 connect_keyboard_signals (EekboardContextService *context)
 {
-    context->priv->key_released_handler =
-        g_signal_connect (context->priv->keyboard, "key-released",
-                          G_CALLBACK(on_key_released),
-                          context);
-    context->priv->key_cancelled_handler =
-        g_signal_connect (context->priv->keyboard, "key-cancelled",
-                          G_CALLBACK(on_key_cancelled),
-                          context);
 }
 
 /**

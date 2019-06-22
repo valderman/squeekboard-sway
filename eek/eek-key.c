@@ -47,7 +47,6 @@ enum {
 };
 
 enum {
-    RELEASED,
     LOCKED,
     UNLOCKED,
     CANCELLED,
@@ -72,17 +71,6 @@ struct _EekKeyPrivate
     gboolean is_pressed;
     gboolean is_locked;
 };
-
-static void
-eek_key_real_released (EekKey *self)
-{
-    EekKeyPrivate *priv = EEK_KEY_GET_PRIVATE(self);
-
-    priv->is_pressed = FALSE;
-#if DEBUG
-    g_debug ("released %X", eek_key_get_keycode (self));
-#endif
-}
 
 static void
 eek_key_real_locked (EekKey *self)
@@ -206,7 +194,6 @@ eek_key_class_init (EekKeyClass *klass)
     gobject_class->finalize     = eek_key_finalize;
 
     /* signals */
-    klass->released = eek_key_real_released;
     klass->locked = eek_key_real_locked;
     klass->unlocked = eek_key_real_unlocked;
     klass->cancelled = eek_key_real_cancelled;
@@ -270,23 +257,6 @@ eek_key_class_init (EekKeyClass *klass)
                                 0, G_MAXULONG, 0,
                                 G_PARAM_READWRITE);
     g_object_class_install_property (gobject_class, PROP_OREF, pspec);
-
-    /**
-     * EekKey::released:
-     * @key: an #EekKey
-     *
-     * The ::released signal is emitted each time @key is shifted to
-     * the released state.
-     */
-   signals[RELEASED] =
-        g_signal_new (I_("released"),
-                      G_TYPE_FROM_CLASS(gobject_class),
-                      G_SIGNAL_RUN_LAST,
-                      G_STRUCT_OFFSET(EekKeyClass, released),
-                      NULL,
-                      NULL,
-                      g_cclosure_marshal_VOID__VOID,
-                      G_TYPE_NONE, 0);
 
     /**
      * EekKey::locked:

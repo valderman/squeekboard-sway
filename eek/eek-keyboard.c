@@ -50,7 +50,6 @@ enum {
     KEY_RELEASED,
     KEY_LOCKED,
     KEY_UNLOCKED,
-    KEY_CANCELLED,
     LAST_SIGNAL
 };
 
@@ -93,15 +92,6 @@ eek_modifier_key_free (EekModifierKey *modkey)
 }
 
 static void
-on_key_released (EekSection  *section,
-                 EekKey      *key,
-                 EekKeyboard *keyboard)
-{
-    g_log("squeek", G_LOG_LEVEL_DEBUG, "emit EekKeyboard key-released");
-    g_signal_emit (keyboard, signals[KEY_RELEASED], 0, key);
-}
-
-static void
 on_key_locked (EekSection  *section,
                 EekKey      *key,
                 EekKeyboard *keyboard)
@@ -115,14 +105,6 @@ on_key_unlocked (EekSection  *section,
                  EekKeyboard *keyboard)
 {
     g_signal_emit (keyboard, signals[KEY_UNLOCKED], 0, key);
-}
-
-static void
-on_key_cancelled (EekSection  *section,
-                 EekKey      *key,
-                 EekKeyboard *keyboard)
-{
-    g_signal_emit (keyboard, signals[KEY_CANCELLED], 0, key);
 }
 
 static void
@@ -278,7 +260,7 @@ void eek_keyboard_press_key(EekKeyboard *keyboard, EekKey *key, guint32 timestam
     EekModifierType modifier;
 
     eek_key_set_pressed(key, TRUE);
-
+    key = EEK_KEY(key);
     priv->pressed_keys = g_list_prepend (priv->pressed_keys, key);
 
     symbol = eek_key_get_symbol_with_fallback (key, 0, 0);
@@ -302,53 +284,55 @@ void eek_keyboard_press_key(EekKeyboard *keyboard, EekKey *key, guint32 timestam
     emit_key_activated(&ec, keycode, symbol, modifiers, &c, TRUE, timestamp);
 }
 
-static void
-eek_keyboard_real_key_released (EekKeyboard *self,
-                                EekKey      *key)
-{
-    EekKeyboardPrivate *priv = EEK_KEYBOARD_GET_PRIVATE(self);
-    EekSymbol *symbol;
-    EekModifierType modifier;
+void eek_keyboard_release_key( EekKeyboard *keyboard,
+                               EekKey      *key,
+                               guint32      timestamp) {
+    EekKeyboardPrivate *priv = EEK_KEYBOARD_GET_PRIVATE(keyboard);
 
-    EEK_KEYBOARD_GET_CLASS (self)->key_cancelled (self, key);
-
-    symbol = eek_key_get_symbol_with_fallback (key, 0, 0);
-    if (!symbol)
-        return;
-
-    modifier = eek_symbol_get_modifier_mask (symbol);
-    switch (priv->modifier_behavior) {
-    case EEK_MODIFIER_BEHAVIOR_NONE:
-        set_modifiers_with_key (self, key, priv->modifiers & ~modifier);
-        break;
-    case EEK_MODIFIER_BEHAVIOR_LOCK:
-        priv->modifiers ^= modifier;
-        break;
-    case EEK_MODIFIER_BEHAVIOR_LATCH:
-        if (modifier)
-            set_modifiers_with_key (self, key, priv->modifiers ^ modifier);
-        else
-            set_modifiers_with_key (self, key,
-                                    (priv->modifiers ^ modifier) & modifier);
-        break;
-    }
-    set_level_from_modifiers (self);
-}
-
-static void
-eek_keyboard_real_key_cancelled (EekKeyboard *self,
-                                 EekKey      *key)
-{
-    EekKeyboardPrivate *priv = EEK_KEYBOARD_GET_PRIVATE(self);
-    GList *head;
-
-    for (head = priv->pressed_keys; head; head = g_list_next (head)) {
+    for (GList *head = priv->pressed_keys; head; head = g_list_next (head)) {
         if (head->data == key) {
             priv->pressed_keys = g_list_remove_link (priv->pressed_keys, head);
             g_list_free1 (head);
             break;
         }
     }
+
+    EekSymbol *symbol = eek_key_get_symbol_with_fallback (key, 0, 0);
+    if (!symbol)
+        return;
+
+    EekModifierType modifier = eek_symbol_get_modifier_mask (symbol);
+
+    if (!symbol)
+        return;
+
+    modifier = eek_symbol_get_modifier_mask (symbol);
+    switch (priv->modifier_behavior) {
+    case EEK_MODIFIER_BEHAVIOR_NONE:
+        set_modifiers_with_key (keyboard, key, priv->modifiers & ~modifier);
+        break;
+    case EEK_MODIFIER_BEHAVIOR_LOCK:
+        priv->modifiers ^= modifier;
+        break;
+    case EEK_MODIFIER_BEHAVIOR_LATCH:
+        if (modifier)
+            set_modifiers_with_key (keyboard, key, priv->modifiers ^ modifier);
+        else
+            set_modifiers_with_key (keyboard, key,
+                                    (priv->modifiers ^ modifier) & modifier);
+        break;
+    }
+    set_level_from_modifiers (keyboard);
+
+    // "Borrowed" from eek-context-service; doesn't influence the state but forwards the event
+
+    guint keycode = eek_key_get_keycode (key);
+    guint modifiers = eek_keyboard_get_modifiers (keyboard);
+    // Insert
+    EekboardContext ec = {0};
+    Client c = {&ec, 0, {0}};
+
+    emit_key_activated(&ec, keycode, symbol, modifiers, &c, FALSE, timestamp);
 }
 
 static void
@@ -392,14 +376,10 @@ static void
 eek_keyboard_real_child_added (EekContainer *self,
                                EekElement   *element)
 {
-    g_signal_connect (element, "key-released",
-                      G_CALLBACK(on_key_released), self);
     g_signal_connect (element, "key-locked",
                       G_CALLBACK(on_key_locked), self);
     g_signal_connect (element, "key-unlocked",
                       G_CALLBACK(on_key_unlocked), self);
-    g_signal_connect (element, "key-cancelled",
-                      G_CALLBACK(on_key_cancelled), self);
     g_signal_connect (element, "symbol-index-changed",
                       G_CALLBACK(on_symbol_index_changed), self);
 }
@@ -408,10 +388,8 @@ static void
 eek_keyboard_real_child_removed (EekContainer *self,
                                  EekElement   *element)
 {
-    g_signal_handlers_disconnect_by_func (element, on_key_released, self);
     g_signal_handlers_disconnect_by_func (element, on_key_locked, self);
     g_signal_handlers_disconnect_by_func (element, on_key_unlocked, self);
-    g_signal_handlers_disconnect_by_func (element, on_key_cancelled, self);
 }
 
 static void
@@ -427,9 +405,6 @@ eek_keyboard_class_init (EekKeyboardClass *klass)
     klass->create_section = eek_keyboard_real_create_section;
 
     /* signals */
-    klass->key_released = eek_keyboard_real_key_released;
-    klass->key_cancelled = eek_keyboard_real_key_cancelled;
-
     container_class->child_added = eek_keyboard_real_child_added;
     container_class->child_removed = eek_keyboard_real_child_removed;
 
@@ -468,26 +443,6 @@ eek_keyboard_class_init (EekKeyboardClass *klass)
                                      pspec);
 
     /**
-     * EekKeyboard::key-released:
-     * @keyboard: an #EekKeyboard
-     * @key: an #EekKey
-     *
-     * The ::key-released signal is emitted each time a key in @keyboard
-     * is shifted to the released state.
-     */
-    signals[KEY_RELEASED] =
-        g_signal_new (I_("key-released"),
-                      G_TYPE_FROM_CLASS(gobject_class),
-                      G_SIGNAL_RUN_LAST,
-                      G_STRUCT_OFFSET(EekKeyboardClass, key_released),
-                      NULL,
-                      NULL,
-                      g_cclosure_marshal_VOID__OBJECT,
-                      G_TYPE_NONE,
-                      1,
-                      EEK_TYPE_KEY);
-
-    /**
      * EekKeyboard::key-locked:
      * @keyboard: an #EekKeyboard
      * @key: an #EekKey
@@ -520,26 +475,6 @@ eek_keyboard_class_init (EekKeyboardClass *klass)
                       G_TYPE_FROM_CLASS(gobject_class),
                       G_SIGNAL_RUN_LAST,
                       G_STRUCT_OFFSET(EekKeyboardClass, key_unlocked),
-                      NULL,
-                      NULL,
-                      g_cclosure_marshal_VOID__OBJECT,
-                      G_TYPE_NONE,
-                      1,
-                      EEK_TYPE_KEY);
-
-    /**
-     * EekKeyboard::key-cancelled:
-     * @keyboard: an #EekKeyboard
-     * @key: an #EekKey
-     *
-     * The ::key-cancelled signal is emitted each time a key in @keyboard
-     * is shifted to the cancelled state.
-     */
-    signals[KEY_CANCELLED] =
-        g_signal_new (I_("key-cancelled"),
-                      G_TYPE_FROM_CLASS(gobject_class),
-                      G_SIGNAL_RUN_LAST,
-                      G_STRUCT_OFFSET(EekKeyboardClass, key_cancelled),
                       NULL,
                       NULL,
                       g_cclosure_marshal_VOID__OBJECT,
