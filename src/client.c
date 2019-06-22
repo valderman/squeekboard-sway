@@ -101,7 +101,7 @@ struct _ClientClass {
     GObjectClass parent_class;
 };
 
-G_DEFINE_TYPE (Client, client, G_TYPE_OBJECT);
+G_DEFINE_TYPE (SeatEmitter, client, G_TYPE_OBJECT);
 
 #if ENABLE_FOCUS_LISTENER
 #define IS_KEYBOARD_VISIBLE(client) (!client->follows_focus)
@@ -128,10 +128,10 @@ static void            focus_listener_cb    (const AtspiEvent       *event,
 static gboolean        keystroke_listener_cb (const AtspiDeviceEvent *stroke,
                                               void                   *user_data);
 #endif  /* HAVE_ATSPI */
-static gboolean        set_keyboards        (Client                 *client,
+static gboolean        set_keyboards        (SeatEmitter                 *client,
                                              const gchar * const    *keyboard);
 static gboolean        set_keyboards_from_xkl
-                                            (Client                 *client);
+                                            (SeatEmitter                 *client);
 #ifdef HAVE_XTEST
 static void            update_modifier_keycodes
                                             (Client                 *client);
@@ -143,7 +143,7 @@ client_set_property (GObject      *object,
                      const GValue *value,
                      GParamSpec   *pspec)
 {
-    Client *client = CLIENT(object);
+    SeatEmitter *client = CLIENT(object);
     GDBusConnection *connection;
     gchar **keyboards;
 
@@ -188,7 +188,7 @@ client_get_property (GObject    *object,
                      GValue     *value,
                      GParamSpec *pspec)
 {
-    Client *client = CLIENT(object);
+    SeatEmitter *client = CLIENT(object);
 
     switch (prop_id) {
     case PROP_EEKBOARD:
@@ -206,7 +206,7 @@ client_get_property (GObject    *object,
 static void
 client_dispose (GObject *object)
 {
-    Client *client = CLIENT(object);
+    SeatEmitter *client = CLIENT(object);
 
     client_disable_xkl (client);
 
@@ -246,7 +246,7 @@ client_dispose (GObject *object)
 static void
 client_finalize (GObject *object)
 {
-    Client *client = CLIENT(object);
+    SeatEmitter *client = CLIENT(object);
 
     g_slist_free (client->keyboards);
     G_OBJECT_CLASS (client_parent_class)->finalize (object);
@@ -301,13 +301,13 @@ client_class_init (ClientClass *klass)
 }
 
 static void
-client_init (Client *client)
+client_init (SeatEmitter *client)
 {
     client->settings = g_settings_new ("org.fedorahosted.eekboard");
 }
 
 gboolean
-client_set_keyboards (Client              *client,
+client_set_keyboards (SeatEmitter              *client,
                       const gchar * const *keyboards)
 {
     gboolean retval;
@@ -318,7 +318,7 @@ client_set_keyboards (Client              *client,
 }
 
 gboolean
-client_enable_xkl (Client *client)
+client_enable_xkl (SeatEmitter *client)
 {
     GdkDisplay *display = gdk_display_get_default ();
     gboolean retval;
@@ -361,7 +361,7 @@ client_enable_xkl (Client *client)
 }
 
 void
-client_disable_xkl (Client *client)
+client_disable_xkl (SeatEmitter *client)
 {
     if (client->xkl_engine) {
         xkl_engine_stop_listen (client->xkl_engine, XKLL_TRACK_KEYBOARD_STATE);
@@ -618,7 +618,7 @@ add_match_rule (GDBusConnection *connection,
 }
 
 static gboolean
-on_hide_keyboard_timeout (Client *client)
+on_hide_keyboard_timeout (SeatEmitter *client)
 {
     eekboard_client_hide_keyboard (client->eekboard, NULL);
     client->hide_keyboard_timeout_id = 0;
@@ -631,7 +631,7 @@ focus_message_filter (GDBusConnection *connection,
                       gboolean         incoming,
                       gpointer         user_data)
 {
-    Client *client = user_data;
+    SeatEmitter *client = user_data;
 
     if (incoming &&
         g_strcmp0 (g_dbus_message_get_interface (message),
@@ -661,7 +661,7 @@ focus_message_filter (GDBusConnection *connection,
 static void
 _ibus_connect_focus_handlers (GDBusConnection *connection, gpointer user_data)
 {
-    Client *client = user_data;
+    SeatEmitter *client = user_data;
 
     add_match_rule (connection,
                     "type='method_call',"
@@ -679,7 +679,7 @@ _ibus_connect_focus_handlers (GDBusConnection *connection, gpointer user_data)
 }
 
 gboolean
-client_enable_ibus_focus (Client *client)
+client_enable_ibus_focus (SeatEmitter *client)
 {
     if (client->ibus_connection == NULL) {
         const gchar *ibus_address;
@@ -711,7 +711,7 @@ client_enable_ibus_focus (Client *client)
 }
 
 void
-client_disable_ibus_focus (Client *client)
+client_disable_ibus_focus (SeatEmitter *client)
 {
     client->follows_focus = FALSE;
 
@@ -725,10 +725,10 @@ client_disable_ibus_focus (Client *client)
     }
 }
 
-Client *
+SeatEmitter *
 client_new (GDBusConnection *connection)
 {
-    Client *client = g_object_new (TYPE_CLIENT,
+    SeatEmitter *client = g_object_new (TYPE_CLIENT,
                                    "connection", connection,
                                    NULL);
     if (client->context)
@@ -741,7 +741,7 @@ filter_xkl_event (GdkXEvent *xev,
                   GdkEvent  *event,
                   gpointer   user_data)
 {
-    Client *client = user_data;
+    SeatEmitter *client = user_data;
     XEvent *xevent = (XEvent *)xev;
 
     xkl_engine_filter_events (client->xkl_engine, xevent);
@@ -752,7 +752,7 @@ static void
 on_xkl_config_changed (XklEngine *xklengine,
                        gpointer   user_data)
 {
-    Client *client = user_data;
+    SeatEmitter *client = user_data;
     gboolean retval;
 
     retval = set_keyboards_from_xkl (client);
@@ -764,7 +764,7 @@ on_xkl_config_changed (XklEngine *xklengine,
 }
 
 static gboolean
-set_keyboards (Client              *client,
+set_keyboards (SeatEmitter              *client,
                const gchar * const *keyboards)
 {
     guint keyboard_id;
@@ -805,7 +805,7 @@ set_keyboards (Client              *client,
 }
 
 static gboolean
-set_keyboards_from_xkl (Client *client)
+set_keyboards_from_xkl (SeatEmitter *client)
 {
     XklConfigRec *rec;
     gchar *layout, *keyboard;
@@ -837,7 +837,7 @@ on_xkl_state_changed (XklEngine           *xklengine,
                       gboolean             restore,
                       gpointer             user_data)
 {
-    Client *client = user_data;
+    SeatEmitter *client = user_data;
 
     if (type == GROUP_CHANGED)
         eekboard_context_set_group (client->context, value, NULL);
@@ -851,7 +851,7 @@ on_xkl_state_changed (XklEngine           *xklengine,
    - get_keycode_from_gdk_keymap (Caribou: best_keycode_keyval_match)
 */
 static guint
-get_replaced_keycode (Client *client)
+get_replaced_keycode (SeatEmitter *client)
 {
     guint keycode;
 
@@ -876,7 +876,7 @@ get_replaced_keycode (Client *client)
    non-zero keycode), it simply changes the current map with the
    specified KEYCODE and KEYSYM. */
 static gboolean
-replace_keycode (Client *client,
+replace_keycode (SeatEmitter *client,
                  guint   keycode,
                  guint  *keysym)
 {
@@ -904,7 +904,7 @@ return TRUE; // FIXME: no xkb allocated at the moment, pretending all is fine
 }
 
 static gboolean
-get_keycode_from_gdk_keymap (Client *client,
+get_keycode_from_gdk_keymap (SeatEmitter *client,
                              guint           keysym,
                              guint          *keycode,
                              guint          *modifiers)
@@ -932,7 +932,7 @@ get_keycode_from_gdk_keymap (Client *client,
     return TRUE;
 }
 
-int WaylandFakeKeyEvent(
+int send_virtual_keyboard_key(
     Display* dpy,
     unsigned int keycode,
     Bool is_press,
@@ -943,7 +943,7 @@ int WaylandFakeKeyEvent(
 
 /* never actually used? */
 static void
-send_fake_modifier_key_event (Client         *client,
+send_fake_modifier_key_event (SeatEmitter         *client,
                               EekModifierType modifiers,
                               gboolean        is_pressed)
 {
@@ -957,7 +957,7 @@ send_fake_modifier_key_event (Client         *client,
             printf("Trying to send a modifier %d press %d\n", i, is_pressed);
             g_return_if_fail (keycode > 0);
 
-            WaylandFakeKeyEvent (xdisplay,
+            send_virtual_keyboard_key (xdisplay,
                                keycode,
                                is_pressed,
                                CurrentTime);
@@ -967,7 +967,7 @@ send_fake_modifier_key_event (Client         *client,
 }
 
 static void
-send_fake_key_event (Client  *client,
+send_fake_key_event (SeatEmitter  *client,
                      guint    xkeysym,
                      guint    keyboard_modifiers)
 {
@@ -1006,9 +1006,9 @@ send_fake_key_event (Client  *client,
     modifiers |= keyboard_modifiers;
 
     send_fake_modifier_key_event (client, modifiers, TRUE);
-    WaylandFakeKeyEvent (xdisplay, keycode, TRUE, 20);
+    send_virtual_keyboard_key (xdisplay, keycode, TRUE, 20);
     //XSync (xdisplay, False);
-    WaylandFakeKeyEvent (xdisplay, keycode, FALSE, 20);
+    send_virtual_keyboard_key (xdisplay, keycode, FALSE, 20);
     // XSync (xdisplay, False);
     send_fake_modifier_key_event (client, modifiers, FALSE);
 
@@ -1017,7 +1017,7 @@ send_fake_key_event (Client  *client,
 }
 
 static void
-send_fake_key_events (Client    *client,
+send_fake_key_events (SeatEmitter    *client,
                       EekSymbol *symbol,
                       guint      keyboard_modifiers)
 {
@@ -1063,7 +1063,7 @@ on_key_activated (EekboardContext *context,
                   guint            modifiers,
                   gpointer         user_data)
 {
-    Client *client = user_data;
+    SeatEmitter *client = user_data;
 
     if (g_strcmp0 (eek_symbol_get_name (symbol), "cycle-keyboard") == 0) {
         client->keyboards_head = g_slist_next (client->keyboards_head);
@@ -1119,7 +1119,7 @@ update_modifier_keycodes (Client *client)
 }
 #endif
 gboolean
-client_enable_xtest (Client *client)
+client_enable_xtest (SeatEmitter *client)
 {
     //GdkDisplay *display = gdk_display_get_default ();
     //Display *xdisplay = GDK_DISPLAY_XDISPLAY (display);
@@ -1156,7 +1156,7 @@ client_enable_xtest (Client *client)
 }
 
 void
-client_disable_xtest (Client *client)
+client_disable_xtest (SeatEmitter *client)
 {
     //if (client->xkb) {
       //  XkbFreeKeyboard (client->xkb, 0, TRUE);	/* free_all = TRUE */

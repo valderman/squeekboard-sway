@@ -34,6 +34,7 @@ sources = [
   enums,
   keysym_entries,
   marshalers,
+  '../eekboard/keymap.c',
   '../eekboard/key-emitter.c',
   '../eekboard/eekboard-context-service.c',
   '../eekboard/eekboard-context.c',
@@ -51,7 +52,9 @@ deps = [
   dependency('gtk+-3.0', version: '>=3.0'),
   dependency('libcroco-0.6'),
   dependency('wayland-client', version: '>=1.14'),
+  dependency('xkbcommon'),
   cc.find_library('m'),
+  cc.find_library('rt'),
 #  dependency('libxklavier'), # FIXME remove
 ]
 

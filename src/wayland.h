@@ -2,12 +2,14 @@
 #define WAYLAND_H
 
 #include "wlr-layer-shell-unstable-v1-client-protocol.h"
+#include "virtual-keyboard-unstable-v1-client-protocol.h"
 
 #include <gmodule.h>
 
 
 struct squeek_wayland {
     struct zwlr_layer_shell_v1 *layer_shell;
+    struct zwp_virtual_keyboard_manager_v1 *virtual_keyboard_manager;
     GPtrArray *outputs; // *wl_output
     struct wl_seat *seat;
 };

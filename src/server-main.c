@@ -38,6 +38,14 @@
 
 #include <gdk/gdkwayland.h>
 
+
+/// Global application state
+struct squeekboard {
+    struct squeek_wayland wayland;
+    EekboardContextService *context;
+};
+
+
 static gboolean opt_system = FALSE;
 static gchar *opt_address = NULL;
 
@@ -93,17 +101,25 @@ registry_handle_global (void *data,
                         const char *interface,
                         uint32_t version)
 {
-    struct squeek_wayland *wayland = data;
+    // currently only v1 supported for most interfaces,
+    // so there's no reason to check for available versions.
+    // Even when lower version would be served, it would not be supported,
+    // causing a hard exit
+    (void)version;
+    struct squeekboard *instance = data;
 
     if (!strcmp (interface, zwlr_layer_shell_v1_interface.name)) {
-        wayland->layer_shell = wl_registry_bind (registry, name,
+        instance->wayland.layer_shell = wl_registry_bind (registry, name,
             &zwlr_layer_shell_v1_interface, 1);
+    } else if (!strcmp (interface, zwp_virtual_keyboard_manager_v1_interface.name)) {
+        instance->wayland.virtual_keyboard_manager = wl_registry_bind(registry, name,
+            &zwp_virtual_keyboard_manager_v1_interface, 1);
     } else if (!strcmp (interface, "wl_output")) {
         struct wl_output *output = wl_registry_bind (registry, name,
             &wl_output_interface, 2);
-        g_ptr_array_add (wayland->outputs, output);
+        g_ptr_array_add (instance->wayland.outputs, output);
     } else if (!strcmp(interface, "wl_seat")) {
-        wayland->seat = wl_registry_bind(registry, name,
+        instance->wayland.seat = wl_registry_bind(registry, name,
             &wl_seat_interface, 1);
     }
 }
@@ -139,17 +155,33 @@ main (int argc, char **argv)
 
     if (display == NULL) {
         g_error ("Failed to get display: %m\n");
+        exit(1);
     }
 
-    struct squeek_wayland wayland = {0};
-    squeek_wayland_init (&wayland);
-    struct wl_registry *registry = wl_display_get_registry (display);
-    wl_registry_add_listener (registry, &registry_listener, &wayland);
-    squeek_wayland_set_global(&wayland);
 
-    EekboardContextService *context = create_context();
+    struct squeekboard instance = {0};
+    squeek_wayland_init (&instance.wayland);
+    struct wl_registry *registry = wl_display_get_registry (display);
+    wl_registry_add_listener (registry, &registry_listener, &instance);
+    wl_display_roundtrip(display); // wait until the registry is actually populated
+    squeek_wayland_set_global(&instance.wayland);
+
+    if (!instance.wayland.seat) {
+        g_error("No seat Wayland global available.");
+        exit(1);
+    }
+    if (!instance.wayland.virtual_keyboard_manager) {
+        g_error("No virtual keyboard manager Wayland global available.");
+        exit(1);
+    }
+
+    instance.context = create_context();
+
     // set up dbus
 
+    // TODO: make dbus errors non-always-fatal
+    // dbus is not strictly necessary for the useful operation
+    // if text-input is used, as it can bring the keyboard in and out
     GBusType bus_type;
     if (opt_system)
         bus_type = G_BUS_TYPE_SYSTEM;
@@ -191,16 +223,13 @@ main (int argc, char **argv)
         break;
     }
 
-    // TODO: make dbus errors non-always-fatal
-    // dbus is not strictly necessary for the useful operation
-    // if text-input is used, as it can bring the keyboard in and out
     EekboardService *service = eekboard_service_new (connection, EEKBOARD_SERVICE_PATH);
 
     if (service == NULL) {
-        g_printerr ("Can't create server\n");
+        g_printerr ("Can't create dbus server\n");
         exit (1);
     } else {
-        eekboard_service_set_context(service, context);
+        eekboard_service_set_context(service, instance.context);
     }
 
     guint owner_id = g_bus_own_name_on_connection (connection,
@@ -226,6 +255,6 @@ main (int argc, char **argv)
     g_object_unref (connection);
     g_main_loop_unref (loop);
 
-    squeek_wayland_deinit (&wayland);
+    squeek_wayland_deinit (&instance.wayland);
     return 0;
 }

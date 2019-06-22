@@ -56,7 +56,8 @@ struct _EekLayoutClass
     GObjectClass parent_class;
 
     /*< public >*/
-    EekKeyboard* (* create_keyboard) (EekLayout *self,
+    EekKeyboard* (* create_keyboard) (EekboardContextService *manager,
+                                      EekLayout *self,
                                       gdouble    initial_width,
                                       gdouble    initial_height);
 

@@ -32,7 +32,7 @@ G_BEGIN_DECLS
 /** Manages the liecycle of the window displaying layouts. */
 typedef struct _ServerContextService ServerContextService;
 
-ServerContextService *server_context_service_new ();
+EekboardContextService *server_context_service_new ();
 
 G_END_DECLS
 #endif  /* SERVER_CONTEXT_SERVICE_H */

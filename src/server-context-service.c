@@ -95,6 +95,17 @@ on_notify_keyboard (GObject    *object,
     const EekKeyboard *keyboard;
 
     keyboard = eekboard_context_service_get_keyboard (EEKBOARD_CONTEXT_SERVICE(context));
+
+    if (!keyboard) {
+        g_error("Programmer error: keyboard layout was unset!");
+    }
+
+    // The keymap will get set even if the window is hidden.
+    // It's not perfect,
+    // but simpler than adding a check in the window showing procedure
+    eekboard_context_service_set_keymap(EEKBOARD_CONTEXT_SERVICE(context),
+                                        keyboard);
+
     if (context->window) {
         if (keyboard == NULL) {
             gtk_widget_hide (context->window);
@@ -106,8 +117,9 @@ on_notify_keyboard (GObject    *object,
             g_signal_handler_block (context->window,
                                     context->notify_visible_handler);
             update_widget (context);
-            if (was_visible)
+            if (was_visible) {
                 gtk_widget_show_all (context->window);
+            }
             g_signal_handler_unblock (context->window,
                                       context->notify_visible_handler);
         }
@@ -492,9 +504,9 @@ server_context_service_init (ServerContextService *context)
                       context);
 }
 
-ServerContextService *
+EekboardContextService *
 server_context_service_new ()
 {
-    return g_object_new (SERVER_TYPE_CONTEXT_SERVICE,
-                         NULL);
+    return EEKBOARD_CONTEXT_SERVICE(g_object_new (SERVER_TYPE_CONTEXT_SERVICE,
+                         NULL));
 }

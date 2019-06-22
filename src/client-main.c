@@ -88,7 +88,7 @@ enum FocusListenerType {
 };
 
 static gboolean
-set_keyboards (Client              *client,
+set_keyboards (SeatEmitter              *client,
                const gchar * const *keyboards)
 {
     if (g_strv_length ((gchar **)keyboards) == 0) {
@@ -110,7 +110,7 @@ set_keyboards (Client              *client,
 int
 main (int argc, char **argv)
 {
-    Client *client = NULL;
+    SeatEmitter *client = NULL;
     EekboardClient *eekboard;
     EekboardContext *context;
     GBusType bus_type;

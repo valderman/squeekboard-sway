@@ -896,27 +896,25 @@ static const GMarkupParser prerequisites_parser = {
 };
 
 static EekKeyboard *
-eek_xml_layout_real_create_keyboard (EekLayout *self,
+eek_xml_layout_real_create_keyboard (EekboardContextService *manager,
+                                     EekLayout *self,
                                      gdouble    initial_width,
                                      gdouble    initial_height)
 {
     EekXmlLayout *layout = EEK_XML_LAYOUT (self);
-    EekKeyboard *keyboard;
-    gchar *filename, *path;
-    GList *loaded;
-    GError *error;
     gboolean retval;
 
     /* Create an empty keyboard to which geometry and symbols
        information are applied. */
-    keyboard = g_object_new (EEK_TYPE_KEYBOARD, "layout", layout, NULL);
+    EekKeyboard *keyboard = g_object_new (EEK_TYPE_KEYBOARD, "layout", layout, NULL);
+    keyboard->manager = manager;
 
     /* Read geometry information. */
-    filename = g_strdup_printf ("%s.xml", layout->priv->desc->geometry);
-    path = g_build_filename (layout->priv->keyboards_dir, "geometry", filename, NULL);
+    gchar *filename = g_strdup_printf ("%s.xml", layout->priv->desc->geometry);
+    gchar *path = g_build_filename (layout->priv->keyboards_dir, "geometry", filename, NULL);
     g_free (filename);
 
-    error = NULL;
+    GError *error = NULL;
     retval = parse_geometry (path, keyboard, &error);
     g_free (path);
     if (!retval) {
@@ -929,7 +927,7 @@ eek_xml_layout_real_create_keyboard (EekLayout *self,
     }
 
     /* Read symbols information. */
-    loaded = NULL;
+    GList *loaded = NULL;
     retval = parse_symbols_with_prerequisites (layout->priv->keyboards_dir,
                                                layout->priv->desc->symbols,
                                                keyboard,

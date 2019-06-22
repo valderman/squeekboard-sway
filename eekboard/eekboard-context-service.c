@@ -29,8 +29,17 @@
 #include "config.h"
 #endif  /* HAVE_CONFIG_H */
 
-#include "eekboard/key-emitter.h"
 #include "eekboard/eekboard-context-service.h"
+
+#include <fcntl.h>
+#include <stdio.h>
+#include <string.h>
+#include <sys/mman.h>
+#include <sys/random.h> // TODO: this is Linux-specific
+#include <xkbcommon/xkbcommon.h>
+
+#include "eekboard/key-emitter.h"
+#include "wayland.h"
 //#include "eekboard/eekboard-xklutil.h"
 //#include "eek/eek-xkl.h"
 
@@ -116,8 +125,9 @@ eekboard_context_service_real_create_keyboard (EekboardContextService *self,
             g_warning ("can't create keyboard %s: %s",
                        keyboard_type, error->message);
             g_error_free (error);
+            keyboard_type = "us";
             error = NULL;
-            layout = eek_xml_layout_new ("us", &error);
+            layout = eek_xml_layout_new (keyboard_type, &error);
             if (layout == NULL) {
                 g_error ("failed to create fallback layout: %s", error->message);
                 g_error_free (error);
@@ -125,8 +135,53 @@ eekboard_context_service_real_create_keyboard (EekboardContextService *self,
             }
         }
     }
-    keyboard = eek_keyboard_new (layout, CSW, CSH);
+    keyboard = eek_keyboard_new (self, layout, CSW, CSH);
     g_object_unref (layout);
+
+    struct xkb_context *context = xkb_context_new(XKB_CONTEXT_NO_FLAGS);
+    if (!context) {
+        g_error("No context created");
+    }
+
+    struct xkb_rule_names rules = { 0 };
+    rules.layout = strdup(keyboard_type);
+    struct xkb_keymap *keymap = xkb_keymap_new_from_names(context, &rules,
+        XKB_KEYMAP_COMPILE_NO_FLAGS);
+    if (!keymap) {
+        g_error("Bad keymap");
+    }
+    keyboard->keymap = keymap;
+    char *keymap_str = xkb_keymap_get_as_string(keymap, XKB_KEYMAP_FORMAT_TEXT_V1);
+    int f = open("km", O_CREAT|O_WRONLY);
+    write(f, keymap_str, strlen(keymap_str) + 1);
+    if (!keymap_str) {
+        g_error("Keymap was not serialized");
+    }
+    keyboard->keymap_len = strlen(keymap_str) + 1;
+    char *path = strdup("/eek_keymap-XXXXXX");
+    char *r = &path[strlen(path) - 6];
+    getrandom(r, 6, GRND_NONBLOCK);
+    for (uint i = 0; i < 6; i++) {
+        r[i] = (r[i] & 0b1111111) | 0b1000000; // A-z
+        r[i] = r[i] > 'z' ? '?' : r[i]; // The randomizer doesn't need to be good...
+    }
+    int keymap_fd = shm_open(path, O_RDWR | O_CREAT | O_EXCL, 0600);
+    if (keymap_fd < 0) {
+        g_error("Failed to set up keymap fd");
+    }
+    keyboard->keymap_fd = keymap_fd;
+    shm_unlink(path);
+    if (ftruncate(keymap_fd, (off_t)keyboard->keymap_len)) {
+        g_error("Failed to increase keymap fd size");
+    }
+    char *ptr = mmap(NULL, keyboard->keymap_len, PROT_WRITE, MAP_SHARED,
+        keymap_fd, 0);
+    if ((void*)ptr == (void*)-1) {
+        g_error("Failed to set up mmap");
+    }
+    strcpy(ptr, keymap_str);
+    munmap(ptr, keyboard->keymap_len);
+    free(keymap_str);
 
     return keyboard;
 }
@@ -233,14 +288,10 @@ settings_get_layout(GSettings *settings, char **type, char **layout)
     g_variant_iter_free(iter);
 }
 
-
 static void
 settings_update_layout(EekboardContextService *context) {
-    EekboardContextServiceClass *klass = EEKBOARD_CONTEXT_SERVICE_GET_CLASS(context);
-    static guint keyboard_id = 0;
     g_autofree gchar *keyboard_type = NULL;
     g_autofree gchar *keyboard_layout = NULL;
-
     settings_get_layout(context->priv->settings, &keyboard_type, &keyboard_layout);
 
     if (!keyboard_type) {
@@ -250,10 +301,13 @@ settings_update_layout(EekboardContextService *context) {
         keyboard_layout = g_strdup("undefined");
     }
 
+    // generic part follows
+    static guint keyboard_id = 0;
     EekKeyboard *keyboard = g_hash_table_lookup(context->priv->keyboard_hash,
                                                 GUINT_TO_POINTER(keyboard_id));
     // create a keyboard
     if (!keyboard) {
+        EekboardContextServiceClass *klass = EEKBOARD_CONTEXT_SERVICE_GET_CLASS(context);
         keyboard = klass->create_keyboard (context, keyboard_layout);
         eek_keyboard_set_modifier_behavior (keyboard,
                                             EEK_MODIFIER_BEHAVIOR_LATCH);
@@ -270,7 +324,6 @@ settings_update_layout(EekboardContextService *context) {
     context->priv->keyboard = keyboard;
     // TODO: this used to save the group, why?
     //group = eek_element_get_group (EEK_ELEMENT(context->priv->keyboard));
-
     g_object_notify (G_OBJECT(context), "keyboard");
 }
 
@@ -278,16 +331,24 @@ static gboolean
 settings_handle_layout_changed(GSettings *s,
                                gpointer keys, gint n_keys,
                                gpointer user_data) {
+    (void)s;
+    (void)keys;
+    (void)n_keys;
     EekboardContextService *context = user_data;
     settings_update_layout(context);
     return TRUE;
 }
 
-
 static void
 eekboard_context_service_constructed (GObject *object)
 {
     EekboardContextService *context = EEKBOARD_CONTEXT_SERVICE (object);
+    context->virtual_keyboard = zwp_virtual_keyboard_manager_v1_create_virtual_keyboard(
+                squeek_wayland->virtual_keyboard_manager,
+                squeek_wayland->seat);
+    if (!context->virtual_keyboard) {
+        g_error("Programmer error: Failed to receive a virtual keyboard instance");
+    }
     settings_update_layout(context);
 }
 
@@ -562,4 +623,12 @@ gboolean
 eekboard_context_service_get_fullscreen (EekboardContextService *context)
 {
     return context->priv->fullscreen;
+}
+
+void eekboard_context_service_set_keymap(EekboardContextService *context,
+                                         const EekKeyboard *keyboard)
+{
+    zwp_virtual_keyboard_v1_keymap(context->virtual_keyboard,
+        WL_KEYBOARD_KEYMAP_FORMAT_XKB_V1,
+        keyboard->keymap_fd, keyboard->keymap_len);
 }

@@ -425,15 +425,6 @@ eek_gtk_keyboard_new (EekKeyboard *keyboard)
     return g_object_new (EEK_TYPE_GTK_KEYBOARD, "keyboard", keyboard, NULL);
 }
 
-static EekColor *
-color_from_gdk_color (GdkColor *gdk_color)
-{
-    return eek_color_new (gdk_color->red / (gdouble)0xFFFF,
-                          gdk_color->green / (gdouble)0xFFFF,
-                          gdk_color->blue / (gdouble)0xFFFF,
-                          1.0);
-}
-
 static void
 magnify_bounds (GtkWidget *self,
                 EekBounds *bounds,
@@ -585,7 +576,7 @@ on_key_cancelled (EekKey      *key,
     if (!priv->renderer)
         return;
 
-    render_released_key (self, key);
+    render_released_key (GTK_WIDGET(self), key);
 }
 
 static void

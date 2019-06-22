@@ -32,6 +32,7 @@
 
 #include "eek-layout.h"
 #include "eek-keyboard.h"
+#include "eekboard/eekboard-context-service.h"
 
 G_DEFINE_ABSTRACT_TYPE (EekLayout, eek_layout, G_TYPE_OBJECT);
 
@@ -55,14 +56,16 @@ eek_layout_init (EekLayout *self)
  * Create a new #EekKeyboard based on @layout.
  */
 EekKeyboard *
-eek_keyboard_new (EekLayout *layout,
+eek_keyboard_new (EekboardContextService *manager,
+                  EekLayout *layout,
                   gdouble    initial_width,
                   gdouble    initial_height)
 {
     g_assert (EEK_IS_LAYOUT(layout));
     g_assert (EEK_LAYOUT_GET_CLASS(layout)->create_keyboard);
 
-    return EEK_LAYOUT_GET_CLASS(layout)->create_keyboard (layout,
+    return EEK_LAYOUT_GET_CLASS(layout)->create_keyboard (manager,
+                                                          layout,
                                                           initial_width,
                                                           initial_height);
 }

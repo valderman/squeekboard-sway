@@ -256,18 +256,15 @@ set_modifiers_with_key (EekKeyboard    *self,
 
 void eek_keyboard_press_key(EekKeyboard *keyboard, EekKey *key, guint32 timestamp) {
     EekKeyboardPrivate *priv = EEK_KEYBOARD_GET_PRIVATE(keyboard);
-    EekSymbol *symbol;
-    EekModifierType modifier;
 
     eek_key_set_pressed(key, TRUE);
-    key = EEK_KEY(key);
     priv->pressed_keys = g_list_prepend (priv->pressed_keys, key);
 
-    symbol = eek_key_get_symbol_with_fallback (key, 0, 0);
+    EekSymbol *symbol = eek_key_get_symbol_with_fallback (key, 0, 0);
     if (!symbol)
         return;
 
-    modifier = eek_symbol_get_modifier_mask (symbol);
+    EekModifierType modifier = eek_symbol_get_modifier_mask (symbol);
     if (priv->modifier_behavior == EEK_MODIFIER_BEHAVIOR_NONE) {
         set_modifiers_with_key (keyboard, key, priv->modifiers | modifier);
         set_level_from_modifiers (keyboard);
@@ -277,11 +274,8 @@ void eek_keyboard_press_key(EekKeyboard *keyboard, EekKey *key, guint32 timestam
 
     guint keycode = eek_key_get_keycode (key);
     guint modifiers = eek_keyboard_get_modifiers (keyboard);
-    // Insert
-    EekboardContext ec = {0};
-    Client c = {&ec, 0, {0}};
 
-    emit_key_activated(&ec, keycode, symbol, modifiers, &c, TRUE, timestamp);
+    emit_key_activated(keyboard->manager, keyboard, keycode, symbol, modifiers, TRUE, timestamp);
 }
 
 void eek_keyboard_release_key( EekKeyboard *keyboard,
@@ -328,11 +322,8 @@ void eek_keyboard_release_key( EekKeyboard *keyboard,
 
     guint keycode = eek_key_get_keycode (key);
     guint modifiers = eek_keyboard_get_modifiers (keyboard);
-    // Insert
-    EekboardContext ec = {0};
-    Client c = {&ec, 0, {0}};
 
-    emit_key_activated(&ec, keycode, symbol, modifiers, &c, FALSE, timestamp);
+    emit_key_activated(keyboard->manager, keyboard, keycode, symbol, modifiers, FALSE, timestamp);
 }
 
 static void

@@ -21,9 +21,6 @@ Features
 - Use Wayland virtual keyboard protocol
 - Use Wayland text input protocol
 - Use Wayland input method protocol
-- Become a Wayland layer shell
-- Remove eekboard-client
-- Use sm.puri.OSK0 DBus interface
 - Pick up DBus interface files from /usr/share
 
 Building

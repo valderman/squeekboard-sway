@@ -26,6 +26,7 @@
 #define EEK_KEYBOARD_H 1
 
 #include <glib-object.h>
+#include <xkbcommon/xkbcommon.h>
 #include "eek-container.h"
 #include "eek-types.h"
 #include "eek-layout.h"
@@ -56,6 +57,11 @@ struct _EekKeyboard
     EekContainer parent;
 
     EekKeyboardPrivate *priv;
+    struct xkb_keymap *keymap;
+    int keymap_fd; // keymap formatted as XKB string
+    size_t keymap_len; // length of the data inside keymap_fd
+
+    EekboardContextService *manager; // unowned reference
 };
 
 /**
@@ -115,12 +121,13 @@ struct _EekModifierKey {
 };
 typedef struct _EekModifierKey EekModifierKey;
 
-GType               eek_keyboard_get_type
-                                     (void) G_GNUC_CONST;
 
-EekKeyboard        *eek_keyboard_new (EekLayout          *layout,
+EekKeyboard        *eek_keyboard_new (EekboardContextService *manager,
+                                      EekLayout          *layout,
                                       gdouble             initial_width,
                                       gdouble             initial_height);
+GType               eek_keyboard_get_type
+                                     (void) G_GNUC_CONST;
 EekLayout          *eek_keyboard_get_layout
                                      (EekKeyboard        *keyboard);
 void                eek_keyboard_get_size

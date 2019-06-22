@@ -320,21 +320,24 @@ create_keyboard (EekXkbLayout *layout, EekKeyboard *keyboard)
 }
 
 static EekKeyboard *
-eek_xkb_layout_real_create_keyboard (EekLayout *self,
+eek_xkb_layout_real_create_keyboard (EekboardContextService *manager,
+                                     EekLayout *self,
                                      gdouble    initial_width,
                                      gdouble    initial_height)
 {
-    EekXkbLayoutPrivate *priv = EEK_XKB_LAYOUT_GET_PRIVATE (self);
-    EekBounds bounds;
-    EekKeyboard *keyboard;
+    EekKeyboard *keyboard = g_object_new (EEK_TYPE_KEYBOARD, "layout", self, NULL);
+    keyboard->manager = manager;
 
-    keyboard = g_object_new (EEK_TYPE_KEYBOARD, "layout", self, NULL);
-    bounds.x = bounds.y = 0.0;
-    bounds.width = initial_width;
-    bounds.height = initial_height;
+    EekBounds bounds = {
+        .x = 0.0,
+        .y = 0.0,
+        .width = initial_width,
+        .height = initial_height
+    };
     eek_element_set_bounds (EEK_ELEMENT(keyboard), &bounds);
 
     /* resolve modifiers dynamically assigned at run time */
+    EekXkbLayoutPrivate *priv = EEK_XKB_LAYOUT_GET_PRIVATE (self);
     eek_keyboard_set_num_lock_mask (keyboard,
                                     XkbKeysymToModifiers (priv->display,
                                                           XK_Num_Lock));

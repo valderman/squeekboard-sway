@@ -20,8 +20,23 @@
 /* This file is responsible for managing keycode data and emitting keycodes. */
 
 #include "eekboard/key-emitter.h"
+#include "eekboard/keymap.h"
 
 #include <gdk/gdk.h>
+
+#include "eekboard/eekboard-context-service.h"
+
+// TODO: decide whether it's this struct that carries the keyboard around in key-emitter or if the whole manager should be dragged around
+// if this is the carrier, then it should be made part of the manager
+// hint: check which fields need to be persisted between keypresses; which between keyboards
+typedef struct {
+    struct zwp_virtual_keyboard_v1 *virtual_keyboard; // unowned copy
+    struct xkb_keymap *keymap; // unowned copy
+    XkbDescRec *xkb;
+    guint modifier_keycodes[8];
+    gint group;
+} SeatEmitter;
+
 
 /* The following functions for keyboard mapping change are direct
    translation of the code in Caribou (in libcaribou/xadapter.vala):
@@ -33,7 +48,7 @@
 
 /* Find an unused keycode where a keysym can be assigned. Restricted to Level 1 */
 static guint
-get_replaced_keycode (Client *client)
+get_replaced_keycode (SeatEmitter *client)
 {
     guint keycode;
 return 0; // FIXME: no xkb allocated yet
@@ -58,7 +73,7 @@ return 0; // FIXME: no xkb allocated yet
    non-zero keycode), it simply changes the current map with the
    specified KEYCODE and KEYSYM. */
 static gboolean
-replace_keycode (Client *client,
+replace_keycode (SeatEmitter *emitter,
                  guint   keycode,
                  guint  *keysym)
 {
@@ -68,8 +83,8 @@ replace_keycode (Client *client,
     int keysyms_per_keycode;
     KeySym *syms;
 return TRUE; // FIXME: no xkb allocated at the moment, pretending all is fine
-    g_return_val_if_fail (client->xkb->min_key_code <= keycode &&
-                          keycode <= client->xkb->max_key_code,
+    g_return_val_if_fail (emitter->xkb->min_key_code <= keycode &&
+                          keycode <= emitter->xkb->max_key_code,
                           FALSE);
     g_return_val_if_fail (keysym != NULL, FALSE);
 /*
@@ -87,20 +102,19 @@ return TRUE; // FIXME: no xkb allocated at the moment, pretending all is fine
 }
 
 static gboolean
-get_keycode_from_gdk_keymap (Client *client,
+get_keycode_from_gdk_keymap (SeatEmitter *emitter,
                              guint           keysym,
                              guint          *keycode,
                              guint          *modifiers)
 {
-    GdkKeymap *keymap = gdk_keymap_get_default ();
     GdkKeymapKey *keys, *best_match = NULL;
-    gint n_keys, i;
+    guint n_keys, i;
 
-    if (!gdk_keymap_get_entries_for_keyval (keymap, keysym, &keys, &n_keys))
+    if (!squeek_keymap_get_entries_for_keyval (emitter->keymap, keysym, &keys, &n_keys))
         return FALSE;
 
     for (i = 0; i < n_keys; i++)
-        if (keys[i].group == client->context->group)
+        if (keys[i].group == emitter->group)
             best_match = &keys[i];
 
     if (!best_match) {
@@ -115,69 +129,63 @@ get_keycode_from_gdk_keymap (Client *client,
     return TRUE;
 }
 
-int WaylandFakeKeyEvent(
-    Display* dpy,
+int send_virtual_keyboard_key(
+    struct zwp_virtual_keyboard_v1 *keyboard,
     unsigned int keycode,
-    Bool is_press,
+    unsigned is_press,
     uint32_t timestamp
 ) {
-    printf("%d: Sending fake event %d press %d\n", timestamp, keycode, is_press);
+    zwp_virtual_keyboard_v1_key(keyboard, timestamp, keycode, (unsigned)is_press);
     return 0;
 }
 
 static void
-send_fake_modifier_key_event (Client         *client,
+send_fake_modifier_key_event (SeatEmitter         *emitter,
                               EekModifierType modifiers,
                               gboolean        is_pressed,
                               uint32_t        timestamp)
 {
-    GdkDisplay *display = gdk_display_get_default ();
-    Display *xdisplay = NULL; //GDK_DISPLAY_XDISPLAY (display);
     unsigned long i;
 
-    for (i = 0; i < G_N_ELEMENTS(client->modifier_keycodes); i++) {
+    for (i = 0; i < G_N_ELEMENTS(emitter->modifier_keycodes); i++) {
         if (modifiers & (1 << i)) {
-            guint keycode = client->modifier_keycodes[i];
+            guint keycode = emitter->modifier_keycodes[i];
             printf("Trying to send a modifier %ld press %d\n", i, is_pressed);
             g_return_if_fail (keycode > 0);
 
-            WaylandFakeKeyEvent (xdisplay,
-                                 keycode,
-                                 is_pressed,
-                                 timestamp);
+            send_virtual_keyboard_key (emitter->virtual_keyboard,
+                                       keycode,
+                                       is_pressed,
+                                       timestamp);
         }
     }
 }
 
 static void
-send_fake_key_event (Client  *client,
+send_fake_key_event (SeatEmitter *emitter,
                      guint    xkeysym,
                      guint    keyboard_modifiers,
                      gboolean pressed,
                      uint32_t timestamp)
 {
-    GdkDisplay *display = gdk_display_get_default ();
-    Display *xdisplay = NULL; // GDK_DISPLAY_XDISPLAY (display);
     EekModifierType modifiers;
-    guint keycode;
     guint old_keysym = xkeysym;
 
     g_return_if_fail (xkeysym > 0);
 
-    modifiers = 0;
-    if (!get_keycode_from_gdk_keymap (client, xkeysym, &keycode, &modifiers)) {
-        keycode = get_replaced_keycode (client);
+    guint keycode;
+    if (!get_keycode_from_gdk_keymap (emitter, xkeysym, &keycode, &modifiers)) {
+        keycode = get_replaced_keycode (emitter);
         if (keycode == 0) {
             g_warning ("no available keycode to replace");
             return;
         }
 
-        if (!replace_keycode (client, keycode, &old_keysym)) {
+        if (!replace_keycode (emitter, keycode, &old_keysym)) {
             g_warning ("failed to lookup X keysym %X", xkeysym);
             return;
         }
     }
-
     /* Clear level shift modifiers */
     keyboard_modifiers &= (unsigned)~EEK_SHIFT_MASK;
     keyboard_modifiers &= (unsigned)~EEK_LOCK_MASK;
@@ -190,16 +198,18 @@ send_fake_key_event (Client  *client,
 
     modifiers |= keyboard_modifiers;
 
-    send_fake_modifier_key_event (client, modifiers, TRUE, timestamp);
-    WaylandFakeKeyEvent (xdisplay, keycode, pressed, timestamp);
-    send_fake_modifier_key_event (client, modifiers, FALSE, timestamp);
+    send_fake_modifier_key_event (emitter, modifiers, TRUE, timestamp);
+
+    // There's something magical about subtracting/adding 8 to keycodes for some reason
+    send_virtual_keyboard_key (emitter->virtual_keyboard, keycode - 8, (unsigned)pressed, timestamp);
+    send_fake_modifier_key_event (emitter, modifiers, FALSE, timestamp);
 
     if (old_keysym != xkeysym)
-        replace_keycode (client, keycode, &old_keysym);
+        replace_keycode (emitter, keycode, &old_keysym);
 }
 
 static void
-send_fake_key_events (Client    *client,
+send_fake_key_events (SeatEmitter *emitter,
                       EekSymbol *symbol,
                       guint      keyboard_modifiers,
                       gboolean   pressed,
@@ -239,16 +249,16 @@ send_fake_key_events (Client    *client,
 
     if (EEK_IS_KEYSYM(symbol)) {
         guint xkeysym = eek_keysym_get_xkeysym (EEK_KEYSYM(symbol));
-        send_fake_key_event (client, xkeysym, keyboard_modifiers, pressed, timestamp);
+        send_fake_key_event (emitter, xkeysym, keyboard_modifiers, pressed, timestamp);
     }
 }
 
 void
-emit_key_activated (EekboardContext *context,
+emit_key_activated (EekboardContextService *manager,
+                    EekKeyboard     *keyboard,
                     guint            keycode,
                     EekSymbol       *symbol,
                     guint            modifiers,
-                    Client  *client,
                     gboolean pressed,
                     uint32_t timestamp)
 {
@@ -279,12 +289,15 @@ emit_key_activated (EekboardContext *context,
         return;
     }
 */
-    send_fake_key_events (client, symbol, modifiers, pressed, timestamp);
+    SeatEmitter emitter = {0};
+    emitter.virtual_keyboard = manager->virtual_keyboard;
+    emitter.keymap = keyboard->keymap;
+    send_fake_key_events (&emitter, symbol, modifiers, pressed, timestamp);
 }
 
 /* Finds the first key code for each modifier and saves it in modifier_keycodes */
 static void
-update_modifier_keycodes (Client *client)
+update_modifier_keycodes (SeatEmitter *client)
 {
     GdkDisplay *display = gdk_display_get_default ();
     Display *xdisplay = NULL; // GDK_DISPLAY_XDISPLAY (display);
@@ -307,7 +320,7 @@ update_modifier_keycodes (Client *client)
 }
 
 gboolean
-client_enable_xtest (Client *client)
+client_enable_xtest (SeatEmitter *client)
 {
     //GdkDisplay *display = gdk_display_get_default ();
     //Display *xdisplay = GDK_DISPLAY_XDISPLAY (display);
@@ -340,7 +353,7 @@ client_enable_xtest (Client *client)
 }
 
 void
-client_disable_xtest (Client *client)
+client_disable_xtest (SeatEmitter *client)
 {
     //if (client->xkb) {
       //  XkbFreeKeyboard (client->xkb, 0, TRUE);	/* free_all = TRUE */

@@ -41,6 +41,8 @@ typedef struct _EekboardServicePrivate EekboardServicePrivate;
 /**
  * EekboardService:
  *
+ * Manages DBus interaction.
+ *
  * The #EekboardService structure contains only private data and
  * should only be accessed using the provided API.
  */

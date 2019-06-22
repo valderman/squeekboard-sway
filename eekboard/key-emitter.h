@@ -7,26 +7,12 @@
 
 #include "eek/eek.h"
 
-typedef struct {
-    gint group;
-} EekboardContext;
-
-typedef struct {
-    EekboardContext *context;
-    XkbDescRec *xkb;
-    guint modifier_keycodes[8];
-} Client;
+#include "virtual-keyboard-unstable-v1-client-protocol.h"
 
 void
-emit_key_activated (EekboardContext *context,
+emit_key_activated (EekboardContextService *manager, EekKeyboard *keyboard,
                     guint            keycode,
                     EekSymbol       *symbol,
                     guint            modifiers,
-                    Client *client, gboolean pressed, uint32_t timestamp);
-
-gboolean
-client_enable_xtest (Client *client);
-
-void
-client_disable_xtest (Client *client);
+                    gboolean pressed, uint32_t timestamp);
 #endif // KEYEMITTER_H

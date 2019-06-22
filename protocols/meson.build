@@ -12,6 +12,7 @@ gen_scanner_client_code = generator(wl_scanner,
 wl_protos = [
   wl_protocol_dir + '/stable/xdg-shell/xdg-shell.xml',
   'wlr-layer-shell-unstable-v1.xml',
+  'virtual-keyboard-unstable-v1.xml',
 ]
 wl_proto_sources = []
 foreach proto: wl_protos

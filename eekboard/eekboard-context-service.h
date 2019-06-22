@@ -36,14 +36,15 @@ G_BEGIN_DECLS
 #define EEKBOARD_IS_CONTEXT_SERVICE_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), EEKBOARD_TYPE_CONTEXT_SERVICE))
 #define EEKBOARD_CONTEXT_SERVICE_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS ((obj), EEKBOARD_TYPE_CONTEXT_SERVICE, EekboardContextServiceClass))
 
-typedef struct _EekboardContextService EekboardContextService;
+
 typedef struct _EekboardContextServiceClass EekboardContextServiceClass;
 typedef struct _EekboardContextServicePrivate EekboardContextServicePrivate;
 
 /**
  * EekboardContextService:
  *
- * TODO: Restrict to managing keyboard layouts, and maybe button rerpeats.
+ * TODO: Restrict to managing keyboard layouts, and maybe button repeats,
+ * and the virtual keyboard protocol.
  *
  * The #EekboardContextService structure contains only private data
  * and should only be accessed using the provided API.
@@ -52,6 +53,8 @@ struct _EekboardContextService {
     GObject parent;
 
     EekboardContextServicePrivate *priv;
+
+    struct zwp_virtual_keyboard_v1 *virtual_keyboard;
 };
 
 /**
@@ -95,6 +98,9 @@ EekKeyboard  *eekboard_context_service_get_keyboard
                                               (EekboardContextService *context);
 gboolean      eekboard_context_service_get_fullscreen
                                               (EekboardContextService *context);
+
+void eekboard_context_service_set_keymap(EekboardContextService *context,
+                                         const EekKeyboard *keyboard);
 
 G_END_DECLS
 #endif  /* EEKBOARD_CONTEXT_SERVICE_H */

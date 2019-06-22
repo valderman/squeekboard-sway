@@ -150,6 +150,8 @@ typedef struct _EekBounds EekBounds;
 typedef struct _EekOutline EekOutline;
 typedef struct _EekColor EekColor;
 
+typedef struct _EekboardContextService EekboardContextService;
+
 /**
  * EekPoint:
  * @x: X coordinate of the point
