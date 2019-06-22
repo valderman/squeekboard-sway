@@ -40,7 +40,6 @@
 enum {
     PROP_0,
     PROP_OBJECT_PATH,
-    PROP_CONNECTION,
     PROP_CLIENT_NAME,
     PROP_KEYBOARD,
     PROP_VISIBLE,
@@ -61,7 +60,6 @@ static guint signals[LAST_SIGNAL] = { 0, };
     (G_TYPE_INSTANCE_GET_PRIVATE ((obj), EEKBOARD_TYPE_CONTEXT_SERVICE, EekboardContextServicePrivate))
 
 struct _EekboardContextServicePrivate {
-    GDBusConnection *connection;
     GDBusNodeInfo *introspection_data;
 
     guint registration_id;
@@ -204,9 +202,6 @@ eekboard_context_service_real_show_keyboard (EekboardContextService *self)
 {
     gboolean visible = self->priv->visible;
     self->priv->visible = TRUE;
-    if (visible != self->priv->visible)
-        emit_visibility_changed_signal (self,
-                                        self->priv->visible);
 }
 
 static void
@@ -214,9 +209,6 @@ eekboard_context_service_real_hide_keyboard (EekboardContextService *self)
 {
     gboolean visible = self->priv->visible;
     self->priv->visible = FALSE;
-    if (visible != self->priv->visible)
-        emit_visibility_changed_signal (self,
-                                        self->priv->visible);
 }
 
 static void
@@ -226,19 +218,12 @@ eekboard_context_service_set_property (GObject      *object,
                                        GParamSpec   *pspec)
 {
     EekboardContextService *context = EEKBOARD_CONTEXT_SERVICE(object);
-    GDBusConnection *connection;
 
     switch (prop_id) {
     case PROP_OBJECT_PATH:
         if (context->priv->object_path)
             g_free (context->priv->object_path);
         context->priv->object_path = g_value_dup_string (value);
-        break;
-    case PROP_CONNECTION:
-        connection = g_value_get_object (value);
-        if (context->priv->connection)
-            g_object_unref (context->priv->connection);
-        context->priv->connection = g_object_ref (connection);
         break;
     case PROP_CLIENT_NAME:
         if (context->priv->client_name)
@@ -279,9 +264,6 @@ eekboard_context_service_get_property (GObject    *object,
     case PROP_OBJECT_PATH:
         g_value_set_string (value, context->priv->object_path);
         break;
-    case PROP_CONNECTION:
-        g_value_set_object (value, context->priv->connection);
-        break;
     case PROP_CLIENT_NAME:
         g_value_set_string (value, context->priv->client_name);
         break;
@@ -308,17 +290,6 @@ eekboard_context_service_dispose (GObject *object)
     if (context->priv->keyboard_hash) {
         g_hash_table_destroy (context->priv->keyboard_hash);
         context->priv->keyboard_hash = NULL;
-    }
-
-    if (context->priv->connection) {
-        if (context->priv->registration_id > 0) {
-            g_dbus_connection_unregister_object (context->priv->connection,
-                                                 context->priv->registration_id);
-            context->priv->registration_id = 0;
-        }
-
-        g_object_unref (context->priv->connection);
-        context->priv->connection = NULL;
     }
 
     if (context->priv->introspection_data) {
@@ -510,20 +481,6 @@ eekboard_context_service_class_init (EekboardContextServiceClass *klass)
                                      pspec);
 
     /**
-     * EekboardContextService:connection:
-     *
-     * D-Bus connection.
-     */
-    pspec = g_param_spec_object ("connection",
-                                 "Connection",
-                                 "Connection",
-                                 G_TYPE_DBUS_CONNECTION,
-                                 G_PARAM_CONSTRUCT | G_PARAM_READWRITE);
-    g_object_class_install_property (gobject_class,
-                                     PROP_CONNECTION,
-                                     pspec);
-
-    /**
      * EekboardContextService:client-name:
      *
      * Name of a client who created this context service.
@@ -630,31 +587,6 @@ disconnect_keyboard_signals (EekboardContextService *context)
     }
 }
 
-static void
-emit_visibility_changed_signal (EekboardContextService *context,
-                                gboolean                visible)
-{
-    return; // FIXME: update Visible property
-    if (context->priv->connection && context->priv->enabled) {
-        GError *error = NULL;
-        gboolean retval;
-
-        retval = g_dbus_connection_emit_signal (context->priv->connection,
-                                                NULL,
-                                                context->priv->object_path,
-                                                EEKBOARD_CONTEXT_SERVICE_INTERFACE,
-                                                "VisibilityChanged",
-                                                g_variant_new ("(b)", visible),
-                                                &error);
-        if (!retval) {
-            g_warning ("failed to emit VisibilityChanged signal: %s",
-                       error->message);
-            g_error_free (error);
-            g_assert_not_reached ();
-        }
-    }
-}
-
 static gboolean on_repeat_timeout (EekboardContextService *context);
 
 static gboolean
@@ -716,7 +648,6 @@ void
 eekboard_context_service_enable (EekboardContextService *context)
 {
     g_return_if_fail (EEKBOARD_IS_CONTEXT_SERVICE(context));
-    g_return_if_fail (context->priv->connection);
 
     if (!context->priv->enabled) {
         context->priv->enabled = TRUE;
@@ -737,27 +668,12 @@ eekboard_context_service_disable (EekboardContextService *context)
     GError *error;
 
     g_return_if_fail (EEKBOARD_IS_CONTEXT_SERVICE(context));
-    g_return_if_fail (context->priv->connection);
 
     if (context->priv->enabled) {
         gboolean retval;
 
         context->priv->enabled = FALSE;
 
-        error = NULL;
-        retval = g_dbus_connection_emit_signal (context->priv->connection,
-                                                NULL,
-                                                context->priv->object_path,
-                                                EEKBOARD_CONTEXT_SERVICE_INTERFACE,
-                                                "Disabled",
-                                                NULL,
-                                                &error);
-        if (!retval) {
-            g_warning ("failed to emit Disabled signal: %s",
-                       error->message);
-            g_error_free (error);
-            g_assert_not_reached ();
-        }
         g_signal_emit (context, signals[DISABLED], 0);
     }
 }
@@ -766,7 +682,6 @@ void
 eekboard_context_service_show_keyboard (EekboardContextService *context)
 {
     g_return_if_fail (EEKBOARD_IS_CONTEXT_SERVICE(context));
-    g_return_if_fail (context->priv->connection);
 
     EEKBOARD_CONTEXT_SERVICE_GET_CLASS(context)->show_keyboard (context);
 }
@@ -775,7 +690,6 @@ void
 eekboard_context_service_hide_keyboard (EekboardContextService *context)
 {
     g_return_if_fail (EEKBOARD_IS_CONTEXT_SERVICE(context));
-    g_return_if_fail (context->priv->connection);
 
     EEKBOARD_CONTEXT_SERVICE_GET_CLASS(context)->hide_keyboard (context);
 }
@@ -793,25 +707,9 @@ eekboard_context_service_destroy (EekboardContextService *context)
     GError *error;
 
     g_return_if_fail (EEKBOARD_IS_CONTEXT_SERVICE(context));
-    g_return_if_fail (context->priv->connection);
 
     if (context->priv->enabled) {
         eekboard_context_service_disable (context);
-    }
-
-    error = NULL;
-    retval = g_dbus_connection_emit_signal (context->priv->connection,
-                                            NULL,
-                                            context->priv->object_path,
-                                            EEKBOARD_CONTEXT_SERVICE_INTERFACE,
-                                            "Destroyed",
-                                            NULL,
-                                            &error);
-    if (!retval) {
-        g_warning ("failed to emit Destroyed signal: %s",
-                   error->message);
-        g_error_free (error);
-        g_assert_not_reached ();
     }
     g_signal_emit (context, signals[DESTROYED], 0);
 }

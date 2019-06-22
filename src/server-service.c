@@ -42,9 +42,7 @@ server_service_real_create_context (EekboardService *self,
     GDBusConnection *connection;
     ServerContextService *context;
 
-    g_object_get (G_OBJECT(self), "connection", &connection, NULL);
-    context = server_context_service_new (client_name, object_path, connection);
-    g_object_unref (connection);
+    context = server_context_service_new (client_name, object_path);
 
     return EEKBOARD_CONTEXT_SERVICE(context);
 }
