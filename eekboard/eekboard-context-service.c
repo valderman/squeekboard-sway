@@ -60,20 +60,12 @@ static guint signals[LAST_SIGNAL] = { 0, };
 struct _EekboardContextServicePrivate {
     GDBusNodeInfo *introspection_data;
 
-    guint registration_id;
-    char *object_path;
-    char *client_name;
-
     gboolean enabled;
     gboolean visible;
     gboolean fullscreen;
 
-    EekKeyboard *keyboard;
-    GHashTable *keyboard_hash;
-
-    gulong key_pressed_handler;
-    gulong key_released_handler;
-    gulong key_cancelled_handler;
+    EekKeyboard *keyboard; // currently used keyboard
+    GHashTable *keyboard_hash; // a table of available keyboards, per layout
 
     EekKey *repeat_key;
     guint repeat_timeout_id;
@@ -83,54 +75,6 @@ struct _EekboardContextServicePrivate {
 };
 
 G_DEFINE_TYPE (EekboardContextService, eekboard_context_service, G_TYPE_OBJECT);
-
-static const gchar introspection_xml[] =
-    "<node>"
-    "  <interface name='org.fedorahosted.Eekboard.Context'>"
-    "    <method name='AddKeyboard'>"
-    "      <arg direction='in' type='s' name='keyboard'/>"
-    "      <arg direction='out' type='u' name='keyboard_id'/>"
-    "    </method>"
-    "    <method name='RemoveKeyboard'>"
-    "      <arg direction='in' type='u' name='keyboard_id'/>"
-    "    </method>"
-    "    <method name='SetKeyboard'>"
-    "      <arg type='u' name='keyboard_id'/>"
-    "    </method>"
-    "    <method name='SetFullscreen'>"
-    "      <arg type='b' name='fullscreen'/>"
-    "    </method>"
-    "    <method name='ShowKeyboard'/>"
-    "    <method name='HideKeyboard'/>"
-    "    <method name='SetGroup'>"
-    "      <arg type='i' name='group'/>"
-    "    </method>"
-    "    <method name='PressKeycode'>"
-    "      <arg type='u' name='keycode'/>"
-    "    </method>"
-    "    <method name='ReleaseKeycode'>"
-    "      <arg type='u' name='keycode'/>"
-    "    </method>"
-    /* signals */
-    "    <signal name='Enabled'/>"
-    "    <signal name='Disabled'/>"
-    "    <signal name='Destroyed'/>"
-    "    <signal name='KeyActivated'>"
-    "      <arg type='u' name='keycode'/>"
-    "      <arg type='v' name='symbol'/>"
-    "      <arg type='u' name='modifiers'/>"
-    "    </signal>"
-    "    <signal name='VisibilityChanged'>"
-    "      <arg type='b' name='visible'/>"
-    "    </signal>"
-    "    <signal name='KeyboardChanged'>"
-    "      <arg type='u' name='keyboard_id'/>"
-    "    </signal>"
-    "    <signal name='GroupChanged'>"
-    "      <arg type='i' name='group'/>"
-    "    </signal>"
-    "  </interface>"
-    "</node>";
 
 static void connect_keyboard_signals (EekboardContextService *context);
 static void disconnect_keyboard_signals
@@ -274,11 +218,6 @@ eekboard_context_service_dispose (GObject *object)
         context->priv->keyboard_hash = NULL;
     }
 
-    if (context->priv->introspection_data) {
-        g_dbus_node_info_unref (context->priv->introspection_data);
-        context->priv->introspection_data = NULL;
-    }
-
     G_OBJECT_CLASS (eekboard_context_service_parent_class)->
         dispose (object);
 }
@@ -287,9 +226,6 @@ static void
 eekboard_context_service_finalize (GObject *object)
 {
     EekboardContextService *context = EEKBOARD_CONTEXT_SERVICE(object);
-
-    g_free (context->priv->object_path);
-    g_free (context->priv->client_name);
 
     G_OBJECT_CLASS (eekboard_context_service_parent_class)->
         finalize (object);
@@ -335,7 +271,7 @@ settings_update_layout(EekboardContextService *context) {
 
     EekKeyboard *keyboard = g_hash_table_lookup(context->priv->keyboard_hash,
                                                 GUINT_TO_POINTER(keyboard_id));
-// create a keyboard
+    // create a keyboard
     if (!keyboard) {
         keyboard = klass->create_keyboard (context, keyboard_layout);
         eek_keyboard_set_modifier_behavior (keyboard,
@@ -349,12 +285,8 @@ settings_update_layout(EekboardContextService *context) {
                            GUINT_TO_POINTER(keyboard_id));
         keyboard_id++;
     }
-// set as current
-    if (context->priv->keyboard)
-        disconnect_keyboard_signals (context);
-
+    // set as current
     context->priv->keyboard = keyboard;
-    connect_keyboard_signals (context);
     // TODO: this used to save the group, why?
     //group = eek_element_get_group (EEK_ELEMENT(context->priv->keyboard));
 
@@ -494,17 +426,7 @@ eekboard_context_service_class_init (EekboardContextServiceClass *klass)
 static void
 eekboard_context_service_init (EekboardContextService *self)
 {
-    GError *error;
-
     self->priv = EEKBOARD_CONTEXT_SERVICE_GET_PRIVATE(self);
-    error = NULL;
-    self->priv->introspection_data =
-        g_dbus_node_info_new_for_xml (introspection_xml, &error);
-    if (self->priv->introspection_data == NULL) {
-        g_warning ("failed to parse D-Bus XML: %s", error->message);
-        g_error_free (error);
-        g_assert_not_reached ();
-    }
 
     self->priv->keyboard_hash =
         g_hash_table_new_full (g_direct_hash,
@@ -519,25 +441,6 @@ eekboard_context_service_init (EekboardContextService *self)
     if (conn_id == 0) {
         g_warning ("Could not connect to gsettings updates, layout"
                    " changing unavailable");
-    }
-}
-
-static void
-disconnect_keyboard_signals (EekboardContextService *context)
-{
-    if (g_signal_handler_is_connected (context->priv->keyboard,
-                                       context->priv->key_pressed_handler))
-        g_signal_handler_disconnect (context->priv->keyboard,
-                                     context->priv->key_pressed_handler);
-    if (g_signal_handler_is_connected (context->priv->keyboard,
-                                       context->priv->key_released_handler))
-        g_signal_handler_disconnect (context->priv->keyboard,
-                                     context->priv->key_released_handler);
-
-    if (g_signal_handler_is_connected (context->priv->keyboard,
-                                       context->priv->key_cancelled_handler)) {
-        g_signal_handler_disconnect (context->priv->keyboard,
-                                     context->priv->key_cancelled_handler);
     }
 }
 
@@ -584,11 +487,6 @@ on_repeat_timeout_init (EekboardContextService *context)
         context->priv->repeat_timeout_id = 0;
 
     return FALSE;
-}
-
-static void
-connect_keyboard_signals (EekboardContextService *context)
-{
 }
 
 /**
@@ -692,17 +590,4 @@ gboolean
 eekboard_context_service_get_fullscreen (EekboardContextService *context)
 {
     return context->priv->fullscreen;
-}
-
-/**
- * eekboard_context_service_get_client_name:
- * @context: an #EekboardContextService
- *
- * Get the name of client which created @context.
- * Returns: (transfer none): a string
- */
-const gchar *
-eekboard_context_service_get_client_name (EekboardContextService *context)
-{
-    return context->priv->client_name;
 }

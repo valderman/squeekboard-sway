@@ -296,12 +296,16 @@ make_window (ServerContextService *context) {
         g_signal_connect (context->window, "notify::visible",
                           G_CALLBACK(on_notify_visible), context);
 
+    // The properties below are just to make hacking easier.
+    // The way we use layer-shell overrides some,
+    // and there's no space in the protocol for others.
+    // Those may still be useful in the future,
+    // or for hacks with regular windows.
     gtk_widget_set_can_focus (context->window, FALSE);
     g_object_set (G_OBJECT(context->window), "accept_focus", FALSE, NULL);
-    const gchar *client_name = eekboard_context_service_get_client_name (EEKBOARD_CONTEXT_SERVICE(context));
     gtk_window_set_title (GTK_WINDOW(context->window),
-                          client_name ? client_name : _("Keyboard"));
-    gtk_window_set_icon_name (GTK_WINDOW(context->window), "eekboard");
+                          _("Squeekboard"));
+    gtk_window_set_icon_name (GTK_WINDOW(context->window), "squeekboard");
     gtk_window_set_keep_above (GTK_WINDOW(context->window), TRUE);
 }
 
@@ -309,7 +313,6 @@ static void
 destroy_window (ServerContextService *context) {
     context->window = NULL;
 }
-
 
 static void
 update_widget (ServerContextService *context)

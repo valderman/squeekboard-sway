@@ -93,8 +93,6 @@ EekKeyboard  *eekboard_context_service_get_keyboard
                                               (EekboardContextService *context);
 gboolean      eekboard_context_service_get_fullscreen
                                               (EekboardContextService *context);
-const gchar * eekboard_context_service_get_client_name
-                                              (EekboardContextService *context);
 
 G_END_DECLS
 #endif  /* EEKBOARD_CONTEXT_SERVICE_H */
