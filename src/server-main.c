@@ -31,7 +31,7 @@
 #include <clutter-gtk/clutter-gtk.h>
 #endif
 
-#include "server-service.h"
+#include "eekboard/eekboard-service.h"
 #include "eek/eek.h"
 #include "wayland.h"
 
@@ -58,9 +58,10 @@ on_name_lost (GDBusConnection *connection,
 }
 
 static void
-on_destroyed (ServerService *service,
+on_destroyed (EekboardService *service,
               gpointer      user_data)
 {
+    (void)service;
     GMainLoop *loop = user_data;
 
     g_main_loop_quit (loop);
@@ -107,27 +108,14 @@ static const struct wl_registry_listener registry_listener = {
 int
 main (int argc, char **argv)
 {
-    ServerService *service;
-    GBusType bus_type;
-    GDBusConnection *connection;
-    GError *error;
-    GMainLoop *loop;
-    guint owner_id;
-
-#if HAVE_CLUTTER_GTK
-    if (gtk_clutter_init (&argc, &argv) != CLUTTER_INIT_SUCCESS) {
-        g_printerr ("Can't init GTK with Clutter\n");
-        exit (1);
-    }
-#else
     if (!gtk_init_check (&argc, &argv)) {
         g_printerr ("Can't init GTK\n");
         exit (1);
     }
-#endif
 
     eek_init ();
 
+    GBusType bus_type;
     if (opt_system)
         bus_type = G_BUS_TYPE_SYSTEM;
     else if (opt_address)
@@ -135,6 +123,8 @@ main (int argc, char **argv)
     else
         bus_type = G_BUS_TYPE_SESSION;
 
+    GDBusConnection *connection = NULL;
+    GError *error = NULL;
     switch (bus_type) {
     case G_BUS_TYPE_SYSTEM:
     case G_BUS_TYPE_SESSION:
@@ -175,19 +165,24 @@ main (int argc, char **argv)
         g_error ("Failed to get display: %m\n");
     }
 
-    struct squeak_wayland wayland;
+    struct squeak_wayland wayland = {0};
     squeak_wayland_init (&wayland);
     struct wl_registry *registry = wl_display_get_registry (display);
     wl_registry_add_listener (registry, &registry_listener, &wayland);
     squeak_wayland_set_global(&wayland);
-    service = server_service_new (EEKBOARD_SERVICE_PATH, connection);
+
+    // set up dbus
+    // TODO: make dbus errors non-always-fatal
+    // dbus is not strictly necessary for the useful operation
+    // if text-input is used, as it can bring the keyboard in and out
+    EekboardService *service = eekboard_service_new (connection, EEKBOARD_SERVICE_PATH);
 
     if (service == NULL) {
         g_printerr ("Can't create server\n");
         exit (1);
     }
 
-    owner_id = g_bus_own_name_on_connection (connection,
+    guint owner_id = g_bus_own_name_on_connection (connection,
                                              EEKBOARD_SERVICE_INTERFACE,
                                              G_BUS_NAME_OWNER_FLAGS_NONE,
                                              on_name_acquired,
@@ -199,7 +194,7 @@ main (int argc, char **argv)
         exit (1);
     }
 
-    loop = g_main_loop_new (NULL, FALSE);
+    GMainLoop *loop = g_main_loop_new (NULL, FALSE);
 
     g_signal_connect (service, "destroyed", G_CALLBACK(on_destroyed), loop);
 

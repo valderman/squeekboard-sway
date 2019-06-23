@@ -182,12 +182,7 @@ eekboard_service_constructed (GObject *object)
     }
 
     // CreateContext
-    EekboardServiceClass *klass = EEKBOARD_SERVICE_GET_CLASS(service);
-
-    EekboardContextService *context;
-
-    g_assert (klass->create_context);
-    context = klass->create_context (service);
+    EekboardContextService *context = server_context_service_new ();
     g_object_set_data_full (G_OBJECT(context),
                             "owner", g_strdup ("sender"),
                             (GDestroyNotify)g_free);
