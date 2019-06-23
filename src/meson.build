@@ -5,7 +5,6 @@ dbus_src = gnome.gdbus_codegen(
 )
 
 sources = [
-  'server-service.c',
   'server-context-service.c',
   'server-main.c',
   'wayland.c',
