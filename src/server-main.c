@@ -115,6 +115,23 @@ main (int argc, char **argv)
 
     eek_init ();
 
+    // Set up Wayland
+    gdk_set_allowed_backends ("wayland");
+    GdkDisplay *gdk_display = gdk_display_get_default ();
+    struct wl_display *display = gdk_wayland_display_get_wl_display (gdk_display);
+
+    if (display == NULL) {
+        g_error ("Failed to get display: %m\n");
+    }
+
+    struct squeek_wayland wayland = {0};
+    squeek_wayland_init (&wayland);
+    struct wl_registry *registry = wl_display_get_registry (display);
+    wl_registry_add_listener (registry, &registry_listener, &wayland);
+    squeek_wayland_set_global(&wayland);
+
+    // set up dbus
+
     GBusType bus_type;
     if (opt_system)
         bus_type = G_BUS_TYPE_SYSTEM;
@@ -156,22 +173,6 @@ main (int argc, char **argv)
         break;
     }
 
-    // Set up Wayland
-    gdk_set_allowed_backends ("wayland");
-    GdkDisplay *gdk_display = gdk_display_get_default ();
-    struct wl_display *display = gdk_wayland_display_get_wl_display (gdk_display);
-
-    if (display == NULL) {
-        g_error ("Failed to get display: %m\n");
-    }
-
-    struct squeek_wayland wayland = {0};
-    squeek_wayland_init (&wayland);
-    struct wl_registry *registry = wl_display_get_registry (display);
-    wl_registry_add_listener (registry, &registry_listener, &wayland);
-    squeek_wayland_set_global(&wayland);
-
-    // set up dbus
     // TODO: make dbus errors non-always-fatal
     // dbus is not strictly necessary for the useful operation
     // if text-input is used, as it can bring the keyboard in and out
