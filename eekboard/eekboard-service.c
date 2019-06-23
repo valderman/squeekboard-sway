@@ -1,7 +1,7 @@
-/* 
+/*
  * Copyright (C) 2010-2011 Daiki Ueno <ueno@unixuser.org>
  * Copyright (C) 2010-2011 Red Hat, Inc.
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -60,7 +60,7 @@ struct _EekboardServicePrivate {
     guint registration_id;
     char *object_path;
 
-    EekboardContextService *context;
+    EekboardContextService *context; // unowned reference
 };
 
 G_DEFINE_TYPE (EekboardService, eekboard_service, G_TYPE_OBJECT);
@@ -150,10 +150,12 @@ static gboolean
 handle_set_visible(SmPuriOSK0 *object, GDBusMethodInvocation *invocation,
                    gboolean arg_visible, gpointer user_data) {
     EekboardService *service = user_data;
-    if (arg_visible) {
-        eekboard_context_service_show_keyboard (service->priv->context);
-    } else {
-        eekboard_context_service_hide_keyboard (service->priv->context);
+    if (service->priv->context) {
+        if (arg_visible) {
+            eekboard_context_service_show_keyboard (service->priv->context);
+        } else {
+            eekboard_context_service_hide_keyboard (service->priv->context);
+        }
     }
     sm_puri_osk0_complete_set_visible(object, invocation);
     return TRUE;
@@ -180,14 +182,6 @@ eekboard_service_constructed (GObject *object)
             g_clear_error(&error);
         }
     }
-
-    // CreateContext
-    EekboardContextService *context = server_context_service_new ();
-    g_object_set_data_full (G_OBJECT(context),
-                            "owner", g_strdup ("sender"),
-                            (GDestroyNotify)g_free);
-    service->priv->context = context;
-    eekboard_context_service_enable (context);
 }
 
 static void
@@ -257,6 +251,7 @@ static void
 eekboard_service_init (EekboardService *self)
 {
     self->priv = EEKBOARD_SERVICE_GET_PRIVATE(self);
+    self->priv->context = NULL;
 }
 
 /**
@@ -272,4 +267,11 @@ eekboard_service_new (GDBusConnection *connection,
                          "object-path", object_path,
                          "connection", connection,
                          NULL);
+}
+
+void
+eekboard_service_set_context(EekboardService *service,
+
+                             EekboardContextService *context) {
+    service->priv->context = context;
 }

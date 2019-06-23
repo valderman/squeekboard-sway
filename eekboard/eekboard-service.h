@@ -70,6 +70,7 @@ struct _EekboardServiceClass {
 GType             eekboard_service_get_type (void) G_GNUC_CONST;
 EekboardService * eekboard_service_new      (GDBusConnection *connection,
                                              const gchar     *object_path);
-
+void              eekboard_service_set_context(EekboardService *service,
+                                               EekboardContextService *context);
 G_END_DECLS
 #endif  /* EEKBOARD_SERVICE_H */

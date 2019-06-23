@@ -33,6 +33,7 @@
 
 #include "eekboard/eekboard-service.h"
 #include "eek/eek.h"
+#include "server-context-service.h"
 #include "wayland.h"
 
 #include <gdk/gdkwayland.h>
@@ -47,6 +48,9 @@ on_name_acquired (GDBusConnection *connection,
                   const gchar     *name,
                   gpointer         user_data)
 {
+    (void)connection;
+    (void)name;
+    (void)user_data;
 }
 
 static void
@@ -54,7 +58,11 @@ on_name_lost (GDBusConnection *connection,
               const gchar     *name,
               gpointer         user_data)
 {
-  exit (1);
+    // TODO: could conceivable continue working
+    (void)connection;
+    (void)name;
+    (void)user_data;
+    exit (1);
 }
 
 static void
@@ -65,6 +73,15 @@ on_destroyed (EekboardService *service,
     GMainLoop *loop = user_data;
 
     g_main_loop_quit (loop);
+}
+
+static EekboardContextService *create_context() {
+    EekboardContextService *context = server_context_service_new ();
+    g_object_set_data_full (G_OBJECT(context),
+                            "owner", g_strdup ("sender"),
+                            (GDestroyNotify)g_free);
+    eekboard_context_service_enable (context);
+    return context;
 }
 
 // Wayland
@@ -130,6 +147,7 @@ main (int argc, char **argv)
     wl_registry_add_listener (registry, &registry_listener, &wayland);
     squeek_wayland_set_global(&wayland);
 
+    EekboardContextService *context = create_context();
     // set up dbus
 
     GBusType bus_type;
@@ -181,6 +199,8 @@ main (int argc, char **argv)
     if (service == NULL) {
         g_printerr ("Can't create server\n");
         exit (1);
+    } else {
+        eekboard_service_set_context(service, context);
     }
 
     guint owner_id = g_bus_own_name_on_connection (connection,
