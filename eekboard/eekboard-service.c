@@ -18,7 +18,9 @@
 
 /**
  * SECTION:eekboard-service
- * @short_description: base server implementation of eekboard service
+ * @short_description: base implementation of eekboard service
+ *
+ * Provides a dbus object, and contains the context.
  *
  * The #EekboardService class provides a base server side
  * implementation of eekboard service.
@@ -58,9 +60,7 @@ struct _EekboardServicePrivate {
     guint registration_id;
     char *object_path;
 
-    GHashTable *context_hash;
-    GSList *context_stack;
-    gboolean visible;
+    EekboardContextService *context;
 };
 
 G_DEFINE_TYPE (EekboardService, eekboard_service, G_TYPE_OBJECT);
@@ -117,19 +117,6 @@ static void
 eekboard_service_dispose (GObject *object)
 {
     EekboardService *service = EEKBOARD_SERVICE(object);
-    GSList *head;
-
-    if (service->priv->context_hash) {
-        g_hash_table_destroy (service->priv->context_hash);
-        service->priv->context_hash = NULL;
-    }
-
-    for (head = service->priv->context_stack; head; head = service->priv->context_stack) {
-        g_object_unref (head->data);
-        service->priv->context_stack = g_slist_next (head);
-        g_slist_free1 (head);
-    }
-
     if (service->priv->connection) {
         if (service->priv->registration_id > 0) {
             g_dbus_connection_unregister_object (service->priv->connection,
@@ -164,17 +151,9 @@ handle_set_visible(SmPuriOSK0 *object, GDBusMethodInvocation *invocation,
                    gboolean arg_visible, gpointer user_data) {
     EekboardService *service = user_data;
     if (arg_visible) {
-        if (service->priv->context_stack) {
-            eekboard_context_service_show_keyboard (service->priv->context_stack->data);
-        } else {
-            service->priv->visible = TRUE;
-        }
+        eekboard_context_service_show_keyboard (service->priv->context);
     } else {
-        if (service->priv->context_stack) {
-            eekboard_context_service_hide_keyboard (service->priv->context_stack->data);
-        } else {
-            service->priv->visible = FALSE;
-        }
+        eekboard_context_service_hide_keyboard (service->priv->context);
     }
     sm_puri_osk0_complete_set_visible(object, invocation);
     return TRUE;
@@ -212,13 +191,7 @@ eekboard_service_constructed (GObject *object)
     g_object_set_data_full (G_OBJECT(context),
                             "owner", g_strdup ("sender"),
                             (GDestroyNotify)g_free);
-    g_hash_table_insert (service->priv->context_hash,
-                         "object_path",
-                         context);
-
-    // PushContext
-    service->priv->context_stack = g_slist_prepend (service->priv->context_stack,
-                                           g_object_ref (context));
+    service->priv->context = context;
     eekboard_context_service_enable (context);
 }
 
@@ -289,36 +262,12 @@ static void
 eekboard_service_init (EekboardService *self)
 {
     self->priv = EEKBOARD_SERVICE_GET_PRIVATE(self);
-
-    self->priv->context_hash =
-        g_hash_table_new_full (g_str_hash,
-                               g_str_equal,
-                               (GDestroyNotify)g_free,
-                               (GDestroyNotify)g_object_unref);
-}
-
-static void
-remove_context_from_stack (EekboardService        *service,
-                           EekboardContextService *context)
-{
-    GSList *head;
-
-    head = g_slist_find (service->priv->context_stack, context);
-    if (head) {
-        service->priv->context_stack = g_slist_remove_link (service->priv->context_stack, head);
-        g_object_unref (head->data);
-        g_slist_free1 (head);
-    }
-    if (service->priv->context_stack)
-        eekboard_context_service_enable (service->priv->context_stack->data);
 }
 
 /**
  * eekboard_service_new:
  * @connection: a #GDBusConnection
  * @object_path: object path
- *
- * Create an empty server for testing purpose.
  */
 EekboardService *
 eekboard_service_new (GDBusConnection *connection,
