@@ -76,7 +76,7 @@ registry_handle_global (void *data,
                         const char *interface,
                         uint32_t version)
 {
-    struct squeak_wayland *wayland = data;
+    struct squeek_wayland *wayland = data;
 
     if (!strcmp (interface, zwlr_layer_shell_v1_interface.name)) {
         wayland->layer_shell = wl_registry_bind (registry, name,
@@ -165,11 +165,11 @@ main (int argc, char **argv)
         g_error ("Failed to get display: %m\n");
     }
 
-    struct squeak_wayland wayland = {0};
-    squeak_wayland_init (&wayland);
+    struct squeek_wayland wayland = {0};
+    squeek_wayland_init (&wayland);
     struct wl_registry *registry = wl_display_get_registry (display);
     wl_registry_add_listener (registry, &registry_listener, &wayland);
-    squeak_wayland_set_global(&wayland);
+    squeek_wayland_set_global(&wayland);
 
     // set up dbus
     // TODO: make dbus errors non-always-fatal
@@ -205,6 +205,6 @@ main (int argc, char **argv)
     g_object_unref (connection);
     g_main_loop_unref (loop);
 
-    squeak_wayland_deinit (&wayland);
+    squeek_wayland_deinit (&wayland);
     return 0;
 }

@@ -1,3 +1,3 @@
 #include "wayland.h"
 
-struct squeak_wayland *squeak_wayland = NULL;
+struct squeek_wayland *squeek_wayland = NULL;

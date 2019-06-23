@@ -277,8 +277,8 @@ make_window (ServerContextService *context) {
     }
     context->window = GTK_WIDGET(g_object_new (
         PHOSH_TYPE_LAYER_SURFACE,
-        "layer-shell", squeak_wayland->layer_shell,
-        "wl-output", g_ptr_array_index(squeak_wayland->outputs, 0), // TODO: select output as needed,
+        "layer-shell", squeek_wayland->layer_shell,
+        "wl-output", g_ptr_array_index(squeek_wayland->outputs, 0), // TODO: select output as needed,
         "height", 200,
         "anchor", ZWLR_LAYER_SURFACE_V1_ANCHOR_BOTTOM
                   | ZWLR_LAYER_SURFACE_V1_ANCHOR_LEFT
