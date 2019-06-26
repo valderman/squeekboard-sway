@@ -7,6 +7,8 @@ project(
     default_options: [ 'warning_level=1', 'buildtype=debugoptimized', 'c_std=gnu11' ],
 )
 
+i18n = import('i18n')
+
 if get_option('buildtype').startswith('debug')
     add_project_arguments('-DDEBUG=1', language : 'c')
 endif
@@ -23,3 +25,4 @@ subdir('data')
 subdir('protocols')
 subdir('eek')
 subdir('src')
+subdir('po')
