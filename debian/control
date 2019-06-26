@@ -6,6 +6,11 @@ Build-Depends:
  debhelper (>= 10),
  meson (>=0.43.0),
  pkg-config,
+ libglib2.0-dev,
+ libcroco3-dev,
+ gtk-doc-tools,
+ libwayland-dev (>= 1.16),
+ wayland-protocols (>= 1.14)
 Standards-Version: 4.1.3
 Homepage: https://source.puri.sm/Librem5/squeekboard
 
