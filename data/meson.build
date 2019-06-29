@@ -56,3 +56,13 @@ foreach symbol: symbols
     )
 endforeach
 
+desktop_file = 'sm.puri.Squeekboard.desktop'
+
+i18n.merge_file('desktop',
+    input: desktop_file + '.in',
+    output: desktop_file,
+    po_dir: '../po',
+    install: true,
+    install_dir: join_paths(datadir, 'applications'),
+    type: 'desktop'
+)
