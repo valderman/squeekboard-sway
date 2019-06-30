@@ -13,6 +13,7 @@ wl_protos = [
   wl_protocol_dir + '/stable/xdg-shell/xdg-shell.xml',
   'wlr-layer-shell-unstable-v1.xml',
   'virtual-keyboard-unstable-v1.xml',
+  'input-method-unstable-v2.xml',
 ]
 wl_proto_sources = []
 foreach proto: wl_protos

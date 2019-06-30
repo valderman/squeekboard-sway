@@ -24,6 +24,8 @@
 
 #include <eek/eek.h>
 
+#include "virtual-keyboard-unstable-v1-client-protocol.h"
+
 G_BEGIN_DECLS
 
 #define EEKBOARD_CONTEXT_SERVICE_PATH "/org/fedorahosted/Eekboard/Context_%d"
