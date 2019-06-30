@@ -60,9 +60,15 @@ deps = [
 ]
 
 # Replacement for eekboard-server
+rslib = library(
+  'rslib',
+  sources:['imservice.rs'],
+  install: true
+)
+
 squeekboard = executable('squeekboard',
   sources,
-  link_with: library('rslib', 'imservice.rs'),
+  link_with: rslib,
   include_directories: [include_directories('..'), include_directories('../eek')],
   dependencies: deps,
   install: true,
