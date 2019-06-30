@@ -19,24 +19,29 @@ pub mod c {
     
     // The following defined in C
     
-    /// struct zwp_input_method_v2 *input_method
+    /// struct zwp_input_method_v2*
     #[repr(transparent)]
     pub struct InputMethod(*const c_void);
     
+    /// EekboardContextService*
+    #[repr(transparent)]
+    pub struct UIManager(*const c_void);
+    
     #[no_mangle]
     extern "C" {
-        fn imservice_make_visible(imservice: *mut IMService);
-        fn imservice_try_hide(imservice: *mut IMService);
+        fn imservice_make_visible(imservice: *const UIManager);
+        fn imservice_try_hide(imservice: *const UIManager);
     }
     
     // The following defined in Rust. TODO: wrap naked pointers to Rust data inside RefCells to prevent multiple writers
     
     #[no_mangle]
     pub unsafe extern "C"
-    fn imservice_new(im: *const InputMethod) -> *mut IMService {
+    fn imservice_new(im: *const InputMethod, ui_manager: *const UIManager) -> *mut IMService {
         Box::<IMService>::into_raw(Box::new(
             IMService {
                 im: im,
+                ui_manager: ui_manager,
                 pending: IMProtocolState::default(),
                 current: IMProtocolState::default(),
                 preedit_string: String::new(),
@@ -87,10 +92,10 @@ pub mod c {
     
     #[no_mangle]
     pub unsafe extern "C"
-    fn imservice_handle_commit_state(imservice_ptr: *mut IMService,
+    fn imservice_handle_commit_state(imservice: *mut IMService,
         _im: *const InputMethod)
     {
-        let imservice = &mut *imservice_ptr;
+        let imservice = &mut *imservice;
         let active_changed = imservice.current.active ^ imservice.pending.active;
         
         imservice.serial += Wrapping(1u32);
@@ -101,14 +106,14 @@ pub mod c {
         };
         if active_changed {
             if imservice.current.active {
-                imservice_make_visible(imservice_ptr);
+                imservice_make_visible(imservice.ui_manager);
             } else {
-                imservice_try_hide(imservice_ptr);
+                imservice_try_hide(imservice.ui_manager);
             }
         }
     }
     
-    // FIXME: destroy
+    // FIXME: destroy and deallocate
 }
 
 /// Describes the desired state of the input method as requested by the server
@@ -120,9 +125,13 @@ struct IMProtocolState {
 }
 
 pub struct IMService {
+    /// Owned reference (still created and destroyed in C)
     im: *const c::InputMethod,
+    /// Unowned reference. Be careful, it's shared with C at large
+    ui_manager: *const c::UIManager,
+
     pending: IMProtocolState,
-    current: IMProtocolState, // turn into an idiomatic representation?
+    current: IMProtocolState, // turn current into an idiomatic representation?
     preedit_string: String,
     serial: Wrapping<u32>,
 }

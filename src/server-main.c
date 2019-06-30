@@ -251,7 +251,8 @@ main (int argc, char **argv)
 
     struct imservice *imservice = NULL;
     if (instance.wayland.input_method_manager) {
-        imservice = get_imservice(instance.wayland.input_method_manager,
+        imservice = get_imservice(instance.context,
+                                  instance.wayland.input_method_manager,
                                   instance.wayland.seat);
         if (imservice) {
             instance.imservice = imservice;
