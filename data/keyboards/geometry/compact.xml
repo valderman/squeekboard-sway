@@ -2,99 +2,8 @@
 <geometry version="0.90">
   <bounds x="0.000000" y="0.000000" width="640.0000" height="296.5853"/>
   <section angle="0">
-    <bounds x="15.60975" y="15.60975" width="640.0000" height="39.02439"/>
-    <row orientation="1">
-      <key keycode="9" name="ESC" oref="outline2">
-	<bounds x="3.121951" y="1.560976" width="37.46341" height="37.46341"/>
-      </key>
-      <key keycode="67" name="FK01" oref="outline2">
-	<bounds x="84.29268" y="1.560976" width="37.46341" height="37.46341"/>
-      </key>
-      <key keycode="68" name="FK02" oref="outline2">
-	<bounds x="124.8780" y="1.560976" width="37.46341" height="37.46341"/>
-      </key>
-      <key keycode="69" name="FK03" oref="outline2">
-	<bounds x="165.4634" y="1.560976" width="37.46341" height="37.46341"/>
-      </key>
-      <key keycode="70" name="FK04" oref="outline2">
-	<bounds x="206.0487" y="1.560976" width="37.46341" height="37.46341"/>
-      </key>
-      <key keycode="71" name="FK05" oref="outline2">
-	<bounds x="266.9268" y="1.560976" width="37.46341" height="37.46341"/>
-      </key>
-      <key keycode="72" name="FK06" oref="outline2">
-	<bounds x="307.5121" y="1.560976" width="37.46341" height="37.46341"/>
-      </key>
-      <key keycode="73" name="FK07" oref="outline2">
-	<bounds x="348.0975" y="1.560976" width="37.46341" height="37.46341"/>
-      </key>
-      <key keycode="74" name="FK08" oref="outline2">
-	<bounds x="388.6829" y="1.560976" width="37.46341" height="37.46341"/>
-      </key>
-      <key keycode="75" name="FK09" oref="outline2">
-	<bounds x="449.5609" y="1.560976" width="37.46341" height="37.46341"/>
-      </key>
-      <key keycode="76" name="FK10" oref="outline2">
-	<bounds x="490.1463" y="1.560976" width="37.46341" height="37.46341"/>
-      </key>
-      <key keycode="95" name="FK11" oref="outline2">
-	<bounds x="530.7317" y="1.560976" width="37.46341" height="37.46341"/>
-      </key>
-      <key keycode="96" name="FK12" oref="outline2">
-	<bounds x="571.3170" y="1.560976" width="37.46341" height="37.46341"/>
-      </key>
-    </row>
-  </section>
-  <section angle="0">
     <bounds x="15.60975" y="78.04878" width="608.7804" height="201.3658"/>
     <row orientation="1">
-      <key keycode="49" name="TLDE" oref="outline2">
-	<bounds x="3.121951" y="1.560976" width="37.46341" height="37.46341"/>
-      </key>
-      <key keycode="10" name="AE01" oref="outline2">
-	<bounds x="43.70731" y="1.560976" width="37.46341" height="37.46341"/>
-      </key>
-      <key keycode="11" name="AE02" oref="outline2">
-	<bounds x="84.29268" y="1.560976" width="37.46341" height="37.46341"/>
-      </key>
-      <key keycode="12" name="AE03" oref="outline2">
-	<bounds x="124.8780" y="1.560976" width="37.46341" height="37.46341"/>
-      </key>
-      <key keycode="13" name="AE04" oref="outline2">
-	<bounds x="165.4634" y="1.560976" width="37.46341" height="37.46341"/>
-      </key>
-      <key keycode="14" name="AE05" oref="outline2">
-	<bounds x="206.0487" y="1.560976" width="37.46341" height="37.46341"/>
-      </key>
-      <key keycode="15" name="AE06" oref="outline2">
-	<bounds x="245.0731" y="1.560976" width="37.46341" height="37.46341"/>
-      </key>
-      <key keycode="16" name="AE07" oref="outline2">
-	<bounds x="285.6585" y="1.560976" width="37.46341" height="37.46341"/>
-      </key>
-      <key keycode="17" name="AE08" oref="outline2">
-	<bounds x="326.2439" y="1.560976" width="37.46341" height="37.46341"/>
-      </key>
-      <key keycode="18" name="AE09" oref="outline2">
-	<bounds x="366.8292" y="1.560976" width="37.46341" height="37.46341"/>
-      </key>
-      <key keycode="19" name="AE10" oref="outline2">
-	<bounds x="407.4146" y="1.560976" width="37.46341" height="37.46341"/>
-      </key>
-      <key keycode="20" name="AE11" oref="outline2">
-	<bounds x="448.0000" y="1.560976" width="37.46341" height="37.46341"/>
-      </key>
-      <key keycode="21" name="AE12" oref="outline2">
-	<bounds x="488.5853" y="1.560976" width="37.46341" height="37.46341"/>
-      </key>
-      <key keycode="22" name="BKSP" oref="outline13">
-	<bounds x="529.1707" y="1.560976" width="79.60975" height="37.46341"/>
-      </key>
-    </row>
-    <row orientation="1">
-      <key keycode="23" name="TAB" oref="outline4">
-	<bounds x="3.121951" y="42.14634" width="59.31707" height="37.46341"/>
-      </key>
       <key keycode="24" name="AD01" oref="outline2">
 	<bounds x="65.56097" y="42.14634" width="37.46341" height="37.46341"/>
       </key>
@@ -125,20 +34,8 @@
       <key keycode="33" name="AD10" oref="outline2">
 	<bounds x="429.2682" y="42.14634" width="37.46341" height="37.46341"/>
       </key>
-      <key keycode="34" name="AD11" oref="outline2">
-	<bounds x="468.2926" y="42.14634" width="37.46341" height="37.46341"/>
-      </key>
-      <key keycode="35" name="AD12" oref="outline2">
-	<bounds x="508.8780" y="42.14634" width="37.46341" height="37.46341"/>
-      </key>
-      <key keycode="51" name="BKSL" oref="outline5">
-	<bounds x="549.4634" y="42.14634" width="59.31707" height="37.46341"/>
-      </key>
     </row>
     <row orientation="1">
-      <key keycode="66" name="CAPS" oref="outline6">
-	<bounds x="3.121951" y="82.73170" width="68.68292" height="37.46341"/>
-      </key>
       <key keycode="38" name="AC01" oref="outline2">
 	<bounds x="76.48780" y="82.73170" width="37.46341" height="37.46341"/>
       </key>
@@ -166,15 +63,6 @@
       <key keycode="46" name="AC09" oref="outline2">
 	<bounds x="399.6097" y="82.73170" width="37.46341" height="37.46341"/>
       </key>
-      <key keycode="47" name="AC10" oref="outline2">
-	<bounds x="438.6341" y="82.73170" width="37.46341" height="37.46341"/>
-      </key>
-      <key keycode="48" name="AC11" oref="outline2">
-	<bounds x="479.2195" y="82.73170" width="37.46341" height="37.46341"/>
-      </key>
-      <key keycode="36" name="RTRN" oref="outline7">
-	<bounds x="519.8048" y="82.73170" width="88.97561" height="37.46341"/>
-      </key>
     </row>
     <row orientation="1">
       <key keycode="50" name="LFSH" oref="outline8">
@@ -201,23 +89,11 @@
       <key keycode="58" name="AB07" oref="outline2">
 	<bounds x="337.1707" y="121.7560" width="37.46341" height="37.46341"/>
       </key>
-      <key keycode="59" name="AB08" oref="outline2">
-	<bounds x="377.7560" y="121.7560" width="37.46341" height="37.46341"/>
-      </key>
-      <key keycode="60" name="AB09" oref="outline2">
-	<bounds x="418.3414" y="121.7560" width="37.46341" height="37.46341"/>
-      </key>
-      <key keycode="61" name="AB10" oref="outline2">
-	<bounds x="458.9268" y="121.7560" width="37.46341" height="37.46341"/>
-      </key>
-      <key keycode="62" name="RTSH" oref="outline9">
-	<bounds x="499.5121" y="121.7560" width="109.2682" height="37.46341"/>
+      <key keycode="22" name="BKSP" oref="outline13">
+	<bounds x="529.1707" y="1.560976" width="79.60975" height="37.46341"/>
       </key>
     </row>
     <row orientation="1">
-      <key keycode="149" name="I149" oref="outline10">
-	<bounds x="3.121951" y="162.3414" width="37.46341" height="37.46341"/>
-      </key>
       <key keycode="37" name="LCTL" oref="outline1">
 	<bounds x="62.43902" y="162.3414" width="48.39024" height="37.46341"/>
       </key>
@@ -227,20 +103,11 @@
       <key keycode="65" name="SPCE" oref="outline3">
 	<bounds x="165.4634" y="162.3414" width="217.5853" height="37.46341"/>
       </key>
-      <key keycode="113" name="LEFT" oref="outline1">
-	<bounds x="368.0487" y="162.3414" width="48.39024" height="37.46341"/>
+      <key keycode="60" name="AB09" oref="outline2">
+       <bounds x="418.3414" y="121.7560" width="37.46341" height="37.46341"/>
       </key>
-      <key keycode="111" name="UP" oref="outline1">
-	<bounds x="419.43894" y="162.3414" width="48.39024" height="37.46341"/>
-      </key>
-      <key keycode="116" name="DOWN" oref="outline1">
-	<bounds x="470.82918" y="162.3414" width="48.39024" height="37.46341"/>
-      </key>
-      <key keycode="114" name="RGHT" oref="outline1">
-	<bounds x="522.21942" y="162.3414" width="48.39024" height="37.46341"/>
-      </key>
-      <key keycode="150" name="I150" oref="outline10">
-	<bounds x="573.60966" y="162.3414" width="37.46341" height="37.46341"/>
+      <key keycode="36" name="RTRN" oref="outline7">
+	<bounds x="519.8048" y="82.73170" width="88.97561" height="37.46341"/>
       </key>
     </row>
   </section>
