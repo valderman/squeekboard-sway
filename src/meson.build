@@ -5,6 +5,7 @@ dbus_src = gnome.gdbus_codegen(
 )
 
 sources = [
+  'imservice.c',
   'server-context-service.c',
   'server-main.c',
   'wayland.c',
@@ -61,6 +62,7 @@ deps = [
 # Replacement for eekboard-server
 squeekboard = executable('squeekboard',
   sources,
+  link_with: library('rslib', 'imservice.rs'),
   include_directories: [include_directories('..'), include_directories('../eek')],
   dependencies: deps,
   install: true,

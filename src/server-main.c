@@ -33,6 +33,7 @@
 
 #include "eekboard/eekboard-service.h"
 #include "eek/eek.h"
+#include "imservice.h"
 #include "server-context-service.h"
 #include "wayland.h"
 
@@ -43,6 +44,7 @@
 struct squeekboard {
     struct squeek_wayland wayland;
     EekboardContextService *context;
+    struct imservice *imservice;
 };
 
 
@@ -114,6 +116,9 @@ registry_handle_global (void *data,
     } else if (!strcmp (interface, zwp_virtual_keyboard_manager_v1_interface.name)) {
         instance->wayland.virtual_keyboard_manager = wl_registry_bind(registry, name,
             &zwp_virtual_keyboard_manager_v1_interface, 1);
+    } else if (!strcmp (interface, zwp_input_method_manager_v2_interface.name)) {
+        instance->wayland.input_method_manager = wl_registry_bind(registry, name,
+            &zwp_input_method_manager_v2_interface, 1);
     } else if (!strcmp (interface, "wl_output")) {
         struct wl_output *output = wl_registry_bind (registry, name,
             &wl_output_interface, 2);
@@ -242,6 +247,18 @@ main (int argc, char **argv)
     if (owner_id == 0) {
         g_printerr ("Can't own the name\n");
         exit (1);
+    }
+
+    struct imservice *imservice = NULL;
+    if (instance.wayland.input_method_manager) {
+        imservice = get_imservice(instance.context,
+                                  instance.wayland.input_method_manager,
+                                  instance.wayland.seat);
+        if (imservice) {
+            instance.imservice = imservice;
+        } else {
+            g_warning("Failed to register as an input method");
+        }
     }
 
     GMainLoop *loop = g_main_loop_new (NULL, FALSE);
