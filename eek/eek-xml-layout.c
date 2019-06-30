@@ -640,13 +640,13 @@ symbols_start_element_callback (GMarkupParseContext *pcontext,
 
         data->key = eek_keyboard_find_key_by_keycode (data->keyboard,
                                                       keycode);
-        if (data->key == NULL) {
+        /*if (data->key == NULL) {
             g_set_error (error,
                          G_MARKUP_ERROR,
                          G_MARKUP_ERROR_INVALID_CONTENT,
                          "no such keycode %u", keycode);
             return;
-        }
+        }*/
 
         attribute = get_attribute (attribute_names, attribute_values,
                                    "groups");
@@ -721,6 +721,10 @@ symbols_end_element_callback (GMarkupParseContext *pcontext,
     text = g_strndup (data->text->str, data->text->len);
 
     if (g_strcmp0 (element_name, "key") == 0) {
+        if (!data->key) {
+            return;
+        }
+
         gint num_symbols = g_slist_length (data->symbols);
         gint levels = num_symbols / data->groups;
         EekSymbolMatrix *matrix = eek_symbol_matrix_new (data->groups,

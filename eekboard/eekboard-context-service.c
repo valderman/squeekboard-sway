@@ -136,6 +136,9 @@ eekboard_context_service_real_create_keyboard (EekboardContextService *self,
         }
     }
     keyboard = eek_keyboard_new (self, layout, CSW, CSH);
+    if (!keyboard) {
+        g_error("Failed to create a keyboard");
+    }
     g_object_unref (layout);
 
     struct xkb_context *context = xkb_context_new(XKB_CONTEXT_NO_FLAGS);
