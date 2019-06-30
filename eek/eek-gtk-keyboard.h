@@ -47,6 +47,8 @@ struct _EekGtkKeyboard
     /*< private >*/
     GtkDrawingArea parent;
 
+    GdkEventSequence *sequence; // unowned reference
+
     EekGtkKeyboardPrivate *priv;
 };
 

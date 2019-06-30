@@ -67,7 +67,6 @@ struct _EekGtkKeyboardPrivate
     EekTheme *theme;
 };
 
-static EekColor * color_from_gdk_color    (GdkColor    *gdk_color);
 static void       on_key_pressed          (EekKey      *key,
                                            EekGtkKeyboard *self);
 static void       on_key_released         (EekKey      *key,
@@ -78,8 +77,6 @@ static void       on_key_locked          (EekKeyboard *keyboard,
 static void       on_key_unlocked         (EekKeyboard *keyboard,
                                            EekKey      *key,
                                            gpointer     user_data);
-static void       on_key_cancelled        (EekKey      *key,
-                                           EekGtkKeyboard *self);
 static void       on_symbol_index_changed (EekKeyboard *keyboard,
                                            gint         group,
                                            gint         level,
@@ -162,62 +159,21 @@ eek_gtk_keyboard_real_size_allocate (GtkWidget     *self,
         size_allocate (self, allocation);
 }
 
-static gboolean
-eek_gtk_keyboard_real_button_press_event (GtkWidget      *self,
-                                          GdkEventButton *event)
-{
-    if (event->type != GDK_BUTTON_PRESS
-            || event->button != 1) {
-        return TRUE;
-    }
+static void depress(EekGtkKeyboard *self,
+                    gdouble x, gdouble y, guint32 time) {
     EekGtkKeyboardPrivate *priv = EEK_GTK_KEYBOARD_GET_PRIVATE(self);
-    EekKey *key;
-
-    key = eek_renderer_find_key_by_position (priv->renderer,
-                                             (gdouble)event->x,
-                                             (gdouble)event->y);
+    EekKey *key = eek_renderer_find_key_by_position (priv->renderer, x, y);
     if (key) {
-        eek_keyboard_press_key(priv->keyboard, key, event->time);
-        on_key_pressed(key, EEK_GTK_KEYBOARD(self));
+        eek_keyboard_press_key(priv->keyboard, key, time);
+        on_key_pressed(key, self);
     }
-    return TRUE;
 }
 
-// TODO: this belongs more in gtk_keyboard, with a way to find out which key to re-render
-static gboolean
-eek_gtk_keyboard_real_button_release_event (GtkWidget      *self,
-                                            GdkEventButton *event)
-{
-    if (event->type != GDK_BUTTON_RELEASE
-            || event->button != 1) {
-        return TRUE;
-    }
+static void drag(EekGtkKeyboard *self,
+                 gdouble x, gdouble y, guint32 time) {
     EekGtkKeyboardPrivate *priv = EEK_GTK_KEYBOARD_GET_PRIVATE(self);
+    EekKey *key = eek_renderer_find_key_by_position (priv->renderer, x, y);
 
-    GList *list = eek_keyboard_get_pressed_keys (priv->keyboard);
-    for (GList *head = list; head; head = g_list_next (head)) {
-        EekKey *key = EEK_KEY(head->data);
-        eek_keyboard_release_key(priv->keyboard, key, event->time);
-        on_key_released(key, EEK_GTK_KEYBOARD(self));
-    }
-    g_list_free (list);
-
-    return TRUE;
-}
-
-static gboolean
-eek_gtk_keyboard_real_motion_notify_event (GtkWidget      *self,
-                                           GdkEventMotion *event)
-{
-    EekGtkKeyboardPrivate *priv = EEK_GTK_KEYBOARD_GET_PRIVATE(self);
-    EekKey *key;
-
-    if (event->state == 0)
-        return FALSE;
-
-    key = eek_renderer_find_key_by_position (priv->renderer,
-                                             (gdouble)event->x,
-                                             (gdouble)event->y);
     if (key) {
         GList *list, *head;
         gboolean found = FALSE;
@@ -227,19 +183,93 @@ eek_gtk_keyboard_real_motion_notify_event (GtkWidget      *self,
             if (head->data == key)
                 found = TRUE;
             else {
-                eek_keyboard_release_key(priv->keyboard, head->data, event->time);
-                on_key_released(key, EEK_GTK_KEYBOARD(self));
+                eek_keyboard_release_key(priv->keyboard, EEK_KEY(head->data), time);
+                on_key_released(key, self);
             }
         }
         g_list_free (list);
 
         if (!found) {
-            eek_keyboard_press_key(priv->keyboard, key, event->time);
-            on_key_pressed(key, EEK_GTK_KEYBOARD(self));
+            eek_keyboard_press_key(priv->keyboard, key, time);
+            on_key_pressed(key, self);
         }
+    }
+}
+
+static void release(EekGtkKeyboard *self, guint32 time) {
+    EekGtkKeyboardPrivate *priv = EEK_GTK_KEYBOARD_GET_PRIVATE(self);
+
+    GList *list = eek_keyboard_get_pressed_keys (priv->keyboard);
+    for (GList *head = list; head; head = g_list_next (head)) {
+        EekKey *key = EEK_KEY(head->data);
+        eek_keyboard_release_key(priv->keyboard, key, time);
+        on_key_released(key, self);
+    }
+    g_list_free (list);
+}
+
+static gboolean
+eek_gtk_keyboard_real_button_press_event (GtkWidget      *self,
+                                          GdkEventButton *event)
+{
+    if (event->type == GDK_BUTTON_PRESS && event->button == 1) {
+        depress(EEK_GTK_KEYBOARD(self), event->x, event->y, event->time);
     }
     return TRUE;
 }
+
+// TODO: this belongs more in gtk_keyboard, with a way to find out which key to re-render
+static gboolean
+eek_gtk_keyboard_real_button_release_event (GtkWidget      *self,
+                                            GdkEventButton *event)
+{
+    if (event->type == GDK_BUTTON_RELEASE && event->button == 1) {
+        // TODO: can the event have different coords than the previous move event?
+        release(EEK_GTK_KEYBOARD(self), event->time);
+    }
+    return TRUE;
+}
+
+static gboolean
+eek_gtk_keyboard_real_motion_notify_event (GtkWidget      *self,
+                                           GdkEventMotion *event)
+{
+    if (event->state & GDK_BUTTON1_MASK) {
+        drag(EEK_GTK_KEYBOARD(self), event->x, event->y, event->time);
+    }
+    return TRUE;
+}
+
+// Only one touch stream at a time allowed. Others will be completely ignored.
+static gboolean
+handle_touch_event (GtkWidget      *widget,
+                    GdkEventTouch *event) {
+    EekGtkKeyboard *self = EEK_GTK_KEYBOARD(widget);
+    if (event->type == GDK_TOUCH_BEGIN) {
+        if (self->sequence) {
+            // Ignore second and following touch points
+            return FALSE;
+        }
+        self->sequence = event->sequence;
+        depress(self, event->x, event->y, event->time);
+        return TRUE;
+    }
+
+    if (self->sequence != event->sequence) {
+        return FALSE;
+    }
+
+    if (event->type == GDK_TOUCH_UPDATE) {
+        drag(self, event->x, event->y, event->time);
+    }
+    if (event->type == GDK_TOUCH_END || event->type == GDK_TOUCH_CANCEL) {
+        // TODO: can the event have different coords than the previous update event?
+        release(self, event->time);
+        self->sequence = NULL;
+    }
+    return TRUE;
+}
+
 
 static void
 eek_gtk_keyboard_real_unmap (GtkWidget *self)
@@ -392,6 +422,7 @@ eek_gtk_keyboard_class_init (EekGtkKeyboardClass *klass)
         eek_gtk_keyboard_real_motion_notify_event;
     widget_class->query_tooltip =
         eek_gtk_keyboard_real_query_tooltip;
+    widget_class->touch_event = handle_touch_event;
 
     gobject_class->set_property = eek_gtk_keyboard_set_property;
     gobject_class->dispose = eek_gtk_keyboard_dispose;
@@ -564,19 +595,6 @@ on_key_released (EekKey      *key,
                             CA_PROP_APPLICATION_ID, "org.fedorahosted.Eekboard",
                             NULL);
 #endif
-}
-
-static void
-on_key_cancelled (EekKey      *key,
-                  EekGtkKeyboard *self)
-{
-    EekGtkKeyboardPrivate *priv = EEK_GTK_KEYBOARD_GET_PRIVATE(self);
-
-    /* renderer may have not been set yet if the widget is a popup */
-    if (!priv->renderer)
-        return;
-
-    render_released_key (GTK_WIDGET(self), key);
 }
 
 static void
