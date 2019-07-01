@@ -127,5 +127,7 @@ EekKey *eek_section_create_key           (EekSection     *section,
 EekKey *eek_section_find_key_by_keycode  (EekSection     *section,
                                           guint           keycode);
 
+void eek_section_place_keys              (EekSection     *section, EekKeyboard *keyboard);
+
 G_END_DECLS
 #endif  /* EEK_SECTION_H */

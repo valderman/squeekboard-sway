@@ -66,7 +66,7 @@ struct _EekKeyPrivate
     EekSymbolMatrix *symbol_matrix;
     gint column;
     gint row;
-    gulong oref;
+    gulong oref; // UI outline reference
     gboolean is_pressed;
     gboolean is_locked;
 };

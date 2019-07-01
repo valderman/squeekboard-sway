@@ -199,32 +199,21 @@ void
 _eek_rounded_polygon (cairo_t  *cr,
                       gdouble   radius,
                       EekPoint *points,
-                      gint      num_points)
+                      guint     num_points)
 {
-    gint i, j;
-
     cairo_move_to (cr,
                    (gdouble) (points[num_points - 1].x +
                               points[0].x) / 2,
                    (gdouble) (points[num_points - 1].y +
                               points[0].y) / 2);
 
-
-#ifdef KBDRAW_DEBUG
-    printf ("    rounded polygon of radius %f:\n", radius);
-#endif
-    for (i = 0; i < num_points; i++) {
-        j = (i + 1) % num_points;
+    for (guint i = 0; i < num_points; i++) {
+        guint j = (i + 1) % num_points;
         rounded_corner (cr, (gdouble) points[i].x,
                         (gdouble) points[i].y,
                         (gdouble) (points[i].x + points[j].x) / 2,
                         (gdouble) (points[i].y + points[j].y) / 2,
                         radius);
-#ifdef KBDRAW_DEBUG
-        printf ("      corner (%d, %d) -> (%d, %d):\n",
-                points[i].x, points[i].y, points[j].x,
-                points[j].y);
-#endif
-    };
+    }
     cairo_close_path (cr);
 }

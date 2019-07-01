@@ -214,7 +214,7 @@ struct _EekOutline
     /*< public >*/
     gdouble corner_radius;
     EekPoint *points;
-    gint num_points;
+    guint num_points;
 };
 
 GType       eek_outline_get_type (void) G_GNUC_CONST;

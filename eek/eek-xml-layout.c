@@ -362,9 +362,6 @@ geometry_start_element_callback (GMarkupParseContext *pcontext,
             eek_element_set_bounds (EEK_ELEMENT(data->keyboard), &bounds);
         else if (g_strcmp0 (data->element_stack->data, "section") == 0)
             eek_element_set_bounds (EEK_ELEMENT(data->section), &bounds);
-        else if (g_strcmp0 (data->element_stack->data, "key") == 0)
-            eek_element_set_bounds (EEK_ELEMENT(data->key), &bounds);
-
         goto out;
     }
 
@@ -504,7 +501,6 @@ geometry_end_element_callback (GMarkupParseContext *pcontext,
 {
     GeometryParseData *data = user_data;
     GSList *head = data->element_stack;
-    gint i;
 
     g_free (head->data);
     data->element_stack = g_slist_next (data->element_stack);
@@ -536,7 +532,8 @@ geometry_end_element_callback (GMarkupParseContext *pcontext,
         outline->num_points = g_slist_length (data->points);
         outline->points = g_slice_alloc0 (sizeof (EekPoint) *
                                           outline->num_points);
-        for (head = data->points = g_slist_reverse (data->points), i = 0;
+        guint i;
+        for (i = 0, head = data->points = g_slist_reverse (data->points);
              head && i < outline->num_points;
              head = g_slist_next (head), i++) {
             memcpy (&outline->points[i], head->data, sizeof (EekPoint));
@@ -640,13 +637,13 @@ symbols_start_element_callback (GMarkupParseContext *pcontext,
 
         data->key = eek_keyboard_find_key_by_keycode (data->keyboard,
                                                       keycode);
-        if (data->key == NULL) {
+        /*if (data->key == NULL) {
             g_set_error (error,
                          G_MARKUP_ERROR,
                          G_MARKUP_ERROR_INVALID_CONTENT,
                          "no such keycode %u", keycode);
             return;
-        }
+        }*/
 
         attribute = get_attribute (attribute_names, attribute_values,
                                    "groups");
@@ -721,6 +718,10 @@ symbols_end_element_callback (GMarkupParseContext *pcontext,
     text = g_strndup (data->text->str, data->text->len);
 
     if (g_strcmp0 (element_name, "key") == 0) {
+        if (!data->key) {
+            return;
+        }
+
         gint num_symbols = g_slist_length (data->symbols);
         gint levels = num_symbols / data->groups;
         EekSymbolMatrix *matrix = eek_symbol_matrix_new (data->groups,
@@ -1132,6 +1133,38 @@ eek_xml_keyboard_desc_free (EekXmlKeyboardDesc *desc)
     g_slice_free (EekXmlKeyboardDesc, desc);
 }
 
+struct place_data {
+    double desired_width;
+    double current_offset;
+    EekKeyboard *keyboard;
+};
+
+const double section_spacing = 7.0;
+
+static void section_placer(EekElement *element, gpointer user_data) {
+    struct place_data *data = (struct place_data*)user_data;
+
+    EekBounds section_bounds = {0};
+    eek_element_get_bounds(element, &section_bounds);
+    section_bounds.width = data->desired_width;
+    eek_element_set_bounds(element, &section_bounds);
+
+    // Sections are rows now. Gather up all the keys and adjust their bounds.
+    eek_section_place_keys(EEK_SECTION(element), EEK_KEYBOARD(data->keyboard));
+
+    eek_element_get_bounds(element, &section_bounds);
+    section_bounds.y = data->current_offset;
+    eek_element_set_bounds(element, &section_bounds);
+    data->current_offset += section_bounds.height + section_spacing;
+}
+
+static void section_counter(EekElement *element, gpointer user_data) {
+    double *total_height = user_data;
+    EekBounds section_bounds = {0};
+    eek_element_get_bounds(element, &section_bounds);
+    *total_height += section_bounds.height + section_spacing;
+}
+
 static gboolean
 parse_geometry (const gchar *path, EekKeyboard *keyboard, GError **error)
 {
@@ -1183,6 +1216,27 @@ parse_geometry (const gchar *path, EekKeyboard *keyboard, GError **error)
             eek_key_set_oref (EEK_KEY(k), GPOINTER_TO_UINT(oref));
     }
     g_hash_table_destroy (oref_hash);
+
+    /* Order rows */
+    // This needs to be done after outlines, because outlines define key sizes
+    // TODO: do this only for rows without bounds
+
+    // The keyboard width is given by the user via screen size. The height will be given dynamically.
+    // TODO: calculate max line width beforehand for button centering. Leave keyboard centering to the renderer later
+    EekBounds keyboard_bounds = {0};
+    eek_element_get_bounds(EEK_ELEMENT(keyboard), &keyboard_bounds);
+
+    struct place_data placer_data = {
+        .desired_width = keyboard_bounds.width,
+        .current_offset = 0,
+        .keyboard = keyboard,
+    };
+    eek_container_foreach_child(EEK_CONTAINER(keyboard), section_placer, &placer_data);
+
+    double total_height = 0;
+    eek_container_foreach_child(EEK_CONTAINER(keyboard), section_counter, &total_height);
+    keyboard_bounds.height = total_height;
+    eek_element_set_bounds(EEK_ELEMENT(keyboard), &keyboard_bounds);
 
     geometry_parse_data_free (data);
     return TRUE;

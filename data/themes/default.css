@@ -5,18 +5,14 @@
 }
 
 .key {
-    color: #ffffff;
-    background-gradient-direction: vertical;
-    background-gradient-start: rgba(0, 0, 0, 255);
-    background-gradient-end: rgba(64, 64, 64, 255);
-    border-width: 2px;
-    border-color: rgba(128, 128, 128, 255);
-    border-radius: 3px;
+    color: #deddda;
+    background: #464448;
+    border-width: 0.5px;
+    border-color: #5e5c64;
+    border-radius: 2px;
 }
 
 .key:active {
-    background-gradient-direction: vertical;
-    background-gradient-start: rgba(0, 0, 255, 255);
-    background-gradient-end: rgba(64, 64, 255, 255);
-    border-color: rgba(160, 160, 255, 255);
+    background: #1c71d8;
+    border-color: #3584e4;
 }
