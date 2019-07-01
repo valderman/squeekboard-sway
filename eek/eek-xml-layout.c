@@ -1141,6 +1141,8 @@ struct place_data {
     EekKeyboard *keyboard;
 };
 
+const double section_spacing = 7.0;
+
 static void section_placer(EekElement *element, gpointer user_data) {
     struct place_data *data = user_data;
 
@@ -1151,14 +1153,14 @@ static void section_placer(EekElement *element, gpointer user_data) {
     eek_element_get_bounds(element, &section_bounds);
     section_bounds.y = data->current_offset;
     eek_element_set_bounds(element, &section_bounds);
-    data->current_offset += section_bounds.height;
+    data->current_offset += section_bounds.height + section_spacing;
 }
 
 static void section_counter(EekElement *element, gpointer user_data) {
     double *total_height = user_data;
     EekBounds section_bounds = {0};
     eek_element_get_bounds(element, &section_bounds);
-    *total_height += section_bounds.height + 2.0;
+    *total_height += section_bounds.height + section_spacing;
 }
 
 static gboolean

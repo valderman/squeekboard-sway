@@ -79,7 +79,7 @@ typedef struct _TextProperty TextProperty;
 extern void _eek_rounded_polygon               (cairo_t     *cr,
                                                 gdouble      radius,
                                                 EekPoint    *points,
-                                                gint         num_points);
+                                                guint         num_points);
 
 static void eek_renderer_real_render_key_label (EekRenderer *self,
                                                 PangoLayout *layout,
@@ -116,8 +116,8 @@ create_keyboard_surface_key_callback (EekElement *element,
     cairo_rectangle (data->cr,
                      0.0,
                      0.0,
-                     bounds.width * priv->scale,
-                     bounds.height * priv->scale);
+                     bounds.width * priv->scale + 100,
+                     bounds.height * priv->scale + 100);
     cairo_clip (data->cr);
     render_key (data->renderer, data->cr, EEK_KEY(element), FALSE);
 
@@ -205,8 +205,6 @@ render_key_outline (EekRenderer *renderer,
     EekRendererPrivate *priv = EEK_RENDERER_GET_PRIVATE(renderer);
     EekOutline *outline;
     EekBounds bounds;
-    gdouble scale;
-    gint i;
     guint oref;
     EekThemeNode *theme_node;
     EekColor foreground, background, gradient_start, gradient_end, border_color;
@@ -233,14 +231,14 @@ render_key_outline (EekRenderer *renderer,
         border_width = eek_theme_node_get_border_width (theme_node,
                                                         EEK_SIDE_TOP);
         border_radius = eek_theme_node_get_border_radius (theme_node,
-                                                          EEK_SIDE_TOP);
+                                                          EEK_CORNER_TOPLEFT);
         eek_theme_node_get_border_color (theme_node, EEK_SIDE_TOP,
                                          &border_color);
     } else {
         foreground = priv->default_foreground_color;
         background = priv->default_background_color;
         gradient_type = EEK_GRADIENT_NONE;
-        border_width = priv->border_width;
+        border_width = (gint)round(priv->border_width);
         border_radius = -1;
         border_color.red = ABS(background.red - foreground.red) * 0.7;
         border_color.green = ABS(background.green - foreground.green) * 0.7;
@@ -248,21 +246,15 @@ render_key_outline (EekRenderer *renderer,
         border_color.alpha = foreground.alpha;
     }
 
-    /* need to rescale so that the border fit inside the clipping
-       region */
-    eek_element_get_bounds (EEK_ELEMENT(key), &bounds);
-    scale = MIN((bounds.width - border_width * 2) / bounds.width,
-                (bounds.height - border_width * 2) / bounds.height);
-
     outline = eek_outline_copy (outline);
-    for (i = 0; i < outline->num_points; i++) {
-        outline->points[i].x *= priv->scale * scale;
-        outline->points[i].y *= priv->scale * scale;
+    for (guint i = 0; i < outline->num_points; i++) {
+        outline->points[i].x *= priv->scale;
+        outline->points[i].y *= priv->scale;
     }
 
     cairo_translate (cr,
-                     border_width * priv->scale * scale,
-                     border_width * priv->scale * scale);
+                     border_width * priv->scale,
+                     border_width * priv->scale);
 
     if (gradient_type != EEK_GRADIENT_NONE) {
         cairo_pattern_t *pat;
@@ -339,6 +331,10 @@ render_key_outline (EekRenderer *renderer,
                           outline->points,
                           outline->num_points);
     cairo_stroke (cr);
+
+    cairo_translate (cr,
+                     -border_width * priv->scale,
+                     -border_width * priv->scale);
 
     eek_outline_free (outline);
 }
@@ -464,10 +460,11 @@ render_key (EekRenderer *self,
     if (!outline_surface) {
         cairo_t *cr;
 
+        // Outline will be drawn on the outside of the button, so the surface needs to be bigger than the button
         outline_surface =
             cairo_image_surface_create (CAIRO_FORMAT_ARGB32,
-                                        bounds.width,
-                                        bounds.height);
+                                        (int)ceil(bounds.width) + 10,
+                                        (int)ceil(bounds.height) + 10);
         cr = cairo_create (outline_surface);
 
         /* blank background */
