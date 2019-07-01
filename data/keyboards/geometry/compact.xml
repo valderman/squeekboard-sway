@@ -71,7 +71,7 @@
   <section angle="0">
     <bounds x="15.60975" y="78.04878" width="608.7804" height="201.3658"/>
     <row orientation="1">
-      <key keycode="50" name="LFSH" oref="outline8">
+      <key keycode="50" name="LFSH" oref="altline">
 	<bounds x="3.121951" y="121.7560" width="88.97561" height="37.46341"/>
       </key>
       <key keycode="52" name="AB01" oref="outline2">
@@ -95,7 +95,7 @@
       <key keycode="58" name="AB07" oref="outline2">
 	<bounds x="337.1707" y="121.7560" width="37.46341" height="37.46341"/>
       </key>
-      <key keycode="22" name="BKSP" oref="outline13">
+      <key keycode="22" name="BKSP" oref="altline">
 	<bounds x="529.1707" y="1.560976" width="79.60975" height="37.46341"/>
       </key>
     </row>
@@ -103,13 +103,13 @@
   <section angle="0">
     <bounds x="15.60975" y="78.04878" width="608.7804" height="201.3658"/>
     <row orientation="1">
-      <key keycode="37" name="LCTL" oref="outline1">
+      <key keycode="37" name="LCTL" oref="altline">
 	<bounds x="62.43902" y="162.3414" width="48.39024" height="37.46341"/>
       </key>
-      <key keycode="64" name="LALT" oref="outline1">
+      <key keycode="64" name="LALT" oref="altline">
 	<bounds x="113.9512" y="162.3414" width="48.39024" height="37.46341"/>
       </key>
-      <key keycode="65" name="SPCE" oref="outline3">
+      <key keycode="65" name="SPCE" oref="spaceline">
 	<bounds x="165.4634" y="162.3414" width="217.5853" height="37.46341"/>
       </key>
       <key keycode="60" name="AB09" oref="outline2">
@@ -126,7 +126,7 @@
     <point x="37.46341" y="37.46341"/>
     <point x="0.000000" y="37.46341"/>
   </outline>
-  <outline id="outline1" corner-radius="1.000000">
+  <outline id="altline" corner-radius="1.000000">
     <point x="0.000000" y="0.000000"/>
     <point x="48.39024" y="0.000000"/>
     <point x="48.39024" y="37.46341"/>
@@ -180,10 +180,10 @@
     <point x="79.60975" y="37.46341"/>
     <point x="0.000000" y="37.46341"/>
   </outline>
-  <outline id="outline3" corner-radius="1.000000">
+  <outline id="spaceline" corner-radius="1.000000">
     <point x="0.000000" y="0.000000"/>
-    <point x="217.5853" y="0.000000"/>
-    <point x="217.5853" y="37.46341"/>
+    <point x="150.5853" y="0.000000"/>
+    <point x="150.5853" y="37.46341"/>
     <point x="0.000000" y="37.46341"/>
   </outline>
 </geometry>

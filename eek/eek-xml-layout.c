@@ -510,8 +510,6 @@ geometry_end_element_callback (GMarkupParseContext *pcontext,
     g_slist_free1 (head);
 
     if (g_strcmp0 (element_name, "section") == 0) {
-        // Sections are rows now. Gather up all the keys and adjust their bounds.
-        eek_section_place_keys(data->section);
         data->section = NULL;
         data->num_rows = 0;
         return;
@@ -1138,13 +1136,22 @@ eek_xml_keyboard_desc_free (EekXmlKeyboardDesc *desc)
     g_slice_free (EekXmlKeyboardDesc, desc);
 }
 
+struct place_data {
+    double current_offset;
+    EekKeyboard *keyboard;
+};
+
 static void section_placer(EekElement *element, gpointer user_data) {
-    double *current_offset = user_data;
+    struct place_data *data = user_data;
+
+    // Sections are rows now. Gather up all the keys and adjust their bounds.
+    eek_section_place_keys(EEK_SECTION(element), EEK_KEYBOARD(data->keyboard));
+
     EekBounds section_bounds = {0};
     eek_element_get_bounds(element, &section_bounds);
-    section_bounds.y = *current_offset;
+    section_bounds.y = data->current_offset;
     eek_element_set_bounds(element, &section_bounds);
-    *current_offset += section_bounds.height;
+    data->current_offset += section_bounds.height;
 }
 
 static void section_counter(EekElement *element, gpointer user_data) {
@@ -1187,18 +1194,6 @@ parse_geometry (const gchar *path, EekKeyboard *keyboard, GError **error)
         return FALSE;
     }
 
-    /* Order rows */
-    // TODO: do this only for rows without bounds
-    double current_offset = 0;
-    eek_container_foreach_child(EEK_CONTAINER(keyboard), section_placer, &current_offset);
-
-    double total_height = 0;
-    eek_container_foreach_child(EEK_CONTAINER(keyboard), section_counter, &total_height);
-    EekBounds keyboard_bounds = {0};
-    eek_element_get_bounds(EEK_ELEMENT(keyboard), &keyboard_bounds);
-    keyboard_bounds.height = total_height;
-    eek_element_set_bounds(EEK_ELEMENT(keyboard), &keyboard_bounds);
-
     /* Resolve outline references. */
     oref_hash = g_hash_table_new (g_str_hash, g_str_equal);
     g_hash_table_iter_init (&iter, data->oref_outline_hash);
@@ -1217,6 +1212,22 @@ parse_geometry (const gchar *path, EekKeyboard *keyboard, GError **error)
             eek_key_set_oref (EEK_KEY(k), GPOINTER_TO_UINT(oref));
     }
     g_hash_table_destroy (oref_hash);
+
+    /* Order rows */
+    // This needs to be done after outlines, because outlines define key sizes
+    // TODO: do this only for rows without bounds
+    struct place_data placer_data = {
+        .current_offset = 0,
+        .keyboard = keyboard,
+    };
+    eek_container_foreach_child(EEK_CONTAINER(keyboard), section_placer, &placer_data);
+
+    double total_height = 0;
+    eek_container_foreach_child(EEK_CONTAINER(keyboard), section_counter, &total_height);
+    EekBounds keyboard_bounds = {0};
+    eek_element_get_bounds(EEK_ELEMENT(keyboard), &keyboard_bounds);
+    keyboard_bounds.height = total_height;
+    eek_element_set_bounds(EEK_ELEMENT(keyboard), &keyboard_bounds);
 
     geometry_parse_data_free (data);
     return TRUE;

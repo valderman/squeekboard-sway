@@ -480,6 +480,38 @@ eek_section_create_key (EekSection *section,
                                                        row);
 }
 
+static void keysizer(EekElement *element, gpointer user_data) {
+    EekKey *key = EEK_KEY(element);
+    EekKeyboard *keyboard = EEK_KEYBOARD(user_data);
+    uint oref = eek_key_get_oref (key);
+    EekOutline *outline = eek_keyboard_get_outline (keyboard, oref);
+    if (outline && outline->num_points > 0) {
+        double minx = outline->points[0].x;
+        double maxx = minx;
+        double miny = outline->points[0].y;
+        double maxy = miny;
+        for (uint i = 1; i < outline->num_points; i++) {
+            EekPoint p = outline->points[i];
+            if (p.x < minx) {
+                minx = p.x;
+            } else if (p.x > maxx) {
+                maxx = p.x;
+            }
+
+            if (p.y < miny) {
+                miny = p.y;
+            } else if (p.y > maxy) {
+                maxy = p.y;
+            }
+        }
+        EekBounds key_bounds = {0};
+        eek_element_get_bounds(element, &key_bounds);
+        key_bounds.height = maxy - miny;
+        key_bounds.width = maxx - minx;
+        eek_element_set_bounds(element, &key_bounds);
+    }
+}
+
 struct keys_info {
     uint count;
     double total_width;
@@ -509,14 +541,15 @@ static void keyplacer(EekElement *element, gpointer user_data) {
     *current_offset += key_bounds.width + keyspacing;
 }
 
-void eek_section_place_keys(EekSection *section)
+void eek_section_place_keys(EekSection *section, EekKeyboard *keyboard)
 {
+    eek_container_foreach_child(EEK_CONTAINER(section), keysizer, keyboard);
+
     struct keys_info keyinfo = {0};
     eek_container_foreach_child(EEK_CONTAINER(section), keycounter, &keyinfo);
     EekBounds section_bounds = {0};
     eek_element_get_bounds(EEK_ELEMENT(section), &section_bounds);
 
-    // FIXME: find a way to center buttons
     double key_offset = (section_bounds.width - (keyinfo.total_width + (keyinfo.count - 1) * keyspacing)) / 2;
     eek_container_foreach_child(EEK_CONTAINER(section), keyplacer, &key_offset);
 
