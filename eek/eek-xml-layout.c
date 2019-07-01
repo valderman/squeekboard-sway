@@ -362,9 +362,6 @@ geometry_start_element_callback (GMarkupParseContext *pcontext,
             eek_element_set_bounds (EEK_ELEMENT(data->keyboard), &bounds);
         else if (g_strcmp0 (data->element_stack->data, "section") == 0)
             eek_element_set_bounds (EEK_ELEMENT(data->section), &bounds);
-        else if (g_strcmp0 (data->element_stack->data, "key") == 0)
-            eek_element_set_bounds (EEK_ELEMENT(data->key), &bounds);
-
         goto out;
     }
 
@@ -1137,6 +1134,7 @@ eek_xml_keyboard_desc_free (EekXmlKeyboardDesc *desc)
 }
 
 struct place_data {
+    double desired_width;
     double current_offset;
     EekKeyboard *keyboard;
 };
@@ -1144,12 +1142,16 @@ struct place_data {
 const double section_spacing = 7.0;
 
 static void section_placer(EekElement *element, gpointer user_data) {
-    struct place_data *data = user_data;
+    struct place_data *data = (struct place_data*)user_data;
+
+    EekBounds section_bounds = {0};
+    eek_element_get_bounds(element, &section_bounds);
+    section_bounds.width = data->desired_width;
+    eek_element_set_bounds(element, &section_bounds);
 
     // Sections are rows now. Gather up all the keys and adjust their bounds.
     eek_section_place_keys(EEK_SECTION(element), EEK_KEYBOARD(data->keyboard));
 
-    EekBounds section_bounds = {0};
     eek_element_get_bounds(element, &section_bounds);
     section_bounds.y = data->current_offset;
     eek_element_set_bounds(element, &section_bounds);
@@ -1218,7 +1220,14 @@ parse_geometry (const gchar *path, EekKeyboard *keyboard, GError **error)
     /* Order rows */
     // This needs to be done after outlines, because outlines define key sizes
     // TODO: do this only for rows without bounds
+
+    // The keyboard width is given by the user via screen size. The height will be given dynamically.
+    // TODO: calculate max line width beforehand for button centering. Leave keyboard centering to the renderer later
+    EekBounds keyboard_bounds = {0};
+    eek_element_get_bounds(EEK_ELEMENT(keyboard), &keyboard_bounds);
+
     struct place_data placer_data = {
+        .desired_width = keyboard_bounds.width,
         .current_offset = 0,
         .keyboard = keyboard,
     };
@@ -1226,8 +1235,6 @@ parse_geometry (const gchar *path, EekKeyboard *keyboard, GError **error)
 
     double total_height = 0;
     eek_container_foreach_child(EEK_CONTAINER(keyboard), section_counter, &total_height);
-    EekBounds keyboard_bounds = {0};
-    eek_element_get_bounds(EEK_ELEMENT(keyboard), &keyboard_bounds);
     keyboard_bounds.height = total_height;
     eek_element_set_bounds(EEK_ELEMENT(keyboard), &keyboard_bounds);
 
