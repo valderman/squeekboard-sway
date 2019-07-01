@@ -637,7 +637,7 @@ eek_renderer_real_render_key_label (EekRenderer *self,
 
         size = calculate_font_size (self, base_font, FALSE);
         priv->font = pango_font_description_copy (base_font);
-        pango_font_description_set_size (priv->font, size);
+        pango_font_description_set_size (priv->font, size * 0.6);
     }
 
     eek_element_get_bounds (EEK_ELEMENT(key), &bounds);
