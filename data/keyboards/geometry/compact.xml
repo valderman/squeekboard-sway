@@ -35,6 +35,9 @@
 	<bounds x="429.2682" y="42.14634" width="37.46341" height="37.46341"/>
       </key>
     </row>
+  </section>
+  <section angle="0">
+    <bounds x="15.60975" y="78.04878" width="608.7804" height="201.3658"/>
     <row orientation="1">
       <key keycode="38" name="AC01" oref="outline2">
 	<bounds x="76.48780" y="82.73170" width="37.46341" height="37.46341"/>
@@ -64,6 +67,9 @@
 	<bounds x="399.6097" y="82.73170" width="37.46341" height="37.46341"/>
       </key>
     </row>
+  </section>
+  <section angle="0">
+    <bounds x="15.60975" y="78.04878" width="608.7804" height="201.3658"/>
     <row orientation="1">
       <key keycode="50" name="LFSH" oref="outline8">
 	<bounds x="3.121951" y="121.7560" width="88.97561" height="37.46341"/>
@@ -93,6 +99,9 @@
 	<bounds x="529.1707" y="1.560976" width="79.60975" height="37.46341"/>
       </key>
     </row>
+  </section>
+  <section angle="0">
+    <bounds x="15.60975" y="78.04878" width="608.7804" height="201.3658"/>
     <row orientation="1">
       <key keycode="37" name="LCTL" oref="outline1">
 	<bounds x="62.43902" y="162.3414" width="48.39024" height="37.46341"/>

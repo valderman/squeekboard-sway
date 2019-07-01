@@ -129,7 +129,7 @@ static EekKey *
 eek_section_real_create_key (EekSection *self,
                              guint       keycode,
                              gint        column_index,
-                             gint        row_index)
+                             guint        row_index)
 {
     EekKey *key;
     gint num_rows;
@@ -478,4 +478,48 @@ eek_section_create_key (EekSection *section,
                                                        keycode,
                                                        column,
                                                        row);
+}
+
+struct keys_info {
+    uint count;
+    double total_width;
+    double biggest_height;
+};
+
+static void keycounter (EekElement *element, gpointer user_data) {
+    struct keys_info *data = user_data;
+    data->count++;
+    EekBounds key_bounds = {0};
+    eek_element_get_bounds(element, &key_bounds);
+    data->total_width += key_bounds.width;
+    if (key_bounds.height > data->biggest_height) {
+        data->biggest_height = key_bounds.height;
+    }
+}
+
+const double keyspacing = 2.0;
+
+static void keyplacer(EekElement *element, gpointer user_data) {
+    double *current_offset = user_data;
+    EekBounds key_bounds = {0};
+    eek_element_get_bounds(element, &key_bounds);
+    key_bounds.x = *current_offset;
+    key_bounds.y = 0;
+    eek_element_set_bounds(element, &key_bounds);
+    *current_offset += key_bounds.width + keyspacing;
+}
+
+void eek_section_place_keys(EekSection *section)
+{
+    struct keys_info keyinfo = {0};
+    eek_container_foreach_child(EEK_CONTAINER(section), keycounter, &keyinfo);
+    EekBounds section_bounds = {0};
+    eek_element_get_bounds(EEK_ELEMENT(section), &section_bounds);
+
+    // FIXME: find a way to center buttons
+    double key_offset = (section_bounds.width - (keyinfo.total_width + (keyinfo.count - 1) * keyspacing)) / 2;
+    eek_container_foreach_child(EEK_CONTAINER(section), keyplacer, &key_offset);
+
+    section_bounds.height = keyinfo.biggest_height;
+    eek_element_set_bounds(EEK_ELEMENT(section), &section_bounds);
 }
