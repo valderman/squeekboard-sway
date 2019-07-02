@@ -56,14 +56,16 @@ deps = [
   dependency('xkbcommon'),
   cc.find_library('m'),
   cc.find_library('rt'),
+  cc.find_library('dl'),
+  cc.find_library('pthread'),
 #  dependency('libxklavier'), # FIXME remove
 ]
 
 # Replacement for eekboard-server
-rslib = library(
+rslib = static_library(
   'rslib',
-  sources:['imservice.rs'],
-  install: true
+  sources: ['imservice.rs'],
+  rust_crate_type: 'staticlib'
 )
 
 squeekboard = executable('squeekboard',
