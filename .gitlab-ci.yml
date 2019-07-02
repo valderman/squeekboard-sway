@@ -12,8 +12,8 @@ build_meson:
   tags:
     - librem5
   script:
-    - mkdir -p ../build
-    - meson ../build/
-    - cd ../build
+    - mkdir -p build
+    - meson build/
+    - cd build
     - ninja install
 
