@@ -177,7 +177,7 @@ get_modifier_mask (guint xkeysym)
     case EEK_KEYSYM_Shift_Lock:
         return EEK_SHIFT_MASK;
     case EEK_KEYSYM_ISO_Level3_Shift:
-        return EEK_MOD5_MASK;
+        return EEK_BUTTON1_MASK;
     case EEK_KEYSYM_Control_L:
     case EEK_KEYSYM_Control_R:
         return EEK_CONTROL_MASK;
