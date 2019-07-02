@@ -19,7 +19,12 @@ endif
 prefix = get_option('prefix')
 datadir = join_paths(prefix, get_option('datadir'))
 pkgdatadir = join_paths(datadir, meson.project_name())
-dbusdir = join_paths(datadir, 'dbus-1/interfaces')
+if get_option('depdatadir') == ''
+  depdatadir = datadir
+else
+  depdatadir = get_option('depdatadir')
+endif
+dbusdir = join_paths(depdatadir, 'dbus-1/interfaces')
 
 subdir('data')
 subdir('protocols')

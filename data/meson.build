@@ -14,10 +14,6 @@ install_data(
     install_dir: pkgdatadir + '/keyboards/geometry/',
 )
 
-install_data('dbus/sm.puri.OSK0.xml',
-    install_dir: dbusdir
-)
-
 symbols = [
     'ar.xml',
     'as-inscript.xml',
