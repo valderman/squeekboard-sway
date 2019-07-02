@@ -34,7 +34,8 @@ typedef struct {
     struct xkb_keymap *keymap; // unowned copy
     XkbDescRec *xkb;
     guint modifier_keycodes[8];
-    gint group;
+    guint modifier_indices[MOD_IDX_LAST];
+    guint group;
 } SeatEmitter;
 
 
@@ -114,7 +115,7 @@ get_keycode_from_gdk_keymap (SeatEmitter *emitter,
         return FALSE;
 
     for (i = 0; i < n_keys; i++)
-        if (keys[i].group == emitter->group)
+        if ((guint)keys[i].group == emitter->group)
             best_match = &keys[i];
 
     if (!best_match) {
@@ -140,25 +141,23 @@ int send_virtual_keyboard_key(
 }
 
 static void
-send_fake_modifier_key_event (SeatEmitter         *emitter,
+send_fake_modifiers_events (SeatEmitter         *emitter,
                               EekModifierType modifiers,
-                              gboolean        is_pressed,
                               uint32_t        timestamp)
 {
-    unsigned long i;
+    (void)timestamp;
 
-    for (i = 0; i < G_N_ELEMENTS(emitter->modifier_keycodes); i++) {
-        if (modifiers & (1 << i)) {
-            guint keycode = emitter->modifier_keycodes[i];
-            printf("Trying to send a modifier %ld press %d\n", i, is_pressed);
-            g_return_if_fail (keycode > 0);
-
-            send_virtual_keyboard_key (emitter->virtual_keyboard,
-                                       keycode,
-                                       is_pressed,
-                                       timestamp);
-        }
+    uint32_t proto_modifiers = 0;
+    if (modifiers & EEK_SHIFT_MASK) {
+        proto_modifiers |= 1<<MOD_IDX_SHIFT;
     }
+    if (modifiers & EEK_CONTROL_MASK) {
+        proto_modifiers |= 1<<MOD_IDX_CTRL;
+    }
+    if (modifiers & EEK_MOD1_MASK) {
+        proto_modifiers |= 1<<MOD_IDX_ALT;
+    }
+    zwp_virtual_keyboard_v1_modifiers(emitter->virtual_keyboard, proto_modifiers, 0, 0, emitter->group);
 }
 
 static void
@@ -190,19 +189,14 @@ send_fake_key_event (SeatEmitter *emitter,
     keyboard_modifiers &= (unsigned)~EEK_SHIFT_MASK;
     keyboard_modifiers &= (unsigned)~EEK_LOCK_MASK;
     /* FIXME: may need to remap ISO_Level3_Shift and NumLock */
-#if 0
-    keyboard_modifiers &= ~EEK_MOD5_MASK;
-    keyboard_modifiers &= ~client->alt_gr_mask;
-    keyboard_modifiers &= ~client->num_lock_mask;
-#endif
 
     modifiers |= keyboard_modifiers;
 
-    send_fake_modifier_key_event (emitter, modifiers, TRUE, timestamp);
+    send_fake_modifiers_events (emitter, modifiers, timestamp);
 
     // There's something magical about subtracting/adding 8 to keycodes for some reason
     send_virtual_keyboard_key (emitter->virtual_keyboard, keycode - 8, (unsigned)pressed, timestamp);
-    send_fake_modifier_key_event (emitter, modifiers, FALSE, timestamp);
+    send_fake_modifiers_events (emitter, modifiers, timestamp);
 
     if (old_keysym != xkeysym)
         replace_keycode (emitter, keycode, &old_keysym);
@@ -211,7 +205,7 @@ send_fake_key_event (SeatEmitter *emitter,
 static void
 send_fake_key_events (SeatEmitter *emitter,
                       EekSymbol *symbol,
-                      guint      keyboard_modifiers,
+                      EekModifierType      keyboard_modifiers,
                       gboolean   pressed,
                       uint32_t   timestamp)
 {
@@ -253,12 +247,48 @@ send_fake_key_events (SeatEmitter *emitter,
     }
 }
 
+
+
+/* Finds the first key code for each modifier and saves it in modifier_keycodes */
+static void
+update_modifier_info (SeatEmitter *client)
+{
+    client->modifier_indices[MOD_IDX_SHIFT] = xkb_keymap_mod_get_index(client->keymap, XKB_MOD_NAME_SHIFT);
+    client->modifier_indices[MOD_IDX_CAPS] = xkb_keymap_mod_get_index(client->keymap, XKB_MOD_NAME_CAPS);
+    client->modifier_indices[MOD_IDX_CTRL] = xkb_keymap_mod_get_index(client->keymap, XKB_MOD_NAME_CTRL);
+    client->modifier_indices[MOD_IDX_ALT] = xkb_keymap_mod_get_index(client->keymap, XKB_MOD_NAME_ALT);
+    client->modifier_indices[MOD_IDX_NUM] = xkb_keymap_mod_get_index(client->keymap, XKB_MOD_NAME_NUM);
+    client->modifier_indices[MOD_IDX_MOD3] = xkb_keymap_mod_get_index(client->keymap, "Mod3");
+    client->modifier_indices[MOD_IDX_LOGO] = xkb_keymap_mod_get_index(client->keymap, XKB_MOD_NAME_LOGO);
+    client->modifier_indices[MOD_IDX_ALTGR] = xkb_keymap_mod_get_index(client->keymap, "Mod5");
+    client->modifier_indices[MOD_IDX_NUMLK] = xkb_keymap_mod_get_index(client->keymap, "NumLock");
+    client->modifier_indices[MOD_IDX_ALSO_ALT] = xkb_keymap_mod_get_index(client->keymap, "Alt");
+    client->modifier_indices[MOD_IDX_LVL3] = xkb_keymap_mod_get_index(client->keymap, "LevelThree");
+    client->modifier_indices[MOD_IDX_LALT] = xkb_keymap_mod_get_index(client->keymap, "LAlt");
+    client->modifier_indices[MOD_IDX_RALT] = xkb_keymap_mod_get_index(client->keymap, "RAlt");
+    client->modifier_indices[MOD_IDX_RCONTROL] = xkb_keymap_mod_get_index(client->keymap, "RControl");
+    client->modifier_indices[MOD_IDX_LCONTROL] = xkb_keymap_mod_get_index(client->keymap, "LControl");
+    client->modifier_indices[MOD_IDX_SCROLLLK] = xkb_keymap_mod_get_index(client->keymap, "ScrollLock");
+    client->modifier_indices[MOD_IDX_LVL5] = xkb_keymap_mod_get_index(client->keymap, "LevelFive");
+    client->modifier_indices[MOD_IDX_ALSO_ALTGR] = xkb_keymap_mod_get_index(client->keymap, "AltGr");
+    client->modifier_indices[MOD_IDX_META] = xkb_keymap_mod_get_index(client->keymap, "Meta");
+    client->modifier_indices[MOD_IDX_SUPER] = xkb_keymap_mod_get_index(client->keymap, "Super");
+    client->modifier_indices[MOD_IDX_HYPER] = xkb_keymap_mod_get_index(client->keymap, "Hyper");
+
+    /*
+    for (xkb_mod_index_t i = 0;
+         i < xkb_keymap_num_mods(client->keymap);
+         i++) {
+        g_log("squeek", G_LOG_LEVEL_DEBUG, "%s", xkb_keymap_mod_get_name(client->keymap, i));
+    }*/
+}
+
 void
 emit_key_activated (EekboardContextService *manager,
                     EekKeyboard     *keyboard,
                     guint            keycode,
                     EekSymbol       *symbol,
-                    guint            modifiers,
+                    EekModifierType  modifiers,
                     gboolean pressed,
                     uint32_t timestamp)
 {
@@ -292,72 +322,6 @@ emit_key_activated (EekboardContextService *manager,
     SeatEmitter emitter = {0};
     emitter.virtual_keyboard = manager->virtual_keyboard;
     emitter.keymap = keyboard->keymap;
+    update_modifier_info (&emitter);
     send_fake_key_events (&emitter, symbol, modifiers, pressed, timestamp);
 }
-
-/* Finds the first key code for each modifier and saves it in modifier_keycodes */
-static void
-update_modifier_keycodes (SeatEmitter *client)
-{
-    GdkDisplay *display = gdk_display_get_default ();
-    Display *xdisplay = NULL; // GDK_DISPLAY_XDISPLAY (display);
-    return; // FIXME: need to get those codes somehow
-    XModifierKeymap *mods;
-    gint i, j;
-
-    //mods = XGetModifierMapping (xdisplay);
-    for (i = 0; i < 8; i++) {
-        client->modifier_keycodes[i] = 0;
-        for (j = 0; j < mods->max_keypermod; j++) {
-            KeyCode keycode = mods->modifiermap[mods->max_keypermod * i + j];
-            if (keycode != 0) {
-                client->modifier_keycodes[i] = keycode;
-                break;
-            }
-        }
-    }
-    //XFreeModifiermap (mods);
-}
-
-gboolean
-client_enable_xtest (SeatEmitter *client)
-{
-    //GdkDisplay *display = gdk_display_get_default ();
-    //Display *xdisplay = GDK_DISPLAY_XDISPLAY (display);
-    int opcode, event_base, error_base, major_version, minor_version;
-
-    /* FIXME: need at least to fetch an xkb keymap (but what for?)
-    g_assert (display);
-
-    if (!XTestQueryExtension (xdisplay,
-                              &event_base, &error_base,
-                              &major_version, &minor_version)) {
-        g_warning ("XTest extension is not available");
-        return FALSE;
-    }
-
-    if (!XkbQueryExtension (xdisplay,
-                            &opcode, &event_base, &error_base,
-                            &major_version, &minor_version)) {
-        g_warning ("Xkb extension is not available");
-        return FALSE;
-    }
-
-    if (!client->xkb)
-        client->xkb = XkbGetMap (xdisplay, XkbKeySymsMask, XkbUseCoreKbd);
-    g_assert (client->xkb);
-*/
-    update_modifier_keycodes (client);
-
-    return TRUE;
-}
-
-void
-client_disable_xtest (SeatEmitter *client)
-{
-    //if (client->xkb) {
-      //  XkbFreeKeyboard (client->xkb, 0, TRUE);	/* free_all = TRUE */
-        //client->xkb = NULL;
-    //}
-}
-//#endif  /* HAVE_XTEST */
