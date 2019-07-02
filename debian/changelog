@@ -1,3 +1,9 @@
+squeekboard (1.0.10) unstable; urgency=medium
+
+  * Use a shared DBus definition
+
+ -- Dorota Czaplejewicz <dorota.czaplejewicz@puri.sm>  Tue, 02 Jul 2019 20:12:02 +0000
+
 squeekboard (1.0.9) unstable; urgency=medium
 
   * Initial release.
