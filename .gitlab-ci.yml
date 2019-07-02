@@ -5,6 +5,10 @@ stages:
 
 before_script:
   - apt-get -y update
+  - apt-get -y install wget gnupg2
+  - echo "deb http://ci.puri.sm/ scratch librem5" > /etc/apt/sources.list.d/ci.list
+  - wget -O- https://ci.puri.sm/ci-repo.key | apt-key add -
+  - apt-get -y update
   - apt-get -y build-dep .
 
 build_meson:
@@ -13,7 +17,7 @@ build_meson:
     - librem5
   script:
     - mkdir -p build
-    - meson build/
+    - meson build/ -Ddepdatadir=/usr/share
     - cd build
     - ninja install
 

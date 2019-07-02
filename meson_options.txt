@@ -1,0 +1,1 @@
+option('depdatadir', type : 'string', value : '', description : 'System data path. Will be searched for definitions instead of datadir when provided')
