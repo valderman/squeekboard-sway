@@ -949,7 +949,7 @@ eek_xml_layout_real_create_keyboard (EekboardContextService *manager,
 
     /* Use pre-defined modifier mask here. */
     eek_keyboard_set_num_lock_mask (keyboard, EEK_MOD2_MASK);
-    eek_keyboard_set_alt_gr_mask (keyboard, EEK_MOD5_MASK);
+    eek_keyboard_set_alt_gr_mask (keyboard, EEK_BUTTON1_MASK);
 
     return keyboard;
 }

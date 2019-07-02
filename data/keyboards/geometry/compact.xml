@@ -106,7 +106,7 @@
       <key keycode="37" name="LCTL" oref="altline">
 	<bounds x="62.43902" y="162.3414" width="48.39024" height="37.46341"/>
       </key>
-      <key keycode="64" name="LALT" oref="altline">
+      <key keycode="66" name="ALTGR" oref="altline">
 	<bounds x="113.9512" y="162.3414" width="48.39024" height="37.46341"/>
       </key>
       <key keycode="65" name="SPCE" oref="spaceline">

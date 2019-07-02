@@ -102,42 +102,52 @@
   <key keycode="24" name="AD01">
     <keysym keyval="113">q</keysym>
     <keysym keyval="81">Q</keysym>
+    <keysym keyval="49">1</keysym>
   </key>
   <key keycode="25" name="AD02">
     <keysym keyval="119">w</keysym>
     <keysym keyval="87">W</keysym>
+    <keysym keyval="50">2</keysym>
   </key>
   <key keycode="26" name="AD03">
     <keysym keyval="101">e</keysym>
     <keysym keyval="69">E</keysym>
+    <keysym keyval="51">3</keysym>
   </key>
   <key keycode="27" name="AD04">
     <keysym keyval="114">r</keysym>
     <keysym keyval="82">R</keysym>
+    <keysym keyval="52">4</keysym>
   </key>
   <key keycode="28" name="AD05">
     <keysym keyval="116">t</keysym>
     <keysym keyval="84">T</keysym>
+    <keysym keyval="53">5</keysym>
   </key>
   <key keycode="29" name="AD06">
     <keysym keyval="121">y</keysym>
     <keysym keyval="89">Y</keysym>
+    <keysym keyval="54">6</keysym>
   </key>
   <key keycode="30" name="AD07">
     <keysym keyval="117">u</keysym>
     <keysym keyval="85">U</keysym>
+    <keysym keyval="55">7</keysym>
   </key>
   <key keycode="31" name="AD08">
     <keysym keyval="105">i</keysym>
     <keysym keyval="73">I</keysym>
+    <keysym keyval="56">8</keysym>
   </key>
   <key keycode="32" name="AD09">
     <keysym keyval="111">o</keysym>
     <keysym keyval="79">O</keysym>
+    <keysym keyval="57">9</keysym>
   </key>
   <key keycode="33" name="AD10">
     <keysym keyval="112">p</keysym>
     <keysym keyval="80">P</keysym>
+    <keysym keyval="48">0</keysym>
   </key>
   <key keycode="34" name="AD11">
     <keysym keyval="91">bracketleft</keysym>
@@ -151,44 +161,53 @@
     <keysym keyval="92">backslash</keysym>
     <keysym keyval="124">bar</keysym>
   </key>
-  <key keycode="66" name="CAPS">
+  <key keycode="66" name="ALTGR">
     <keysym keyval="65027">ISO_Level3_Shift</keysym>
   </key>
   <key keycode="38" name="AC01">
     <keysym keyval="97">a</keysym>
     <keysym keyval="65">A</keysym>
+    <keysym keyval="64">at</keysym>
   </key>
   <key keycode="39" name="AC02">
     <keysym keyval="115">s</keysym>
     <keysym keyval="83">S</keysym>
+    <keysym keyval="35">numbersign</keysym>
   </key>
   <key keycode="40" name="AC03">
     <keysym keyval="100">d</keysym>
     <keysym keyval="68">D</keysym>
+    <keysym keyval="36">dollar</keysym>
   </key>
   <key keycode="41" name="AC04">
     <keysym keyval="102">f</keysym>
     <keysym keyval="70">F</keysym>
+    <keysym keyval="37">percent</keysym>
   </key>
   <key keycode="42" name="AC05">
     <keysym keyval="103">g</keysym>
     <keysym keyval="71">G</keysym>
+    <keysym keyval="38">ampersand</keysym>
   </key>
   <key keycode="43" name="AC06">
     <keysym keyval="104">h</keysym>
     <keysym keyval="72">H</keysym>
+    <keysym keyval="45">minus</keysym>
   </key>
   <key keycode="44" name="AC07">
     <keysym keyval="106">j</keysym>
     <keysym keyval="74">J</keysym>
+    <keysym keyval="95">underscore</keysym>
   </key>
   <key keycode="45" name="AC08">
     <keysym keyval="107">k</keysym>
     <keysym keyval="75">K</keysym>
+    <keysym keyval="123">braceleft</keysym>
   </key>
   <key keycode="46" name="AC09">
     <keysym keyval="108">l</keysym>
     <keysym keyval="76">L</keysym>
+    <keysym keyval="125">braceright</keysym>
   </key>
   <key keycode="47" name="AC10">
     <keysym keyval="59">semicolon</keysym>
@@ -207,30 +226,37 @@
   <key keycode="52" name="AB01">
     <keysym keyval="122">z</keysym>
     <keysym keyval="90">Z</keysym>
+    <keysym keyval="43">plus</keysym>
   </key>
   <key keycode="53" name="AB02">
     <keysym keyval="120">x</keysym>
     <keysym keyval="88">X</keysym>
+    <keysym keyval="34">quotedbl</keysym>
   </key>
   <key keycode="54" name="AB03">
     <keysym keyval="99">c</keysym>
     <keysym keyval="67">C</keysym>
+    <keysym keyval="39">quoteright</keysym>
   </key>
   <key keycode="55" name="AB04">
     <keysym keyval="118">v</keysym>
     <keysym keyval="86">V</keysym>
+    <keysym keyval="58">colon</keysym>
   </key>
   <key keycode="56" name="AB05">
     <keysym keyval="98">b</keysym>
     <keysym keyval="66">B</keysym>
+    <keysym keyval="59">semicolon</keysym>
   </key>
   <key keycode="57" name="AB06">
     <keysym keyval="110">n</keysym>
     <keysym keyval="78">N</keysym>
+    <keysym keyval="33">exclam</keysym>
   </key>
   <key keycode="58" name="AB07">
     <keysym keyval="109">m</keysym>
     <keysym keyval="77">M</keysym>
+    <keysym keyval="63">question</keysym>
   </key>
   <key keycode="59" name="AB08">
     <keysym keyval="44">comma</keysym>
