@@ -273,7 +273,7 @@ void eek_keyboard_press_key(EekKeyboard *keyboard, EekKey *key, guint32 timestam
     // "Borrowed" from eek-context-service; doesn't influence the state but forwards the event
 
     guint keycode = eek_key_get_keycode (key);
-    guint modifiers = eek_keyboard_get_modifiers (keyboard);
+    EekModifierType modifiers = eek_keyboard_get_modifiers (keyboard);
 
     emit_key_activated(keyboard->manager, keyboard, keycode, symbol, modifiers, TRUE, timestamp);
 }
