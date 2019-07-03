@@ -3,6 +3,6 @@
 export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 
 %:
-	dh $@ --builddirectory=_build
+	dh $@ --builddirectory=_build --buildsystem=meson
 
 override_dh_autoreconf:
