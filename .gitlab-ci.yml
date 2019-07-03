@@ -16,8 +16,6 @@ build_meson:
   tags:
     - librem5
   script:
-    - mkdir -p build
-    - meson build/ -Ddepdatadir=/usr/share
-    - cd build
-    - ninja install
+    - meson . _build/ -Ddepdatadir=/usr/share
+    - ninja -C _build install
 
