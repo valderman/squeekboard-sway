@@ -43,6 +43,7 @@
  * Copyright (C) 2003-2004 Dodji Seketeli.  All Rights Reserved.
  */
 
+#define G_LOG_DOMAIN "eek-theme"
 
 #include <stdlib.h>
 #include <string.h>
@@ -256,13 +257,59 @@ parse_stylesheet (const char  *filename,
 {
   enum CRStatus status;
   CRStyleSheet *stylesheet;
+  g_autoptr (GFileInputStream) stream = NULL;
+  g_autoptr (GFileInfo) info = NULL;
+  g_autoptr (GFile) file = NULL;
+  g_autofree guchar* contents = NULL;
+  goffset size;
+  gsize out = 0;
+  GError *err = NULL;
 
   if (filename == NULL)
     return NULL;
 
-  status = cr_om_parser_simply_parse_file ((const guchar *) filename,
-                                           CR_UTF_8,
-                                           &stylesheet);
+  g_debug ("Parsing %s", filename);
+  if (g_strcmp0 (filename, "resource://") > 0) {
+      file = g_file_new_for_uri (filename);
+      stream = g_file_read (file, NULL, &err);
+      if (!stream) {
+          g_warning ("Failed to open %s: %s", filename, err->message);
+          g_clear_error (&err);
+          return NULL;
+      }
+
+      info = g_file_input_stream_query_info (stream,
+                                             G_FILE_ATTRIBUTE_STANDARD_SIZE,
+                                             NULL,
+                                             &err);
+
+      if (!info) {
+          g_warning ("Failed to stat %s: %s", filename, err->message);
+          g_clear_error (&err);
+          return NULL;
+      }
+
+      size = g_file_info_get_size (info);
+      contents = g_malloc0 (size);
+      if (!g_input_stream_read_all (G_INPUT_STREAM (stream),
+                                    contents,
+                                    size,
+                                    &out,
+                                    NULL,
+                                    &err)) {
+          g_warning ("Failed to read %s: %s", filename, err->message);
+          g_clear_error (&err);
+          return NULL;
+      }
+      status = cr_om_parser_simply_parse_buf (contents,
+                                              size,
+                                              CR_UTF_8,
+                                              &stylesheet);
+  } else {
+      status = cr_om_parser_simply_parse_file ((const guchar *) filename,
+                                               CR_UTF_8,
+                                               &stylesheet);
+  }
 
   if (status != CR_OK)
     {
