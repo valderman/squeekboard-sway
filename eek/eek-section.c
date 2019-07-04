@@ -529,7 +529,7 @@ static void keycounter (EekElement *element, gpointer user_data) {
     }
 }
 
-const double keyspacing = 3.0;
+const double keyspacing = 4.0;
 
 static void keyplacer(EekElement *element, gpointer user_data) {
     double *current_offset = user_data;
