@@ -373,6 +373,7 @@ server_context_service_real_hide_keyboard (EekboardContextService *_context)
 
     gtk_widget_hide (context->window);
     gtk_container_remove(GTK_CONTAINER(context->window), context->widget);
+    context->widget = NULL; // When GTK removes the widget, it doesn't just unlink it, but also frees it
     destroy_window (context);
 
     EEKBOARD_CONTEXT_SERVICE_CLASS (server_context_service_parent_class)->
