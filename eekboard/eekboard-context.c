@@ -49,18 +49,15 @@ enum {
     PROP_LAST
 };
 
-G_DEFINE_TYPE (EekboardContext, eekboard_context, G_TYPE_DBUS_PROXY);
-
-#define EEKBOARD_CONTEXT_GET_PRIVATE(obj)                               \
-    (G_TYPE_INSTANCE_GET_PRIVATE ((obj), EEKBOARD_TYPE_CONTEXT, EekboardContextPrivate))
-
-struct _EekboardContextPrivate
+typedef struct _EekboardContextPrivate
 {
     gboolean visible;
     gboolean enabled;
     gboolean fullscreen;
     gint group;
-};
+} EekboardContextPrivate;
+
+G_DEFINE_TYPE_WITH_PRIVATE (EekboardContext, eekboard_context, G_TYPE_DBUS_PROXY)
 
 static void
 eekboard_context_real_g_signal (GDBusProxy  *self,
@@ -69,6 +66,7 @@ eekboard_context_real_g_signal (GDBusProxy  *self,
                                 GVariant    *parameters)
 {
     EekboardContext *context = EEKBOARD_CONTEXT (self);
+    EekboardContextPrivate *priv = eekboard_context_get_instance_private (context);
 
     if (g_strcmp0 (signal_name, "Enabled") == 0) {
         g_signal_emit (context, signals[ENABLED], 0);
@@ -111,8 +109,8 @@ eekboard_context_real_g_signal (GDBusProxy  *self,
         gboolean visible = FALSE;
 
         g_variant_get (parameters, "(b)", &visible);
-        if (visible != context->priv->visible) {
-            context->priv->visible = visible;
+        if (visible != priv->visible) {
+            priv->visible = visible;
             g_object_notify (G_OBJECT(context), "visible");
         }
         return;
@@ -122,8 +120,8 @@ eekboard_context_real_g_signal (GDBusProxy  *self,
         gint group = 0;
 
         g_variant_get (parameters, "(i)", &group);
-        if (group != context->priv->group) {
-            context->priv->group = group;
+        if (group != priv->group) {
+            priv->group = group;
             /* g_object_notify (G_OBJECT(context), "group"); */
         }
         return;
@@ -135,13 +133,17 @@ eekboard_context_real_g_signal (GDBusProxy  *self,
 static void
 eekboard_context_real_enabled (EekboardContext *self)
 {
-    self->priv->enabled = TRUE;
+    EekboardContextPrivate *priv = eekboard_context_get_instance_private (self);
+
+    priv->enabled = TRUE;
 }
 
 static void
 eekboard_context_real_disabled (EekboardContext *self)
 {
-    self->priv->enabled = FALSE;
+    EekboardContextPrivate *priv = eekboard_context_get_instance_private (self);
+
+    priv->enabled = FALSE;
 }
 
 static void
@@ -164,9 +166,11 @@ eekboard_context_get_property (GObject    *object,
                                GParamSpec *pspec)
 {
     EekboardContext *context = EEKBOARD_CONTEXT(object);
+    EekboardContextPrivate *priv = eekboard_context_get_instance_private (context);
+
     switch (prop_id) {
     case PROP_VISIBLE:
-        g_value_set_boolean (value, context->priv->visible);
+        g_value_set_boolean (value, priv->visible);
         break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -180,9 +184,6 @@ eekboard_context_class_init (EekboardContextClass *klass)
     GDBusProxyClass *proxy_class = G_DBUS_PROXY_CLASS (klass);
     GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
     GParamSpec        *pspec;
-
-    g_type_class_add_private (gobject_class,
-                              sizeof (EekboardContextPrivate));
 
     klass->enabled = eekboard_context_real_enabled;
     klass->disabled = eekboard_context_real_disabled;
@@ -288,7 +289,7 @@ eekboard_context_class_init (EekboardContextClass *klass)
 static void
 eekboard_context_init (EekboardContext *self)
 {
-    self->priv = EEKBOARD_CONTEXT_GET_PRIVATE(self);
+    /* void */
 }
 
 static void
@@ -485,7 +486,9 @@ eekboard_context_set_group (EekboardContext *context,
 {
     g_return_if_fail (EEKBOARD_IS_CONTEXT(context));
 
-    if (context->priv->group != group) {
+    EekboardContextPrivate *priv = eekboard_context_get_instance_private (context);
+
+    if (priv->group != group) {
         g_dbus_proxy_call (G_DBUS_PROXY(context),
                            "SetGroup",
                            g_variant_new ("(i)", group),
@@ -509,7 +512,10 @@ eekboard_context_get_group (EekboardContext *context,
                             GCancellable    *cancellable)
 {
     g_return_val_if_fail (EEKBOARD_IS_CONTEXT(context), 0);
-    return context->priv->group;
+
+    EekboardContextPrivate *priv = eekboard_context_get_instance_private (context);
+
+    return priv->group;
 }
 
 /**
@@ -526,7 +532,9 @@ eekboard_context_show_keyboard (EekboardContext *context,
 {
     g_return_if_fail (EEKBOARD_IS_CONTEXT(context));
 
-    if (context->priv->enabled) {
+    EekboardContextPrivate *priv = eekboard_context_get_instance_private (context);
+
+    if (priv->enabled) {
         g_dbus_proxy_call (G_DBUS_PROXY(context),
                            "ShowKeyboard",
                            NULL,
@@ -551,7 +559,9 @@ eekboard_context_hide_keyboard (EekboardContext *context,
 {
     g_return_if_fail (EEKBOARD_IS_CONTEXT(context));
 
-    if (context->priv->enabled) {
+    EekboardContextPrivate *priv = eekboard_context_get_instance_private (context);
+
+    if (priv->enabled) {
         g_dbus_proxy_call (G_DBUS_PROXY(context),
                            "HideKeyboard",
                            NULL,
@@ -578,7 +588,9 @@ eekboard_context_press_keycode (EekboardContext *context,
 {
     g_return_if_fail (EEKBOARD_IS_CONTEXT(context));
 
-    if (context->priv->enabled) {
+    EekboardContextPrivate *priv = eekboard_context_get_instance_private (context);
+
+    if (priv->enabled) {
         g_dbus_proxy_call (G_DBUS_PROXY(context),
                            "PressKeycode",
                            g_variant_new ("(u)", keycode),
@@ -605,7 +617,9 @@ eekboard_context_release_keycode (EekboardContext *context,
 {
     g_return_if_fail (EEKBOARD_IS_CONTEXT(context));
 
-    if (context->priv->enabled) {
+    EekboardContextPrivate *priv = eekboard_context_get_instance_private (context);
+
+    if (priv->enabled) {
         g_dbus_proxy_call (G_DBUS_PROXY(context),
                            "ReleaseKeycode",
                            g_variant_new ("(u)", keycode),
@@ -627,7 +641,10 @@ gboolean
 eekboard_context_is_visible (EekboardContext *context)
 {
     g_return_val_if_fail (EEKBOARD_IS_CONTEXT(context), FALSE);
-    return context->priv->enabled && context->priv->visible;
+
+    EekboardContextPrivate *priv = eekboard_context_get_instance_private (context);
+
+    return priv->enabled && priv->visible;
 }
 
 /**
@@ -644,7 +661,10 @@ eekboard_context_set_enabled (EekboardContext *context,
                               gboolean         enabled)
 {
     g_return_if_fail (EEKBOARD_IS_CONTEXT(context));
-    context->priv->enabled = enabled;
+
+    EekboardContextPrivate *priv = eekboard_context_get_instance_private (context);
+
+    priv->enabled = enabled;
 }
 
 /**
@@ -657,7 +677,10 @@ gboolean
 eekboard_context_is_enabled (EekboardContext *context)
 {
     g_return_val_if_fail (EEKBOARD_IS_CONTEXT(context), FALSE);
-    return context->priv->enabled;
+
+    EekboardContextPrivate *priv = eekboard_context_get_instance_private (context);
+
+    return priv->enabled;
 }
 
 /**
@@ -674,7 +697,10 @@ eekboard_context_set_fullscreen (EekboardContext *context,
                                  GCancellable    *cancellable)
 {
     g_return_if_fail (EEKBOARD_IS_CONTEXT(context));
-    if (context->priv->fullscreen != fullscreen) {
+
+    EekboardContextPrivate *priv = eekboard_context_get_instance_private (context);
+
+    if (priv->fullscreen != fullscreen) {
         g_dbus_proxy_call (G_DBUS_PROXY(context),
                            "SetFullscreen",
                            g_variant_new ("(b)", fullscreen),

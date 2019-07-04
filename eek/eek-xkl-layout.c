@@ -42,13 +42,6 @@ static GInitableIface *parent_initable_iface;
 
 static void initable_iface_init (GInitableIface *initable_iface);
 
-G_DEFINE_TYPE_WITH_CODE (EekXklLayout, eek_xkl_layout, EEK_TYPE_XKB_LAYOUT,
-                         G_IMPLEMENT_INTERFACE (G_TYPE_INITABLE,
-                                                initable_iface_init));
-
-#define EEK_XKL_LAYOUT_GET_PRIVATE(obj)                                  \
-    (G_TYPE_INSTANCE_GET_PRIVATE ((obj), EEK_TYPE_XKL_LAYOUT, EekXklLayoutPrivate))
-
 enum {
     PROP_0,
     PROP_MODEL,
@@ -58,11 +51,17 @@ enum {
     PROP_LAST
 };
 
-struct _EekXklLayoutPrivate
+typedef struct _EekXklLayoutPrivate
 {
     XklEngine *engine;
     XklConfigRec *config;
-};
+} EekXklLayoutPrivate;
+
+G_DEFINE_TYPE_EXTENDED (EekXklLayout, eek_xkl_layout, EEK_TYPE_XKB_LAYOUT,
+			0, /* GTypeFlags */
+			G_ADD_PRIVATE (EekXklLayout)
+                        G_IMPLEMENT_INTERFACE (G_TYPE_INITABLE,
+                                               initable_iface_init))
 
 /* from gnome-keyboard-properties-xkbpv.c:
  *  BAD STYLE: Taken from xklavier_private_xkb.h
@@ -83,7 +82,8 @@ static gboolean set_xkb_component_names (EekXklLayout *layout,
 static void
 eek_xkl_layout_dispose (GObject *object)
 {
-    EekXklLayoutPrivate *priv = EEK_XKL_LAYOUT_GET_PRIVATE (object);
+    EekXklLayoutPrivate *priv = eek_xkl_layout_get_instance_private (
+		    EEK_XKL_LAYOUT (object));
 
     if (priv->config) {
         g_object_unref (priv->config);
@@ -157,8 +157,6 @@ eek_xkl_layout_class_init (EekXklLayoutClass *klass)
     GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
     GParamSpec *pspec;
 
-    g_type_class_add_private (gobject_class, sizeof (EekXklLayoutPrivate));
-
     gobject_class->dispose = eek_xkl_layout_dispose;
     gobject_class->set_property = eek_xkl_layout_set_property;
     gobject_class->get_property = eek_xkl_layout_get_property;
@@ -215,7 +213,7 @@ eek_xkl_layout_class_init (EekXklLayoutClass *klass)
 static void
 eek_xkl_layout_init (EekXklLayout *self)
 {
-    self->priv = EEK_XKL_LAYOUT_GET_PRIVATE (self);
+    /* void */
 }
 
 /**
@@ -266,7 +264,7 @@ gboolean
 eek_xkl_layout_set_config (EekXklLayout *layout,
                            XklConfigRec *config)
 {
-    EekXklLayoutPrivate *priv = EEK_XKL_LAYOUT_GET_PRIVATE (layout);
+    EekXklLayoutPrivate *priv = eek_xkl_layout_get_instance_private (layout);
     XklConfigRec *c;
     gboolean retval;
 
@@ -329,7 +327,7 @@ gboolean
 eek_xkl_layout_set_model (EekXklLayout *layout,
                           const gchar  *model)
 {
-    EekXklLayoutPrivate *priv = EEK_XKL_LAYOUT_GET_PRIVATE (layout);
+    EekXklLayoutPrivate *priv = eek_xkl_layout_get_instance_private (layout);
     XklConfigRec *config;
     gboolean retval;
     
@@ -357,7 +355,7 @@ gboolean
 eek_xkl_layout_set_layouts (EekXklLayout *layout,
                             gchar       **layouts)
 {
-    EekXklLayoutPrivate *priv = EEK_XKL_LAYOUT_GET_PRIVATE (layout);
+    EekXklLayoutPrivate *priv = eek_xkl_layout_get_instance_private (layout);
     XklConfigRec *config;
     gboolean retval;
 
@@ -385,7 +383,7 @@ gboolean
 eek_xkl_layout_set_variants (EekXklLayout *layout,
                              gchar       **variants)
 {
-    EekXklLayoutPrivate *priv = EEK_XKL_LAYOUT_GET_PRIVATE (layout);
+    EekXklLayoutPrivate *priv = eek_xkl_layout_get_instance_private (layout);
     XklConfigRec *config;
     gboolean retval;
 
@@ -413,7 +411,7 @@ gboolean
 eek_xkl_layout_set_options (EekXklLayout *layout,
                             gchar       **options)
 {
-    EekXklLayoutPrivate *priv = EEK_XKL_LAYOUT_GET_PRIVATE (layout);
+    EekXklLayoutPrivate *priv = eek_xkl_layout_get_instance_private (layout);
     XklConfigRec *config;
     gboolean retval;
 
@@ -497,7 +495,7 @@ eek_xkl_layout_disable_option (EekXklLayout *layout,
 gchar *
 eek_xkl_layout_get_model (EekXklLayout *layout)
 {
-    EekXklLayoutPrivate *priv = EEK_XKL_LAYOUT_GET_PRIVATE (layout);
+    EekXklLayoutPrivate *priv = eek_xkl_layout_get_instance_private (layout);
 
     g_return_val_if_fail (priv, NULL);
     return g_strdup (priv->config->model);
@@ -513,7 +511,7 @@ eek_xkl_layout_get_model (EekXklLayout *layout)
 gchar **
 eek_xkl_layout_get_layouts (EekXklLayout *layout)
 {
-    EekXklLayoutPrivate *priv = EEK_XKL_LAYOUT_GET_PRIVATE (layout);
+    EekXklLayoutPrivate *priv = eek_xkl_layout_get_instance_private (layout);
 
     g_return_val_if_fail (priv, NULL);
     return g_strdupv (priv->config->layouts);
@@ -529,7 +527,7 @@ eek_xkl_layout_get_layouts (EekXklLayout *layout)
 gchar **
 eek_xkl_layout_get_variants (EekXklLayout *layout)
 {
-    EekXklLayoutPrivate *priv = EEK_XKL_LAYOUT_GET_PRIVATE (layout);
+    EekXklLayoutPrivate *priv = eek_xkl_layout_get_instance_private (layout);
 
     g_return_val_if_fail (priv, NULL);
     return g_strdupv (priv->config->variants);
@@ -545,7 +543,7 @@ eek_xkl_layout_get_variants (EekXklLayout *layout)
 gchar **
 eek_xkl_layout_get_options (EekXklLayout *layout)
 {
-    EekXklLayoutPrivate *priv = EEK_XKL_LAYOUT_GET_PRIVATE (layout);
+    EekXklLayoutPrivate *priv = eek_xkl_layout_get_instance_private (layout);
 
     g_return_val_if_fail (priv, NULL);
     return g_strdupv (priv->config->options);
@@ -554,7 +552,7 @@ eek_xkl_layout_get_options (EekXklLayout *layout)
 static gboolean
 set_xkb_component_names (EekXklLayout *layout, XklConfigRec *config)
 {
-    EekXklLayoutPrivate *priv = layout->priv;
+    EekXklLayoutPrivate *priv = eek_xkl_layout_get_instance_private (layout);
     XkbComponentNamesRec names;
     gboolean retval = FALSE;
 
@@ -628,21 +626,22 @@ initable_init (GInitable    *initable,
                GError      **error)
 {
     EekXklLayout *layout = EEK_XKL_LAYOUT (initable);
+    EekXklLayoutPrivate *priv = eek_xkl_layout_get_instance_private (layout);
     Display *display;
 
     if (!parent_initable_iface->init (initable, cancellable, error))
         return FALSE;
 
-    layout->priv->config = xkl_config_rec_new ();
+    priv->config = xkl_config_rec_new ();
 
     g_object_get (G_OBJECT (initable),
                   "display", &display,
                   NULL);
 
-    layout->priv->engine = xkl_engine_get_instance (display);
+    priv->engine = xkl_engine_get_instance (display);
 
-    if (!xkl_config_rec_get_from_server (layout->priv->config,
-                                         layout->priv->engine)) {
+    if (!xkl_config_rec_get_from_server (priv->config,
+                                         priv->engine)) {
         g_set_error (error,
                      EEK_ERROR,
                      EEK_ERROR_LAYOUT_ERROR,
@@ -650,7 +649,7 @@ initable_init (GInitable    *initable,
         return FALSE;
     }
 
-    set_xkb_component_names (layout, layout->priv->config);
+    set_xkb_component_names (layout, priv->config);
     return TRUE;
 }
 
