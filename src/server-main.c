@@ -143,6 +143,40 @@ static const struct wl_registry_listener registry_listener = {
   registry_handle_global_remove
 };
 
+#define SESSION_NAME "sm.puri.OSK0"
+
+GDBusProxy *_proxy = NULL;
+
+static void
+session_register(void) {
+    char *autostart_id = getenv("DESKTOP_AUTOSTART_ID");
+    if (!autostart_id) {
+        g_debug("No autostart id");
+        autostart_id = "";
+    }
+    GError *error = NULL;
+    _proxy = g_dbus_proxy_new_for_bus_sync(G_BUS_TYPE_SESSION,
+        G_DBUS_PROXY_FLAGS_DO_NOT_AUTO_START, NULL,
+        "org.gnome.SessionManager", "/org/gnome/SessionManager",
+        "org.gnome.SessionManager", NULL, &error);
+    if (error) {
+        g_warning("Could not connect to session manager: %s\n",
+                error->message);
+        g_clear_error(&error);
+        return;
+    }
+
+    g_dbus_proxy_call_sync(_proxy, "RegisterClient",
+        g_variant_new("(ss)", SESSION_NAME, autostart_id),
+        G_DBUS_CALL_FLAGS_NONE, 1000, NULL, &error);
+    if (error) {
+        g_warning("Could not register to session manager: %s\n",
+                error->message);
+        g_clear_error(&error);
+        return;
+    }
+}
+
 int
 main (int argc, char **argv)
 {
@@ -260,6 +294,8 @@ main (int argc, char **argv)
             g_warning("Failed to register as an input method");
         }
     }
+
+    session_register();
 
     GMainLoop *loop = g_main_loop_new (NULL, FALSE);
 
