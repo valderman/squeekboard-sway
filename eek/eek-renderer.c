@@ -246,7 +246,9 @@ render_key_outline (EekRenderer *renderer,
         border_color.alpha = foreground.alpha;
     }
 
+    eek_element_get_bounds(EEK_ELEMENT(key), &bounds);
     outline = eek_outline_copy (outline);
+
     for (guint i = 0; i < outline->num_points; i++) {
         outline->points[i].x *= priv->scale;
         outline->points[i].y *= priv->scale;
