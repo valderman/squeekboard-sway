@@ -26,22 +26,7 @@
 G_BEGIN_DECLS
 
 #define EEKBOARD_TYPE_CLIENT (eekboard_client_get_type())
-#define EEKBOARD_CLIENT(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), EEKBOARD_TYPE_CLIENT, EekboardClient))
-#define EEKBOARD_CLIENT_CLASS(klass) (G_TYPE_CHECK_CLASS_CAST ((klass), EEKBOARD_TYPE_CLIENT, EekboardClientClass))
-#define EEKBOARD_IS_CLIENT(obj) (G_TYPE_CHECK_INSTANCE_TYPE ((obj), EEKBOARD_TYPE_CLIENT))
-#define EEKBOARD_IS_CLIENT_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), EEKBOARD_TYPE_CLIENT))
-#define EEKBOARD_CLIENT_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS ((obj), EEKBOARD_TYPE_CLIENT, EekboardClientClass))
-
-typedef struct _EekboardClient EekboardClient;
-typedef struct _EekboardClientClass EekboardClientClass;
-typedef struct _EekboardClientPrivate EekboardClientPrivate;
-
-struct _EekboardClient {
-    /*< private >*/
-    GDBusProxy parent;
-
-    EekboardClientPrivate *priv;
-};
+G_DECLARE_DERIVABLE_TYPE (EekboardClient, eekboard_client, EEKBOARD, CLIENT, GDBusProxy)
 
 struct _EekboardClientClass {
     /*< private >*/

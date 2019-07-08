@@ -50,10 +50,8 @@ enum {
 
 static guint signals[LAST_SIGNAL] = { 0, };
 
-#define EEKBOARD_SERVICE_GET_PRIVATE(obj)                               \
-    (G_TYPE_INSTANCE_GET_PRIVATE ((obj), EEKBOARD_TYPE_SERVICE, EekboardServicePrivate))
-
-struct _EekboardServicePrivate {
+typedef struct _EekboardServicePrivate
+{
     GDBusConnection *connection;
     SmPuriOSK0 *dbus_interface;
     GDBusNodeInfo *introspection_data;
@@ -61,9 +59,9 @@ struct _EekboardServicePrivate {
     char *object_path;
 
     EekboardContextService *context; // unowned reference
-};
+} EekboardServicePrivate;
 
-G_DEFINE_TYPE (EekboardService, eekboard_service, G_TYPE_OBJECT);
+G_DEFINE_TYPE_WITH_PRIVATE (EekboardService, eekboard_service, G_TYPE_OBJECT)
 
 static void
 eekboard_service_set_property (GObject      *object,
@@ -72,19 +70,20 @@ eekboard_service_set_property (GObject      *object,
                                GParamSpec   *pspec)
 {
     EekboardService *service = EEKBOARD_SERVICE(object);
+    EekboardServicePrivate *priv = eekboard_service_get_instance_private (service);
     GDBusConnection *connection;
 
     switch (prop_id) {
     case PROP_OBJECT_PATH:
-        if (service->priv->object_path)
-            g_free (service->priv->object_path);
-        service->priv->object_path = g_value_dup_string (value);
+        if (priv->object_path)
+            g_free (priv->object_path);
+        priv->object_path = g_value_dup_string (value);
         break;
     case PROP_CONNECTION:
         connection = g_value_get_object (value);
-        if (service->priv->connection)
-            g_object_unref (service->priv->connection);
-        service->priv->connection = g_object_ref (connection);
+        if (priv->connection)
+            g_object_unref (priv->connection);
+        priv->connection = g_object_ref (connection);
         break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -99,13 +98,14 @@ eekboard_service_get_property (GObject    *object,
                                GParamSpec *pspec)
 {
     EekboardService *service = EEKBOARD_SERVICE(object);
+    EekboardServicePrivate *priv = eekboard_service_get_instance_private (service);
 
     switch (prop_id) {
     case PROP_OBJECT_PATH:
-        g_value_set_string (value, service->priv->object_path);
+        g_value_set_string (value, priv->object_path);
         break;
     case PROP_CONNECTION:
-        g_value_set_object (value, service->priv->connection);
+        g_value_set_object (value, priv->connection);
         break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -117,20 +117,22 @@ static void
 eekboard_service_dispose (GObject *object)
 {
     EekboardService *service = EEKBOARD_SERVICE(object);
-    if (service->priv->connection) {
-        if (service->priv->registration_id > 0) {
-            g_dbus_connection_unregister_object (service->priv->connection,
-                                                 service->priv->registration_id);
-            service->priv->registration_id = 0;
+    EekboardServicePrivate *priv = eekboard_service_get_instance_private (service);
+
+    if (priv->connection) {
+        if (priv->registration_id > 0) {
+            g_dbus_connection_unregister_object (priv->connection,
+                                                 priv->registration_id);
+            priv->registration_id = 0;
         }
 
-        g_object_unref (service->priv->connection);
-        service->priv->connection = NULL;
+        g_object_unref (priv->connection);
+        priv->connection = NULL;
     }
 
-    if (service->priv->introspection_data) {
-        g_dbus_node_info_unref (service->priv->introspection_data);
-        service->priv->introspection_data = NULL;
+    if (priv->introspection_data) {
+        g_dbus_node_info_unref (priv->introspection_data);
+        priv->introspection_data = NULL;
     }
 
     G_OBJECT_CLASS (eekboard_service_parent_class)->dispose (object);
@@ -140,8 +142,9 @@ static void
 eekboard_service_finalize (GObject *object)
 {
     EekboardService *service = EEKBOARD_SERVICE(object);
+    EekboardServicePrivate *priv = eekboard_service_get_instance_private (service);
 
-    g_free (service->priv->object_path);
+    g_free (priv->object_path);
 
     G_OBJECT_CLASS (eekboard_service_parent_class)->finalize (object);
 }
@@ -150,11 +153,13 @@ static gboolean
 handle_set_visible(SmPuriOSK0 *object, GDBusMethodInvocation *invocation,
                    gboolean arg_visible, gpointer user_data) {
     EekboardService *service = user_data;
-    if (service->priv->context) {
+    EekboardServicePrivate *priv = eekboard_service_get_instance_private (service);
+
+    if (priv->context) {
         if (arg_visible) {
-            eekboard_context_service_show_keyboard (service->priv->context);
+            eekboard_context_service_show_keyboard (priv->context);
         } else {
-            eekboard_context_service_hide_keyboard (service->priv->context);
+            eekboard_context_service_hide_keyboard (priv->context);
         }
     }
     sm_puri_osk0_complete_set_visible(object, invocation);
@@ -165,18 +170,19 @@ static void
 eekboard_service_constructed (GObject *object)
 {
     EekboardService *service = EEKBOARD_SERVICE(object);
+    EekboardServicePrivate *priv = eekboard_service_get_instance_private (service);
 
-    service->priv->dbus_interface = sm_puri_osk0_skeleton_new();
-    sm_puri_osk0_set_visible(service->priv->dbus_interface, FALSE); // TODO: use actual value
-    g_signal_connect(service->priv->dbus_interface, "handle-set-visible",
+    priv->dbus_interface = sm_puri_osk0_skeleton_new();
+    sm_puri_osk0_set_visible(priv->dbus_interface, FALSE); // TODO: use actual value
+    g_signal_connect(priv->dbus_interface, "handle-set-visible",
                      G_CALLBACK(handle_set_visible), service);
 
-    if (service->priv->connection && service->priv->object_path) {
+    if (priv->connection && priv->object_path) {
         GError *error = NULL;
 
-        if (!g_dbus_interface_skeleton_export(G_DBUS_INTERFACE_SKELETON(service->priv->dbus_interface),
-                                              service->priv->connection,
-                                              service->priv->object_path,
+        if (!g_dbus_interface_skeleton_export(G_DBUS_INTERFACE_SKELETON(priv->dbus_interface),
+                                              priv->connection,
+                                              priv->object_path,
                                               &error)) {
             g_warning("Error registering dbus object: %s\n", error->message);
             g_clear_error(&error);
@@ -189,9 +195,6 @@ eekboard_service_class_init (EekboardServiceClass *klass)
 {
     GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
     GParamSpec *pspec;
-
-    g_type_class_add_private (gobject_class,
-                              sizeof (EekboardServicePrivate));
 
     klass->create_context = NULL;
 
@@ -250,8 +253,9 @@ eekboard_service_class_init (EekboardServiceClass *klass)
 static void
 eekboard_service_init (EekboardService *self)
 {
-    self->priv = EEKBOARD_SERVICE_GET_PRIVATE(self);
-    self->priv->context = NULL;
+    EekboardServicePrivate *priv = eekboard_service_get_instance_private (self);
+
+    priv->context = NULL;
 }
 
 /**
@@ -271,7 +275,9 @@ eekboard_service_new (GDBusConnection *connection,
 
 void
 eekboard_service_set_context(EekboardService *service,
+                             EekboardContextService *context)
+{
+    EekboardServicePrivate *priv = eekboard_service_get_instance_private (service);
 
-                             EekboardContextService *context) {
-    service->priv->context = context;
+    priv->context = context;
 }

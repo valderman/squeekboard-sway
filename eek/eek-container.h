@@ -30,14 +30,7 @@
 G_BEGIN_DECLS
 
 #define EEK_TYPE_CONTAINER (eek_container_get_type())
-#define EEK_CONTAINER(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), EEK_TYPE_CONTAINER, EekContainer))
-#define EEK_CONTAINER_CLASS(klass) (G_TYPE_CHECK_CLASS_CAST ((klass), EEK_TYPE_CONTAINER, EekContainerClass))
-#define EEK_IS_CONTAINER(obj) (G_TYPE_CHECK_INSTANCE_TYPE ((obj), EEK_TYPE_CONTAINER))
-#define EEK_IS_CONTAINER_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), EEK_TYPE_CONTAINER))
-#define EEK_CONTAINER_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS ((obj), EEK_TYPE_CONTAINER, EekContainerClass))
-
-typedef struct _EekContainerClass EekContainerClass;
-typedef struct _EekContainerPrivate EekContainerPrivate;
+G_DECLARE_DERIVABLE_TYPE (EekContainer, eek_container, EEK, CONTAINER, EekElement)
 
 /**
  * EekCallback:
@@ -49,14 +42,6 @@ typedef struct _EekContainerPrivate EekContainerPrivate;
  */
 typedef void (*EekCallback) (EekElement *element, gpointer user_data);
 typedef gint (*EekCompareFunc) (EekElement *element, gpointer user_data);
-
-struct _EekContainer
-{
-    /*< private >*/
-    EekElement parent;
-
-    EekContainerPrivate *priv;
-};
 
 /**
  * EekContainerClass:

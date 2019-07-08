@@ -47,18 +47,13 @@ enum {
     PROP_LAST
 };
 
-G_DEFINE_TYPE (EekGtkKeyboard, eek_gtk_keyboard, GTK_TYPE_DRAWING_AREA);
-
-#define EEK_GTK_KEYBOARD_GET_PRIVATE(obj)                                  \
-    (G_TYPE_INSTANCE_GET_PRIVATE ((obj), EEK_TYPE_GTK_KEYBOARD, EekGtkKeyboardPrivate))
-
 /* since 2.91.5 GDK_DRAWABLE was removed and gdk_cairo_create takes
    GdkWindow as the argument */
 #ifndef GDK_DRAWABLE
 #define GDK_DRAWABLE(x) (x)
 #endif
 
-struct _EekGtkKeyboardPrivate
+typedef struct _EekGtkKeyboardPrivate
 {
     EekRenderer *renderer;
     EekKeyboard *keyboard;
@@ -66,7 +61,11 @@ struct _EekGtkKeyboardPrivate
     gulong key_unlocked_handler;
     gulong symbol_index_changed_handler;
     EekTheme *theme;
-};
+
+    GdkEventSequence *sequence; // unowned reference
+} EekGtkKeyboardPrivate;
+
+G_DEFINE_TYPE_WITH_PRIVATE (EekGtkKeyboard, eek_gtk_keyboard, GTK_TYPE_DRAWING_AREA)
 
 static void       on_key_pressed          (EekKey      *key,
                                            EekGtkKeyboard *self);
@@ -107,7 +106,8 @@ static gboolean
 eek_gtk_keyboard_real_draw (GtkWidget *self,
                             cairo_t   *cr)
 {
-    EekGtkKeyboardPrivate *priv = EEK_GTK_KEYBOARD_GET_PRIVATE(self);
+    EekGtkKeyboardPrivate *priv =
+	    eek_gtk_keyboard_get_instance_private (EEK_GTK_KEYBOARD (self));
     GtkAllocation allocation;
     GList *list, *head;
 
@@ -149,7 +149,8 @@ static void
 eek_gtk_keyboard_real_size_allocate (GtkWidget     *self,
                                      GtkAllocation *allocation)
 {
-    EekGtkKeyboardPrivate *priv = EEK_GTK_KEYBOARD_GET_PRIVATE(self);
+    EekGtkKeyboardPrivate *priv =
+	    eek_gtk_keyboard_get_instance_private (EEK_GTK_KEYBOARD (self));
 
     if (priv->renderer)
         eek_renderer_set_allocation_size (priv->renderer,
@@ -162,7 +163,7 @@ eek_gtk_keyboard_real_size_allocate (GtkWidget     *self,
 
 static void depress(EekGtkKeyboard *self,
                     gdouble x, gdouble y, guint32 time) {
-    EekGtkKeyboardPrivate *priv = EEK_GTK_KEYBOARD_GET_PRIVATE(self);
+    EekGtkKeyboardPrivate *priv = eek_gtk_keyboard_get_instance_private (self);
     EekKey *key = eek_renderer_find_key_by_position (priv->renderer, x, y);
     if (key) {
         eek_keyboard_press_key(priv->keyboard, key, time);
@@ -172,7 +173,7 @@ static void depress(EekGtkKeyboard *self,
 
 static void drag(EekGtkKeyboard *self,
                  gdouble x, gdouble y, guint32 time) {
-    EekGtkKeyboardPrivate *priv = EEK_GTK_KEYBOARD_GET_PRIVATE(self);
+    EekGtkKeyboardPrivate *priv = eek_gtk_keyboard_get_instance_private (self);
     EekKey *key = eek_renderer_find_key_by_position (priv->renderer, x, y);
 
     if (key) {
@@ -198,7 +199,7 @@ static void drag(EekGtkKeyboard *self,
 }
 
 static void release(EekGtkKeyboard *self, guint32 time) {
-    EekGtkKeyboardPrivate *priv = EEK_GTK_KEYBOARD_GET_PRIVATE(self);
+    EekGtkKeyboardPrivate *priv = eek_gtk_keyboard_get_instance_private (self);
 
     GList *list = eek_keyboard_get_pressed_keys (priv->keyboard);
     for (GList *head = list; head; head = g_list_next (head)) {
@@ -243,20 +244,23 @@ eek_gtk_keyboard_real_motion_notify_event (GtkWidget      *self,
 
 // Only one touch stream at a time allowed. Others will be completely ignored.
 static gboolean
-handle_touch_event (GtkWidget      *widget,
-                    GdkEventTouch *event) {
-    EekGtkKeyboard *self = EEK_GTK_KEYBOARD(widget);
+handle_touch_event (GtkWidget     *widget,
+                    GdkEventTouch *event)
+{
+    EekGtkKeyboard        *self = EEK_GTK_KEYBOARD (widget);
+    EekGtkKeyboardPrivate *priv = eek_gtk_keyboard_get_instance_private (self);
+
     if (event->type == GDK_TOUCH_BEGIN) {
-        if (self->sequence) {
+        if (priv->sequence) {
             // Ignore second and following touch points
             return FALSE;
         }
-        self->sequence = event->sequence;
+        priv->sequence = event->sequence;
         depress(self, event->x, event->y, event->time);
         return TRUE;
     }
 
-    if (self->sequence != event->sequence) {
+    if (priv->sequence != event->sequence) {
         return FALSE;
     }
 
@@ -266,16 +270,16 @@ handle_touch_event (GtkWidget      *widget,
     if (event->type == GDK_TOUCH_END || event->type == GDK_TOUCH_CANCEL) {
         // TODO: can the event have different coords than the previous update event?
         release(self, event->time);
-        self->sequence = NULL;
+        priv->sequence = NULL;
     }
     return TRUE;
 }
 
-
 static void
 eek_gtk_keyboard_real_unmap (GtkWidget *self)
 {
-    EekGtkKeyboardPrivate *priv = EEK_GTK_KEYBOARD_GET_PRIVATE(self);
+    EekGtkKeyboardPrivate *priv =
+	    eek_gtk_keyboard_get_instance_private (EEK_GTK_KEYBOARD (self));
 
     if (priv->keyboard) {
         GList *list, *head;
@@ -302,7 +306,9 @@ eek_gtk_keyboard_real_query_tooltip (GtkWidget  *widget,
                                      gboolean    keyboard_tooltip,
                                      GtkTooltip *tooltip)
 {
-    EekGtkKeyboardPrivate *priv = EEK_GTK_KEYBOARD_GET_PRIVATE(widget);
+    EekGtkKeyboard        *self = EEK_GTK_KEYBOARD (widget);
+    EekGtkKeyboardPrivate *priv = eek_gtk_keyboard_get_instance_private (self);
+
     EekKey *key;
 
     key = eek_renderer_find_key_by_position (priv->renderer,
@@ -323,7 +329,7 @@ static void
 eek_gtk_keyboard_set_keyboard (EekGtkKeyboard *self,
                                EekKeyboard    *keyboard)
 {
-    EekGtkKeyboardPrivate *priv = EEK_GTK_KEYBOARD_GET_PRIVATE(self);
+    EekGtkKeyboardPrivate *priv = eek_gtk_keyboard_get_instance_private (self);
     priv->keyboard = g_object_ref (keyboard);
 
     priv->key_locked_handler =
@@ -359,7 +365,8 @@ eek_gtk_keyboard_set_property (GObject      *object,
 static void
 eek_gtk_keyboard_dispose (GObject *object)
 {
-    EekGtkKeyboardPrivate *priv = EEK_GTK_KEYBOARD_GET_PRIVATE(object);
+    EekGtkKeyboard        *self = EEK_GTK_KEYBOARD (object);
+    EekGtkKeyboardPrivate *priv = eek_gtk_keyboard_get_instance_private (self);
 
     if (priv->renderer) {
         g_object_unref (priv->renderer);
@@ -408,9 +415,6 @@ eek_gtk_keyboard_class_init (EekGtkKeyboardClass *klass)
     GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
     GParamSpec *pspec;
 
-    g_type_class_add_private (gobject_class,
-                              sizeof (EekGtkKeyboardPrivate));
-
     widget_class->realize = eek_gtk_keyboard_real_realize;
     widget_class->unmap = eek_gtk_keyboard_real_unmap;
     widget_class->draw = eek_gtk_keyboard_real_draw;
@@ -441,7 +445,7 @@ eek_gtk_keyboard_class_init (EekGtkKeyboardClass *klass)
 static void
 eek_gtk_keyboard_init (EekGtkKeyboard *self)
 {
-    self->priv = EEK_GTK_KEYBOARD_GET_PRIVATE(self);
+    /* void */
 }
 
 /**
@@ -523,7 +527,8 @@ static void
 render_pressed_key (GtkWidget *widget,
                     EekKey    *key)
 {
-    EekGtkKeyboardPrivate *priv = EEK_GTK_KEYBOARD_GET_PRIVATE(widget);
+    EekGtkKeyboard        *self = EEK_GTK_KEYBOARD (widget);
+    EekGtkKeyboardPrivate *priv = eek_gtk_keyboard_get_instance_private (self);
     EekBounds bounds, large_bounds;
 
     GdkWindow         *window  = gtk_widget_get_window (widget);
@@ -562,7 +567,8 @@ static void
 render_locked_key (GtkWidget *widget,
                    EekKey    *key)
 {
-    EekGtkKeyboardPrivate *priv = EEK_GTK_KEYBOARD_GET_PRIVATE(widget);
+    EekGtkKeyboard        *self = EEK_GTK_KEYBOARD (widget);
+    EekGtkKeyboardPrivate *priv = eek_gtk_keyboard_get_instance_private (self);
     EekBounds bounds;
 
     GdkWindow         *window  = gtk_widget_get_window (widget);
@@ -593,7 +599,8 @@ static void
 render_released_key (GtkWidget *widget,
                      EekKey    *key)
 {
-    EekGtkKeyboardPrivate *priv = EEK_GTK_KEYBOARD_GET_PRIVATE(widget);
+    EekGtkKeyboard        *self = EEK_GTK_KEYBOARD (widget);
+    EekGtkKeyboardPrivate *priv = eek_gtk_keyboard_get_instance_private (self);
     EekBounds bounds, large_bounds;
 
     GdkWindow         *window  = gtk_widget_get_window (widget);
@@ -624,7 +631,7 @@ static void
 on_key_pressed (EekKey      *key,
                 EekGtkKeyboard *self)
 {
-    EekGtkKeyboardPrivate *priv = EEK_GTK_KEYBOARD_GET_PRIVATE(self);
+    EekGtkKeyboardPrivate *priv = eek_gtk_keyboard_get_instance_private (self);
 
     /* renderer may have not been set yet if the widget is a popup */
     if (!priv->renderer)
@@ -645,7 +652,7 @@ static void
 on_key_released (EekKey      *key,
                  EekGtkKeyboard *self)
 {
-    EekGtkKeyboardPrivate *priv = EEK_GTK_KEYBOARD_GET_PRIVATE(self);
+    EekGtkKeyboardPrivate *priv = eek_gtk_keyboard_get_instance_private (self);
 
     /* renderer may have not been set yet if the widget is a popup */
     if (!priv->renderer)
@@ -668,7 +675,7 @@ on_key_locked (EekKeyboard *keyboard,
                gpointer     user_data)
 {
     GtkWidget *widget = user_data;
-    EekGtkKeyboardPrivate *priv = EEK_GTK_KEYBOARD_GET_PRIVATE(widget);
+    EekGtkKeyboardPrivate *priv = eek_gtk_keyboard_get_instance_private (user_data);
 
     /* renderer may have not been set yet if the widget is a popup */
     if (!priv->renderer)
@@ -683,7 +690,7 @@ on_key_unlocked (EekKeyboard *keyboard,
                  gpointer     user_data)
 {
     GtkWidget *widget = user_data;
-    EekGtkKeyboardPrivate *priv = EEK_GTK_KEYBOARD_GET_PRIVATE(widget);
+    EekGtkKeyboardPrivate *priv = eek_gtk_keyboard_get_instance_private (user_data);
 
     /* renderer may have not been set yet if the widget is a popup */
     if (!priv->renderer)
@@ -707,11 +714,9 @@ void
 eek_gtk_keyboard_set_theme (EekGtkKeyboard *keyboard,
                             EekTheme       *theme)
 {
-    EekGtkKeyboardPrivate *priv;
-
     g_return_if_fail (EEK_IS_GTK_KEYBOARD(keyboard));
     g_return_if_fail (EEK_IS_THEME(theme));
 
-    priv = EEK_GTK_KEYBOARD_GET_PRIVATE(keyboard);
+    EekGtkKeyboardPrivate *priv = eek_gtk_keyboard_get_instance_private (keyboard);
     priv->theme = g_object_ref (theme);
 }

@@ -28,28 +28,7 @@
 G_BEGIN_DECLS
 
 #define EEKBOARD_TYPE_CONTEXT (eekboard_context_get_type())
-#define EEKBOARD_CONTEXT(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), EEKBOARD_TYPE_CONTEXT, EekboardContext))
-#define EEKBOARD_CONTEXT_CLASS(klass) (G_TYPE_CHECK_CLASS_CAST ((klass), EEKBOARD_TYPE_CONTEXT, EekboardContextClass))
-#define EEKBOARD_IS_CONTEXT(obj) (G_TYPE_CHECK_INSTANCE_TYPE ((obj), EEKBOARD_TYPE_CONTEXT))
-#define EEKBOARD_IS_CONTEXT_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), EEKBOARD_TYPE_CONTEXT))
-#define EEKBOARD_CONTEXT_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS ((obj), EEKBOARD_TYPE_CONTEXT, EekboardContextClass))
-
-typedef struct _EekboardContext EekboardContext;
-typedef struct _EekboardContextClass EekboardContextClass;
-typedef struct _EekboardContextPrivate EekboardContextPrivate;
-
-/**
- * EekboardContext:
- *
- * The #EekboardContext structure contains only private data and
- * should only be accessed using the provided API.
- */
-struct _EekboardContext {
-    /*< private >*/
-    GDBusProxy parent;
-
-    EekboardContextPrivate *priv;
-};
+G_DECLARE_DERIVABLE_TYPE (EekboardContext, eekboard_context, EEKBOARD, CONTEXT, GDBusProxy)
 
 /**
  * EekboardContextClass:

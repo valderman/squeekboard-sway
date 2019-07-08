@@ -59,27 +59,7 @@ typedef enum {
 } EekSymbolCategory;
 
 #define EEK_TYPE_SYMBOL (eek_symbol_get_type())
-#define EEK_SYMBOL(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), EEK_TYPE_SYMBOL, EekSymbol))
-#define EEK_SYMBOL_CLASS(klass) (G_TYPE_CHECK_CLASS_CAST ((klass), EEK_TYPE_SYMBOL, EekSymbolClass))
-#define EEK_IS_SYMBOL(obj) (G_TYPE_CHECK_INSTANCE_TYPE ((obj), EEK_TYPE_SYMBOL))
-#define EEK_IS_SYMBOL_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), EEK_TYPE_SYMBOL))
-#define EEK_SYMBOL_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS ((obj), EEK_TYPE_SYMBOL, EekSymbolClass))
-
-typedef struct _EekSymbolClass EekSymbolClass;
-typedef struct _EekSymbolPrivate EekSymbolPrivate;
-
-/**
- * EekSymbol:
- *
- * The #EekSymbol structure contains only private data and should only
- * be accessed using the provided API.
- */
-struct _EekSymbol {
-    /*< private >*/
-    GObject parent;
-
-    EekSymbolPrivate *priv;
-};
+G_DECLARE_DERIVABLE_TYPE(EekSymbol, eek_symbol, EEK, SYMBOL, GObject)
 
 /**
  * EekSymbolClass:

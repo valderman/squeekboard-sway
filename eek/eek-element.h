@@ -30,22 +30,7 @@
 
 G_BEGIN_DECLS
 #define EEK_TYPE_ELEMENT (eek_element_get_type())
-#define EEK_ELEMENT(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), EEK_TYPE_ELEMENT, EekElement))
-#define EEK_ELEMENT_CLASS(klass) (G_TYPE_CHECK_CLASS_CAST ((klass), EEK_TYPE_ELEMENT, EekElementClass))
-#define EEK_IS_ELEMENT(obj) (G_TYPE_CHECK_INSTANCE_TYPE ((obj), EEK_TYPE_ELEMENT))
-#define EEK_IS_ELEMENT_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), EEK_TYPE_ELEMENT))
-#define EEK_ELEMENT_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS ((obj), EEK_TYPE_ELEMENT, EekElementClass))
-
-typedef struct _EekElementClass   EekElementClass;
-typedef struct _EekElementPrivate EekElementPrivate;
-
-struct _EekElement
-{
-    /*< private >*/
-    GObject parent;
-
-    EekElementPrivate *priv;
-};
+G_DECLARE_DERIVABLE_TYPE (EekElement, eek_element, EEK, ELEMENT, GObject)
 
 struct _EekElementClass
 {

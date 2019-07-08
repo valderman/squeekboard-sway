@@ -54,13 +54,7 @@ enum {
 
 static guint signals[LAST_SIGNAL] = { 0, };
 
-G_DEFINE_TYPE (EekKey, eek_key, EEK_TYPE_ELEMENT);
-
-#define EEK_KEY_GET_PRIVATE(obj)                                  \
-    (G_TYPE_INSTANCE_GET_PRIVATE ((obj), EEK_TYPE_KEY, EekKeyPrivate))
-
-
-struct _EekKeyPrivate
+typedef struct _EekKeyPrivate
 {
     guint keycode;
     EekSymbolMatrix *symbol_matrix;
@@ -69,12 +63,14 @@ struct _EekKeyPrivate
     gulong oref; // UI outline reference
     gboolean is_pressed;
     gboolean is_locked;
-};
+} EekKeyPrivate;
+
+G_DEFINE_TYPE_WITH_PRIVATE (EekKey, eek_key, EEK_TYPE_ELEMENT)
 
 static void
 eek_key_real_locked (EekKey *self)
 {
-    EekKeyPrivate *priv = EEK_KEY_GET_PRIVATE(self);
+    EekKeyPrivate *priv = eek_key_get_instance_private (self);
 
     priv->is_locked = TRUE;
 #if DEBUG
@@ -85,7 +81,7 @@ eek_key_real_locked (EekKey *self)
 static void
 eek_key_real_unlocked (EekKey *self)
 {
-    EekKeyPrivate *priv = EEK_KEY_GET_PRIVATE(self);
+    EekKeyPrivate *priv = eek_key_get_instance_private (self);
 
     priv->is_locked = FALSE;
 #if DEBUG
@@ -96,8 +92,11 @@ eek_key_real_unlocked (EekKey *self)
 static void
 eek_key_finalize (GObject *object)
 {
-    EekKeyPrivate *priv = EEK_KEY_GET_PRIVATE(object);
+    EekKey        *self = EEK_KEY (object);
+    EekKeyPrivate *priv = eek_key_get_instance_private (self);
+
     eek_symbol_matrix_free (priv->symbol_matrix);
+
     G_OBJECT_CLASS (eek_key_parent_class)->finalize (object);
 }
 
@@ -173,9 +172,6 @@ eek_key_class_init (EekKeyClass *klass)
 {
     GObjectClass      *gobject_class = G_OBJECT_CLASS (klass);
     GParamSpec        *pspec;
-
-    g_type_class_add_private (gobject_class,
-                              sizeof (EekKeyPrivate));
 
     gobject_class->set_property = eek_key_set_property;
     gobject_class->get_property = eek_key_get_property;
@@ -285,9 +281,7 @@ eek_key_class_init (EekKeyClass *klass)
 static void
 eek_key_init (EekKey *self)
 {
-    EekKeyPrivate *priv;
-
-    priv = self->priv = EEK_KEY_GET_PRIVATE(self);
+    EekKeyPrivate *priv = eek_key_get_instance_private (self);
     priv->symbol_matrix = eek_symbol_matrix_new (0, 0);
 }
 
@@ -307,7 +301,10 @@ eek_key_set_keycode (EekKey *key,
                      guint   keycode)
 {
     g_return_if_fail (EEK_IS_KEY (key));
-    key->priv->keycode = keycode;
+
+    EekKeyPrivate *priv = eek_key_get_instance_private (key);
+
+    priv->keycode = keycode;
 }
 
 /**
@@ -321,7 +318,10 @@ guint
 eek_key_get_keycode (EekKey *key)
 {
     g_return_val_if_fail (EEK_IS_KEY (key), EEK_INVALID_KEYCODE);
-    return key->priv->keycode;
+
+    EekKeyPrivate *priv = eek_key_get_instance_private (key);
+
+    return priv->keycode;
 }
 
 /**
@@ -337,8 +337,10 @@ eek_key_set_symbol_matrix (EekKey          *key,
 {
     g_return_if_fail (EEK_IS_KEY(key));
 
-    eek_symbol_matrix_free (key->priv->symbol_matrix);
-    key->priv->symbol_matrix = eek_symbol_matrix_copy (matrix);
+    EekKeyPrivate *priv = eek_key_get_instance_private (key);
+
+    eek_symbol_matrix_free (priv->symbol_matrix);
+    priv->symbol_matrix = eek_symbol_matrix_copy (matrix);
 }
 
 /**
@@ -352,7 +354,10 @@ EekSymbolMatrix *
 eek_key_get_symbol_matrix (EekKey *key)
 {
     g_return_val_if_fail (EEK_IS_KEY(key), NULL);
-    return key->priv->symbol_matrix;
+
+    EekKeyPrivate *priv = eek_key_get_instance_private (key);
+
+    return priv->symbol_matrix;
 }
 
 /**
@@ -440,7 +445,7 @@ eek_key_get_symbol_at_index (EekKey *key,
                              gint    fallback_group,
                              gint    fallback_level)
 {
-    EekKeyPrivate *priv = EEK_KEY_GET_PRIVATE(key);
+    EekKeyPrivate *priv = eek_key_get_instance_private (key);
     gint num_symbols;
 
     g_return_val_if_fail (fallback_group >= 0, NULL);
@@ -492,12 +497,14 @@ eek_key_set_index (EekKey *key,
     g_return_if_fail (0 <= column);
     g_return_if_fail (0 <= row);
 
-    if (key->priv->column != column) {
-        key->priv->column = column;
+    EekKeyPrivate *priv = eek_key_get_instance_private (key);
+
+    if (priv->column != column) {
+        priv->column = column;
         g_object_notify (G_OBJECT(key), "column");
     }
-    if (key->priv->row != row) {
-        key->priv->row = row;
+    if (priv->row != row) {
+        priv->row = row;
         g_object_notify (G_OBJECT(key), "row");
     }
 }
@@ -518,10 +525,12 @@ eek_key_get_index (EekKey *key,
     g_return_if_fail (EEK_IS_KEY(key));
     g_return_if_fail (column != NULL || row != NULL);
 
+    EekKeyPrivate *priv = eek_key_get_instance_private (key);
+
     if (column != NULL)
-        *column = key->priv->column;
+        *column = priv->column;
     if (row != NULL)
-        *row = key->priv->row;
+        *row = priv->row;
 }
 
 /**
@@ -536,8 +545,11 @@ eek_key_set_oref (EekKey *key,
                   guint   oref)
 {
     g_return_if_fail (EEK_IS_KEY(key));
-    if (key->priv->oref != oref) {
-        key->priv->oref = oref;
+
+    EekKeyPrivate *priv = eek_key_get_instance_private (key);
+
+    if (priv->oref != oref) {
+        priv->oref = oref;
         g_object_notify (G_OBJECT(key), "oref");
     }
 }
@@ -553,7 +565,10 @@ guint
 eek_key_get_oref (EekKey *key)
 {
     g_return_val_if_fail (EEK_IS_KEY (key), 0);
-    return key->priv->oref;
+
+    EekKeyPrivate *priv = eek_key_get_instance_private (key);
+
+    return priv->oref;
 }
 
 /**
@@ -566,7 +581,10 @@ gboolean
 eek_key_is_pressed (EekKey *key)
 {
     g_return_val_if_fail (EEK_IS_KEY(key), FALSE);
-    return key->priv->is_pressed;
+
+    EekKeyPrivate *priv = eek_key_get_instance_private (key);
+
+    return priv->is_pressed;
 }
 
 /**
@@ -579,11 +597,17 @@ gboolean
 eek_key_is_locked (EekKey *key)
 {
     g_return_val_if_fail (EEK_IS_KEY(key), FALSE);
-    return key->priv->is_locked;
+
+    EekKeyPrivate *priv = eek_key_get_instance_private (key);
+
+    return priv->is_locked;
 }
 
 void eek_key_set_pressed(EekKey *key, gboolean value)
 {
     g_return_if_fail (EEK_IS_KEY(key));
-    key->priv->is_pressed = value;
+
+    EekKeyPrivate *priv = eek_key_get_instance_private (key);
+
+    priv->is_pressed = value;
 }

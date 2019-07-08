@@ -52,20 +52,16 @@ enum {
 
 static guint signals[LAST_SIGNAL] = { 0, };
 
-G_DEFINE_ABSTRACT_TYPE (EekElement, eek_element, G_TYPE_OBJECT);
-
-#define EEK_ELEMENT_GET_PRIVATE(obj)                                  \
-    (G_TYPE_INSTANCE_GET_PRIVATE ((obj), EEK_TYPE_ELEMENT, EekElementPrivate))
-
-
-struct _EekElementPrivate
+typedef struct _EekElementPrivate
 {
     gchar *name;
     EekBounds bounds;
     EekElement *parent;
     gint group;
     gint level;
-};
+} EekElementPrivate;
+
+G_DEFINE_ABSTRACT_TYPE_WITH_PRIVATE (EekElement, eek_element, G_TYPE_OBJECT)
 
 static void
 eek_element_real_symbol_index_changed (EekElement *self,
@@ -78,7 +74,8 @@ eek_element_real_symbol_index_changed (EekElement *self,
 static void
 eek_element_finalize (GObject *object)
 {
-    EekElementPrivate *priv = EEK_ELEMENT_GET_PRIVATE(object);
+    EekElement        *self = EEK_ELEMENT (object);
+    EekElementPrivate *priv = eek_element_get_instance_private (self);
 
     g_free (priv->name);
     G_OBJECT_CLASS (eek_element_parent_class)->finalize (object);
@@ -145,9 +142,6 @@ eek_element_class_init (EekElementClass *klass)
 {
     GObjectClass      *gobject_class = G_OBJECT_CLASS (klass);
     GParamSpec        *pspec;
-
-    g_type_class_add_private (gobject_class,
-                              sizeof (EekElementPrivate));
 
     /* signals */
     klass->symbol_index_changed = eek_element_real_symbol_index_changed;
@@ -238,9 +232,8 @@ eek_element_class_init (EekElementClass *klass)
 static void
 eek_element_init (EekElement *self)
 {
-    EekElementPrivate *priv;
+    EekElementPrivate *priv = eek_element_get_instance_private (self);
 
-    priv = self->priv = EEK_ELEMENT_GET_PRIVATE(self);
     priv->group = -1;
     priv->level = -1;
 }
@@ -259,10 +252,12 @@ eek_element_set_parent (EekElement *element,
     g_return_if_fail (EEK_IS_ELEMENT(element));
     g_return_if_fail (parent == NULL || EEK_IS_ELEMENT(parent));
 
-    if (element->priv->parent == parent)
+    EekElementPrivate *priv = eek_element_get_instance_private (element);
+
+    if (priv->parent == parent)
         return;
 
-    if (element->priv->parent != NULL) {
+    if (priv->parent != NULL) {
         /* release self-reference acquired when setting parent */
         g_object_unref (element);
     }
@@ -271,7 +266,7 @@ eek_element_set_parent (EekElement *element,
         g_object_ref (element);
     }
 
-    element->priv->parent = parent;
+    priv->parent = parent;
 }
 
 /**
@@ -285,7 +280,10 @@ EekElement *
 eek_element_get_parent (EekElement *element)
 {
     g_return_val_if_fail (EEK_IS_ELEMENT(element), NULL);
-    return element->priv->parent;
+
+    EekElementPrivate *priv = eek_element_get_instance_private (element);
+
+    return priv->parent;
 }
 
 /**
@@ -300,8 +298,11 @@ eek_element_set_name (EekElement  *element,
                       const gchar *name)
 {
     g_return_if_fail (EEK_IS_ELEMENT(element));
-    g_free (element->priv->name);
-    element->priv->name = g_strdup (name);
+
+    EekElementPrivate *priv = eek_element_get_instance_private (element);
+
+    g_free (priv->name);
+    priv->name = g_strdup (name);
 }
 
 /**
@@ -315,7 +316,10 @@ const gchar *
 eek_element_get_name (EekElement  *element)
 {
     g_return_val_if_fail (EEK_IS_ELEMENT(element), NULL);
-    return element->priv->name;
+
+    EekElementPrivate *priv = eek_element_get_instance_private (element);
+
+    return priv->name;
 }
 
 /**
@@ -332,7 +336,10 @@ eek_element_set_bounds (EekElement  *element,
                         EekBounds   *bounds)
 {
     g_return_if_fail (EEK_IS_ELEMENT(element));
-    memcpy (&element->priv->bounds, bounds, sizeof(EekBounds));
+
+    EekElementPrivate *priv = eek_element_get_instance_private (element);
+
+    memcpy (&priv->bounds, bounds, sizeof(EekBounds));
 }
 
 /**
@@ -350,7 +357,10 @@ eek_element_get_bounds (EekElement  *element,
 {
     g_return_if_fail (EEK_IS_ELEMENT(element));
     g_return_if_fail (bounds != NULL);
-    memcpy (bounds, &element->priv->bounds, sizeof(EekBounds));
+
+    EekElementPrivate *priv = eek_element_get_instance_private (element);
+
+    memcpy (bounds, &priv->bounds, sizeof(EekBounds));
 }
 
 /**
@@ -486,11 +496,14 @@ eek_element_set_group (EekElement *element,
                        gint        group)
 {
     g_return_if_fail (EEK_IS_ELEMENT(element));
-    if (element->priv->group != group) {
-        element->priv->group = group;
+
+    EekElementPrivate *priv = eek_element_get_instance_private (element);
+
+    if (priv->group != group) {
+        priv->group = group;
         g_object_notify (G_OBJECT(element), "group");
         g_signal_emit (element, signals[SYMBOL_INDEX_CHANGED], 0,
-                       group, element->priv->level);
+                       group, priv->level);
     }
 }
 
@@ -509,11 +522,14 @@ eek_element_set_level (EekElement *element,
                        gint        level)
 {
     g_return_if_fail (EEK_IS_ELEMENT(element));
-    if (element->priv->level != level) {
-        element->priv->level = level;
+
+    EekElementPrivate *priv = eek_element_get_instance_private (element);
+
+    if (priv->level != level) {
+        priv->level = level;
         g_object_notify (G_OBJECT(element), "level");
         g_signal_emit (element, signals[SYMBOL_INDEX_CHANGED], 0,
-                       element->priv->group, level);
+                       priv->group, level);
     }
 }
 
@@ -530,7 +546,10 @@ gint
 eek_element_get_group (EekElement *element)
 {
     g_return_val_if_fail (EEK_IS_ELEMENT(element), -1);
-    return element->priv->group;
+
+    EekElementPrivate *priv = eek_element_get_instance_private (element);
+
+    return priv->group;
 }
 
 /**
@@ -546,5 +565,8 @@ gint
 eek_element_get_level (EekElement *element)
 {
     g_return_val_if_fail (EEK_IS_ELEMENT(element), -1);
-    return element->priv->level;
+
+    EekElementPrivate *priv = eek_element_get_instance_private (element);
+
+    return priv->level;
 }

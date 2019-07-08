@@ -50,9 +50,10 @@
 #define EEK_KEYSYM_Hyper_L 0xffed
 #define EEK_KEYSYM_Hyper_R 0xffee
 
-struct _EekKeysymPrivate {
+typedef struct _EekKeysymPrivate
+{
     guint xkeysym;
-};
+} EekKeysymPrivate;
 
 struct _EekKeysymEntry {
     guint xkeysym;
@@ -68,12 +69,11 @@ typedef struct _EekKeysymEntry EekKeysymEntry;
 
 static void eek_serializable_iface_init (EekSerializableIface *iface);
 
-G_DEFINE_TYPE_WITH_CODE (EekKeysym, eek_keysym, EEK_TYPE_SYMBOL,
-                         G_IMPLEMENT_INTERFACE (EEK_TYPE_SERIALIZABLE,
-                                                eek_serializable_iface_init));
-
-#define EEK_KEYSYM_GET_PRIVATE(obj)                                  \
-    (G_TYPE_INSTANCE_GET_PRIVATE ((obj), EEK_TYPE_KEYSYM, EekKeysymPrivate))
+G_DEFINE_TYPE_EXTENDED (EekKeysym, eek_keysym, EEK_TYPE_SYMBOL,
+			0, /* GTypeFlags */
+			G_ADD_PRIVATE (EekKeysym)
+                        G_IMPLEMENT_INTERFACE (EEK_TYPE_SERIALIZABLE,
+                                               eek_serializable_iface_init))
 
 static EekSerializableIface *eek_keysym_parent_serializable_iface;
 
@@ -81,7 +81,8 @@ static void
 eek_keysym_real_serialize (EekSerializable *self,
                            GVariantBuilder *builder)
 {
-    EekKeysymPrivate *priv = EEK_KEYSYM_GET_PRIVATE(self);
+    EekKeysymPrivate *priv = eek_keysym_get_instance_private (
+		    EEK_KEYSYM(self));
 
     eek_keysym_parent_serializable_iface->serialize (self, builder);
 
@@ -93,7 +94,8 @@ eek_keysym_real_deserialize (EekSerializable *self,
                              GVariant        *variant,
                              gsize            index)
 {
-    EekKeysymPrivate *priv = EEK_KEYSYM_GET_PRIVATE(self);
+    EekKeysymPrivate *priv = eek_keysym_get_instance_private (
+		    EEK_KEYSYM(self));
 
     index = eek_keysym_parent_serializable_iface->deserialize (self,
                                                                variant,
@@ -200,15 +202,13 @@ get_modifier_mask (guint xkeysym)
 static void
 eek_keysym_class_init (EekKeysymClass *klass)
 {
-    GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
-
-    g_type_class_add_private (gobject_class, sizeof (EekKeysymPrivate));
+    /* void */
 }
 
 static void
 eek_keysym_init (EekKeysym *self)
 {
-    self->priv = EEK_KEYSYM_GET_PRIVATE(self);
+    /* void */
 }
 
 /**
@@ -291,7 +291,7 @@ eek_keysym_new_with_modifier (guint           xkeysym,
         g_slice_free (EekKeysymEntry, unichar_entry);
     }
 
-    priv = EEK_KEYSYM_GET_PRIVATE(keysym);
+    priv = eek_keysym_get_instance_private (keysym);
     priv->xkeysym = xkeysym;
 
     return keysym;
@@ -345,6 +345,6 @@ eek_keysym_get_xkeysym (EekKeysym *keysym)
     EekKeysymPrivate *priv;
 
     g_assert (EEK_IS_KEYSYM(keysym));
-    priv = EEK_KEYSYM_GET_PRIVATE(keysym);
+    priv = eek_keysym_get_instance_private (keysym);
     return priv->xkeysym;
 }

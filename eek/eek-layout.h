@@ -31,20 +31,7 @@
 G_BEGIN_DECLS
 
 #define EEK_TYPE_LAYOUT (eek_layout_get_type())
-#define EEK_LAYOUT(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), EEK_TYPE_LAYOUT, EekLayout))
-#define EEK_LAYOUT_CLASS(klass) (G_TYPE_CHECK_CLASS_CAST ((klass), EEK_TYPE_LAYOUT, EekLayoutClass))
-#define EEK_IS_LAYOUT(obj) (G_TYPE_CHECK_INSTANCE_TYPE ((obj), EEK_TYPE_LAYOUT))
-#define EEK_IS_LAYOUT_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), EEK_TYPE_LAYOUT))
-#define EEK_LAYOUT_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS ((obj), EEK_TYPE_LAYOUT, EekLayoutClass))
-
-typedef struct _EekLayoutClass EekLayoutClass;
-typedef struct _EekLayout EekLayout;
-
-struct _EekLayout
-{
-    /*< private >*/
-    GObject parent;
-};
+G_DECLARE_DERIVABLE_TYPE (EekLayout, eek_layout, EEK, LAYOUT, GObject)
 
 /**
  * EekLayoutClass:

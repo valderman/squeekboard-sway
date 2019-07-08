@@ -31,23 +31,7 @@
 G_BEGIN_DECLS
 
 #define EEK_TYPE_XKB_LAYOUT (eek_xkb_layout_get_type())
-#define EEK_XKB_LAYOUT(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), EEK_TYPE_XKB_LAYOUT, EekXkbLayout))
-#define EEK_XKB_LAYOUT_CLASS(klass) (G_TYPE_CHECK_CLASS_CAST ((klass), EEK_TYPE_XKB_LAYOUT, EekXkbLayoutClass))
-#define EEK_IS_XKB_LAYOUT(obj) (G_TYPE_CHECK_INSTANCE_TYPE ((obj), EEK_TYPE_XKB_LAYOUT))
-#define EEK_IS_XKB_LAYOUT_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), EEK_TYPE_XKB_LAYOUT))
-#define EEK_XKB_LAYOUT_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS ((obj), EEK_TYPE_XKB_LAYOUT, EekXkbLayoutClass))
-
-typedef struct _EekXkbLayout        EekXkbLayout;
-typedef struct _EekXkbLayoutClass   EekXkbLayoutClass;
-typedef struct _EekXkbLayoutPrivate EekXkbLayoutPrivate;
-
-struct _EekXkbLayout
-{
-    /*< private >*/
-    EekLayout parent;
-
-    EekXkbLayoutPrivate *priv;
-};
+G_DECLARE_DERIVABLE_TYPE (EekXkbLayout, eek_xkb_layout, EEK, XKB_LAYOUT, EekLayout)
 
 struct _EekXkbLayoutClass
 {

@@ -32,28 +32,7 @@
 G_BEGIN_DECLS
 
 #define EEK_TYPE_SECTION (eek_section_get_type())
-#define EEK_SECTION(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), EEK_TYPE_SECTION, EekSection))
-#define EEK_SECTION_CLASS(klass) (G_TYPE_CHECK_CLASS_CAST ((klass), EEK_TYPE_SECTION, EekSectionClass))
-#define EEK_IS_SECTION(obj) (G_TYPE_CHECK_INSTANCE_TYPE ((obj), EEK_TYPE_SECTION))
-#define EEK_IS_SECTION_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), EEK_TYPE_SECTION))
-#define EEK_SECTION_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS ((obj), EEK_TYPE_SECTION, EekSectionClass))
-
-typedef struct _EekSectionClass EekSectionClass;
-typedef struct _EekSectionPrivate EekSectionPrivate;
-
-/**
- * EekSection:
- *
- * The #EekSection structure contains only private data and should
- * only be accessed using the provided API.
- */
-struct _EekSection
-{
-    /*< private >*/
-    EekContainer parent;
-
-    EekSectionPrivate *priv;
-};
+G_DECLARE_DERIVABLE_TYPE(EekSection, eek_section, EEK, SECTION, EekContainer)
 
 /**
  * EekSectionClass:

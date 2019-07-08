@@ -34,7 +34,7 @@
 #include "eek-keyboard.h"
 #include "eekboard/eekboard-context-service.h"
 
-G_DEFINE_ABSTRACT_TYPE (EekLayout, eek_layout, G_TYPE_OBJECT);
+G_DEFINE_ABSTRACT_TYPE (EekLayout, eek_layout, G_TYPE_OBJECT)
 
 static void
 eek_layout_class_init (EekLayoutClass *klass)

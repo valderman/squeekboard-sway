@@ -31,31 +31,7 @@
 G_BEGIN_DECLS
 
 #define EEK_TYPE_KEY (eek_key_get_type())
-#define EEK_KEY(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), EEK_TYPE_KEY, EekKey))
-#define EEK_KEY_CLASS(klass) (G_TYPE_CHECK_CLASS_CAST ((klass), EEK_TYPE_KEY, EekKeyClass))
-#define EEK_IS_KEY(obj) (G_TYPE_CHECK_INSTANCE_TYPE ((obj), EEK_TYPE_KEY))
-#define EEK_IS_KEY_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), EEK_TYPE_KEY))
-#define EEK_KEY_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS ((obj), EEK_TYPE_KEY, EekKeyClass))
-
-typedef struct _EekKeyClass EekKeyClass;
-typedef struct _EekKeyPrivate EekKeyPrivate;
-
-/**
- * EekKey:
- *
- * Contains information about the state of a key.
- * TODO: rewrite as a plain struct
- *
- * The #EekKey structure contains only private data and should only be
- * accessed using the provided API.
- */
-struct _EekKey
-{
-    /*< private >*/
-    EekElement parent;
-
-    EekKeyPrivate *priv;
-};
+G_DECLARE_DERIVABLE_TYPE(EekKey, eek_key, EEK, KEY, EekElement)
 
 /**
  * EekKeyClass:

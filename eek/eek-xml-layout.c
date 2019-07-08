@@ -43,19 +43,18 @@ enum {
 
 static void initable_iface_init (GInitableIface *initable_iface);
 
-G_DEFINE_TYPE_WITH_CODE (EekXmlLayout, eek_xml_layout, EEK_TYPE_LAYOUT,
-                         G_IMPLEMENT_INTERFACE (G_TYPE_INITABLE,
-                                                initable_iface_init));
-
-#define EEK_XML_LAYOUT_GET_PRIVATE(obj)                                  \
-    (G_TYPE_INSTANCE_GET_PRIVATE ((obj), EEK_TYPE_XML_LAYOUT, EekXmlLayoutPrivate))
-
-struct _EekXmlLayoutPrivate
+typedef struct _EekXmlLayoutPrivate
 {
     gchar *id;
     gchar *keyboards_dir;
     EekXmlKeyboardDesc *desc;
-};
+} EekXmlLayoutPrivate;
+
+G_DEFINE_TYPE_EXTENDED (EekXmlLayout, eek_xml_layout, EEK_TYPE_LAYOUT,
+			0, /* GTypeFlags */
+			G_ADD_PRIVATE(EekXmlLayout)
+                        G_IMPLEMENT_INTERFACE (G_TYPE_INITABLE,
+                                               initable_iface_init))
 
 G_DEFINE_BOXED_TYPE(EekXmlKeyboardDesc, eek_xml_keyboard_desc, eek_xml_keyboard_desc_copy, eek_xml_keyboard_desc_free);
 
@@ -903,6 +902,7 @@ eek_xml_layout_real_create_keyboard (EekboardContextService *manager,
                                      gdouble    initial_height)
 {
     EekXmlLayout *layout = EEK_XML_LAYOUT (self);
+    EekXmlLayoutPrivate *priv = eek_xml_layout_get_instance_private (layout);
     gboolean retval;
 
     /* Create an empty keyboard to which geometry and symbols
@@ -911,8 +911,8 @@ eek_xml_layout_real_create_keyboard (EekboardContextService *manager,
     keyboard->manager = manager;
 
     /* Read geometry information. */
-    gchar *filename = g_strdup_printf ("%s.xml", layout->priv->desc->geometry);
-    gchar *path = g_build_filename (layout->priv->keyboards_dir, "geometry", filename, NULL);
+    gchar *filename = g_strdup_printf ("%s.xml", priv->desc->geometry);
+    gchar *path = g_build_filename (priv->keyboards_dir, "geometry", filename, NULL);
     g_free (filename);
 
     GError *error = NULL;
@@ -921,7 +921,7 @@ eek_xml_layout_real_create_keyboard (EekboardContextService *manager,
     if (!retval) {
         g_object_unref (keyboard);
         g_warning ("can't parse geometry file %s: %s",
-                   layout->priv->desc->geometry,
+                   priv->desc->geometry,
                    error->message);
         g_error_free (error);
         return NULL;
@@ -929,8 +929,8 @@ eek_xml_layout_real_create_keyboard (EekboardContextService *manager,
 
     /* Read symbols information. */
     GList *loaded = NULL;
-    retval = parse_symbols_with_prerequisites (layout->priv->keyboards_dir,
-                                               layout->priv->desc->symbols,
+    retval = parse_symbols_with_prerequisites (priv->keyboards_dir,
+                                               priv->desc->symbols,
                                                keyboard,
                                                &loaded,
                                                &error);
@@ -938,7 +938,7 @@ eek_xml_layout_real_create_keyboard (EekboardContextService *manager,
     if (!retval) {
         g_object_unref (keyboard);
         g_warning ("can't parse symbols file %s: %s",
-                   layout->priv->desc->symbols,
+                   priv->desc->symbols,
                    error->message);
         g_error_free (error);
         return NULL;
@@ -961,10 +961,12 @@ eek_xml_layout_set_property (GObject      *object,
                              GParamSpec   *pspec)
 {
     EekXmlLayout *layout = EEK_XML_LAYOUT (object);
+    EekXmlLayoutPrivate *priv = eek_xml_layout_get_instance_private (layout);
+
     switch (prop_id) {
     case PROP_ID:
-        g_free (layout->priv->id);
-        layout->priv->id = g_value_dup_string (value);
+        g_free (priv->id);
+        priv->id = g_value_dup_string (value);
         break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -979,9 +981,11 @@ eek_xml_layout_get_property (GObject    *object,
                              GParamSpec *pspec)
 {
     EekXmlLayout *layout = EEK_XML_LAYOUT (object);
+    EekXmlLayoutPrivate *priv = eek_xml_layout_get_instance_private (layout);
+
     switch (prop_id) {
     case PROP_ID:
-        g_value_set_string (value, layout->priv->id);
+        g_value_set_string (value, priv->id);
         break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -992,7 +996,8 @@ eek_xml_layout_get_property (GObject    *object,
 static void
 eek_xml_layout_finalize (GObject *object)
 {
-    EekXmlLayoutPrivate *priv = EEK_XML_LAYOUT_GET_PRIVATE (object);
+    EekXmlLayoutPrivate *priv = eek_xml_layout_get_instance_private (
+		    EEK_XML_LAYOUT (object));
 
     g_free (priv->id);
 
@@ -1010,8 +1015,6 @@ eek_xml_layout_class_init (EekXmlLayoutClass *klass)
     EekLayoutClass *layout_class = EEK_LAYOUT_CLASS (klass);
     GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
     GParamSpec *pspec;
-
-    g_type_class_add_private (gobject_class, sizeof (EekXmlLayoutPrivate));
 
     layout_class->create_keyboard = eek_xml_layout_real_create_keyboard;
 
@@ -1031,7 +1034,7 @@ eek_xml_layout_class_init (EekXmlLayoutClass *klass)
 static void
 eek_xml_layout_init (EekXmlLayout *self)
 {
-    self->priv = EEK_XML_LAYOUT_GET_PRIVATE (self);
+    /* void */
 }
 
 EekLayout *
@@ -1050,16 +1053,17 @@ initable_init (GInitable    *initable,
                GError      **error)
 {
     EekXmlLayout *layout = EEK_XML_LAYOUT (initable);
+    EekXmlLayoutPrivate *priv = eek_xml_layout_get_instance_private (layout);
     GList *keyboards, *p;
     gchar *path;
     EekXmlKeyboardDesc *desc;
 
-    layout->priv->keyboards_dir = (gchar *) g_getenv ("EEKBOARD_KEYBOARDSDIR");
-    if (layout->priv->keyboards_dir == NULL)
-        layout->priv->keyboards_dir = KEYBOARDSDIR;
-    layout->priv->keyboards_dir = g_strdup (layout->priv->keyboards_dir);
+    priv->keyboards_dir = (gchar *) g_getenv ("EEKBOARD_KEYBOARDSDIR");
+    if (priv->keyboards_dir == NULL)
+        priv->keyboards_dir = KEYBOARDSDIR;
+    priv->keyboards_dir = g_strdup (priv->keyboards_dir);
 
-    path = g_build_filename (layout->priv->keyboards_dir, "keyboards.xml", NULL);
+    path = g_build_filename (priv->keyboards_dir, "keyboards.xml", NULL);
     keyboards = parse_keyboards (path, error);
     g_free (path);
     if (error && *error)
@@ -1067,7 +1071,7 @@ initable_init (GInitable    *initable,
 
     for (p = keyboards; p; p = p->next) {
         desc = p->data;
-        if (g_strcmp0 (desc->id, layout->priv->id) == 0)
+        if (g_strcmp0 (desc->id, priv->id) == 0)
             break;
     }
     if (p == NULL) {
@@ -1075,12 +1079,12 @@ initable_init (GInitable    *initable,
                      EEK_ERROR,
                      EEK_ERROR_LAYOUT_ERROR,
                      "no such keyboard %s",
-                     layout->priv->id);
+                     priv->id);
         return FALSE;
     }
 
     keyboards = g_list_remove_link (keyboards, p);
-    layout->priv->desc = p->data;
+    priv->desc = p->data;
     g_list_free_1 (p);
     g_list_free_full (keyboards, (GDestroyNotify) keyboard_desc_free);
 

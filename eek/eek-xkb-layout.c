@@ -52,20 +52,13 @@
 
 static void initable_iface_init (GInitableIface *initable_iface);
 
-G_DEFINE_TYPE_WITH_CODE (EekXkbLayout, eek_xkb_layout, EEK_TYPE_LAYOUT,
-                         G_IMPLEMENT_INTERFACE (G_TYPE_INITABLE,
-                                                initable_iface_init));
-
-#define EEK_XKB_LAYOUT_GET_PRIVATE(obj)                                  \
-    (G_TYPE_INSTANCE_GET_PRIVATE ((obj), EEK_TYPE_XKB_LAYOUT, EekXkbLayoutPrivate))
-
 enum {
     PROP_0,
     PROP_DISPLAY,
     PROP_LAST
 };
 
-struct _EekXkbLayoutPrivate
+typedef struct _EekXkbLayoutPrivate
 {
     /* Configuration names that should synch'ed to the symbolic names
        in priv->xkb->names.  Since we use GLib's memory allocator,
@@ -82,7 +75,13 @@ struct _EekXkbLayoutPrivate
 
     gint scale_numerator;
     gint scale_denominator;
-};
+} EekXkbLayoutPrivate;
+
+G_DEFINE_TYPE_EXTENDED (EekXkbLayout, eek_xkb_layout, EEK_TYPE_LAYOUT,
+			0, /* GTypeFlags */
+			G_ADD_PRIVATE(EekXkbLayout)
+                        G_IMPLEMENT_INTERFACE (G_TYPE_INITABLE,
+                                               initable_iface_init))
 
 static guint    find_keycode             (EekXkbLayout *layout,
                                           gchar        *key_name);
@@ -101,7 +100,7 @@ G_INLINE_FUNC gint
 xkb_to_pixmap_coord (EekXkbLayout *layout,
                      gint          n)
 {
-    EekXkbLayoutPrivate *priv = layout->priv;
+    EekXkbLayoutPrivate *priv = eek_xkb_layout_get_instance_private (layout);
     return n * priv->scale_numerator / priv->scale_denominator;
 }
 
@@ -109,7 +108,7 @@ G_INLINE_FUNC gdouble
 xkb_to_pixmap_double (EekXkbLayout *layout,
                      gdouble       d)
 {
-    EekXkbLayoutPrivate *priv = layout->priv;
+    EekXkbLayoutPrivate *priv = eek_xkb_layout_get_instance_private (layout);
     return d * priv->scale_numerator / priv->scale_denominator;
 }
 
@@ -127,7 +126,7 @@ create_key (EekXkbLayout *layout,
     XkbBoundsRec *xkbbounds;
     XkbShapeRec *xkbshape;
     XkbOutlineRec *xkboutline;
-    EekXkbLayoutPrivate *priv = layout->priv;
+    EekXkbLayoutPrivate *priv = eek_xkb_layout_get_instance_private (layout);
     EekKey *key;
     EekBounds bounds;
     EekSymbolMatrix *matrix = NULL;
@@ -237,7 +236,7 @@ create_section (EekXkbLayout  *layout,
                 XkbSectionRec *xkbsection)
 {
     XkbGeometryRec *xkbgeometry;
-    EekXkbLayoutPrivate *priv;
+    EekXkbLayoutPrivate *priv = eek_xkb_layout_get_instance_private (layout);
     EekSection *section;
     EekBounds bounds;
     gchar *name;
@@ -249,7 +248,6 @@ create_section (EekXkbLayout  *layout,
     bounds.width = xkb_to_pixmap_coord(layout, xkbsection->width);
     bounds.height = xkb_to_pixmap_coord(layout, xkbsection->height);
 
-    priv = layout->priv;
     xkbgeometry = priv->xkb->geom;
     section = eek_keyboard_create_section (keyboard);
     name = XGetAtomName (priv->display, xkbsection->name);
@@ -293,7 +291,7 @@ create_section (EekXkbLayout  *layout,
 static void
 create_keyboard (EekXkbLayout *layout, EekKeyboard *keyboard)
 {
-    EekXkbLayoutPrivate *priv = layout->priv;
+    EekXkbLayoutPrivate *priv = eek_xkb_layout_get_instance_private (layout);
     XkbGeometryRec *xkbgeometry;
     EekBounds bounds;
     gint i;
@@ -337,7 +335,8 @@ eek_xkb_layout_real_create_keyboard (EekboardContextService *manager,
     eek_element_set_bounds (EEK_ELEMENT(keyboard), &bounds);
 
     /* resolve modifiers dynamically assigned at run time */
-    EekXkbLayoutPrivate *priv = EEK_XKB_LAYOUT_GET_PRIVATE (self);
+    EekXkbLayoutPrivate *priv = eek_xkb_layout_get_instance_private (
+		    EEK_XKB_LAYOUT(self));
     eek_keyboard_set_num_lock_mask (keyboard,
                                     XkbKeysymToModifiers (priv->display,
                                                           XK_Num_Lock));
@@ -358,7 +357,8 @@ eek_xkb_layout_real_create_keyboard (EekboardContextService *manager,
 static void
 eek_xkb_layout_finalize (GObject *object)
 {
-    EekXkbLayoutPrivate *priv = EEK_XKB_LAYOUT_GET_PRIVATE (object);
+    EekXkbLayoutPrivate *priv = eek_xkb_layout_get_instance_private (
+		    EEK_XKB_LAYOUT (object));
 
     g_free (priv->names.keycodes);
     g_free (priv->names.geometry);
@@ -374,10 +374,11 @@ eek_xkb_layout_set_property (GObject      *object,
                              GParamSpec   *pspec)
 {
     EekXkbLayout *layout = EEK_XKB_LAYOUT (object);
+    EekXkbLayoutPrivate *priv = eek_xkb_layout_get_instance_private (layout);
 
     switch (prop_id) {
     case PROP_DISPLAY:
-        layout->priv->display = g_value_get_pointer (value);
+        priv->display = g_value_get_pointer (value);
         break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -392,10 +393,11 @@ eek_xkb_layout_get_property (GObject    *object,
                              GParamSpec *pspec)
 {
     EekXkbLayout *layout = EEK_XKB_LAYOUT (object);
+    EekXkbLayoutPrivate *priv = eek_xkb_layout_get_instance_private (layout);
 
     switch (prop_id) {
     case PROP_DISPLAY:
-        g_value_set_pointer (value, layout->priv->display);
+        g_value_set_pointer (value, priv->display);
         break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -409,8 +411,6 @@ eek_xkb_layout_class_init (EekXkbLayoutClass *klass)
     EekLayoutClass *layout_class = EEK_LAYOUT_CLASS (klass);
     GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
     GParamSpec *pspec;
-
-    g_type_class_add_private (gobject_class, sizeof (EekXkbLayoutPrivate));
 
     layout_class->create_keyboard = eek_xkb_layout_real_create_keyboard;
 
@@ -429,14 +429,14 @@ eek_xkb_layout_class_init (EekXkbLayoutClass *klass)
 static void
 eek_xkb_layout_init (EekXkbLayout *self)
 {
-    self->priv = EEK_XKB_LAYOUT_GET_PRIVATE (self);
+    /* void */
 }
 
 static gboolean
 get_names_from_server (EekXkbLayout *layout,
                        GError      **error)
 {
-    EekXkbLayoutPrivate *priv = layout->priv;
+    EekXkbLayoutPrivate *priv = eek_xkb_layout_get_instance_private (layout);
     gchar *name;
 
     XkbGetNames (priv->display, XkbAllNamesMask, priv->xkb);
@@ -516,19 +516,21 @@ eek_xkb_layout_set_names (EekXkbLayout         *layout,
                           XkbComponentNamesRec *names,
                           GError              **error)
 {
-    if (g_strcmp0 (names->keycodes, layout->priv->names.keycodes)) {
-        g_free (layout->priv->names.keycodes);
-        layout->priv->names.keycodes = g_strdup (names->keycodes);
+    EekXkbLayoutPrivate *priv = eek_xkb_layout_get_instance_private (layout);
+
+    if (g_strcmp0 (names->keycodes, priv->names.keycodes)) {
+        g_free (priv->names.keycodes);
+        priv->names.keycodes = g_strdup (names->keycodes);
     }
 
-    if (g_strcmp0 (names->geometry, layout->priv->names.geometry)) {
-        g_free (layout->priv->names.geometry);
-        layout->priv->names.geometry = g_strdup (names->geometry);
+    if (g_strcmp0 (names->geometry, priv->names.geometry)) {
+        g_free (priv->names.geometry);
+        priv->names.geometry = g_strdup (names->geometry);
     }
 
-    if (g_strcmp0 (names->symbols, layout->priv->names.symbols)) {
-        g_free (layout->priv->names.symbols);
-        layout->priv->names.symbols = g_strdup (names->symbols);
+    if (g_strcmp0 (names->symbols, priv->names.symbols)) {
+        g_free (priv->names.symbols);
+        priv->names.symbols = g_strdup (names->symbols);
     }
 
     return get_keyboard_from_server (layout, error);
@@ -538,7 +540,7 @@ static gboolean
 get_keyboard_from_server (EekXkbLayout *layout,
                           GError      **error)
 {
-    EekXkbLayoutPrivate *priv = layout->priv;
+    EekXkbLayoutPrivate *priv = eek_xkb_layout_get_instance_private (layout);
 
     if (priv->xkb) {
         XkbFreeKeyboard (priv->xkb, 0, True);
@@ -589,7 +591,7 @@ find_keycode (EekXkbLayout *layout, gchar *key_name)
     XkbKeyAliasPtr palias;
     guint is_name_matched;
     gchar *src, *dst;
-    EekXkbLayoutPrivate *priv = layout->priv;
+    EekXkbLayoutPrivate *priv = eek_xkb_layout_get_instance_private (layout);
 
     if (!priv->xkb)
         return EEK_INVALID_KEYCODE;
@@ -642,7 +644,7 @@ setup_scaling (EekXkbLayout *layout,
                gdouble       width,
                gdouble       height)
 {
-    EekXkbLayoutPrivate *priv = layout->priv;
+    EekXkbLayoutPrivate *priv = eek_xkb_layout_get_instance_private (layout);
 
     g_return_if_fail (priv->xkb);
 

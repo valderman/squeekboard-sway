@@ -31,21 +31,7 @@
 G_BEGIN_DECLS
 
 #define EEK_TYPE_RENDERER (eek_renderer_get_type())
-#define EEK_RENDERER(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), EEK_TYPE_RENDERER, EekRenderer))
-#define EEK_RENDERER_CLASS(klass) (G_TYPE_CHECK_CLASS_CAST ((klass), EEK_TYPE_RENDERER, EekRendererClass))
-#define EEK_IS_RENDERER(obj) (G_TYPE_CHECK_INSTANCE_TYPE ((obj), EEK_TYPE_RENDERER))
-#define EEK_IS_RENDERER_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), EEK_TYPE_RENDERER))
-#define EEK_RENDERER_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS ((obj), EEK_TYPE_RENDERER, EekRendererClass))
-
-typedef struct _EekRenderer EekRenderer;
-typedef struct _EekRendererClass EekRendererClass;
-typedef struct _EekRendererPrivate EekRendererPrivate;
-
-struct _EekRenderer {
-    GObject parent;
-
-    EekRendererPrivate *priv;
-};
+G_DECLARE_DERIVABLE_TYPE (EekRenderer, eek_renderer, EEK, RENDERER, GObject)
 
 struct _EekRendererClass
 {

@@ -30,27 +30,7 @@
 G_BEGIN_DECLS
 
 #define EEK_TYPE_TEXT (eek_text_get_type())
-#define EEK_TEXT(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), EEK_TYPE_TEXT, EekText))
-#define EEK_TEXT_CLASS(klass) (G_TYPE_CHECK_CLASS_CAST ((klass), EEK_TYPE_TEXT, EekTextClass))
-#define EEK_IS_TEXT(obj) (G_TYPE_CHECK_INSTANCE_TYPE ((obj), EEK_TYPE_TEXT))
-#define EEK_IS_TEXT_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), EEK_TYPE_TEXT))
-#define EEK_TEXT_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS ((obj), EEK_TYPE_TEXT, EekTextClass))
-
-typedef struct _EekTextClass EekTextClass;
-typedef struct _EekTextPrivate EekTextPrivate;
-
-/**
- * EekText:
- *
- * The #EekText structure contains only private data and should only
- * be accessed using the provided API.
- */
-struct _EekText {
-    /*< private >*/
-    EekSymbol parent;
-
-    EekTextPrivate *priv;
-};
+G_DECLARE_DERIVABLE_TYPE(EekText, eek_text, EEK, TEXT, EekSymbol)
 
 struct _EekTextClass {
     /*< private >*/
