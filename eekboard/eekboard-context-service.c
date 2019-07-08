@@ -569,7 +569,9 @@ eekboard_context_service_show_keyboard (EekboardContextService *context)
 {
     g_return_if_fail (EEKBOARD_IS_CONTEXT_SERVICE(context));
 
-    EEKBOARD_CONTEXT_SERVICE_GET_CLASS(context)->show_keyboard (context);
+    if (!context->priv->visible) {
+        EEKBOARD_CONTEXT_SERVICE_GET_CLASS(context)->show_keyboard (context);
+    }
 }
 
 void
@@ -577,7 +579,9 @@ eekboard_context_service_hide_keyboard (EekboardContextService *context)
 {
     g_return_if_fail (EEKBOARD_IS_CONTEXT_SERVICE(context));
 
-    EEKBOARD_CONTEXT_SERVICE_GET_CLASS(context)->hide_keyboard (context);
+    if (context->priv->visible) {
+        EEKBOARD_CONTEXT_SERVICE_GET_CLASS(context)->hide_keyboard (context);
+    }
 }
 
 /**
