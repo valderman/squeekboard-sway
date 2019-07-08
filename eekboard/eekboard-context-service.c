@@ -84,7 +84,7 @@ struct _EekboardContextServicePrivate {
 
 G_DEFINE_TYPE (EekboardContextService, eekboard_context_service, G_TYPE_OBJECT);
 
-static Display *display = NULL;
+/*static Display *display = NULL; */
 
 static EekKeyboard *
 eekboard_context_service_real_create_keyboard (EekboardContextService *self,
@@ -483,7 +483,7 @@ eekboard_context_service_init (EekboardContextService *self)
     }
 }
 
-static gboolean on_repeat_timeout (EekboardContextService *context);
+/*static gboolean on_repeat_timeout (EekboardContextService *context);
 
 static gboolean
 on_repeat_timeout (EekboardContextService *context)
@@ -505,15 +505,15 @@ on_repeat_timeout (EekboardContextService *context)
 static gboolean
 on_repeat_timeout_init (EekboardContextService *context)
 {
-    /* FIXME: clear modifiers for further key repeat; better not
-       depend on modifier behavior is LATCH */
+    // FIXME: clear modifiers for further key repeat; better not
+    // depend on modifier behavior is LATCH
     eek_keyboard_set_modifiers (context->priv->keyboard, 0);
     
-    /* reschedule repeat timeout only when "repeat" option is set */
-    /* TODO: org.gnome.desktop.input-sources doesn't have repeat info.
-     * In addition, repeat is only useful when the keyboard is not in text
-     * input mode */
-    /*
+    // reschedule repeat timeout only when "repeat" option is set
+    // TODO: org.gnome.desktop.input-sources doesn't have repeat info.
+    // In addition, repeat is only useful when the keyboard is not in text
+    // input mode
+
     if (g_settings_get_boolean (context->priv->settings, "repeat")) {
         guint delay;
 
@@ -522,11 +522,11 @@ on_repeat_timeout_init (EekboardContextService *context)
             g_timeout_add (delay,
                            (GSourceFunc)on_repeat_timeout,
                            context);
-    } else */
+    //} else
         context->priv->repeat_timeout_id = 0;
 
     return FALSE;
-}
+}*/
 
 /**
  * eekboard_context_service_enable:
