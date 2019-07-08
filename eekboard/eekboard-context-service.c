@@ -82,7 +82,7 @@ struct _EekboardContextServicePrivate {
     GSettings *settings;
 };
 
-G_DEFINE_TYPE (EekboardContextService, eekboard_context_service, G_TYPE_OBJECT);
+G_DEFINE_TYPE_WITH_PRIVATE (EekboardContextService, eekboard_context_service, G_TYPE_OBJECT);
 
 /*static Display *display = NULL; */
 
@@ -355,9 +355,6 @@ eekboard_context_service_class_init (EekboardContextServiceClass *klass)
 {
     GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
     GParamSpec *pspec;
-
-    g_type_class_add_private (gobject_class,
-                              sizeof (EekboardContextServicePrivate));
 
     klass->create_keyboard = eekboard_context_service_real_create_keyboard;
     klass->show_keyboard = eekboard_context_service_real_show_keyboard;
