@@ -217,16 +217,18 @@ static void
 set_geometry (ServerContextService *context)
 {
     GdkScreen *screen;
+    GdkDisplay *display;
     GdkWindow *root;
-    gint monitor;
+    GdkMonitor *monitor;
     GdkRectangle rect;
-    const EekKeyboard *keyboard;
+    EekKeyboard *keyboard;
     EekBounds bounds;
 
     screen = gdk_screen_get_default ();
-    root = gtk_widget_get_root_window (context->window);
-    monitor = gdk_screen_get_monitor_at_window (screen, root);
-    gdk_screen_get_monitor_geometry (screen, monitor, &rect);
+    root = gdk_screen_get_root_window (screen);
+    display = gdk_display_get_default();
+    monitor = gdk_display_get_monitor_at_window (display, root);
+    gdk_monitor_get_geometry (monitor, &rect);
     keyboard = eekboard_context_service_get_keyboard (EEKBOARD_CONTEXT_SERVICE(context));
     eek_element_get_bounds (EEK_ELEMENT(keyboard), &bounds);
 
