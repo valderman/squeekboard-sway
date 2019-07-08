@@ -221,7 +221,7 @@ set_geometry (ServerContextService *context)
     GdkWindow *root;
     GdkMonitor *monitor;
     GdkRectangle rect;
-    const EekKeyboard *keyboard;
+    EekKeyboard *keyboard;
     EekBounds bounds;
 
     screen = gdk_screen_get_default ();
