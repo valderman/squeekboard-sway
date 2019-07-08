@@ -55,8 +55,6 @@ enum {
 
 static guint signals[LAST_SIGNAL] = { 0, };
 
-G_DEFINE_TYPE (EekKeyboard, eek_keyboard, EEK_TYPE_CONTAINER);
-
 #define EEK_KEYBOARD_GET_PRIVATE(obj)                                  \
     (G_TYPE_INSTANCE_GET_PRIVATE ((obj), EEK_TYPE_KEYBOARD, EekKeyboardPrivate))
 
@@ -74,6 +72,8 @@ struct _EekKeyboardPrivate
     EekModifierType num_lock_mask;
     EekModifierType alt_gr_mask;
 };
+
+G_DEFINE_TYPE_WITH_PRIVATE (EekKeyboard, eek_keyboard, EEK_TYPE_CONTAINER);
 
 G_DEFINE_BOXED_TYPE(EekModifierKey, eek_modifier_key,
                     eek_modifier_key_copy, eek_modifier_key_free);
@@ -389,9 +389,6 @@ eek_keyboard_class_init (EekKeyboardClass *klass)
     EekContainerClass *container_class = EEK_CONTAINER_CLASS (klass);
     GObjectClass      *gobject_class = G_OBJECT_CLASS (klass);
     GParamSpec        *pspec;
-
-    g_type_class_add_private (gobject_class,
-                              sizeof (EekKeyboardPrivate));
 
     klass->create_section = eek_keyboard_real_create_section;
 
