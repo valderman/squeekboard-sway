@@ -480,6 +480,7 @@ eekboard_context_service_init (EekboardContextService *self)
     }
 }
 
+/* FIXME These functions should either be implemented or removed. */
 /*static gboolean on_repeat_timeout (EekboardContextService *context);
 
 static gboolean
