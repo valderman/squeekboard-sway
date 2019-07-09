@@ -480,52 +480,6 @@ eekboard_context_service_init (EekboardContextService *self)
     }
 }
 
-/* FIXME These functions should either be implemented or removed. */
-/*static gboolean on_repeat_timeout (EekboardContextService *context);
-
-static gboolean
-on_repeat_timeout (EekboardContextService *context)
-{
-    guint delay = 500; // ms
-
-    // hardcoding; needs to connect to yet another settings path because
-    // org.gnome.desktop.input-sources doesn't control repeating
-    //g_settings_get (context->priv->settings, "repeat-interval", "u", &delay);
-
-    context->priv->repeat_timeout_id =
-        g_timeout_add (delay,
-                       (GSourceFunc)on_repeat_timeout,
-                       context);
-
-    return FALSE;
-}
-
-static gboolean
-on_repeat_timeout_init (EekboardContextService *context)
-{
-    // FIXME: clear modifiers for further key repeat; better not
-    // depend on modifier behavior is LATCH
-    eek_keyboard_set_modifiers (context->priv->keyboard, 0);
-    
-    // reschedule repeat timeout only when "repeat" option is set
-    // TODO: org.gnome.desktop.input-sources doesn't have repeat info.
-    // In addition, repeat is only useful when the keyboard is not in text
-    // input mode
-
-    if (g_settings_get_boolean (context->priv->settings, "repeat")) {
-        guint delay;
-
-        g_settings_get (context->priv->settings, "repeat-interval", "u", &delay);
-        context->priv->repeat_timeout_id =
-            g_timeout_add (delay,
-                           (GSourceFunc)on_repeat_timeout,
-                           context);
-    //} else
-        context->priv->repeat_timeout_id = 0;
-
-    return FALSE;
-}*/
-
 /**
  * eekboard_context_service_enable:
  * @context: an #EekboardContextService
