@@ -1,7 +1,7 @@
-/* 
+/*
  * Copyright (C) 2010-2011 Daiki Ueno <ueno@unixuser.org>
  * Copyright (C) 2010-2011 Red Hat, Inc.
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -95,9 +95,8 @@ on_notify_keyboard (GObject              *object,
 
     keyboard = eekboard_context_service_get_keyboard (EEKBOARD_CONTEXT_SERVICE(context));
 
-    if (!keyboard) {
+    if (!keyboard)
         g_error("Programmer error: keyboard layout was unset!");
-    }
 
     // The keymap will get set even if the window is hidden.
     // It's not perfect,
@@ -153,7 +152,7 @@ set_dock (GtkWidget *widget, GtkAllocation *allocation) // <--- FIXME: this coul
 
     /* set window type to dock */
     gdk_window_set_type_hint (window, GDK_WINDOW_TYPE_HINT_DOCK);
-  
+
     vals[0] = 0;
     vals[1] = 0;
     vals[2] = 0;
@@ -233,14 +232,14 @@ set_geometry (ServerContextService *context)
                                           context);
 
     if (eekboard_context_service_get_fullscreen (EEKBOARD_CONTEXT_SERVICE(context))) {
-        gint width = rect.width;
+        gint width  = rect.width;
         gint height = rect.height;
 
         if (width > height) {
-            width *= context->size_constraint_landscape[0];
+            width  *= context->size_constraint_landscape[0];
             height *= context->size_constraint_landscape[1];
         } else {
-            width *= context->size_constraint_portrait[0];
+            width  *= context->size_constraint_portrait[0];
             height *= context->size_constraint_portrait[1];
         }
 
@@ -277,12 +276,12 @@ set_geometry (ServerContextService *context)
 }
 
 static void
-make_window (ServerContextService *context) {
-    if (context->window) {
+make_window (ServerContextService *context)
+{
+    if (context->window)
         g_error("Window already present");
-        return;
-    }
-    context->window = GTK_WIDGET(g_object_new (
+
+    context->window = g_object_new (
         PHOSH_TYPE_LAYER_SURFACE,
         "layer-shell", squeek_wayland->layer_shell,
         "wl-output", g_ptr_array_index(squeek_wayland->outputs, 0), // TODO: select output as needed,
@@ -295,12 +294,16 @@ make_window (ServerContextService *context) {
         "exclusive-zone", 200,
         //"namespace", "phosh home",
         NULL
-    ));
+    );
+
     g_signal_connect (context->window, "destroy",
-                      G_CALLBACK(on_destroy), context);
+                      G_CALLBACK(on_destroy),
+                      context);
+
     context->notify_visible_handler =
         g_signal_connect (context->window, "notify::visible",
-                          G_CALLBACK(on_notify_visible), context);
+                          G_CALLBACK(on_notify_visible),
+                          context);
 
     // FIXME: these properties could all be set in g_object_new()
     // The properties below are just to make hacking easier.
@@ -387,8 +390,7 @@ server_context_service_real_disabled (EekboardContextService *_context)
     ServerContextService *context = SERVER_CONTEXT_SERVICE(_context);
 
     if (context->window) {
-        context->was_visible =
-            gtk_widget_get_visible (context->window);
+        context->was_visible = gtk_widget_get_visible (context->window);
         gtk_widget_hide (context->window);
     }
 }
@@ -498,6 +500,5 @@ server_context_service_init (ServerContextService *context)
 EekboardContextService *
 server_context_service_new ()
 {
-    return EEKBOARD_CONTEXT_SERVICE(g_object_new (SERVER_TYPE_CONTEXT_SERVICE,
-                         NULL));
+    return EEKBOARD_CONTEXT_SERVICE(g_object_new (SERVER_TYPE_CONTEXT_SERVICE, NULL));
 }
