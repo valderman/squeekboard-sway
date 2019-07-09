@@ -109,8 +109,7 @@ on_notify_keyboard (GObject    *object,
     if (context->window) {
         if (keyboard == NULL) {
             gtk_widget_hide (context->window);
-            gtk_widget_destroy (context->widget);
-            context->widget = NULL;
+            g_clear_pointer (&context->widget, gtk_widget_destroy);
         } else {
             gboolean was_visible = gtk_widget_get_visible (context->window);
             /* avoid to send KeyboardVisibilityChanged */
@@ -323,8 +322,9 @@ make_window (ServerContextService *context) {
 }
 
 static void
-destroy_window (ServerContextService *context) {
-    context->window = NULL;
+destroy_window (ServerContextService *context)
+{
+    context->window = NULL; // FIXME: doesn't destroy much
 }
 
 static void
@@ -335,10 +335,7 @@ update_widget (ServerContextService *context)
     gchar *theme_path;
     EekTheme *theme;
     
-    if (context->widget) {
-        gtk_widget_destroy (context->widget);
-        context->widget = NULL;
-    }
+    g_clear_pointer (&context->widget, gtk_widget_destroy);
 
     theme_path = g_build_filename (THEMESDIR, "default.css", NULL);
 
@@ -374,9 +371,9 @@ server_context_service_real_hide_keyboard (EekboardContextService *_context)
     ServerContextService *context = SERVER_CONTEXT_SERVICE(_context);
 
     gtk_widget_hide (context->window);
-    gtk_container_remove(GTK_CONTAINER(context->window), context->widget);
-    context->widget = NULL; // When GTK removes the widget, it doesn't just unlink it, but also frees it
-    destroy_window (context);
+    g_clear_pointer (&context->widget, gtk_widget_destroy);
+
+    destroy_window (context); // <--- FIXME: looks suspect
 
     EEKBOARD_CONTEXT_SERVICE_CLASS (server_context_service_parent_class)->
         hide_keyboard (_context);
@@ -442,10 +439,8 @@ server_context_service_dispose (GObject *object)
 {
     ServerContextService *context = SERVER_CONTEXT_SERVICE(object);
 
-    if (context->window) {
-        gtk_widget_destroy (context->window);
-        context->window = NULL;
-    }
+    g_clear_pointer (&context->window, gtk_widget_destroy);
+    context->widget = NULL;
 
     G_OBJECT_CLASS (server_context_service_parent_class)->dispose (object);
 }
