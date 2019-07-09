@@ -65,10 +65,10 @@ static void set_dock      (GtkWidget            *widget,
                            GtkAllocation        *allocation);
 
 static void
-on_monitors_changed (GdkScreen *screen,
-                     gpointer   user_data)
+on_monitors_changed (GdkScreen            *screen,
+                     ServerContextService *context)
+
 {
-    ServerContextService *context = user_data;
     if (context->window)
         set_geometry (context);
 }
@@ -87,11 +87,10 @@ on_destroy (GtkWidget *widget, gpointer user_data)
 }
 
 static void
-on_notify_keyboard (GObject    *object,
-                    GParamSpec *spec,
-                    gpointer    user_data)
+on_notify_keyboard (GObject              *object,
+                    GParamSpec           *spec,
+                    ServerContextService *context)
 {
-    ServerContextService *context = user_data;
     const EekKeyboard *keyboard;
 
     keyboard = eekboard_context_service_get_keyboard (EEKBOARD_CONTEXT_SERVICE(context));
@@ -124,21 +123,21 @@ on_notify_keyboard (GObject    *object,
         }
     }
 }
-        
+
 static void
-on_notify_fullscreen (GObject    *object,
-                      GParamSpec *spec,
-                      gpointer    user_data)
+on_notify_fullscreen (GObject              *object,  // <--- context
+                      GParamSpec           *spec,
+                      ServerContextService *context) // <--- more context
 {
-    ServerContextService *context = user_data;
     if (context->window)
         set_geometry (context);
 }
 
 static void
-on_notify_visible (GObject *object, GParamSpec *spec, gpointer user_data)
+on_notify_visible (GObject    *object,            // <--- context
+                   GParamSpec *spec,
+                   ServerContextService *context) // <--- more context
 {
-    ServerContextService *context = user_data;
     gboolean visible;
 
     g_object_get (object, "visible", &visible, NULL);
@@ -197,10 +196,9 @@ on_size_allocate_set_dock (GtkWidget *widget,
 }
 
 static void
-on_realize_set_non_maximizable (GtkWidget *widget,
-                                gpointer   user_data)
+on_realize_set_non_maximizable (GtkWidget            *widget,
+                                ServerContextService *context)
 {
-    ServerContextService *context = user_data;
 
     g_assert (context && context->window == widget);
 
