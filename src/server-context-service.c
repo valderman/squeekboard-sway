@@ -213,20 +213,16 @@ on_realize_set_non_maximizable (GtkWidget            *widget,
 static void
 set_geometry (ServerContextService *context)
 {
-    GdkScreen *screen;
-    GdkDisplay *display;
-    GdkWindow *root;
-    GdkMonitor *monitor;
+    GdkScreen   *screen   = gdk_screen_get_default ();
+    GdkWindow   *root     = gdk_screen_get_root_window (screen);
+    GdkDisplay  *display  = gdk_display_get_default ();
+    GdkMonitor  *monitor  = gdk_display_get_monitor_at_window (display, root);
+    EekKeyboard *keyboard = eekboard_context_service_get_keyboard (EEKBOARD_CONTEXT_SERVICE(context));
+
     GdkRectangle rect;
-    EekKeyboard *keyboard;
     EekBounds bounds;
 
-    screen = gdk_screen_get_default ();
-    root = gdk_screen_get_root_window (screen);
-    display = gdk_display_get_default();
-    monitor = gdk_display_get_monitor_at_window (display, root);
     gdk_monitor_get_geometry (monitor, &rect);
-    keyboard = eekboard_context_service_get_keyboard (EEKBOARD_CONTEXT_SERVICE(context));
     eek_element_get_bounds (EEK_ELEMENT(keyboard), &bounds);
 
     g_signal_handlers_disconnect_by_func (context->window,
@@ -331,23 +327,19 @@ update_widget (ServerContextService *context)
 {
     EekKeyboard *keyboard;
     EekBounds bounds;
-    gchar *theme_path;
+    g_autofree gchar *theme_path = g_build_filename (THEMESDIR, "default.css", NULL);
     EekTheme *theme;
-    
-    g_clear_pointer (&context->widget, gtk_widget_destroy);
-
-    theme_path = g_build_filename (THEMESDIR, "default.css", NULL);
 
     theme = eek_theme_new (theme_path, NULL, NULL);
-    g_free (theme_path);
 
     keyboard = eekboard_context_service_get_keyboard (EEKBOARD_CONTEXT_SERVICE(context));
     eek_element_get_bounds (EEK_ELEMENT(keyboard), &bounds); // <--- FIXME: bounds not used
 
     g_clear_pointer (&context->widget, gtk_widget_destroy);
     context->widget = eek_gtk_keyboard_new (keyboard);
+
     eek_gtk_keyboard_set_theme (EEK_GTK_KEYBOARD(context->widget), theme);
-    g_object_unref (theme);
+    g_clear_object (&theme);
 
     gtk_widget_set_has_tooltip (context->widget, TRUE); // <--- FIXME: I've never seen one
     gtk_container_add (GTK_CONTAINER(context->window), context->widget);
