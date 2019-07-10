@@ -1,10 +1,5 @@
 
 install_data(
-    'themes/default.css',
-    install_dir: pkgdatadir + '/themes',
-)
-
-install_data(
     'keyboards/keyboards.xml',
     install_dir: pkgdatadir + '/keyboards/',
 )

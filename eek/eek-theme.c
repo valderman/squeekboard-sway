@@ -43,6 +43,7 @@
  * Copyright (C) 2003-2004 Dodji Seketeli.  All Rights Reserved.
  */
 
+#define G_LOG_DOMAIN "eek-theme"
 
 #include <stdlib.h>
 #include <string.h>
@@ -166,103 +167,65 @@ eek_theme_class_init (EekThemeClass *klass)
 
 }
 
-/* This is a workaround for a bug in libcroco < 0.6.2 where
- * function starting with 'r' (and 'u') are misparsed. We work
- * around this by exploiting the fact that libcroco is incomformant
- * with the CSS-spec and case sensitive and pre-convert all
- * occurrences of rgba to RGBA. Then we make our own parsing
- * code check for RGBA as well.
- */
-#if LIBCROCO_VERSION_NUMBER < 602
-static gboolean
-is_identifier_character (char c)
-{
-  /* Actual CSS rules allow for unicode > 0x00a1 and escaped
-   * characters, but we'll assume we won't do that in our stylesheets
-   * or at least not next to the string 'rgba'.
-   */
-  return g_ascii_isalnum(c) || c == '-' || c == '_';
-}
-
-static void
-convert_rgba_RGBA (char *buf)
-{
-  char *p;
-
-  p = strstr (buf, "rgba");
-  while (p)
-    {
-      /* Check if this looks like a complete token; this is to
-       * avoiding mangling, say, a selector '.rgba-entry' */
-      if (!((p > buf && is_identifier_character (*(p - 1))) ||
-            (is_identifier_character (*(p + 4)))))
-        memcpy(p, "RGBA", 4);
-      p += 4;
-      p = strstr (p, "rgba");
-    }
-}
-
-static CRStyleSheet *
-parse_stylesheet (const char  *filename,
-                  GError     **error)
-{
-  enum CRStatus status;
-  char *contents;
-  gsize length;
-  CRStyleSheet *stylesheet = NULL;
-
-  if (filename == NULL)
-    return NULL;
-
-  if (!g_file_get_contents (filename, &contents, &length, error))
-    return NULL;
-
-  convert_rgba_RGBA (contents);
-
-  status = cr_om_parser_simply_parse_buf ((const guchar *) contents,
-                                          length,
-                                          CR_UTF_8,
-                                          &stylesheet);
-  g_free (contents);
-
-  if (status != CR_OK)
-    {
-      g_set_error (error, G_IO_ERROR, G_IO_ERROR_FAILED,
-                   "Error parsing stylesheet '%s'; errcode:%d", filename, status);
-      return NULL;
-    }
-
-  return stylesheet;
-}
-
-CRDeclaration *
-_eek_theme_parse_declaration_list (const char *str)
-{
-  char *copy = g_strdup (str);
-  CRDeclaration *result;
-
-  convert_rgba_RGBA (copy);
-
-  result = cr_declaration_parse_list_from_buf ((const guchar *)copy,
-                                               CR_UTF_8);
-  g_free (copy);
-
-  return result;
-}
-#else /* LIBCROCO_VERSION_NUMBER >= 602 */
 static CRStyleSheet *
 parse_stylesheet (const char  *filename,
                   GError     **error)
 {
   enum CRStatus status;
   CRStyleSheet *stylesheet;
+  g_autoptr (GFileInputStream) stream = NULL;
+  g_autoptr (GFileInfo) info = NULL;
+  g_autoptr (GFile) file = NULL;
+  g_autofree guchar* contents = NULL;
+  goffset size;
+  gsize out = 0;
+  GError *err = NULL;
 
   if (filename == NULL)
     return NULL;
 
-  status = cr_om_parser_simply_parse_file ((const guchar *) filename,
-                                           CR_UTF_8,
-                                           &stylesheet);
+  g_debug ("Parsing %s", filename);
+  if (g_strcmp0 (filename, "resource://") > 0) {
+      file = g_file_new_for_uri (filename);
+      stream = g_file_read (file, NULL, &err);
+      if (!stream) {
+          g_warning ("Failed to open %s: %s", filename, err->message);
+          g_clear_error (&err);
+          return NULL;
+      }
+
+      info = g_file_input_stream_query_info (stream,
+                                             G_FILE_ATTRIBUTE_STANDARD_SIZE,
+                                             NULL,
+                                             &err);
+
+      if (!info) {
+          g_warning ("Failed to stat %s: %s", filename, err->message);
+          g_clear_error (&err);
+          return NULL;
+      }
+
+      size = g_file_info_get_size (info);
+      contents = g_malloc0 (size);
+      if (!g_input_stream_read_all (G_INPUT_STREAM (stream),
+                                    contents,
+                                    size,
+                                    &out,
+                                    NULL,
+                                    &err)) {
+          g_warning ("Failed to read %s: %s", filename, err->message);
+          g_clear_error (&err);
+          return NULL;
+      }
+      status = cr_om_parser_simply_parse_buf (contents,
+                                              size,
+                                              CR_UTF_8,
+                                              &stylesheet);
+  } else {
+      status = cr_om_parser_simply_parse_file ((const guchar *) filename,
+                                               CR_UTF_8,
+                                               &stylesheet);
+  }
 
   if (status != CR_OK)
     {
@@ -280,7 +243,6 @@ _eek_theme_parse_declaration_list (const char *str)
   return cr_declaration_parse_list_from_buf ((const guchar *)str,
                                              CR_UTF_8);
 }
-#endif /* LIBCROCO_VERSION_NUMBER < 602 */
 
 /* Just g_warning for now until we have something nicer to do */
 static CRStyleSheet *

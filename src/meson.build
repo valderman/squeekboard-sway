@@ -4,6 +4,13 @@ dbus_src = gnome.gdbus_codegen(
     join_paths(dbusdir, 'sm.puri.OSK0.xml')
 )
 
+squeekboard_resources = gnome.compile_resources(
+   'squeekboard-resources',
+   'squeekboard.gresources.xml',
+
+   c_name: 'squeekboard',
+)
+
 sources = [
   'imservice.c',
   'server-context-service.c',
@@ -40,7 +47,8 @@ sources = [
   '../eekboard/eekboard-context-service.c',
   '../eekboard/eekboard-context.c',
   '../eekboard/eekboard-service.c',
-#  '../eekboard/eekboard-xklutil.c',
+  #  '../eekboard/eekboard-xklutil.c',
+  squeekboard_resources,
   wl_proto_sources,
 ]
 
