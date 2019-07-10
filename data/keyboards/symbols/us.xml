@@ -93,7 +93,7 @@
     <keysym keyval="43">plus</keysym>
   </key>
   <key keycode="22" name="BKSP">
-    <symbol label="⌫" icon="edit-clear-symbolic">backspace</symbol>
+    <keysym keyval="65288" icon="edit-clear-symbolic">backspace</keysym>
   </key>
   <key keycode="23" name="TAB">
     <keysym keyval="65289">Tab</keysym>
