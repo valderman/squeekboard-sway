@@ -36,15 +36,12 @@ enum {
 
 static guint signals[LAST_SIGNAL] = { 0, };
 
-G_DEFINE_TYPE (EekboardClient, eekboard_client, G_TYPE_DBUS_PROXY);
-
-#define EEKBOARD_CLIENT_GET_PRIVATE(obj)                                \
-    (G_TYPE_INSTANCE_GET_PRIVATE ((obj), EEKBOARD_TYPE_CLIENT, EekboardClientPrivate))
-
-struct _EekboardClientPrivate
+typedef struct _EekboardClientPrivate
 {
     GHashTable *context_hash;
-};
+} EekboardClientPrivate;
+
+G_DEFINE_TYPE_WITH_PRIVATE (EekboardClient, eekboard_client, G_TYPE_DBUS_PROXY)
 
 static void send_destroy_context (EekboardClient  *client,
                                   EekboardContext *context,
@@ -53,7 +50,7 @@ static void send_destroy_context (EekboardClient  *client,
 static void
 eekboard_client_real_destroyed (EekboardClient *self)
 {
-    EekboardClientPrivate *priv = EEKBOARD_CLIENT_GET_PRIVATE(self);
+    EekboardClientPrivate *priv = eekboard_client_get_instance_private (self);
 
     // g_debug ("eekboard_client_real_destroyed");
     g_hash_table_remove_all (priv->context_hash);
@@ -63,7 +60,7 @@ static void
 eekboard_client_dispose (GObject *object)
 {
     EekboardClient *client = EEKBOARD_CLIENT(object);
-    EekboardClientPrivate *priv = EEKBOARD_CLIENT_GET_PRIVATE(client);
+    EekboardClientPrivate *priv = eekboard_client_get_instance_private (client);
 
     if (priv->context_hash) {
         GHashTableIter iter;
@@ -85,9 +82,6 @@ static void
 eekboard_client_class_init (EekboardClientClass *klass)
 {
     GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
-
-    g_type_class_add_private (gobject_class,
-                              sizeof (EekboardClientPrivate));
 
     klass->destroyed = eekboard_client_real_destroyed;
 
@@ -115,8 +109,9 @@ eekboard_client_class_init (EekboardClientClass *klass)
 static void
 eekboard_client_init (EekboardClient *self)
 {
-    self->priv = EEKBOARD_CLIENT_GET_PRIVATE(self);
-    self->priv->context_hash =
+    EekboardClientPrivate *priv = eekboard_client_get_instance_private (self);
+
+    priv->context_hash =
         g_hash_table_new_full (g_str_hash,
                                g_str_equal,
                                (GDestroyNotify)g_free,
@@ -189,7 +184,9 @@ on_context_destroyed (EekboardContext *context,
                       gpointer         user_data)
 {
     EekboardClient *client = user_data;
-    g_hash_table_remove (client->priv->context_hash,
+    EekboardClientPrivate *priv = eekboard_client_get_instance_private (client);
+
+    g_hash_table_remove (priv->context_hash,
                          g_dbus_proxy_get_object_path (G_DBUS_PROXY(context)));
 }
 
@@ -239,7 +236,9 @@ eekboard_client_create_context (EekboardClient *client,
         return NULL;
     }
 
-    g_hash_table_insert (client->priv->context_hash,
+    EekboardClientPrivate *priv = eekboard_client_get_instance_private (client);
+
+    g_hash_table_insert (priv->context_hash,
                          g_strdup (object_path),
                          g_object_ref (context));
     g_signal_connect (context, "destroyed",
@@ -284,9 +283,11 @@ eekboard_client_push_context (EekboardClient  *client,
     g_return_if_fail (EEKBOARD_IS_CLIENT(client));
     g_return_if_fail (EEKBOARD_IS_CONTEXT(context));
 
+    EekboardClientPrivate *priv = eekboard_client_get_instance_private (client);
+
     object_path = g_dbus_proxy_get_object_path (G_DBUS_PROXY(context));
 
-    context = g_hash_table_lookup (client->priv->context_hash,
+    context = g_hash_table_lookup (priv->context_hash,
                                    object_path);
     if (!context)
         return;
@@ -394,8 +395,10 @@ eekboard_client_destroy_context (EekboardClient  *client,
     g_return_if_fail (EEKBOARD_IS_CLIENT(client));
     g_return_if_fail (EEKBOARD_IS_CONTEXT(context));
 
+    EekboardClientPrivate *priv = eekboard_client_get_instance_private (client);
+
     object_path = g_dbus_proxy_get_object_path (G_DBUS_PROXY(context));
-    g_hash_table_remove (client->priv->context_hash, object_path);
+    g_hash_table_remove (priv->context_hash, object_path);
 
     send_destroy_context (client, context, cancellable);
 }

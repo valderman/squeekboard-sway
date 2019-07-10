@@ -28,30 +28,7 @@ G_BEGIN_DECLS
 #define EEKBOARD_SERVICE_INTERFACE "sm.puri.OSK0"
 
 #define EEKBOARD_TYPE_SERVICE (eekboard_service_get_type())
-#define EEKBOARD_SERVICE(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), EEKBOARD_TYPE_SERVICE, EekboardService))
-#define EEKBOARD_SERVICE_CLASS(klass) (G_TYPE_CHECK_CLASS_CAST ((klass), EEKBOARD_TYPE_SERVICE, EekboardServiceClass))
-#define EEKBOARD_IS_SERVICE(obj) (G_TYPE_CHECK_INSTANCE_TYPE ((obj), EEKBOARD_TYPE_SERVICE))
-#define EEKBOARD_IS_SERVICE_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), EEKBOARD_TYPE_SERVICE))
-#define EEKBOARD_SERVICE_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS ((obj), EEKBOARD_TYPE_SERVICE, EekboardServiceClass))
-
-typedef struct _EekboardService EekboardService;
-typedef struct _EekboardServiceClass EekboardServiceClass;
-typedef struct _EekboardServicePrivate EekboardServicePrivate;
-
-/**
- * EekboardService:
- *
- * Manages DBus interaction.
- *
- * The #EekboardService structure contains only private data and
- * should only be accessed using the provided API.
- */
-struct _EekboardService {
-    /*< private >*/
-    GObject parent;
-
-    EekboardServicePrivate *priv;
-};
+G_DECLARE_DERIVABLE_TYPE (EekboardService, eekboard_service, EEKBOARD, SERVICE, GObject)
 
 /**
  * EekboardServiceClass:

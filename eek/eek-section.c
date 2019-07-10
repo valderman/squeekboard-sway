@@ -1,17 +1,17 @@
-/* 
+/*
  * Copyright (C) 2010-2011 Daiki Ueno <ueno@unixuser.org>
  * Copyright (C) 2010-2011 Red Hat, Inc.
- * 
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
  * as published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
@@ -52,11 +52,6 @@ enum {
 
 static guint signals[LAST_SIGNAL] = { 0, };
 
-G_DEFINE_TYPE (EekSection, eek_section, EEK_TYPE_CONTAINER);
-
-#define EEK_SECTION_GET_PRIVATE(obj)                           \
-    (G_TYPE_INSTANCE_GET_PRIVATE ((obj), EEK_TYPE_SECTION, EekSectionPrivate))
-
 struct _EekRow
 {
     gint num_columns;
@@ -65,17 +60,19 @@ struct _EekRow
 
 typedef struct _EekRow EekRow;
 
-struct _EekSectionPrivate
+typedef struct _EekSectionPrivate
 {
     gint angle;
     GSList *rows;
     EekModifierType modifiers;
-};
+} EekSectionPrivate;
+
+G_DEFINE_TYPE_WITH_PRIVATE (EekSection, eek_section, EEK_TYPE_CONTAINER)
 
 static gint
 eek_section_real_get_n_rows (EekSection *self)
 {
-    EekSectionPrivate *priv = EEK_SECTION_GET_PRIVATE(self);
+    EekSectionPrivate *priv = eek_section_get_instance_private (self);
 
     return g_slist_length (priv->rows);
 }
@@ -85,7 +82,7 @@ eek_section_real_add_row (EekSection    *self,
                           gint           num_columns,
                           EekOrientation orientation)
 {
-    EekSectionPrivate *priv = EEK_SECTION_GET_PRIVATE(self);
+    EekSectionPrivate *priv = eek_section_get_instance_private (self);
     EekRow *row;
 
     row = g_slice_new (EekRow);
@@ -100,7 +97,7 @@ eek_section_real_get_row (EekSection     *self,
                           gint           *num_columns,
                           EekOrientation *orientation)
 {
-    EekSectionPrivate *priv = EEK_SECTION_GET_PRIVATE(self);
+    EekSectionPrivate *priv = eek_section_get_instance_private (self);
     EekRow *row;
 
     row = g_slist_nth_data (priv->rows, index);
@@ -129,7 +126,7 @@ static EekKey *
 eek_section_real_create_key (EekSection *self,
                              guint       keycode,
                              gint        column_index,
-                             guint        row_index)
+                             gint        row_index)
 {
     EekKey *key;
     gint num_rows;
@@ -138,7 +135,9 @@ eek_section_real_create_key (EekSection *self,
     num_rows = eek_section_get_n_rows (self);
     g_return_val_if_fail (0 <= row_index && row_index < num_rows, NULL);
 
-    row = g_slist_nth_data (self->priv->rows, row_index);
+    EekSectionPrivate *priv = eek_section_get_instance_private (self);
+
+    row = g_slist_nth_data (priv->rows, row_index);
     if (row->num_columns < column_index + 1)
         row->num_columns = column_index + 1;
 
@@ -158,7 +157,7 @@ eek_section_real_create_key (EekSection *self,
 static void
 set_level_from_modifiers (EekSection *self)
 {
-    EekSectionPrivate *priv = EEK_SECTION_GET_PRIVATE(self);
+    EekSectionPrivate *priv = eek_section_get_instance_private (self);
     EekKeyboard *keyboard;
     EekModifierType num_lock_mask;
     gint level = -1;
@@ -173,7 +172,7 @@ set_level_from_modifiers (EekSection *self)
 static void
 eek_section_real_key_pressed (EekSection *self, EekKey *key)
 {
-    EekSectionPrivate *priv = EEK_SECTION_GET_PRIVATE(self);
+    EekSectionPrivate *priv = eek_section_get_instance_private (self);
     EekSymbol *symbol;
     EekKeyboard *keyboard;
     EekModifierBehavior behavior;
@@ -195,7 +194,7 @@ eek_section_real_key_pressed (EekSection *self, EekKey *key)
 static void
 eek_section_real_key_released (EekSection *self, EekKey *key)
 {
-    EekSectionPrivate *priv = EEK_SECTION_GET_PRIVATE(self);
+    EekSectionPrivate *priv = eek_section_get_instance_private (self);
     EekSymbol *symbol;
     EekKeyboard *keyboard;
     EekModifierBehavior behavior;
@@ -225,7 +224,8 @@ eek_section_real_key_released (EekSection *self, EekKey *key)
 static void
 eek_section_finalize (GObject *object)
 {
-    EekSectionPrivate *priv = EEK_SECTION_GET_PRIVATE(object);
+    EekSection        *self = EEK_SECTION (object);
+    EekSectionPrivate *priv = eek_section_get_instance_private (self);
     GSList *head;
 
     for (head = priv->rows; head; head = g_slist_next (head))
@@ -290,8 +290,6 @@ eek_section_class_init (EekSectionClass *klass)
     EekContainerClass *container_class = EEK_CONTAINER_CLASS (klass);
     GObjectClass      *gobject_class = G_OBJECT_CLASS (klass);
     GParamSpec        *pspec;
-
-    g_type_class_add_private (gobject_class, sizeof (EekSectionPrivate));
 
     klass->get_n_rows = eek_section_real_get_n_rows;
     klass->add_row = eek_section_real_add_row;
@@ -367,7 +365,7 @@ eek_section_class_init (EekSectionClass *klass)
 static void
 eek_section_init (EekSection *self)
 {
-    self->priv = EEK_SECTION_GET_PRIVATE (self);
+    /* void */
 }
 
 /**
@@ -382,8 +380,11 @@ eek_section_set_angle (EekSection  *section,
                        gint         angle)
 {
     g_return_if_fail (EEK_IS_SECTION(section));
-    if (section->priv->angle != angle) {
-        section->priv->angle = angle;
+
+    EekSectionPrivate *priv = eek_section_get_instance_private (section);
+
+    if (priv->angle != angle) {
+        priv->angle = angle;
         g_object_notify (G_OBJECT(section), "angle");
     }
 }
@@ -398,7 +399,10 @@ gint
 eek_section_get_angle (EekSection *section)
 {
     g_return_val_if_fail (EEK_IS_SECTION(section), -1);
-    return section->priv->angle;
+
+    EekSectionPrivate *priv = eek_section_get_instance_private (section);
+
+    return priv->angle;
 }
 
 /**
@@ -529,7 +533,7 @@ static void keycounter (EekElement *element, gpointer user_data) {
     }
 }
 
-const double keyspacing = 3.0;
+const double keyspacing = 4.0;
 
 static void keyplacer(EekElement *element, gpointer user_data) {
     double *current_offset = user_data;

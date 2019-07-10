@@ -5,8 +5,8 @@
 #include "eekboard/eekboard-context-service.h"
 
 
-void imservice_handle_text_change_cause(void *data, struct zwp_input_method_v2 *input_method) {}
-void imservice_handle_content_type(void *data, struct zwp_input_method_v2 *input_method) {}
+void imservice_handle_text_change_cause(void *data, struct zwp_input_method_v2 *input_method, uint32_t cause) {}
+void imservice_handle_content_type(void *data, struct zwp_input_method_v2 *input_method, uint32_t hint, uint32_t purpose) {}
 void imservice_handle_unavailable(void *data, struct zwp_input_method_v2 *input_method) {}
 
 

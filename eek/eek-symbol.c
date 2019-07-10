@@ -44,29 +44,31 @@ enum {
     PROP_LAST
 };
 
-struct _EekSymbolPrivate {
+typedef struct _EekSymbolPrivate
+{
     gchar *name;
     gchar *label;
     EekSymbolCategory category;
     EekModifierType modifier_mask;
     gchar *icon_name;
     gchar *tooltip;
-};
+} EekSymbolPrivate;
 
 static void eek_serializable_iface_init (EekSerializableIface *iface);
 
-G_DEFINE_TYPE_WITH_CODE (EekSymbol, eek_symbol, G_TYPE_OBJECT,
-                         G_IMPLEMENT_INTERFACE (EEK_TYPE_SERIALIZABLE,
-                                                eek_serializable_iface_init));
-
-#define EEK_SYMBOL_GET_PRIVATE(obj)                                  \
-    (G_TYPE_INSTANCE_GET_PRIVATE ((obj), EEK_TYPE_SYMBOL, EekSymbolPrivate))
+G_DEFINE_TYPE_EXTENDED (EekSymbol,
+			eek_symbol,
+			G_TYPE_OBJECT,
+			0, /* GTypeFlags */
+			G_ADD_PRIVATE (EekSymbol)
+                        G_IMPLEMENT_INTERFACE (EEK_TYPE_SERIALIZABLE,
+                                               eek_serializable_iface_init))
 
 static void
 eek_symbol_real_serialize (EekSerializable *self,
                            GVariantBuilder *builder)
 {
-    EekSymbolPrivate *priv = EEK_SYMBOL_GET_PRIVATE(self);
+    EekSymbolPrivate *priv = eek_symbol_get_instance_private (EEK_SYMBOL (self));
 #define NOTNULL(s) ((s) != NULL ? (s) : "")
     g_variant_builder_add (builder, "s", NOTNULL(priv->name));
     g_variant_builder_add (builder, "s", NOTNULL(priv->label));
@@ -82,7 +84,7 @@ eek_symbol_real_deserialize (EekSerializable *self,
                              GVariant        *variant,
                              gsize            index)
 {
-    EekSymbolPrivate *priv = EEK_SYMBOL_GET_PRIVATE(self);
+    EekSymbolPrivate *priv = eek_symbol_get_instance_private (EEK_SYMBOL (self));
 
     g_variant_get_child (variant, index++, "s", &priv->name);
     g_variant_get_child (variant, index++, "s", &priv->label);
@@ -172,7 +174,8 @@ eek_symbol_get_property (GObject    *object,
 static void
 eek_symbol_finalize (GObject *object)
 {
-    EekSymbolPrivate *priv = EEK_SYMBOL_GET_PRIVATE(object);
+    EekSymbol        *self = EEK_SYMBOL (object);
+    EekSymbolPrivate *priv = eek_symbol_get_instance_private (self);
 
     g_free (priv->name);
     g_free (priv->label);
@@ -186,8 +189,6 @@ eek_symbol_class_init (EekSymbolClass *klass)
 {
     GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
     GParamSpec *pspec;
-
-    g_type_class_add_private (gobject_class, sizeof (EekSymbolPrivate));
 
     gobject_class->set_property = eek_symbol_set_property;
     gobject_class->get_property = eek_symbol_get_property;
@@ -241,9 +242,8 @@ eek_symbol_class_init (EekSymbolClass *klass)
 static void
 eek_symbol_init (EekSymbol *self)
 {
-    EekSymbolPrivate *priv;
+    EekSymbolPrivate *priv = eek_symbol_get_instance_private (self);
 
-    priv = self->priv = EEK_SYMBOL_GET_PRIVATE(self);
     priv->category = EEK_SYMBOL_CATEGORY_UNKNOWN;
 }
 
@@ -270,11 +270,10 @@ void
 eek_symbol_set_name (EekSymbol   *symbol,
                      const gchar *name)
 {
-    EekSymbolPrivate *priv;
-
     g_return_if_fail (EEK_IS_SYMBOL(symbol));
 
-    priv = EEK_SYMBOL_GET_PRIVATE(symbol);
+    EekSymbolPrivate *priv = eek_symbol_get_instance_private (symbol);
+
     g_free (priv->name);
     priv->name = g_strdup (name);
 }
@@ -288,11 +287,10 @@ eek_symbol_set_name (EekSymbol   *symbol,
 const gchar *
 eek_symbol_get_name (EekSymbol *symbol)
 {
-    EekSymbolPrivate *priv;
-
     g_return_val_if_fail (EEK_IS_SYMBOL(symbol), NULL);
 
-    priv = EEK_SYMBOL_GET_PRIVATE(symbol);
+    EekSymbolPrivate *priv = eek_symbol_get_instance_private (symbol);
+
     if (priv->name == NULL || *priv->name == '\0')
         return NULL;
     return priv->name;
@@ -309,11 +307,10 @@ void
 eek_symbol_set_label (EekSymbol   *symbol,
                       const gchar *label)
 {
-    EekSymbolPrivate *priv;
-
     g_return_if_fail (EEK_IS_SYMBOL(symbol));
 
-    priv = EEK_SYMBOL_GET_PRIVATE(symbol);
+    EekSymbolPrivate *priv = eek_symbol_get_instance_private (symbol);
+
     g_free (priv->label);
     priv->label = g_strdup (label);
 }
@@ -327,11 +324,10 @@ eek_symbol_set_label (EekSymbol   *symbol,
 const gchar *
 eek_symbol_get_label (EekSymbol *symbol)
 {
-    EekSymbolPrivate *priv;
-
     g_return_val_if_fail (EEK_IS_SYMBOL(symbol), NULL);
 
-    priv = EEK_SYMBOL_GET_PRIVATE(symbol);
+    EekSymbolPrivate *priv = eek_symbol_get_instance_private (symbol);
+
     if (priv->label == NULL || *priv->label == '\0')
         return NULL;
     return priv->label;
@@ -348,11 +344,10 @@ void
 eek_symbol_set_category (EekSymbol        *symbol,
                          EekSymbolCategory category)
 {
-    EekSymbolPrivate *priv;
-
     g_return_if_fail (EEK_IS_SYMBOL(symbol));
 
-    priv = EEK_SYMBOL_GET_PRIVATE(symbol);
+    EekSymbolPrivate *priv = eek_symbol_get_instance_private (symbol);
+
     priv->category = category;
 }
 
@@ -365,11 +360,10 @@ eek_symbol_set_category (EekSymbol        *symbol,
 EekSymbolCategory
 eek_symbol_get_category (EekSymbol *symbol)
 {
-    EekSymbolPrivate *priv;
-
     g_return_val_if_fail (EEK_IS_SYMBOL(symbol), EEK_SYMBOL_CATEGORY_UNKNOWN);
 
-    priv = EEK_SYMBOL_GET_PRIVATE(symbol);
+    EekSymbolPrivate *priv = eek_symbol_get_instance_private (symbol);
+
     return priv->category;
 }
 
@@ -384,11 +378,10 @@ void
 eek_symbol_set_modifier_mask (EekSymbol      *symbol,
                               EekModifierType mask)
 {
-    EekSymbolPrivate *priv;
-
     g_return_if_fail (EEK_IS_SYMBOL(symbol));
 
-    priv = EEK_SYMBOL_GET_PRIVATE(symbol);
+    EekSymbolPrivate *priv = eek_symbol_get_instance_private (symbol);
+
     priv->modifier_mask = mask;
 }
 
@@ -401,11 +394,10 @@ eek_symbol_set_modifier_mask (EekSymbol      *symbol,
 EekModifierType
 eek_symbol_get_modifier_mask (EekSymbol *symbol)
 {
-    EekSymbolPrivate *priv;
-
     g_return_val_if_fail (EEK_IS_SYMBOL(symbol), 0);
 
-    priv = EEK_SYMBOL_GET_PRIVATE(symbol);
+    EekSymbolPrivate *priv = eek_symbol_get_instance_private (symbol);
+
     return priv->modifier_mask;
 }
 
@@ -433,11 +425,10 @@ void
 eek_symbol_set_icon_name (EekSymbol   *symbol,
                           const gchar *icon_name)
 {
-    EekSymbolPrivate *priv;
-
     g_return_if_fail (EEK_IS_SYMBOL(symbol));
 
-    priv = EEK_SYMBOL_GET_PRIVATE(symbol);
+    EekSymbolPrivate *priv = eek_symbol_get_instance_private (symbol);
+
     g_free (priv->icon_name);
     priv->icon_name = g_strdup (icon_name);
 }
@@ -451,11 +442,10 @@ eek_symbol_set_icon_name (EekSymbol   *symbol,
 const gchar *
 eek_symbol_get_icon_name (EekSymbol *symbol)
 {
-    EekSymbolPrivate *priv;
-
     g_return_val_if_fail (EEK_IS_SYMBOL(symbol), NULL);
 
-    priv = EEK_SYMBOL_GET_PRIVATE(symbol);
+    EekSymbolPrivate *priv = eek_symbol_get_instance_private (symbol);
+
     if (priv->icon_name == NULL || *priv->icon_name == '\0')
         return NULL;
     return priv->icon_name;
@@ -472,11 +462,10 @@ void
 eek_symbol_set_tooltip (EekSymbol   *symbol,
                         const gchar *tooltip)
 {
-    EekSymbolPrivate *priv;
-
     g_return_if_fail (EEK_IS_SYMBOL(symbol));
 
-    priv = EEK_SYMBOL_GET_PRIVATE(symbol);
+    EekSymbolPrivate *priv = eek_symbol_get_instance_private (symbol);
+
     g_free (priv->tooltip);
     priv->tooltip = g_strdup (tooltip);
 }
@@ -490,11 +479,10 @@ eek_symbol_set_tooltip (EekSymbol   *symbol,
 const gchar *
 eek_symbol_get_tooltip (EekSymbol *symbol)
 {
-    EekSymbolPrivate *priv;
-
     g_return_val_if_fail (EEK_IS_SYMBOL(symbol), NULL);
 
-    priv = EEK_SYMBOL_GET_PRIVATE(symbol);
+    EekSymbolPrivate *priv = eek_symbol_get_instance_private (symbol);
+
     if (priv->tooltip == NULL || *priv->tooltip == '\0')
         return NULL;
     return priv->tooltip;

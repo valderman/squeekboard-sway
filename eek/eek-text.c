@@ -36,18 +36,20 @@ enum {
     PROP_LAST
 };
 
-struct _EekTextPrivate {
+typedef struct _EekTextPrivate
+{
     gchar *text;
-};
+} EekTextPrivate;
 
 static void eek_serializable_iface_init (EekSerializableIface *iface);
 
-G_DEFINE_TYPE_WITH_CODE (EekText, eek_text, EEK_TYPE_SYMBOL,
-                         G_IMPLEMENT_INTERFACE (EEK_TYPE_SERIALIZABLE,
-                                                eek_serializable_iface_init));
-
-#define EEK_TEXT_GET_PRIVATE(obj)                                  \
-    (G_TYPE_INSTANCE_GET_PRIVATE ((obj), EEK_TYPE_TEXT, EekTextPrivate))
+G_DEFINE_TYPE_EXTENDED (EekText,
+			eek_text,
+			EEK_TYPE_SYMBOL,
+			0, /* GTypeFlags */
+			G_ADD_PRIVATE (EekText)
+                        G_IMPLEMENT_INTERFACE (EEK_TYPE_SERIALIZABLE,
+                                               eek_serializable_iface_init))
 
 static EekSerializableIface *eek_text_parent_serializable_iface;
 
@@ -55,7 +57,7 @@ static void
 eek_text_real_serialize (EekSerializable *self,
                          GVariantBuilder *builder)
 {
-    EekTextPrivate *priv = EEK_TEXT_GET_PRIVATE(self);
+    EekTextPrivate *priv = eek_text_get_instance_private (EEK_TEXT (self));
 
     eek_text_parent_serializable_iface->serialize (self, builder);
 
@@ -67,7 +69,7 @@ eek_text_real_deserialize (EekSerializable *self,
                            GVariant        *variant,
                            gsize            index)
 {
-    EekTextPrivate *priv = EEK_TEXT_GET_PRIVATE(self);
+    EekTextPrivate *priv = eek_text_get_instance_private (EEK_TEXT (self));
 
     index = eek_text_parent_serializable_iface->deserialize (self,
                                                              variant,
@@ -93,7 +95,9 @@ eek_text_set_property (GObject      *object,
                        const GValue *value,
                        GParamSpec   *pspec)
 {
-    EekTextPrivate *priv = EEK_TEXT_GET_PRIVATE(object);
+    EekText        *self = EEK_TEXT (object);
+    EekTextPrivate *priv = eek_text_get_instance_private (self);
+
     switch (prop_id) {
     case PROP_TEXT:
         g_free (priv->text);
@@ -107,11 +111,13 @@ eek_text_set_property (GObject      *object,
 
 static void
 eek_text_get_property (GObject    *object,
-                         guint       prop_id,
-                         GValue     *value,
-                         GParamSpec *pspec)
+                       guint       prop_id,
+                       GValue     *value,
+                       GParamSpec *pspec)
 {
-    EekTextPrivate *priv = EEK_TEXT_GET_PRIVATE(object);
+    EekText        *self = EEK_TEXT (object);
+    EekTextPrivate *priv = eek_text_get_instance_private (self);
+
     switch (prop_id) {
     case PROP_TEXT:
         g_value_set_string (value, priv->text);
@@ -125,7 +131,8 @@ eek_text_get_property (GObject    *object,
 static void
 eek_text_finalize (GObject *object)
 {
-    EekTextPrivate *priv = EEK_TEXT_GET_PRIVATE(object);
+    EekText        *self = EEK_TEXT (object);
+    EekTextPrivate *priv = eek_text_get_instance_private (self);
 
     g_free (priv->text);
     G_OBJECT_CLASS (eek_text_parent_class)->finalize (object);
@@ -136,8 +143,6 @@ eek_text_class_init (EekTextClass *klass)
 {
     GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
     GParamSpec *pspec;
-
-    g_type_class_add_private (gobject_class, sizeof (EekTextPrivate));
 
     gobject_class->set_property = eek_text_set_property;
     gobject_class->get_property = eek_text_get_property;
@@ -154,7 +159,7 @@ eek_text_class_init (EekTextClass *klass)
 static void
 eek_text_init (EekText *self)
 {
-    self->priv = EEK_TEXT_GET_PRIVATE(self);
+    /* void */
 }
 
 EekText *
@@ -176,7 +181,7 @@ eek_text_new (const gchar *text)
 const gchar *
 eek_text_get_text (EekText *text)
 {
-    EekTextPrivate *priv = EEK_TEXT_GET_PRIVATE(text);
+    EekTextPrivate *priv = eek_text_get_instance_private (text);
 
     return priv->text;
 }

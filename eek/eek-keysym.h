@@ -38,27 +38,7 @@ G_BEGIN_DECLS
 #define EEK_INVALID_KEYSYM (0)
 
 #define EEK_TYPE_KEYSYM (eek_keysym_get_type())
-#define EEK_KEYSYM(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), EEK_TYPE_KEYSYM, EekKeysym))
-#define EEK_KEYSYM_CLASS(klass) (G_TYPE_CHECK_CLASS_CAST ((klass), EEK_TYPE_KEYSYM, EekKeysymClass))
-#define EEK_IS_KEYSYM(obj) (G_TYPE_CHECK_INSTANCE_TYPE ((obj), EEK_TYPE_KEYSYM))
-#define EEK_IS_KEYSYM_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), EEK_TYPE_KEYSYM))
-#define EEK_KEYSYM_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS ((obj), EEK_TYPE_KEYSYM, EekKeysymClass))
-
-typedef struct _EekKeysymClass EekKeysymClass;
-typedef struct _EekKeysymPrivate EekKeysymPrivate;
-
-/**
- * EekKeysym:
- *
- * The #EekKeysym structure contains only private data and should only
- * be accessed using the provided API.
- */
-struct _EekKeysym {
-    /*< private >*/
-    EekSymbol parent;
-
-    EekKeysymPrivate *priv;
-};
+G_DECLARE_DERIVABLE_TYPE (EekKeysym, eek_keysym, EEK, KEYSYM, EekSymbol)
 
 struct _EekKeysymClass {
     /*< private >*/

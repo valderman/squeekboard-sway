@@ -40,23 +40,19 @@ enum {
 
 static guint signals[LAST_SIGNAL] = { 0, };
 
-G_DEFINE_ABSTRACT_TYPE (EekContainer, eek_container, EEK_TYPE_ELEMENT);
-
-#define EEK_CONTAINER_GET_PRIVATE(obj)                                  \
-    (G_TYPE_INSTANCE_GET_PRIVATE ((obj), EEK_TYPE_CONTAINER, EekContainerPrivate))
-
-
-struct _EekContainerPrivate
+typedef struct _EekContainerPrivate
 {
     GList *head;
     GList *last;
-};
+} EekContainerPrivate;
+
+G_DEFINE_ABSTRACT_TYPE_WITH_PRIVATE (EekContainer, eek_container, EEK_TYPE_ELEMENT)
 
 static void
 eek_container_real_add_child (EekContainer *self,
                               EekElement   *child)
 {
-    EekContainerPrivate *priv = EEK_CONTAINER_GET_PRIVATE(self);
+    EekContainerPrivate *priv = eek_container_get_instance_private (self);
 
     g_return_if_fail (EEK_IS_ELEMENT(child));
     g_object_ref (child);
@@ -75,7 +71,7 @@ static void
 eek_container_real_remove_child (EekContainer *self,
                                  EekElement   *child)
 {
-    EekContainerPrivate *priv = EEK_CONTAINER_GET_PRIVATE(self);
+    EekContainerPrivate *priv = eek_container_get_instance_private (self);
     GList *head;
 
     g_return_if_fail (EEK_IS_ELEMENT(child));
@@ -94,7 +90,7 @@ eek_container_real_foreach_child (EekContainer *self,
                                   EekCallback   callback,
                                   gpointer      user_data)
 {
-    EekContainerPrivate *priv = EEK_CONTAINER_GET_PRIVATE(self);
+    EekContainerPrivate *priv = eek_container_get_instance_private (self);
     GList *head;
 
     for (head = priv->head; head; head = g_list_next (head))
@@ -106,7 +102,7 @@ eek_container_real_find (EekContainer *self,
                          EekCompareFunc func,
                          gpointer user_data)
 {
-    EekContainerPrivate *priv = EEK_CONTAINER_GET_PRIVATE(self);
+    EekContainerPrivate *priv = eek_container_get_instance_private (self);
     GList *head;
 
     head = g_list_find_custom (priv->head, user_data, (GCompareFunc)func);
@@ -118,7 +114,8 @@ eek_container_real_find (EekContainer *self,
 static void
 eek_container_dispose (GObject *object)
 {
-    EekContainerPrivate *priv = EEK_CONTAINER_GET_PRIVATE(object);
+    EekContainer        *self = EEK_CONTAINER (object);
+    EekContainerPrivate *priv = eek_container_get_instance_private (self);
     GList *head;
 
     for (head = priv->head; head; head = priv->head) {
@@ -133,9 +130,6 @@ static void
 eek_container_class_init (EekContainerClass *klass)
 {
     GObjectClass      *gobject_class = G_OBJECT_CLASS (klass);
-
-    g_type_class_add_private (gobject_class,
-                              sizeof (EekContainerPrivate));
 
     klass->add_child = eek_container_real_add_child;
     klass->remove_child = eek_container_real_remove_child;
@@ -189,7 +183,7 @@ eek_container_class_init (EekContainerClass *klass)
 static void
 eek_container_init (EekContainer *self)
 {
-    self->priv = EEK_CONTAINER_GET_PRIVATE(self);
+    /* void */
 }
 
 /**

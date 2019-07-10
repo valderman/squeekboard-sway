@@ -82,9 +82,9 @@ struct _EekboardContextServicePrivate {
     GSettings *settings;
 };
 
-G_DEFINE_TYPE (EekboardContextService, eekboard_context_service, G_TYPE_OBJECT);
+G_DEFINE_TYPE_WITH_PRIVATE (EekboardContextService, eekboard_context_service, G_TYPE_OBJECT);
 
-static Display *display = NULL;
+/*static Display *display = NULL; */
 
 static EekKeyboard *
 eekboard_context_service_real_create_keyboard (EekboardContextService *self,
@@ -356,9 +356,6 @@ eekboard_context_service_class_init (EekboardContextServiceClass *klass)
     GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
     GParamSpec *pspec;
 
-    g_type_class_add_private (gobject_class,
-                              sizeof (EekboardContextServicePrivate));
-
     klass->create_keyboard = eekboard_context_service_real_create_keyboard;
     klass->show_keyboard = eekboard_context_service_real_show_keyboard;
     klass->hide_keyboard = eekboard_context_service_real_hide_keyboard;
@@ -483,51 +480,6 @@ eekboard_context_service_init (EekboardContextService *self)
     }
 }
 
-static gboolean on_repeat_timeout (EekboardContextService *context);
-
-static gboolean
-on_repeat_timeout (EekboardContextService *context)
-{
-    guint delay = 500; // ms
-
-    // hardcoding; needs to connect to yet another settings path because
-    // org.gnome.desktop.input-sources doesn't control repeating
-    //g_settings_get (context->priv->settings, "repeat-interval", "u", &delay);
-
-    context->priv->repeat_timeout_id =
-        g_timeout_add (delay,
-                       (GSourceFunc)on_repeat_timeout,
-                       context);
-
-    return FALSE;
-}
-
-static gboolean
-on_repeat_timeout_init (EekboardContextService *context)
-{
-    /* FIXME: clear modifiers for further key repeat; better not
-       depend on modifier behavior is LATCH */
-    eek_keyboard_set_modifiers (context->priv->keyboard, 0);
-    
-    /* reschedule repeat timeout only when "repeat" option is set */
-    /* TODO: org.gnome.desktop.input-sources doesn't have repeat info.
-     * In addition, repeat is only useful when the keyboard is not in text
-     * input mode */
-    /*
-    if (g_settings_get_boolean (context->priv->settings, "repeat")) {
-        guint delay;
-
-        g_settings_get (context->priv->settings, "repeat-interval", "u", &delay);
-        context->priv->repeat_timeout_id =
-            g_timeout_add (delay,
-                           (GSourceFunc)on_repeat_timeout,
-                           context);
-    } else */
-        context->priv->repeat_timeout_id = 0;
-
-    return FALSE;
-}
-
 /**
  * eekboard_context_service_enable:
  * @context: an #EekboardContextService
@@ -569,7 +521,9 @@ eekboard_context_service_show_keyboard (EekboardContextService *context)
 {
     g_return_if_fail (EEKBOARD_IS_CONTEXT_SERVICE(context));
 
-    EEKBOARD_CONTEXT_SERVICE_GET_CLASS(context)->show_keyboard (context);
+    if (!context->priv->visible) {
+        EEKBOARD_CONTEXT_SERVICE_GET_CLASS(context)->show_keyboard (context);
+    }
 }
 
 void
@@ -577,7 +531,9 @@ eekboard_context_service_hide_keyboard (EekboardContextService *context)
 {
     g_return_if_fail (EEKBOARD_IS_CONTEXT_SERVICE(context));
 
-    EEKBOARD_CONTEXT_SERVICE_GET_CLASS(context)->hide_keyboard (context);
+    if (context->priv->visible) {
+        EEKBOARD_CONTEXT_SERVICE_GET_CLASS(context)->hide_keyboard (context);
+    }
 }
 
 /**

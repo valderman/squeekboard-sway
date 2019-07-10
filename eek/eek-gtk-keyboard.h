@@ -32,25 +32,7 @@
 
 G_BEGIN_DECLS
 #define EEK_TYPE_GTK_KEYBOARD (eek_gtk_keyboard_get_type())
-#define EEK_GTK_KEYBOARD(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), EEK_TYPE_GTK_KEYBOARD, EekGtkKeyboard))
-#define EEK_GTK_KEYBOARD_CLASS(klass) (G_TYPE_CHECK_CLASS_CAST ((klass), EEK_TYPE_GTK_KEYBOARD, EekGtkKeyboardClass))
-#define EEK_IS_GTK_KEYBOARD(obj) (G_TYPE_CHECK_INSTANCE_TYPE ((obj), EEK_TYPE_GTK_KEYBOARD))
-#define EEK_IS_GTK_KEYBOARD_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), EEK_TYPE_GTK_KEYBOARD))
-#define EEK_GTK_KEYBOARD_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS ((obj), EEK_TYPE_GTK_KEYBOARD, EekGtkKeyboardClass))
-
-typedef struct _EekGtkKeyboard EekGtkKeyboard;
-typedef struct _EekGtkKeyboardClass EekGtkKeyboardClass;
-typedef struct _EekGtkKeyboardPrivate EekGtkKeyboardPrivate;
-
-struct _EekGtkKeyboard
-{
-    /*< private >*/
-    GtkDrawingArea parent;
-
-    GdkEventSequence *sequence; // unowned reference
-
-    EekGtkKeyboardPrivate *priv;
-};
+G_DECLARE_DERIVABLE_TYPE (EekGtkKeyboard, eek_gtk_keyboard, EEK, GTK_KEYBOARD, GtkDrawingArea)
 
 struct _EekGtkKeyboardClass
 {

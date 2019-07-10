@@ -36,12 +36,7 @@ enum {
     PROP_LAST
 };
 
-G_DEFINE_TYPE (EekRenderer, eek_renderer, G_TYPE_OBJECT);
-
-#define EEK_RENDERER_GET_PRIVATE(obj)                                  \
-    (G_TYPE_INSTANCE_GET_PRIVATE ((obj), EEK_TYPE_RENDERER, EekRendererPrivate))
-
-struct _EekRendererPrivate
+typedef struct _EekRendererPrivate
 {
     EekKeyboard *keyboard;
     PangoContext *pcontext;
@@ -62,7 +57,9 @@ struct _EekRendererPrivate
     gulong symbol_index_changed_handler;
 
     EekTheme *theme;
-};
+} EekRendererPrivate;
+
+G_DEFINE_TYPE_WITH_PRIVATE (EekRenderer, eek_renderer, G_TYPE_OBJECT)
 
 static const EekColor DEFAULT_FOREGROUND_COLOR = {0.3, 0.3, 0.3, 1.0};
 static const EekColor DEFAULT_BACKGROUND_COLOR = {1.0, 1.0, 1.0, 1.0};
@@ -106,7 +103,7 @@ create_keyboard_surface_key_callback (EekElement *element,
                                       gpointer    user_data)
 {
     CreateKeyboardSurfaceCallbackData *data = user_data;
-    EekRendererPrivate *priv = EEK_RENDERER_GET_PRIVATE(data->renderer);
+    EekRendererPrivate *priv = eek_renderer_get_instance_private (data->renderer);
     EekBounds bounds;
 
     cairo_save (data->cr);
@@ -129,7 +126,7 @@ create_keyboard_surface_section_callback (EekElement *element,
                                           gpointer    user_data)
 {
     CreateKeyboardSurfaceCallbackData *data = user_data;
-    EekRendererPrivate *priv = EEK_RENDERER_GET_PRIVATE(data->renderer);
+    EekRendererPrivate *priv = eek_renderer_get_instance_private (data->renderer);
     EekBounds bounds;
     gint angle;
 
@@ -151,7 +148,7 @@ create_keyboard_surface_section_callback (EekElement *element,
 static cairo_surface_t *
 create_keyboard_surface (EekRenderer *renderer)
 {
-    EekRendererPrivate *priv = EEK_RENDERER_GET_PRIVATE(renderer);
+    EekRendererPrivate *priv = eek_renderer_get_instance_private (renderer);
     EekBounds bounds;
     cairo_surface_t *keyboard_surface;
     CreateKeyboardSurfaceCallbackData data;
@@ -202,7 +199,7 @@ render_key_outline (EekRenderer *renderer,
                     EekKey      *key,
                     gboolean     active)
 {
-    EekRendererPrivate *priv = EEK_RENDERER_GET_PRIVATE(renderer);
+    EekRendererPrivate *priv = eek_renderer_get_instance_private (renderer);
     EekOutline *outline;
     EekBounds bounds;
     guint oref;
@@ -246,7 +243,9 @@ render_key_outline (EekRenderer *renderer,
         border_color.alpha = foreground.alpha;
     }
 
+    eek_element_get_bounds(EEK_ELEMENT(key), &bounds);
     outline = eek_outline_copy (outline);
+
     for (guint i = 0; i < outline->num_points; i++) {
         outline->points[i].x *= priv->scale;
         outline->points[i].y *= priv->scale;
@@ -351,7 +350,7 @@ static void
 calculate_font_size_key_callback (EekElement *element, gpointer user_data)
 {
     CalculateFontSizeCallbackData *data = user_data;
-    EekRendererPrivate *priv = EEK_RENDERER_GET_PRIVATE(data->renderer);
+    EekRendererPrivate *priv = eek_renderer_get_instance_private (data->renderer);
     gdouble sx, sy;
     PangoFontDescription *font;
     PangoRectangle extents = { 0, };
@@ -411,7 +410,7 @@ calculate_font_size (EekRenderer                *renderer,
                      const PangoFontDescription *base_font,
                      gboolean                    ascii)
 {
-    EekRendererPrivate *priv = EEK_RENDERER_GET_PRIVATE(renderer);
+    EekRendererPrivate *priv = eek_renderer_get_instance_private (renderer);
     CalculateFontSizeCallbackData data;
 
     data.size = G_MAXDOUBLE;
@@ -430,7 +429,7 @@ render_key (EekRenderer *self,
             EekKey      *key,
             gboolean     active)
 {
-    EekRendererPrivate *priv = EEK_RENDERER_GET_PRIVATE(self);
+    EekRendererPrivate *priv = eek_renderer_get_instance_private (self);
     EekOutline *outline;
     cairo_surface_t *outline_surface;
     EekBounds bounds;
@@ -603,7 +602,7 @@ eek_renderer_real_render_key_label (EekRenderer *self,
                                     PangoLayout *layout,
                                     EekKey      *key)
 {
-    EekRendererPrivate *priv = EEK_RENDERER_GET_PRIVATE(self);
+    EekRendererPrivate *priv = eek_renderer_get_instance_private (self);
     EekSymbol *symbol;
     EekSymbolCategory category;
     const gchar *label;
@@ -696,7 +695,7 @@ static void
 eek_renderer_real_render_keyboard (EekRenderer *self,
                                    cairo_t     *cr)
 {
-    EekRendererPrivate *priv = EEK_RENDERER_GET_PRIVATE(self);
+    EekRendererPrivate *priv = eek_renderer_get_instance_private (self);
     cairo_pattern_t *source;
 
     g_return_if_fail (priv->keyboard);
@@ -718,7 +717,8 @@ eek_renderer_set_property (GObject      *object,
                            const GValue *value,
                            GParamSpec   *pspec)
 {
-    EekRendererPrivate *priv = EEK_RENDERER_GET_PRIVATE(object);
+    EekRendererPrivate *priv = eek_renderer_get_instance_private (
+		    EEK_RENDERER(object));
 
     switch (prop_id) {
     case PROP_KEYBOARD:
@@ -746,7 +746,8 @@ eek_renderer_get_property (GObject    *object,
                            GValue     *value,
                            GParamSpec *pspec)
 {
-    EekRendererPrivate *priv = EEK_RENDERER_GET_PRIVATE(object);
+    EekRendererPrivate *priv = eek_renderer_get_instance_private (
+		    EEK_RENDERER(object));
 
     switch (prop_id) {
     case PROP_KEYBOARD:
@@ -761,7 +762,8 @@ eek_renderer_get_property (GObject    *object,
 static void
 eek_renderer_dispose (GObject *object)
 {
-    EekRendererPrivate *priv = EEK_RENDERER_GET_PRIVATE(object);
+    EekRenderer        *self = EEK_RENDERER (object);
+    EekRendererPrivate *priv = eek_renderer_get_instance_private (self);
 
     if (priv->keyboard) {
         if (g_signal_handler_is_connected (priv->keyboard,
@@ -785,7 +787,9 @@ eek_renderer_dispose (GObject *object)
 static void
 eek_renderer_finalize (GObject *object)
 {
-    EekRendererPrivate *priv = EEK_RENDERER_GET_PRIVATE(object);
+    EekRenderer        *self = EEK_RENDERER(object);
+    EekRendererPrivate *priv = eek_renderer_get_instance_private (self);
+
     g_hash_table_destroy (priv->outline_surface_cache);
     g_hash_table_destroy (priv->active_outline_surface_cache);
     pango_font_description_free (priv->ascii_font);
@@ -798,9 +802,6 @@ eek_renderer_class_init (EekRendererClass *klass)
 {
     GObjectClass      *gobject_class = G_OBJECT_CLASS (klass);
     GParamSpec        *pspec;
-
-    g_type_class_add_private (gobject_class,
-                              sizeof (EekRendererPrivate));
 
     klass->render_key_label = eek_renderer_real_render_key_label;
     klass->render_key_outline = eek_renderer_real_render_key_outline;
@@ -834,9 +835,8 @@ eek_renderer_class_init (EekRendererClass *klass)
 static void
 eek_renderer_init (EekRenderer *self)
 {
-    EekRendererPrivate *priv;
+    EekRendererPrivate *priv = eek_renderer_get_instance_private (self);
 
-    priv = self->priv = EEK_RENDERER_GET_PRIVATE(self);
     priv->keyboard = NULL;
     priv->pcontext = NULL;
     priv->default_foreground_color = DEFAULT_FOREGROUND_COLOR;
@@ -863,15 +863,17 @@ eek_renderer_init (EekRenderer *self)
 static void
 invalidate (EekRenderer *renderer)
 {
-    if (renderer->priv->outline_surface_cache)
-        g_hash_table_remove_all (renderer->priv->outline_surface_cache);
+    EekRendererPrivate *priv = eek_renderer_get_instance_private (renderer);
 
-    if (renderer->priv->active_outline_surface_cache)
-        g_hash_table_remove_all (renderer->priv->active_outline_surface_cache);
+    if (priv->outline_surface_cache)
+        g_hash_table_remove_all (priv->outline_surface_cache);
 
-    if (renderer->priv->keyboard_surface) {
-        cairo_surface_destroy (renderer->priv->keyboard_surface);
-        renderer->priv->keyboard_surface = NULL;
+    if (priv->active_outline_surface_cache)
+        g_hash_table_remove_all (priv->active_outline_surface_cache);
+
+    if (priv->keyboard_surface) {
+        cairo_surface_destroy (priv->keyboard_surface);
+        priv->keyboard_surface = NULL;
     }
 }
 
@@ -906,10 +908,12 @@ eek_renderer_set_allocation_size (EekRenderer *renderer,
     g_return_if_fail (EEK_IS_RENDERER(renderer));
     g_return_if_fail (width > 0.0 && height > 0.0);
 
-    renderer->priv->allocation_width = width;
-    renderer->priv->allocation_height = height;
+    EekRendererPrivate *priv = eek_renderer_get_instance_private (renderer);
 
-    eek_element_get_bounds (EEK_ELEMENT(renderer->priv->keyboard), &bounds);
+    priv->allocation_width = width;
+    priv->allocation_height = height;
+
+    eek_element_get_bounds (EEK_ELEMENT(priv->keyboard), &bounds);
 
     if (bounds.height * width / bounds.width <= height)
         scale = width / bounds.width;
@@ -922,8 +926,8 @@ eek_renderer_set_allocation_size (EekRenderer *renderer,
             scale = bounds.height / height;
     }
 
-    if (scale != renderer->priv->scale) {
-        renderer->priv->scale = scale;
+    if (scale != priv->scale) {
+        priv->scale = scale;
         invalidate (renderer);
     }
 }
@@ -937,11 +941,13 @@ eek_renderer_get_size (EekRenderer *renderer,
 
     g_return_if_fail (EEK_IS_RENDERER(renderer));
 
-    eek_element_get_bounds (EEK_ELEMENT(renderer->priv->keyboard), &bounds);
+    EekRendererPrivate *priv = eek_renderer_get_instance_private (renderer);
+
+    eek_element_get_bounds (EEK_ELEMENT(priv->keyboard), &bounds);
     if (width)
-        *width = bounds.width * renderer->priv->scale;
+        *width = bounds.width * priv->scale;
     if (height)
-        *height = bounds.height * renderer->priv->scale;
+        *height = bounds.height * priv->scale;
 }
 
 void
@@ -960,20 +966,22 @@ eek_renderer_get_key_bounds (EekRenderer *renderer,
     g_return_if_fail (EEK_IS_KEY(key));
     g_return_if_fail (bounds != NULL);
 
+    EekRendererPrivate *priv = eek_renderer_get_instance_private (renderer);
+
     section = eek_element_get_parent (EEK_ELEMENT(key));
 
     eek_element_get_bounds (EEK_ELEMENT(key), bounds);
     eek_element_get_bounds (section, &section_bounds);
-    eek_element_get_bounds (EEK_ELEMENT(renderer->priv->keyboard),
+    eek_element_get_bounds (EEK_ELEMENT(priv->keyboard),
                             &keyboard_bounds);
 
     if (!rotate) {
         bounds->x += keyboard_bounds.x + section_bounds.x;
         bounds->y += keyboard_bounds.y + section_bounds.y;
-        bounds->x *= renderer->priv->scale;
-        bounds->y *= renderer->priv->scale;
-        bounds->width *= renderer->priv->scale;
-        bounds->height *= renderer->priv->scale;
+        bounds->x *= priv->scale;
+        bounds->y *= priv->scale;
+        bounds->width *= priv->scale;
+        bounds->height *= priv->scale;
         return;
     }
     points[0].x = bounds->x;
@@ -1005,24 +1013,30 @@ eek_renderer_get_key_bounds (EekRenderer *renderer,
     bounds->y = keyboard_bounds.y + section_bounds.y + min.y;
     bounds->width = (max.x - min.x);
     bounds->height = (max.y - min.y);
-    bounds->x *= renderer->priv->scale;
-    bounds->y *= renderer->priv->scale;
-    bounds->width *= renderer->priv->scale;
-    bounds->height *= renderer->priv->scale;
+    bounds->x *= priv->scale;
+    bounds->y *= priv->scale;
+    bounds->width *= priv->scale;
+    bounds->height *= priv->scale;
 }
 
 gdouble
 eek_renderer_get_scale (EekRenderer *renderer)
 {
     g_return_val_if_fail (EEK_IS_RENDERER(renderer), 0);
-    return renderer->priv->scale;
+
+    EekRendererPrivate *priv = eek_renderer_get_instance_private (renderer);
+
+    return priv->scale;
 }
 
 PangoLayout *
 eek_renderer_create_pango_layout (EekRenderer  *renderer)
 {
     g_return_val_if_fail (EEK_IS_RENDERER(renderer), NULL);
-    return pango_layout_new (renderer->priv->pcontext);
+
+    EekRendererPrivate *priv = eek_renderer_get_instance_private (renderer);
+
+    return pango_layout_new (priv->pcontext);
 }
 
 void
@@ -1100,7 +1114,9 @@ eek_renderer_set_default_foreground_color (EekRenderer    *renderer,
     g_return_if_fail (EEK_IS_RENDERER(renderer));
     g_return_if_fail (color);
 
-    memcpy (&renderer->priv->default_foreground_color, color, sizeof(EekColor));
+    EekRendererPrivate *priv = eek_renderer_get_instance_private (renderer);
+
+    memcpy (&priv->default_foreground_color, color, sizeof(EekColor));
 }
 
 void
@@ -1110,7 +1126,9 @@ eek_renderer_set_default_background_color (EekRenderer    *renderer,
     g_return_if_fail (EEK_IS_RENDERER(renderer));
     g_return_if_fail (color);
 
-    memcpy (&renderer->priv->default_background_color, color, sizeof(EekColor));
+    EekRendererPrivate *priv = eek_renderer_get_instance_private (renderer);
+
+    memcpy (&priv->default_background_color, color, sizeof(EekColor));
 }
 
 void
@@ -1123,11 +1141,13 @@ eek_renderer_get_foreground_color (EekRenderer *renderer,
     g_return_if_fail (EEK_IS_RENDERER(renderer));
     g_return_if_fail (color);
 
+    EekRendererPrivate *priv = eek_renderer_get_instance_private (renderer);
+
     theme_node = g_object_get_data (G_OBJECT(element), "theme-node");
     if (theme_node)
         eek_theme_node_get_foreground_color (theme_node, color);
     else
-        memcpy (color, &renderer->priv->default_foreground_color,
+        memcpy (color, &priv->default_foreground_color,
                 sizeof(EekColor));
 }
 
@@ -1141,11 +1161,13 @@ eek_renderer_get_background_color (EekRenderer *renderer,
     g_return_if_fail (EEK_IS_RENDERER(renderer));
     g_return_if_fail (color);
 
+    EekRendererPrivate *priv = eek_renderer_get_instance_private (renderer);
+
     theme_node = g_object_get_data (G_OBJECT(element), "theme-node");
     if (theme_node)
         eek_theme_node_get_background_color (theme_node, color);
     else
-        memcpy (color, &renderer->priv->default_background_color,
+        memcpy (color, &priv->default_background_color,
                 sizeof(EekColor));
 }
 
@@ -1208,12 +1230,14 @@ find_key_by_position_key_callback (EekElement *element,
     points[3].x = points[0].x;
     points[3].y = points[2].y;
 
+    EekRendererPrivate *priv = eek_renderer_get_instance_private (data->renderer);
+
     for (i = 0; i < G_N_ELEMENTS(points); i++) {
         eek_point_rotate (&points[i], data->angle);
         points[i].x += data->origin.x;
         points[i].y += data->origin.y;
-        points[i].x *= data->renderer->priv->scale;
-        points[i].y *= data->renderer->priv->scale;
+        points[i].x *= priv->scale;
+        points[i].y *= priv->scale;
     }
 
     b1 = sign (&data->point, &points[0], &points[1]) < 0.0;
@@ -1268,12 +1292,14 @@ eek_renderer_find_key_by_position (EekRenderer *renderer,
 
     g_return_val_if_fail (EEK_IS_RENDERER(renderer), NULL);
 
-    eek_element_get_bounds (EEK_ELEMENT(renderer->priv->keyboard), &bounds);
+    EekRendererPrivate *priv = eek_renderer_get_instance_private (renderer);
 
-    if (x < bounds.x * renderer->priv->scale ||
-        y < bounds.y * renderer->priv->scale ||
-        x > bounds.width * renderer->priv->scale ||
-        y > bounds.height * renderer->priv->scale)
+    eek_element_get_bounds (EEK_ELEMENT(priv->keyboard), &bounds);
+
+    if (x < bounds.x * priv->scale ||
+        y < bounds.y * priv->scale ||
+        x > bounds.width * priv->scale ||
+        y > bounds.height * priv->scale)
         return NULL;
 
     data.point.x = x;
@@ -1283,7 +1309,7 @@ eek_renderer_find_key_by_position (EekRenderer *renderer,
     data.key = NULL;
     data.renderer = renderer;
 
-    eek_container_find (EEK_CONTAINER(renderer->priv->keyboard),
+    eek_container_find (EEK_CONTAINER(priv->keyboard),
                         find_key_by_position_section_callback,
                         &data);
     return data.key;
@@ -1303,9 +1329,11 @@ create_theme_node_key_callback (EekElement *element,
     CreateThemeNodeData *data = user_data;
     EekThemeNode *theme_node;
 
+    EekRendererPrivate *priv = eek_renderer_get_instance_private (data->renderer);
+
     theme_node = eek_theme_node_new (data->context,
                                      data->parent,
-                                     data->renderer->priv->theme,
+                                     priv->theme,
                                      EEK_TYPE_KEY,
                                      eek_element_get_name (element),
                                      "key",
@@ -1318,7 +1346,7 @@ create_theme_node_key_callback (EekElement *element,
 
     theme_node = eek_theme_node_new (data->context,
                                      data->parent,
-                                     data->renderer->priv->theme,
+                                     priv->theme,
                                      EEK_TYPE_KEY,
                                      eek_element_get_name (element),
                                      "key",
@@ -1337,9 +1365,11 @@ create_theme_node_section_callback (EekElement *element,
     CreateThemeNodeData *data = user_data;
     EekThemeNode *theme_node, *parent;
 
+    EekRendererPrivate *priv = eek_renderer_get_instance_private (data->renderer);
+
     theme_node = eek_theme_node_new (data->context,
                                      data->parent,
-                                     data->renderer->priv->theme,
+                                     priv->theme,
                                      EEK_TYPE_SECTION,
                                      eek_element_get_name (element),
                                      "section",
@@ -1368,22 +1398,25 @@ eek_renderer_set_theme (EekRenderer *renderer,
 
     g_return_if_fail (EEK_IS_RENDERER(renderer));
     g_return_if_fail (EEK_IS_THEME(theme));
-    g_return_if_fail (renderer->priv->keyboard);
 
-    if (renderer->priv->theme)
-        g_object_unref (renderer->priv->theme);
-    renderer->priv->theme = g_object_ref (theme);
+    EekRendererPrivate *priv = eek_renderer_get_instance_private (renderer);
+
+    g_return_if_fail (priv->keyboard);
+
+    if (priv->theme)
+        g_object_unref (priv->theme);
+    priv->theme = g_object_ref (theme);
 
     theme_context = eek_theme_context_new ();
     theme_node = eek_theme_node_new (theme_context,
                                      NULL,
-                                     renderer->priv->theme,
+                                     priv->theme,
                                      EEK_TYPE_KEYBOARD,
                                      "keyboard",
                                      "keyboard",
                                      NULL,
                                      NULL);
-    g_object_set_data_full (G_OBJECT(renderer->priv->keyboard),
+    g_object_set_data_full (G_OBJECT(priv->keyboard),
                             "theme-node",
                             theme_node,
                             (GDestroyNotify)g_object_unref);
@@ -1391,7 +1424,7 @@ eek_renderer_set_theme (EekRenderer *renderer,
     data.context = theme_context;
     data.parent = theme_node;
     data.renderer = renderer;
-    eek_container_foreach_child (EEK_CONTAINER(renderer->priv->keyboard),
+    eek_container_foreach_child (EEK_CONTAINER(priv->keyboard),
                                  create_theme_node_section_callback,
                                  &data);
 }
