@@ -330,7 +330,6 @@ update_widget (ServerContextService *context)
 {
     EekKeyboard *keyboard;
     EekBounds bounds;
-    g_autofree gchar *theme_path = g_build_filename (THEMESDIR, "default.css", NULL);
     EekTheme *theme;
     
     if (context->widget) {
@@ -341,7 +340,6 @@ update_widget (ServerContextService *context)
     theme = eek_theme_new ("resource:///sm/puri/squeekboard/style.css",
                            NULL,
                            NULL);
-    g_free (theme_path);
 
     keyboard = eekboard_context_service_get_keyboard (EEKBOARD_CONTEXT_SERVICE(context));
     eek_element_get_bounds (EEK_ELEMENT(keyboard), &bounds); // <--- FIXME: bounds not used
