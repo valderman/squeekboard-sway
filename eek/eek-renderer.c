@@ -494,7 +494,7 @@ render_key (EekRenderer *self,
         cairo_surface_t *icon_surface =
             eek_renderer_get_icon_surface (self,
                                            eek_symbol_get_icon_name (symbol),
-                                           MIN(bounds.width, bounds.height) * 0.7);
+                                           MIN(bounds.width, bounds.height) * 0.5);
         if (icon_surface) {
             gint width = cairo_image_surface_get_width (icon_surface);
             gint height = cairo_image_surface_get_height (icon_surface);
@@ -521,8 +521,15 @@ render_key (EekRenderer *self,
                              (bounds.height - height * scale) / 2);
             cairo_rectangle (cr, 0, 0, width, height);
             cairo_clip (cr);
-            cairo_set_source_surface (cr, icon_surface, 0.0, 0.0);
-            cairo_paint (cr);
+            /* Draw the shape of the icon using the foreground color */
+            eek_renderer_get_foreground_color (self, EEK_ELEMENT(key), &foreground);
+            cairo_set_source_rgba (cr, foreground.red,
+                                       foreground.green,
+                                       foreground.blue,
+                                       foreground.alpha);
+            cairo_mask_surface (cr, icon_surface, 0.0, 0.0);
+            cairo_fill (cr);
+
             cairo_restore (cr);
             return;
         }
