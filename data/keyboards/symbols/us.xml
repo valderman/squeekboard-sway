@@ -167,6 +167,9 @@
   </key>
   <key keycode="66" name="ALTGR">
     <keysym keyval="65027">ISO_Level3_Shift</keysym>
+    <keysym keyval="65027">ISO_Level3_Shift</keysym>
+    <keysym keyval="65027" label="ABC">ISO_Level3_Shift</keysym>
+    <keysym keyval="65027" label="ABC">ISO_Level3_Shift</keysym>
   </key>
   <key keycode="38" name="AC01">
     <keysym keyval="97">a</keysym>
@@ -235,6 +238,9 @@
   </key>
   <key keycode="50" name="LFSH">
     <keysym keyval="65505">Shift_L</keysym>
+    <keysym keyval="65505">Shift_L</keysym>
+    <keysym keyval="65505" label="=/+">Shift_L</keysym>
+    <keysym keyval="65505" label="123">Shift_L</keysym>
   </key>
   <key keycode="52" name="AB01">
     <keysym keyval="122">z</keysym>
