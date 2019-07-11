@@ -1,17 +1,17 @@
-/* 
+/*
  * Copyright (C) 2010-2011 Daiki Ueno <ueno@unixuser.org>
  * Copyright (C) 2010-2011 Red Hat, Inc.
- * 
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
  * as published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
@@ -109,7 +109,7 @@ create_keyboard_surface_key_callback (EekElement *element,
     cairo_save (data->cr);
 
     eek_element_get_bounds (element, &bounds);
-    cairo_translate (data->cr, bounds.x * priv->scale, bounds.y * priv->scale); 
+    cairo_translate (data->cr, bounds.x * priv->scale, bounds.y * priv->scale);
     cairo_rectangle (data->cr,
                      0.0,
                      0.0,
@@ -137,7 +137,7 @@ create_keyboard_surface_section_callback (EekElement *element,
 
     angle = eek_section_get_angle (EEK_SECTION(element));
     cairo_rotate (data->cr, angle * G_PI / 180);
-    
+
     eek_container_foreach_child (EEK_CONTAINER(element),
                                  create_keyboard_surface_key_callback,
                                  data);
@@ -213,7 +213,7 @@ render_key_outline (EekRenderer *renderer,
     outline = eek_keyboard_get_outline (priv->keyboard, oref);
     if (outline == NULL)
         return;
-    
+
     theme_node = g_object_get_data (G_OBJECT(key),
                                     active ?
                                     "theme-node-pressed" :
@@ -459,7 +459,8 @@ render_key (EekRenderer *self,
     if (!outline_surface) {
         cairo_t *cr;
 
-        // Outline will be drawn on the outside of the button, so the surface needs to be bigger than the button
+        // Outline will be drawn on the outside of the button, so the
+        // surface needs to be bigger than the button
         outline_surface =
             cairo_image_surface_create (CAIRO_FORMAT_ARGB32,
                                         (int)ceil(bounds.width) + 10,
@@ -491,6 +492,7 @@ render_key (EekRenderer *self,
         return;
 
     if (eek_symbol_get_icon_name (symbol)) {
+
         cairo_surface_t *icon_surface =
             eek_renderer_get_icon_surface (self,
                                            eek_symbol_get_icon_name (symbol),
