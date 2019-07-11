@@ -53,6 +53,13 @@ enum {
     LAST_SIGNAL
 };
 
+enum {
+    VIEW_LETTERS_LOWER,
+    VIEW_LETTERS_UPPER,
+    VIEW_NUMBERS,
+    VIEW_SYMBOLS
+};
+
 static guint signals[LAST_SIGNAL] = { 0, };
 
 #define EEK_KEYBOARD_GET_PRIVATE(obj)                                  \
@@ -63,6 +70,7 @@ struct _EekKeyboardPrivate
     EekLayout *layout;
     EekModifierBehavior modifier_behavior;
     EekModifierType modifiers;
+    EekModifierType old_level;
     GList *pressed_keys;
     GList *locked_keys;
     GArray *outline_array;
@@ -206,24 +214,43 @@ static void
 set_level_from_modifiers (EekKeyboard *self)
 {
     EekKeyboardPrivate *priv = EEK_KEYBOARD_GET_PRIVATE(self);
-    gint level = 0;
 
-    if (priv->modifiers & priv->alt_gr_mask) {
-        /* Alt-Gr is the 123 and ABC keys */
+    /* The levels are: 0 Letters, 1 Upper case letters, 2 Numbers, 3 Symbols */
+    gint level = ((priv->modifiers & priv->alt_gr_mask) ? 2 : 0) |
+                 ((priv->modifiers & EEK_SHIFT_MASK) ? 1 : 0);
+
+    switch (priv->old_level) {
+    case VIEW_LETTERS_UPPER:
+    {
+        /* Redirect upper case letters to numbers instead of symbols, clearing
+           the shift modifier to keep the modifiers in sync with the level */
+        if (level == VIEW_SYMBOLS) {
+            level = VIEW_NUMBERS;
+            priv->modifiers &= ~EEK_SHIFT_MASK;
+        }
+        break;
+    }
+    case VIEW_SYMBOLS:
+    {
+        /* Redirect symbols to lower case letters instead of upper case,
+           clearing the shift modifier to keep the modifiers in sync with the
+           level */
+        if (level == VIEW_LETTERS_UPPER) {
+            level = VIEW_LETTERS_LOWER;
+            priv->modifiers &= ~EEK_SHIFT_MASK;
+        }
+        break;
+    }
+    case VIEW_LETTERS_LOWER:    /* Direct transitions between views */
+    case VIEW_NUMBERS:
+    default:
+        break;
+    }
+
+    if (level == VIEW_NUMBERS || level == VIEW_SYMBOLS)
         priv->modifier_behavior = EEK_MODIFIER_BEHAVIOR_LOCK;
-        level |= 2;
-    }
 
-    if (priv->modifiers & EEK_SHIFT_MASK) {
-        /* Left Shift is the Shift and =/+ keys */
-        level |= 1;
-
-        if (level == 1)
-            priv->modifier_behavior = EEK_MODIFIER_BEHAVIOR_LATCH;
-        else
-            priv->modifier_behavior = EEK_MODIFIER_BEHAVIOR_LOCK;
-    }
-
+    priv->old_level = level;
     eek_element_set_level (EEK_ELEMENT(self), level);
 }
 
