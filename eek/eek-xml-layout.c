@@ -1,7 +1,7 @@
-/* 
+/*
  * Copyright (C) 2011 Daiki Ueno <ueno@unixuser.org>
  * Copyright (C) 2011 Red Hat, Inc.
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -25,6 +25,7 @@
 #include "config.h"
 #endif  /* HAVE_CONFIG_H */
 
+#include <gio/gio.h> /* GResource */
 #include <stdlib.h>
 #include <string.h>
 
@@ -34,6 +35,8 @@
 #include "eek-key.h"
 #include "eek-keysym.h"
 #include "eek-text.h"
+
+#include "squeekboard-resources.h"
 
 enum {
     PROP_0,
@@ -451,7 +454,7 @@ geometry_start_element_callback (GMarkupParseContext *pcontext,
                                    "corner-radius");
         if (attribute != NULL)
             data->corner_radius = g_strtod (attribute, NULL);
-        
+
         goto out;
     }
 
@@ -1058,10 +1061,10 @@ initable_init (GInitable    *initable,
     gchar *path;
     EekXmlKeyboardDesc *desc;
 
-    priv->keyboards_dir = (gchar *) g_getenv ("EEKBOARD_KEYBOARDSDIR");
+    priv->keyboards_dir = g_strdup ((gchar *) g_getenv ("EEKBOARD_KEYBOARDSDIR"));
+
     if (priv->keyboards_dir == NULL)
-        priv->keyboards_dir = KEYBOARDSDIR;
-    priv->keyboards_dir = g_strdup (priv->keyboards_dir);
+        priv->keyboards_dir = g_strdup ("resource:///sm/puri/squeekboard/keyboards/");
 
     path = g_build_filename (priv->keyboards_dir, "keyboards.xml", NULL);
     keyboards = parse_keyboards (path, error);
@@ -1112,7 +1115,7 @@ eek_xml_list_keyboards (void)
 
     keyboards_dir = g_getenv ("EEKBOARD_KEYBOARDSDIR");
     if (keyboards_dir == NULL)
-        keyboards_dir = KEYBOARDSDIR;
+        keyboards_dir = g_strdup ("resource:///sm/puri/squeekboard/keyboards/");
     path = g_build_filename (keyboards_dir, "keyboards.xml", NULL);
     keyboards = parse_keyboards (path, NULL);
     g_free (path);
@@ -1181,7 +1184,9 @@ parse_geometry (const gchar *path, EekKeyboard *keyboard, GError **error)
     GFileInputStream *input;
     gboolean retval;
 
-    file = g_file_new_for_path (path);
+    file = g_str_has_prefix (path, "resource://")
+         ? g_file_new_for_uri  (path)
+         : g_file_new_for_path (path);
 
     input = g_file_read (file, NULL, error);
     g_object_unref (file);
@@ -1307,7 +1312,9 @@ parse_symbols (const gchar *path, EekKeyboard *keyboard, GError **error)
     GFileInputStream *input;
     gboolean retval;
 
-    file = g_file_new_for_path (path);
+    file = g_str_has_prefix (path, "resource://")
+         ? g_file_new_for_uri  (path)
+         : g_file_new_for_path (path);
 
     input = g_file_read (file, NULL, error);
     g_object_unref (file);
@@ -1340,7 +1347,9 @@ parse_prerequisites (const gchar *path, GError **error)
     GList *prerequisites;
     gboolean retval;
 
-    file = g_file_new_for_path (path);
+    file = g_str_has_prefix (path, "resource://")
+         ? g_file_new_for_uri  (path)
+         : g_file_new_for_path (path);
 
     input = g_file_read (file, NULL, error);
     g_object_unref (file);
@@ -1375,7 +1384,9 @@ parse_keyboards (const gchar *path, GError **error)
     GList *keyboards;
     gboolean retval;
 
-    file = g_file_new_for_path (path);
+    file = g_str_has_prefix (path, "resource://")
+         ? g_file_new_for_uri  (path)
+         : g_file_new_for_path (path);
 
     input = g_file_read (file, NULL, error);
     g_object_unref (file);
@@ -1452,7 +1463,7 @@ static void scale_keyboard (EekKeyboard *keyboard,
     for (i = 0; i < n_outlines; i++) {
         EekOutline *outline = eek_keyboard_get_outline (keyboard, i);
         gint j;
- 
+
         for (j = 0; j < outline->num_points; j++) {
             outline->points[j].x *= scale;
             outline->points[j].y *= scale;
