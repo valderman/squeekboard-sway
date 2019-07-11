@@ -503,7 +503,8 @@ render_key (EekRenderer *self,
         cairo_surface_t *icon_surface =
             eek_renderer_get_icon_surface (self,
                                            eek_symbol_get_icon_name (symbol),
-                                           MIN(bounds.width, bounds.height));
+                                           MIN(bounds.width, bounds.height),
+                                           1);
         if (icon_surface) {
             gint width = cairo_image_surface_get_width (icon_surface);
             gint height = cairo_image_surface_get_height (icon_surface);
@@ -1071,7 +1072,8 @@ eek_renderer_render_key_outline (EekRenderer *renderer,
 cairo_surface_t *
 eek_renderer_get_icon_surface (EekRenderer *renderer,
                                const gchar *icon_name,
-                               gint size)
+                               gint size,
+                               gint scale)
 {
     EekRendererClass *klass;
 
@@ -1079,7 +1081,7 @@ eek_renderer_get_icon_surface (EekRenderer *renderer,
 
     klass = EEK_RENDERER_GET_CLASS(renderer);
     if (klass->get_icon_surface)
-        return klass->get_icon_surface (renderer, icon_name, size);
+        return klass->get_icon_surface (renderer, icon_name, size, scale);
     return NULL;
 }
 

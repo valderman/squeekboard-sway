@@ -33,11 +33,11 @@ G_DEFINE_TYPE (EekGtkRenderer, eek_gtk_renderer, EEK_TYPE_RENDERER);
 static cairo_surface_t *
 eek_gtk_renderer_real_get_icon_surface (EekRenderer *self,
                                         const gchar *icon_name,
-                                        gint size)
+                                        gint size,
+                                        gint scale)
 {
     GError *error = NULL;
     cairo_surface_t *surface;
-    gint scale = 1;
 
     surface = gtk_icon_theme_load_surface (gtk_icon_theme_get_default (),
                                            icon_name,

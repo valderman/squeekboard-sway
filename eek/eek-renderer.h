@@ -58,7 +58,8 @@ struct _EekRendererClass
 
     cairo_surface_t *(* get_icon_surface)   (EekRenderer *self,
                                              const gchar *icon_name,
-                                             gint         size);
+                                             gint         size,
+                                             gint         scale);
 
     /*< private >*/
     /* padding */
@@ -103,7 +104,8 @@ void             eek_renderer_render_key       (EekRenderer     *renderer,
 
 cairo_surface_t *eek_renderer_get_icon_surface (EekRenderer     *renderer,
                                                 const gchar     *icon_name,
-                                                gint             size);
+                                                gint             size,
+                                                gint             scale);
 
 void             eek_renderer_render_keyboard  (EekRenderer     *renderer,
                                                 cairo_t         *cr);
