@@ -1,7 +1,7 @@
-/* 
+/*
  * Copyright (C) 2010-2011 Daiki Ueno <ueno@unixuser.org>
  * Copyright (C) 2010-2011 Red Hat, Inc.
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -150,13 +150,14 @@ eekboard_context_service_real_create_keyboard (EekboardContextService *self,
     rules.layout = strdup(keyboard_type);
     struct xkb_keymap *keymap = xkb_keymap_new_from_names(context, &rules,
         XKB_KEYMAP_COMPILE_NO_FLAGS);
+    xkb_context_unref(context);
     if (!keymap) {
         g_error("Bad keymap");
     }
     keyboard->keymap = keymap;
     char *keymap_str = xkb_keymap_get_as_string(keymap, XKB_KEYMAP_FORMAT_TEXT_V1);
     keyboard->keymap_len = strlen(keymap_str) + 1;
-    char *path = strdup("/eek_keymap-XXXXXX");
+    g_autofree char *path = strdup("/eek_keymap-XXXXXX");
     char *r = &path[strlen(path) - 6];
     getrandom(r, 6, GRND_NONBLOCK);
     for (uint i = 0; i < 6; i++) {
@@ -284,6 +285,7 @@ settings_get_layout(GSettings *settings, char **type, char **layout)
         }
     }
     g_variant_iter_free(iter);
+    g_variant_unref(inputs);
 }
 
 static void

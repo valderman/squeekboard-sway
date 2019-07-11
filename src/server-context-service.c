@@ -124,18 +124,18 @@ on_notify_keyboard (GObject              *object,
 }
 
 static void
-on_notify_fullscreen (GObject              *object,  // <--- context
+on_notify_fullscreen (GObject              *object,
                       GParamSpec           *spec,
-                      ServerContextService *context) // <--- more context
+                      ServerContextService *context)
 {
     if (context->window)
         set_geometry (context);
 }
 
 static void
-on_notify_visible (GObject    *object,            // <--- context
+on_notify_visible (GObject    *object,
                    GParamSpec *spec,
-                   ServerContextService *context) // <--- more context
+                   ServerContextService *context)
 {
     gboolean visible;
 
@@ -144,7 +144,7 @@ on_notify_visible (GObject    *object,            // <--- context
 }
 
 static void
-set_dock (GtkWidget *widget, GtkAllocation *allocation) // <--- FIXME: this could go
+set_dock (GtkWidget *widget, GtkAllocation *allocation)
 {
 #ifdef HAVE_XDOCK
     GdkWindow *window = gtk_widget_get_window (widget);
@@ -202,7 +202,7 @@ on_realize_set_non_maximizable (GtkWidget            *widget,
     g_assert (context && context->window == widget);
 
     /* make the window not maximizable */
-    gdk_window_set_functions (gtk_widget_get_window (widget), // FIXME: This seems to affect #22
+    gdk_window_set_functions (gtk_widget_get_window (widget),
                               GDK_FUNC_RESIZE |
                               GDK_FUNC_MOVE |
                               GDK_FUNC_MINIMIZE |
@@ -305,7 +305,6 @@ make_window (ServerContextService *context)
                           G_CALLBACK(on_notify_visible),
                           context);
 
-    // FIXME: these properties could all be set in g_object_new()
     // The properties below are just to make hacking easier.
     // The way we use layer-shell overrides some,
     // and there's no space in the protocol for others.
@@ -322,16 +321,15 @@ make_window (ServerContextService *context)
 static void
 destroy_window (ServerContextService *context)
 {
-    context->window = NULL; // FIXME: doesn't destroy much
+    context->window = NULL;
 }
 
 static void
 update_widget (ServerContextService *context)
 {
     EekKeyboard *keyboard;
-    EekBounds bounds;
     EekTheme *theme;
-    
+
     if (context->widget) {
         gtk_widget_destroy (context->widget);
         context->widget = NULL;
@@ -342,15 +340,13 @@ update_widget (ServerContextService *context)
                            NULL);
 
     keyboard = eekboard_context_service_get_keyboard (EEKBOARD_CONTEXT_SERVICE(context));
-    eek_element_get_bounds (EEK_ELEMENT(keyboard), &bounds); // <--- FIXME: bounds not used
 
-    g_clear_pointer (&context->widget, gtk_widget_destroy);
     context->widget = eek_gtk_keyboard_new (keyboard);
 
     eek_gtk_keyboard_set_theme (EEK_GTK_KEYBOARD(context->widget), theme);
     g_clear_object (&theme);
 
-    gtk_widget_set_has_tooltip (context->widget, TRUE); // <--- FIXME: I've never seen one
+    gtk_widget_set_has_tooltip (context->widget, TRUE);
     gtk_container_add (GTK_CONTAINER(context->window), context->widget);
     set_geometry (context);
 }
@@ -375,7 +371,7 @@ server_context_service_real_hide_keyboard (EekboardContextService *_context)
     gtk_widget_hide (context->window);
     g_clear_pointer (&context->widget, gtk_widget_destroy);
 
-    destroy_window (context); // <--- FIXME: looks suspect
+    destroy_window (context);
 
     EEKBOARD_CONTEXT_SERVICE_CLASS (server_context_service_parent_class)->
         hide_keyboard (_context);
@@ -492,15 +488,15 @@ server_context_service_init (ServerContextService *context)
                       "monitors-changed",
                       G_CALLBACK(on_monitors_changed),
                       context);
-    g_signal_connect (context,                              // <--- FIXME; here
+    g_signal_connect (context,
                       "notify::keyboard",
                       G_CALLBACK(on_notify_keyboard),
-                      context);                             // <--- FIXME: they try to confuse us
+                      context);
 
-    g_signal_connect (context,                              // <--- FIXME; here
+    g_signal_connect (context,
                       "notify::fullscreen",
                       G_CALLBACK(on_notify_fullscreen),
-                      context);                             // <--- FIXME: they try to confuse us
+                      context);
 }
 
 EekboardContextService *
