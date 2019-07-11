@@ -57,10 +57,9 @@ eek_gtk_renderer_real_get_icon_surface (EekRenderer *self,
                                         gint size)
 {
     GdkPixbuf *pixbuf;
-    GError *error;
+    GError *error = NULL;
     cairo_surface_t *surface;
 
-    error = NULL;
     pixbuf = gtk_icon_theme_load_icon (gtk_icon_theme_get_default (),
                                        icon_name,
                                        size,
