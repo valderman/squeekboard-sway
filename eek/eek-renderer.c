@@ -486,6 +486,7 @@ render_key (EekRenderer *self,
     cairo_set_source_surface (cr, outline_surface, 0.0, 0.0);
     cairo_paint (cr);
 
+    eek_renderer_get_foreground_color (self, EEK_ELEMENT(key), &foreground);
     /* render icon (if any) */
     symbol = eek_key_get_symbol_with_fallback (key, 0, 0);
     if (!symbol)
@@ -524,7 +525,6 @@ render_key (EekRenderer *self,
             cairo_rectangle (cr, 0, 0, width, height);
             cairo_clip (cr);
             /* Draw the shape of the icon using the foreground color */
-            eek_renderer_get_foreground_color (self, EEK_ELEMENT(key), &foreground);
             cairo_set_source_rgba (cr, foreground.red,
                                        foreground.green,
                                        foreground.blue,
@@ -548,7 +548,6 @@ render_key (EekRenderer *self,
          (bounds.width - extents.width / PANGO_SCALE) / 2,
          (bounds.height - extents.height / PANGO_SCALE) / 2);
 
-    eek_renderer_get_foreground_color (self, EEK_ELEMENT(key), &foreground);
     cairo_set_source_rgba (cr,
                            foreground.red,
                            foreground.green,
