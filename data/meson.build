@@ -1,51 +1,11 @@
+gnome = import('gnome')
 
-install_data(
-    'keyboards/keyboards.xml',
-    install_dir: pkgdatadir + '/keyboards/',
+squeekboard_resources = gnome.compile_resources(
+   'squeekboard-resources',
+   'squeekboard.gresources.xml',
+
+   c_name: 'squeekboard',
 )
-
-install_data(
-    'keyboards/geometry/compact.xml',
-    install_dir: pkgdatadir + '/keyboards/geometry/',
-)
-
-symbols = [
-    'ar.xml',
-    'as-inscript.xml',
-    'be.xml',
-    'bn-inscript.xml',
-    'fa.xml',
-    'gu-inscript.xml',
-    'he.xml',
-    'hi-inscript.xml',
-    'ja-kana.xml',
-    'kk.xml',
-    'kn-inscript.xml',
-    'ks-inscript.xml',
-    'ks.xml',
-    'mai-inscript.xml',
-    'ml-inscript.xml',
-    'mr-inscript.xml',
-    'my.xml',
-    'or-inscript.xml',
-    'pa-inscript.xml',
-    'ru.xml',
-    'sd-inscript.xml',
-    'ta-inscript.xml',
-    'te-inscript.xml',
-    'th.xml',
-    'ua.xml',
-    'ug.xml',
-    'us.xml',
-    'zh-bopomofo.xml',
-]
-
-foreach symbol: symbols
-    install_data(
-        'keyboards/symbols/' + symbol,
-        install_dir: pkgdatadir + '/keyboards/symbols/',
-    )
-endforeach
 
 desktop_file = 'sm.puri.Squeekboard.desktop'
 
