@@ -208,10 +208,22 @@ set_level_from_modifiers (EekKeyboard *self)
     EekKeyboardPrivate *priv = EEK_KEYBOARD_GET_PRIVATE(self);
     gint level = 0;
 
-    if (priv->modifiers & priv->alt_gr_mask)
+    if (priv->modifiers & priv->alt_gr_mask) {
+        /* Alt-Gr is the 123 and ABC keys */
+        priv->modifier_behavior = EEK_MODIFIER_BEHAVIOR_LOCK;
         level |= 2;
-    if (priv->modifiers & EEK_SHIFT_MASK)
+    }
+
+    if (priv->modifiers & EEK_SHIFT_MASK) {
+        /* Left Shift is the Shift and =/+ keys */
         level |= 1;
+
+        if (level == 1)
+            priv->modifier_behavior = EEK_MODIFIER_BEHAVIOR_LATCH;
+        else
+            priv->modifier_behavior = EEK_MODIFIER_BEHAVIOR_LOCK;
+    }
+
     eek_element_set_level (EEK_ELEMENT(self), level);
 }
 
