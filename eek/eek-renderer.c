@@ -162,9 +162,14 @@ create_keyboard_surface (EekRenderer *renderer)
                                        &background);
 
     eek_element_get_bounds (EEK_ELEMENT(priv->keyboard), &bounds);
-    keyboard_surface = cairo_image_surface_create (CAIRO_FORMAT_ARGB32,
-                                                   ceil(bounds.width * priv->scale),
-                                                   ceil(bounds.height * priv->scale));
+
+    /* Create a surface that encompasses the dimensions of the keyboard as well
+       as the margin around the edge. */
+    keyboard_surface = cairo_image_surface_create (
+        CAIRO_FORMAT_ARGB32,
+        ceil(((bounds.x * 2) + bounds.width) * priv->scale),
+        ceil(((bounds.y * 2) + bounds.height) * priv->scale));
+
     data.cr = cairo_create (keyboard_surface);
     data.renderer = renderer;
 
