@@ -31,65 +31,26 @@
 G_DEFINE_TYPE (EekGtkRenderer, eek_gtk_renderer, EEK_TYPE_RENDERER);
 
 static cairo_surface_t *
-pixbuf_to_cairo_surface (GdkPixbuf *pixbuf)
-{
-  cairo_surface_t *dummy_surface;
-  cairo_pattern_t *pattern;
-  cairo_surface_t *surface;
-  cairo_t *cr;
-
-  dummy_surface = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, 1, 1);
-
-  cr = cairo_create (dummy_surface);
-  gdk_cairo_set_source_pixbuf (cr, pixbuf, 0, 0);
-  pattern = cairo_get_source (cr);
-  cairo_pattern_get_surface (pattern, &surface);
-  cairo_surface_reference (surface);
-  cairo_destroy (cr);
-  cairo_surface_destroy (dummy_surface);
-
-  return surface;
-}
-
-static cairo_surface_t *
 eek_gtk_renderer_real_get_icon_surface (EekRenderer *self,
                                         const gchar *icon_name,
                                         gint size)
 {
-    GdkPixbuf *pixbuf;
     GError *error = NULL;
     cairo_surface_t *surface;
+    gint scale = 1;
 
-    gchar *path = g_strconcat("/sm/puri/squeekboard/icons/", icon_name, ".svg", NULL);
-
-    pixbuf = gdk_pixbuf_new_from_resource_at_scale (path, size, size,
-                                                    TRUE, &error);
-
-    if (pixbuf != NULL)
-        goto found;
-    else {
-/*      g_warning ("can't get icon pixbuf for %s: %s", path, error->message);*/
-        g_error_free (error);
-        error = NULL;
-    }
-    g_free(path);
-
-    pixbuf = gtk_icon_theme_load_icon (gtk_icon_theme_get_default (),
-                                       icon_name,
-                                       size,
-                                       0,
-                                       &error);
-    if (pixbuf == NULL) {
-        g_warning ("can't get icon pixbuf for %s: %s",
-                   icon_name,
-                   error->message);
+    surface = gtk_icon_theme_load_surface (gtk_icon_theme_get_default (),
+                                           icon_name,
+                                           size,
+                                           scale,
+                                           NULL,
+                                           0,
+                                           &error);
+    if (surface == NULL) {
+        g_warning ("can't get icon surface for %s: %s",
         g_error_free (error);
         return NULL;
     }
-
-found:
-    surface = pixbuf_to_cairo_surface (pixbuf);
-    g_object_unref (pixbuf);
     return surface;
 }
 
