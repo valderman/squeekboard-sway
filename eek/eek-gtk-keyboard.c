@@ -549,12 +549,12 @@ render_pressed_key (GtkWidget *widget,
     cairo_translate (cr, bounds.x, bounds.y);
     eek_renderer_render_key (priv->renderer, cr, key, 1.0, TRUE);
     cairo_restore (cr);
-
+/*
     cairo_save (cr);
     cairo_translate (cr, large_bounds.x, large_bounds.y);
     eek_renderer_render_key (priv->renderer, cr, key, 1.5, TRUE);
     cairo_restore (cr);
-
+*/
     gdk_window_end_draw_frame (window, context);
 
     cairo_region_destroy (region);
