@@ -492,37 +492,23 @@ render_key (EekRenderer *self,
     if (!symbol)
         return;
 
+ #define SCALE 0.8
     if (eek_symbol_get_icon_name (symbol)) {
 
         cairo_surface_t *icon_surface =
             eek_renderer_get_icon_surface (self,
                                            eek_symbol_get_icon_name (symbol),
-                                           MIN(bounds.width, bounds.height) * 0.5);
+                                           MIN(bounds.width, bounds.height));
         if (icon_surface) {
             gint width = cairo_image_surface_get_width (icon_surface);
             gint height = cairo_image_surface_get_height (icon_surface);
-            gdouble scale;
-
-            if (width < bounds.width && height < bounds.height)
-                scale = 1;
-            else {
-                if (height * bounds.width / width <= bounds.height)
-                    scale = bounds.width / width;
-                else if (width * bounds.height / height <= bounds.width)
-                    scale = bounds.height / height;
-                else {
-                    if (width * bounds.height < height * bounds.width)
-                        scale = width / bounds.width;
-                    else
-                        scale = height / bounds.height;
-                }
-            }
 
             cairo_save (cr);
             cairo_translate (cr,
-                             (bounds.width - width * scale) / 2,
-                             (bounds.height - height * scale) / 2);
+                             (bounds.width - width * SCALE) / 2,
+                             (bounds.height - height * SCALE) / 2);
             cairo_rectangle (cr, 0, 0, width, height);
+            cairo_scale (cr, SCALE, SCALE);
             cairo_clip (cr);
             /* Draw the shape of the icon using the foreground color */
             cairo_set_source_rgba (cr, foreground.red,
