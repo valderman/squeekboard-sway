@@ -165,11 +165,11 @@
     <keysym keyval="92">backslash</keysym>
     <keysym keyval="124">bar</keysym>
   </key>
-  <key keycode="66" name="ALTGR">
-    <keysym keyval="65027">ISO_Level3_Shift</keysym>
-    <keysym keyval="65027">ISO_Level3_Shift</keysym>
-    <keysym keyval="65027" label="ABC">ISO_Level3_Shift</keysym>
-    <keysym keyval="65027" label="ABC">ISO_Level3_Shift</keysym>
+  <key keycode="0" name="ABC123">
+    <symbol label="123">show-numbers</symbol>
+    <symbol label="123">show-numbers</symbol>
+    <symbol label="ABC">show-letters</symbol>
+    <symbol label="ABC">show-letters</symbol>
   </key>
   <key keycode="38" name="AC01">
     <keysym keyval="97">a</keysym>

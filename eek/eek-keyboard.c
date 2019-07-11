@@ -211,13 +211,23 @@ eek_keyboard_get_property (GObject    *object,
 }
 
 static void
-set_level_from_modifiers (EekKeyboard *self)
+set_level_from_modifiers (EekKeyboard *self, EekKey *key)
 {
     EekKeyboardPrivate *priv = EEK_KEYBOARD_GET_PRIVATE(self);
 
     /* The levels are: 0 Letters, 1 Upper case letters, 2 Numbers, 3 Symbols */
-    gint level = ((priv->modifiers & priv->alt_gr_mask) ? 2 : 0) |
-                 ((priv->modifiers & EEK_SHIFT_MASK) ? 1 : 0);
+
+    /* Use the numbers/letters bit from the old level */
+    gint level = priv->old_level & 2;
+
+    /* Handle non-emitting keys */
+    if (key && (eek_key_get_keycode(key) == 0)) {
+        const gchar *name = eek_element_get_name(EEK_ELEMENT(key));
+        if (g_strcmp0(name, "ABC123") == 0)
+            level ^= 2;
+    }
+
+    level |= ((priv->modifiers & EEK_SHIFT_MASK) ? 1 : 0);
 
     switch (priv->old_level) {
     case VIEW_LETTERS_UPPER:
@@ -249,6 +259,8 @@ set_level_from_modifiers (EekKeyboard *self)
 
     if (level == VIEW_NUMBERS || level == VIEW_SYMBOLS)
         priv->modifier_behavior = EEK_MODIFIER_BEHAVIOR_LOCK;
+    else if (level == VIEW_LETTERS_UPPER)
+        priv->modifier_behavior = EEK_MODIFIER_BEHAVIOR_LATCH;
 
     priv->old_level = level;
     eek_element_set_level (EEK_ELEMENT(self), level);
@@ -306,7 +318,7 @@ void eek_keyboard_press_key(EekKeyboard *keyboard, EekKey *key, guint32 timestam
     EekModifierType modifier = eek_symbol_get_modifier_mask (symbol);
     if (priv->modifier_behavior == EEK_MODIFIER_BEHAVIOR_NONE) {
         set_modifiers_with_key (keyboard, key, priv->modifiers | modifier);
-        set_level_from_modifiers (keyboard);
+        set_level_from_modifiers (keyboard, key);
     }
 
     // "Borrowed" from eek-context-service; doesn't influence the state but forwards the event
@@ -355,7 +367,7 @@ void eek_keyboard_release_key( EekKeyboard *keyboard,
                                     (priv->modifiers ^ modifier) & modifier);
         break;
     }
-    set_level_from_modifiers (keyboard);
+    set_level_from_modifiers (keyboard, key);
 
     // "Borrowed" from eek-context-service; doesn't influence the state but forwards the event
 
@@ -621,7 +633,7 @@ eek_keyboard_set_modifiers (EekKeyboard    *keyboard,
 {
     g_return_if_fail (EEK_IS_KEYBOARD(keyboard));
     keyboard->priv->modifiers = modifiers;
-    set_level_from_modifiers (keyboard);
+    set_level_from_modifiers (keyboard, NULL);
 }
 
 /**
