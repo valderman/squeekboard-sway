@@ -1,7 +1,7 @@
 gnome = import('gnome')
 dbus_src = gnome.gdbus_codegen(
     'sm.puri.OSK0',
-    join_paths(dbusdir, 'sm.puri.OSK0.xml')
+    join_paths(meson.source_root() / 'data' / 'dbus', 'sm.puri.OSK0.xml')
 )
 
 squeekboard_resources = gnome.compile_resources(
