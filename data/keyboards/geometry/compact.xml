@@ -103,7 +103,7 @@
   <section angle="0">
     <bounds x="0" y="0" width="608.7804" height="201.3658"/>
     <row orientation="1">
-      <key keycode="66" name="ALTGR" oref="altline">
+      <key keycode="0" name="ABC123" oref="altline">
 	<bounds x="62.43902" y="162.3414" width="48.39024" height="37.46341"/>
       </key>
       <key keycode="150" name="I150" oref="altline">
