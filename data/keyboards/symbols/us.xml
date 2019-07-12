@@ -290,7 +290,6 @@
   </key>
   <key keycode="60" name="AB09">
     <keysym keyval="46">period</keysym>
-    <keysym keyval="62">greater</keysym>
   </key>
   <key keycode="61" name="AB10">
     <keysym keyval="47">slash</keysym>
