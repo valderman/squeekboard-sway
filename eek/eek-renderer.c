@@ -497,7 +497,7 @@ render_key (EekRenderer *self,
     if (!symbol)
         return;
 
- #define SCALE 0.8
+ #define SCALE 0.5
     if (eek_symbol_get_icon_name (symbol)) {
 
         cairo_surface_t *icon_surface =
