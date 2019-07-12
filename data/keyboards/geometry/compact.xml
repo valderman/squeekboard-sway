@@ -2,7 +2,6 @@
 <geometry version="0.90">
   <bounds x="0" y="10.000000" width="426.0000" height="296.5853"/>
   <section angle="0">
-    <bounds x="0" y="0" width="0" height="0"/>
     <row orientation="1">
       <key keycode="24" name="AD01" oref="outline2">
 	<bounds x="0" y="0" width="0" height="0"/>
@@ -37,7 +36,6 @@
     </row>
   </section>
   <section angle="0">
-    <bounds x="0" y="0" width="0" height="0"/>
     <row orientation="1">
       <key keycode="38" name="AC01" oref="outline2">
 	<bounds x="0" y="0" width="0" height="0"/>
@@ -69,7 +67,6 @@
     </row>
   </section>
   <section angle="0">
-    <bounds x="0" y="0" width="0" height="0"/>
     <row orientation="1">
       <key keycode="50" name="LFSH" oref="altline">
 	<bounds x="0" y="0" width="0" height="0"/>
@@ -101,7 +98,6 @@
     </row>
   </section>
   <section angle="0">
-    <bounds x="0" y="0" width="0" height="0"/>
     <row orientation="1">
       <key keycode="0" name="ABC123" oref="altline">
 	<bounds x="0" y="0" width="0" height="0"/>
