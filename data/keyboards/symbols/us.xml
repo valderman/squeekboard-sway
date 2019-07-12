@@ -234,11 +234,11 @@
     <keysym keyval="34">quotedbl</keysym>
   </key>
   <key keycode="36" name="RTRN">
-    <keysym keyval="65293">Return</keysym>
+    <keysym keyval="65293" icon="key-enter">Return</keysym>
   </key>
   <key keycode="50" name="LFSH">
-    <keysym keyval="65505">Shift_L</keysym>
-    <keysym keyval="65505">Shift_L</keysym>
+    <keysym keyval="65505" icon="key-shift">Shift_L</keysym>
+    <keysym keyval="65505" icon="key-shift">Shift_L</keysym>
     <keysym keyval="65505" label="=/+">Shift_L</keysym>
     <keysym keyval="65505" label="123">Shift_L</keysym>
   </key>
