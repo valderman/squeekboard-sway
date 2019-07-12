@@ -60,6 +60,20 @@ eek_gtk_renderer_real_get_icon_surface (EekRenderer *self,
     GError *error = NULL;
     cairo_surface_t *surface;
 
+    gchar *path = g_strconcat("/sm/puri/squeekboard/icons/", icon_name, ".svg", NULL);
+
+    pixbuf = gdk_pixbuf_new_from_resource_at_scale (path, size, size,
+                                                    TRUE, &error);
+
+    if (pixbuf != NULL)
+        goto found;
+    else {
+        g_warning ("can't get icon pixbuf for %s: %s", path, error->message);
+        g_error_free (error);
+        error = NULL;
+    }
+    g_free(path);
+
     pixbuf = gtk_icon_theme_load_icon (gtk_icon_theme_get_default (),
                                        icon_name,
                                        size,
@@ -73,6 +87,7 @@ eek_gtk_renderer_real_get_icon_surface (EekRenderer *self,
         return NULL;
     }
 
+found:
     surface = pixbuf_to_cairo_surface (pixbuf);
     g_object_unref (pixbuf);
     return surface;
