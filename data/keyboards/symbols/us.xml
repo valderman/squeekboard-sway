@@ -39,59 +39,6 @@
   <key keycode="96" name="FK12">
     <keysym keyval="65481">F12</keysym>
   </key>
-  <key keycode="49" name="TLDE">
-    <keysym keyval="96">quoteleft</keysym>
-    <keysym keyval="126">asciitilde</keysym>
-  </key>
-  <key keycode="10" name="AE01">
-    <keysym keyval="49">1</keysym>
-    <keysym keyval="33">exclam</keysym>
-  </key>
-  <key keycode="11" name="AE02">
-    <keysym keyval="50">2</keysym>
-    <keysym keyval="64">at</keysym>
-  </key>
-  <key keycode="12" name="AE03">
-    <keysym keyval="51">3</keysym>
-    <keysym keyval="35">numbersign</keysym>
-  </key>
-  <key keycode="13" name="AE04">
-    <keysym keyval="52">4</keysym>
-    <keysym keyval="36">dollar</keysym>
-  </key>
-  <key keycode="14" name="AE05">
-    <keysym keyval="53">5</keysym>
-    <keysym keyval="37">percent</keysym>
-    <keysym keyval="8364">EuroSign</keysym>
-  </key>
-  <key keycode="15" name="AE06">
-    <keysym keyval="54">6</keysym>
-    <keysym keyval="94">asciicircum</keysym>
-  </key>
-  <key keycode="16" name="AE07">
-    <keysym keyval="55">7</keysym>
-    <keysym keyval="38">ampersand</keysym>
-  </key>
-  <key keycode="17" name="AE08">
-    <keysym keyval="56">8</keysym>
-    <keysym keyval="42">asterisk</keysym>
-  </key>
-  <key keycode="18" name="AE09">
-    <keysym keyval="57">9</keysym>
-    <keysym keyval="40">parenleft</keysym>
-  </key>
-  <key keycode="19" name="AE10">
-    <keysym keyval="48">0</keysym>
-    <keysym keyval="41">parenright</keysym>
-  </key>
-  <key keycode="20" name="AE11">
-    <keysym keyval="45">minus</keysym>
-    <keysym keyval="95">underscore</keysym>
-  </key>
-  <key keycode="21" name="AE12">
-    <keysym keyval="61">equal</keysym>
-    <keysym keyval="43">plus</keysym>
-  </key>
   <key keycode="22" name="BKSP">
     <keysym keyval="65288" icon="edit-clear-symbolic">backspace</keysym>
   </key>
