@@ -362,8 +362,6 @@ geometry_start_element_callback (GMarkupParseContext *pcontext,
 
         if (g_strcmp0 (data->element_stack->data, "geometry") == 0)
             eek_element_set_bounds (EEK_ELEMENT(data->keyboard), &bounds);
-        else if (g_strcmp0 (data->element_stack->data, "section") == 0)
-            eek_element_set_bounds (EEK_ELEMENT(data->section), &bounds);
         goto out;
     }
 
