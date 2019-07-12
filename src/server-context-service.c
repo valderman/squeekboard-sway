@@ -285,7 +285,7 @@ make_window (ServerContextService *context)
         PHOSH_TYPE_LAYER_SURFACE,
         "layer-shell", squeek_wayland->layer_shell,
         "wl-output", g_ptr_array_index(squeek_wayland->outputs, 0), // TODO: select output as needed,
-        "height", 200,
+        "height", 210,
         "anchor", ZWLR_LAYER_SURFACE_V1_ANCHOR_BOTTOM
                   | ZWLR_LAYER_SURFACE_V1_ANCHOR_LEFT
                   | ZWLR_LAYER_SURFACE_V1_ANCHOR_RIGHT,
