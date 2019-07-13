@@ -124,7 +124,8 @@ on_unlocked (EekKey     *key,
 
 static EekKey *
 eek_section_real_create_key (EekSection *self,
-                             guint       keycode,
+                             const gchar *name,
+                             gint        keycode,
                              gint        column_index,
                              gint        row_index)
 {
@@ -142,6 +143,7 @@ eek_section_real_create_key (EekSection *self,
         row->num_columns = column_index + 1;
 
     key = g_object_new (EEK_TYPE_KEY,
+                        "name", name,
                         "keycode", keycode,
                         "column", column_index,
                         "row", row_index,
@@ -463,6 +465,7 @@ eek_section_get_row (EekSection     *section,
 /**
  * eek_section_create_key:
  * @section: an #EekSection
+ * @name: a name
  * @keycode: a keycode
  * @column: the column index of the key
  * @row: the row index of the key
@@ -473,12 +476,14 @@ eek_section_get_row (EekSection     *section,
  */
 EekKey *
 eek_section_create_key (EekSection *section,
-                        guint       keycode,
+                        const gchar *name,
+                        gint        keycode,
                         gint        column,
                         gint        row)
 {
     g_return_val_if_fail (EEK_IS_SECTION(section), NULL);
     return EEK_SECTION_GET_CLASS(section)->create_key (section,
+                                                       name,
                                                        keycode,
                                                        column,
                                                        row);

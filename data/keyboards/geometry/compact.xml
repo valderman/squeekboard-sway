@@ -3,51 +3,51 @@
   <bounds x="0" y="10.000000" width="426.0000" height="296.5853"/>
   <section angle="0">
     <row orientation="1">
-      <key keycode="24" name="AD01" oref="outline2" />
-      <key keycode="25" name="AD02" oref="outline2" />
-      <key keycode="26" name="AD03" oref="outline2" />
-      <key keycode="27" name="AD04" oref="outline2" />
-      <key keycode="28" name="AD05" oref="outline2" />
-      <key keycode="29" name="AD06" oref="outline2" />
-      <key keycode="30" name="AD07" oref="outline2" />
-      <key keycode="31" name="AD08" oref="outline2" />
-      <key keycode="32" name="AD09" oref="outline2" />
-      <key keycode="33" name="AD10" oref="outline2" />
+      <key name="AD01" oref="outline2" />
+      <key name="AD02" oref="outline2" />
+      <key name="AD03" oref="outline2" />
+      <key name="AD04" oref="outline2" />
+      <key name="AD05" oref="outline2" />
+      <key name="AD06" oref="outline2" />
+      <key name="AD07" oref="outline2" />
+      <key name="AD08" oref="outline2" />
+      <key name="AD09" oref="outline2" />
+      <key name="AD10" oref="outline2" />
     </row>
   </section>
   <section angle="0">
     <row orientation="1">
-      <key keycode="38" name="AC01" oref="outline2" />
-      <key keycode="39" name="AC02" oref="outline2" />
-      <key keycode="40" name="AC03" oref="outline2" />
-      <key keycode="41" name="AC04" oref="outline2" />
-      <key keycode="42" name="AC05" oref="outline2" />
-      <key keycode="43" name="AC06" oref="outline2" />
-      <key keycode="44" name="AC07" oref="outline2" />
-      <key keycode="45" name="AC08" oref="outline2" />
-      <key keycode="46" name="AC09" oref="outline2" />
+      <key name="AC01" oref="outline2" />
+      <key name="AC02" oref="outline2" />
+      <key name="AC03" oref="outline2" />
+      <key name="AC04" oref="outline2" />
+      <key name="AC05" oref="outline2" />
+      <key name="AC06" oref="outline2" />
+      <key name="AC07" oref="outline2" />
+      <key name="AC08" oref="outline2" />
+      <key name="AC09" oref="outline2" />
     </row>
   </section>
   <section angle="0">
     <row orientation="1">
-      <key keycode="50" name="LFSH" oref="altline" />
-      <key keycode="52" name="AB01" oref="outline2" />
-      <key keycode="53" name="AB02" oref="outline2" />
-      <key keycode="54" name="AB03" oref="outline2" />
-      <key keycode="55" name="AB04" oref="outline2" />
-      <key keycode="56" name="AB05" oref="outline2" />
-      <key keycode="57" name="AB06" oref="outline2" />
-      <key keycode="58" name="AB07" oref="outline2" />
-      <key keycode="22" name="BKSP" oref="altline" />
+      <key name="LFSH" oref="altline" />
+      <key name="AB01" oref="outline2" />
+      <key name="AB02" oref="outline2" />
+      <key name="AB03" oref="outline2" />
+      <key name="AB04" oref="outline2" />
+      <key name="AB05" oref="outline2" />
+      <key name="AB06" oref="outline2" />
+      <key name="AB07" oref="outline2" />
+      <key name="BKSP" oref="altline" />
     </row>
   </section>
   <section angle="0">
     <row orientation="1">
-      <key keycode="0" name="ABC123" oref="altline" />
-      <key keycode="150" name="I150" oref="altline" />
-      <key keycode="65" name="SPCE" oref="spaceline" />
-      <key keycode="60" name="AB09" oref="outline2" />
-      <key keycode="36" name="RTRN" oref="outline7" />
+      <key name="ABC123" oref="altline" />
+      <key name="I150" oref="altline" />
+      <key name="SPCE" oref="spaceline" />
+      <key name="AB08" oref="outline2" />
+      <key name="RTRN" oref="outline7" />
     </row>
   </section>
   <outline id="outline2" corner-radius="1.000000">
