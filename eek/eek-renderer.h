@@ -82,6 +82,8 @@ void             eek_renderer_get_key_bounds   (EekRenderer     *renderer,
                                                 gboolean         rotate);
 
 gdouble          eek_renderer_get_scale        (EekRenderer     *renderer);
+void             eek_renderer_set_scale_factor (EekRenderer     *renderer,
+                                                gint             scale);
 
 PangoLayout     *eek_renderer_create_pango_layout
                                                (EekRenderer     *renderer);
