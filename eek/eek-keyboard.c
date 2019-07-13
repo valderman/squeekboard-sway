@@ -70,7 +70,7 @@ struct _EekKeyboardPrivate
     EekLayout *layout;
     EekModifierBehavior modifier_behavior;
     EekModifierType modifiers;
-    EekModifierType old_level;
+    unsigned int old_level;
     GList *pressed_keys;
     GList *locked_keys;
     GArray *outline_array;
