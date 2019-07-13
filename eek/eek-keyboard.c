@@ -259,7 +259,7 @@ set_level_from_modifiers (EekKeyboard *self, EekKey *key)
 
     if (level == VIEW_NUMBERS || level == VIEW_SYMBOLS)
         priv->modifier_behavior = EEK_MODIFIER_BEHAVIOR_LOCK;
-    else if (level == VIEW_LETTERS_UPPER)
+    else
         priv->modifier_behavior = EEK_MODIFIER_BEHAVIOR_LATCH;
 
     priv->old_level = level;
