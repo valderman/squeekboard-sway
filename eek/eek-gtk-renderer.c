@@ -68,7 +68,7 @@ eek_gtk_renderer_real_get_icon_surface (EekRenderer *self,
     if (pixbuf != NULL)
         goto found;
     else {
-        g_warning ("can't get icon pixbuf for %s: %s", path, error->message);
+/*      g_warning ("can't get icon pixbuf for %s: %s", path, error->message);*/
         g_error_free (error);
         error = NULL;
     }
