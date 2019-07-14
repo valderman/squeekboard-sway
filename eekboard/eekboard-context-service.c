@@ -30,6 +30,7 @@
 #endif  /* HAVE_CONFIG_H */
 
 #include "eekboard/eekboard-context-service.h"
+#include "keymap.h"
 
 #include <fcntl.h>
 #include <stdio.h>
@@ -148,16 +149,16 @@ eekboard_context_service_real_create_keyboard (EekboardContextService *self,
 
     struct xkb_rule_names rules = { 0 };
     rules.layout = strdup(keyboard_type);
-    struct xkb_keymap *keymap = xkb_keymap_new_from_names(context, &rules,
-        XKB_KEYMAP_COMPILE_NO_FLAGS);
+    struct xkb_keymap *keymap = xkb_keymap_new_from_string(context, default_keymap,
+        XKB_KEYMAP_FORMAT_TEXT_V1, XKB_KEYMAP_COMPILE_NO_FLAGS);
     xkb_context_unref(context);
     if (!keymap) {
         g_error("Bad keymap");
     }
     keyboard->keymap = keymap;
     char *keymap_str = xkb_keymap_get_as_string(keymap, XKB_KEYMAP_FORMAT_TEXT_V1);
-    g_debug("%s", keymap_str);
     keyboard->keymap_len = strlen(keymap_str) + 1;
+
     g_autofree char *path = strdup("/eek_keymap-XXXXXX");
     char *r = &path[strlen(path) - 6];
     getrandom(r, 6, GRND_NONBLOCK);
