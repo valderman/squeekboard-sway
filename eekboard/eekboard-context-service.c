@@ -156,6 +156,7 @@ eekboard_context_service_real_create_keyboard (EekboardContextService *self,
         g_error("Bad keymap");
     }
     keyboard->keymap = keymap;
+
     char *keymap_str = xkb_keymap_get_as_string(keymap, XKB_KEYMAP_FORMAT_TEXT_V1);
     keyboard->keymap_len = strlen(keymap_str) + 1;
 

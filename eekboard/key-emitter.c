@@ -137,14 +137,15 @@ int send_virtual_keyboard_key(
     unsigned is_press,
     uint32_t timestamp
 ) {
+    g_debug("send_virtual_keyboard_key: %u", keycode);
     zwp_virtual_keyboard_v1_key(keyboard, timestamp, keycode, (unsigned)is_press);
     return 0;
 }
 
 static void
 send_fake_modifiers_events (SeatEmitter         *emitter,
-                              EekModifierType modifiers,
-                              uint32_t        timestamp)
+                            EekModifierType      modifiers,
+                            uint32_t             timestamp)
 {
     (void)timestamp;
 
@@ -158,6 +159,7 @@ send_fake_modifiers_events (SeatEmitter         *emitter,
     if (modifiers & EEK_MOD1_MASK) {
         proto_modifiers |= 1<<MOD_IDX_ALT;
     }
+    g_debug("send_fake_modifiers_events: %u", proto_modifiers);
     zwp_virtual_keyboard_v1_modifiers(emitter->virtual_keyboard, proto_modifiers, 0, 0, emitter->group);
 }
 
@@ -172,6 +174,7 @@ send_fake_key_event (SeatEmitter *emitter,
     guint old_keysym = xkeysym;
 
     g_return_if_fail (xkeysym > 0);
+    g_debug("send_fake_key_event: %i %i", xkeysym, keyboard_modifiers);
 
     guint keycode;
     if (!get_keycode_from_gdk_keymap (emitter, xkeysym, &keycode, &modifiers)) {
@@ -214,6 +217,7 @@ send_fake_key_events (SeatEmitter *emitter,
     if (eek_symbol_is_modifier (symbol))
         return;
 
+    g_debug("symbol: %s", eek_symbol_get_name(symbol));
     /* If symbol is a text, convert chars in it to keysym */
     if (EEK_IS_TEXT(symbol)) {
         const gchar *utf8 = eek_text_get_text (EEK_TEXT(symbol));
@@ -243,6 +247,7 @@ send_fake_key_events (SeatEmitter *emitter,
     }
 
     if (EEK_IS_KEYSYM(symbol)) {
+        g_debug("keysym: %u", eek_keysym_get_xkeysym(EEK_KEYSYM(symbol)));
         guint xkeysym = eek_keysym_get_xkeysym (EEK_KEYSYM(symbol));
         send_fake_key_event (emitter, xkeysym, keyboard_modifiers, pressed, timestamp);
     }
@@ -284,6 +289,30 @@ update_modifier_info (SeatEmitter *client)
     }*/
 }
 
+static void
+send_fake_key (SeatEmitter *emitter,
+               EekKeyboard *keyboard,
+               guint    keycode,
+               guint    keyboard_modifiers,
+               gboolean pressed,
+               uint32_t timestamp)
+{
+    uint32_t proto_modifiers = 0;
+    guint level = eek_element_get_level(EEK_ELEMENT(keyboard));
+    uint32_t group = (level / 2);
+
+    g_debug("send_fake_key: %u %u", keycode, keyboard_modifiers);
+    g_debug("level: %u", level);
+    g_debug("group: %u", group);
+
+    if (keyboard_modifiers & EEK_SHIFT_MASK)
+        proto_modifiers |= 1<<MOD_IDX_SHIFT;
+
+    zwp_virtual_keyboard_v1_modifiers(emitter->virtual_keyboard, proto_modifiers, 0, 0, group);
+    send_virtual_keyboard_key (emitter->virtual_keyboard, keycode - 8, (unsigned)pressed, timestamp);
+    zwp_virtual_keyboard_v1_modifiers(emitter->virtual_keyboard, proto_modifiers, 0, 0, group);
+}
+
 void
 emit_key_activated (EekboardContextService *manager,
                     EekKeyboard     *keyboard,
@@ -293,6 +322,8 @@ emit_key_activated (EekboardContextService *manager,
                     gboolean pressed,
                     uint32_t timestamp)
 {
+    g_debug("symbol: %s", eek_symbol_get_name(symbol));
+    g_debug("keycode: %u", keycode);
     /* FIXME: figure out how to deal with Client after key presses go through
     if (g_strcmp0 (eek_symbol_get_name (symbol), "cycle-keyboard") == 0) {
         client->keyboards_head = g_slist_next (client->keyboards_head);
@@ -324,5 +355,5 @@ emit_key_activated (EekboardContextService *manager,
     emitter.virtual_keyboard = manager->virtual_keyboard;
     emitter.keymap = keyboard->keymap;
     update_modifier_info (&emitter);
-    send_fake_key_events (&emitter, symbol, modifiers, pressed, timestamp);
+    send_fake_key (&emitter, keyboard, keycode, modifiers, pressed, timestamp);
 }

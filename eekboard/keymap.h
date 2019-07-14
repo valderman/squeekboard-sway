@@ -261,26 +261,22 @@ xkb_keycodes \"squeekboard\" {\
     };\
 \
     xkb_symbols \"squeekboard\" {\
-        key <AE04>	{ [         4,     dollar,     EuroSign,   onequarter ]	};\
+\
+        name[Group1] = \"Letters\";\
+        name[Group2] = \"Numbers/Symbols\";\
+\
+        key <AD01> { [ q, Q ], [ 1, asciitilde ] };\
+        key <AD02> { [ w, W ], [ 2, quoteleft ] };\
+        key <AE04> { [ 4, dollar ], [ EuroSign, onequarter ] };\
     };\
 \
     xkb_types \"squeekboard\" {\
-	type \"ONE_LEVEL\" {\
-		modifiers= none;\
-		level_name[Level1]= \"Any\";\
-	};\
+\
 	type \"TWO_LEVEL\" {\
-		modifiers= Shift;\
-		map[Shift]= Level2;\
-		level_name[Level1]= \"Base\";\
-		level_name[Level2]= \"Shift\";\
-	};\
-	type \"ALPHABETIC\" {\
-		modifiers= Shift+Lock;\
-		map[Shift]= Level2;\
-		map[Lock]= Level2;\
-		level_name[Level1]= \"Base\";\
-		level_name[Level2]= \"Caps\";\
+		modifiers = Shift;\
+		map[Shift] = Level2;\
+		level_name[Level1] = \"Base\";\
+		level_name[Level2] = \"Shift\";\
 	};\
     };\
 \
