@@ -24,6 +24,9 @@
   <keyboard id="my" name="my"
 	    geometry="compact" symbols="my"
 	    longname="Myanmar" language="my"/>
+  <keyboard id="nb" name="nb"
+	    geometry="extended" symbols="nb"
+	    longname="Norwegian" language="nb"/>
   <keyboard id="ru" name="ru"
 	    geometry="compact" symbols="us"
 	    longname="Russian" language="ru"/>

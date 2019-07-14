@@ -249,7 +249,6 @@ struct _GeometryParseData {
     gchar *name;
     EekOutline outline;
     gchar *oref;
-    gint keycode;
 
     GHashTable *key_oref_hash;
     GHashTable *oref_outline_hash;
@@ -272,7 +271,6 @@ geometry_parse_data_new (EekKeyboard *keyboard)
                                g_str_equal,
                                g_free,
                                (GDestroyNotify)eek_outline_free);
-    data->keycode = 1;
     return data;
 }
 
@@ -398,6 +396,18 @@ geometry_start_element_callback (GMarkupParseContext *pcontext,
     }
 
     if (g_strcmp0 (element_name, "key") == 0) {
+        guint keycode;
+
+        attribute = get_attribute (attribute_names, attribute_values,
+                                   "keycode");
+        if (attribute == NULL) {
+            g_set_error (error,
+                         G_MARKUP_ERROR,
+                         G_MARKUP_ERROR_MISSING_ATTRIBUTE,
+                         "no \"keycode\" attribute for \"key\"");
+            return;
+        }
+        keycode = strtol (attribute, NULL, 10);
 
         attribute = get_attribute (attribute_names, attribute_values,
                                    "name");
@@ -411,7 +421,7 @@ geometry_start_element_callback (GMarkupParseContext *pcontext,
 
         data->key = eek_section_create_key (data->section,
                                             g_strdup (attribute),
-                                            data->keycode++,
+                                            keycode,
                                             data->num_columns,
                                             data->num_rows - 1);
 

@@ -156,6 +156,7 @@ eekboard_context_service_real_create_keyboard (EekboardContextService *self,
     }
     keyboard->keymap = keymap;
     char *keymap_str = xkb_keymap_get_as_string(keymap, XKB_KEYMAP_FORMAT_TEXT_V1);
+    g_debug("%s", keymap_str);
     keyboard->keymap_len = strlen(keymap_str) + 1;
     g_autofree char *path = strdup("/eek_keymap-XXXXXX");
     char *r = &path[strlen(path) - 6];
@@ -293,6 +294,7 @@ settings_update_layout(EekboardContextService *context) {
     g_autofree gchar *keyboard_type = NULL;
     g_autofree gchar *keyboard_layout = NULL;
     settings_get_layout(context->priv->settings, &keyboard_type, &keyboard_layout);
+    g_debug("type=%s, layout=%s", keyboard_type, keyboard_layout);
 
     if (!keyboard_type) {
         keyboard_type = g_strdup("us");
