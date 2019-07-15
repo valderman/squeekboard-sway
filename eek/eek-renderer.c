@@ -48,6 +48,7 @@ typedef struct _EekRendererPrivate
     gdouble allocation_width;
     gdouble allocation_height;
     gdouble scale;
+    gint scale_factor; /* the outputs scale factor */
 
     PangoFontDescription *ascii_font;
     PangoFontDescription *font;
@@ -499,21 +500,21 @@ render_key (EekRenderer *self,
 
  #define SCALE 0.4
     if (eek_symbol_get_icon_name (symbol)) {
-
+        gint scale = priv->scale_factor;
         cairo_surface_t *icon_surface =
             eek_renderer_get_icon_surface (self,
                                            eek_symbol_get_icon_name (symbol),
-                                           MIN(bounds.width, bounds.height));
+                                           SCALE * MIN(bounds.width, bounds.height),
+                                           scale);
         if (icon_surface) {
             gint width = cairo_image_surface_get_width (icon_surface);
             gint height = cairo_image_surface_get_height (icon_surface);
 
             cairo_save (cr);
             cairo_translate (cr,
-                             (bounds.width - width * SCALE) / 2,
-                             (bounds.height - height * SCALE) / 2);
+                             (bounds.width - width / scale) / 2,
+                             (bounds.height - height / scale) / 2);
             cairo_rectangle (cr, 0, 0, width, height);
-            cairo_scale (cr, SCALE, SCALE);
             cairo_clip (cr);
             /* Draw the shape of the icon using the foreground color */
             cairo_set_source_rgba (cr, foreground.red,
@@ -844,6 +845,7 @@ eek_renderer_init (EekRenderer *self)
     priv->allocation_width = 0.0;
     priv->allocation_height = 0.0;
     priv->scale = 1.0;
+    priv->scale_factor = 1;
     priv->font = NULL;
     priv->outline_surface_cache =
         g_hash_table_new_full (g_direct_hash,
@@ -1028,6 +1030,15 @@ eek_renderer_get_scale (EekRenderer *renderer)
     return priv->scale;
 }
 
+void
+eek_renderer_set_scale_factor (EekRenderer *renderer, gint scale)
+{
+    g_return_if_fail (EEK_IS_RENDERER(renderer));
+
+    EekRendererPrivate *priv = eek_renderer_get_instance_private (renderer);
+    priv->scale_factor = scale;
+}
+
 PangoLayout *
 eek_renderer_create_pango_layout (EekRenderer  *renderer)
 {
@@ -1071,7 +1082,8 @@ eek_renderer_render_key_outline (EekRenderer *renderer,
 cairo_surface_t *
 eek_renderer_get_icon_surface (EekRenderer *renderer,
                                const gchar *icon_name,
-                               gint size)
+                               gint size,
+                               gint scale)
 {
     EekRendererClass *klass;
 
@@ -1079,7 +1091,7 @@ eek_renderer_get_icon_surface (EekRenderer *renderer,
 
     klass = EEK_RENDERER_GET_CLASS(renderer);
     if (klass->get_icon_surface)
-        return klass->get_icon_surface (renderer, icon_name, size);
+        return klass->get_icon_surface (renderer, icon_name, size, scale);
     return NULL;
 }
 

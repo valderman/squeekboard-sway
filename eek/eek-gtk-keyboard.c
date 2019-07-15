@@ -121,6 +121,8 @@ eek_gtk_keyboard_real_draw (GtkWidget *self,
         eek_renderer_set_allocation_size (priv->renderer,
                                           allocation.width,
                                           allocation.height);
+        eek_renderer_set_scale_factor (priv->renderer,
+                                       gtk_widget_get_scale_factor (self));
     }
 
     eek_renderer_render_keyboard (priv->renderer, cr);

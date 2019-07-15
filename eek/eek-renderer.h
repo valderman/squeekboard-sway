@@ -58,7 +58,8 @@ struct _EekRendererClass
 
     cairo_surface_t *(* get_icon_surface)   (EekRenderer *self,
                                              const gchar *icon_name,
-                                             gint         size);
+                                             gint         size,
+                                             gint         scale);
 
     /*< private >*/
     /* padding */
@@ -81,6 +82,8 @@ void             eek_renderer_get_key_bounds   (EekRenderer     *renderer,
                                                 gboolean         rotate);
 
 gdouble          eek_renderer_get_scale        (EekRenderer     *renderer);
+void             eek_renderer_set_scale_factor (EekRenderer     *renderer,
+                                                gint             scale);
 
 PangoLayout     *eek_renderer_create_pango_layout
                                                (EekRenderer     *renderer);
@@ -103,7 +106,8 @@ void             eek_renderer_render_key       (EekRenderer     *renderer,
 
 cairo_surface_t *eek_renderer_get_icon_surface (EekRenderer     *renderer,
                                                 const gchar     *icon_name,
-                                                gint             size);
+                                                gint             size,
+                                                gint             scale);
 
 void             eek_renderer_render_keyboard  (EekRenderer     *renderer,
                                                 cairo_t         *cr);
