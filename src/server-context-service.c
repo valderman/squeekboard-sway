@@ -61,8 +61,6 @@ G_DEFINE_TYPE (ServerContextService, server_context_service, EEKBOARD_TYPE_CONTE
 
 static void update_widget (ServerContextService *context);
 static void set_geometry  (ServerContextService *context);
-static void set_dock      (GtkWidget            *widget,
-                           GtkAllocation        *allocation);
 
 static void
 on_monitors_changed (GdkScreen            *screen,
@@ -144,72 +142,6 @@ on_notify_visible (GObject    *object,
 }
 
 static void
-set_dock (GtkWidget *widget, GtkAllocation *allocation)
-{
-#ifdef HAVE_XDOCK
-    GdkWindow *window = gtk_widget_get_window (widget);
-    long vals[12];
-
-    /* set window type to dock */
-    gdk_window_set_type_hint (window, GDK_WINDOW_TYPE_HINT_DOCK);
-
-    vals[0] = 0;
-    vals[1] = 0;
-    vals[2] = 0;
-    vals[3] = allocation->height;
-    vals[4] = 0;
-    vals[5] = 0;
-    vals[6] = 0;
-    vals[7] = 0;
-    vals[8] = 0;
-    vals[9] = 0;
-    vals[10] = allocation->x;
-    vals[11] = allocation->x + allocation->width;
-
-    XChangeProperty (GDK_WINDOW_XDISPLAY (window),
-                     GDK_WINDOW_XID (window),
-                     XInternAtom (GDK_WINDOW_XDISPLAY (window),
-                                  "_NET_WM_STRUT_PARTIAL", False),
-                     XA_CARDINAL, 32, PropModeReplace,
-                     (guchar *)vals, 12);
-#endif  /* HAVE_XDOCK */
-}
-
-static void
-on_realize_set_dock (GtkWidget *widget,
-                     gpointer   user_data)
-{
-    GtkAllocation allocation;
-
-    gtk_widget_get_allocation (widget, &allocation);
-    set_dock (widget, &allocation);
-}
-
-static void
-on_size_allocate_set_dock (GtkWidget *widget,
-                           GdkRectangle *allocation,
-                           gpointer user_data)
-{
-    if (gtk_widget_get_realized (widget))
-        set_dock (widget, allocation);
-}
-
-static void
-on_realize_set_non_maximizable (GtkWidget            *widget,
-                                ServerContextService *context)
-{
-
-    g_assert (context && context->window == widget);
-
-    /* make the window not maximizable */
-    gdk_window_set_functions (gtk_widget_get_window (widget),
-                              GDK_FUNC_RESIZE |
-                              GDK_FUNC_MOVE |
-                              GDK_FUNC_MINIMIZE |
-                              GDK_FUNC_CLOSE);
-}
-
-static void
 set_geometry (ServerContextService *context)
 {
     GdkScreen   *screen   = gdk_screen_get_default ();
@@ -223,13 +155,6 @@ set_geometry (ServerContextService *context)
 
     gdk_monitor_get_geometry (monitor, &rect);
     eek_element_get_bounds (EEK_ELEMENT(keyboard), &bounds);
-
-    g_signal_handlers_disconnect_by_func (context->window,
-                                          on_realize_set_dock,
-                                          context);
-    g_signal_handlers_disconnect_by_func (context->window,
-                                          on_realize_set_non_maximizable,
-                                          context);
 
     if (eekboard_context_service_get_fullscreen (EEKBOARD_CONTEXT_SERVICE(context))) {
         gint width  = rect.width;
@@ -256,12 +181,6 @@ set_geometry (ServerContextService *context)
 
         gtk_window_set_decorated (GTK_WINDOW(context->window), FALSE);
         gtk_window_set_resizable (GTK_WINDOW(context->window), FALSE);
-        g_signal_connect_after (context->window, "realize",
-                                G_CALLBACK(on_realize_set_dock),
-                                context);
-        g_signal_connect_after (context->window, "size-allocate",
-                                G_CALLBACK(on_size_allocate_set_dock),
-                                context);
     } else {
         gtk_window_resize (GTK_WINDOW(context->window),
                            bounds.width,
@@ -269,9 +188,6 @@ set_geometry (ServerContextService *context)
         gtk_window_move (GTK_WINDOW(context->window),
                          MAX(rect.width - 20 - bounds.width, 0),
                          MAX(rect.height - 40 - bounds.height, 0));
-        g_signal_connect_after (context->window, "realize",
-                                G_CALLBACK(on_realize_set_non_maximizable),
-                                context);
     }
 }
 
