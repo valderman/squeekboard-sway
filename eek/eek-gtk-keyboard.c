@@ -57,9 +57,6 @@ typedef struct _EekGtkKeyboardPrivate
 {
     EekRenderer *renderer;
     EekKeyboard *keyboard;
-    gulong key_locked_handler;
-    gulong key_unlocked_handler;
-    gulong symbol_index_changed_handler;
     EekTheme *theme;
 
     GdkEventSequence *sequence; // unowned reference
@@ -332,15 +329,12 @@ eek_gtk_keyboard_set_keyboard (EekGtkKeyboard *self,
     EekGtkKeyboardPrivate *priv = eek_gtk_keyboard_get_instance_private (self);
     priv->keyboard = g_object_ref (keyboard);
 
-    priv->key_locked_handler =
-        g_signal_connect (priv->keyboard, "key-locked",
-                          G_CALLBACK(on_key_locked), self);
-    priv->key_unlocked_handler =
-        g_signal_connect (priv->keyboard, "key-unlocked",
-                          G_CALLBACK(on_key_unlocked), self);
-    priv->symbol_index_changed_handler =
-        g_signal_connect (priv->keyboard, "symbol-index-changed",
-                          G_CALLBACK(on_symbol_index_changed), self);
+    g_signal_connect (priv->keyboard, "key-locked",
+                      G_CALLBACK(on_key_locked), self);
+    g_signal_connect (priv->keyboard, "key-unlocked",
+                      G_CALLBACK(on_key_unlocked), self);
+    g_signal_connect (priv->keyboard, "symbol-index-changed",
+                      G_CALLBACK(on_symbol_index_changed), self);
 }
 
 static void
@@ -374,19 +368,7 @@ eek_gtk_keyboard_dispose (GObject *object)
     }
 
     if (priv->keyboard) {
-        if (g_signal_handler_is_connected (priv->keyboard,
-                                           priv->key_locked_handler))
-            g_signal_handler_disconnect (priv->keyboard,
-                                         priv->key_locked_handler);
-        if (g_signal_handler_is_connected (priv->keyboard,
-                                           priv->key_unlocked_handler))
-            g_signal_handler_disconnect (priv->keyboard,
-                                         priv->key_unlocked_handler);
-        if (g_signal_handler_is_connected (priv->keyboard,
-                                           priv->symbol_index_changed_handler))
-            g_signal_handler_disconnect (priv->keyboard,
-                                         priv->symbol_index_changed_handler);
-
+        g_signal_handlers_disconnect_by_data(priv->keyboard, self);
         GList *list, *head;
 
         list = eek_keyboard_get_pressed_keys (priv->keyboard);
