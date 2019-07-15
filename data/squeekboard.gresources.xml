@@ -6,6 +6,7 @@
    <file compressed="true" preprocess="xml-stripblanks">keyboards/geometry/extended.xml</file>
    <file compressed="true" preprocess="xml-stripblanks">keyboards/keyboards.xml</file>
    <file compressed="true">keyboards/keymaps/nb.xkb</file>
+   <file compressed="true">keyboards/keymaps/us.xkb</file>
    <file compressed="true" preprocess="xml-stripblanks">keyboards/symbols/ar.xml</file>
    <file compressed="true" preprocess="xml-stripblanks">keyboards/symbols/as-inscript.xml</file>
    <file compressed="true" preprocess="xml-stripblanks">keyboards/symbols/be.xml</file>
