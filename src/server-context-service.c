@@ -275,6 +275,7 @@ set_geometry (ServerContextService *context)
     }
 }
 
+#define KEYBOARD_HEIGHT 210
 static void
 make_window (ServerContextService *context)
 {
@@ -285,13 +286,13 @@ make_window (ServerContextService *context)
         PHOSH_TYPE_LAYER_SURFACE,
         "layer-shell", squeek_wayland->layer_shell,
         "wl-output", g_ptr_array_index(squeek_wayland->outputs, 0), // TODO: select output as needed,
-        "height", 210,
+        "height", KEYBOARD_HEIGHT,
         "anchor", ZWLR_LAYER_SURFACE_V1_ANCHOR_BOTTOM
                   | ZWLR_LAYER_SURFACE_V1_ANCHOR_LEFT
                   | ZWLR_LAYER_SURFACE_V1_ANCHOR_RIGHT,
         "layer", ZWLR_LAYER_SHELL_V1_LAYER_TOP,
         "kbd-interactivity", FALSE,
-        "exclusive-zone", 200,
+        "exclusive-zone", KEYBOARD_HEIGHT,
         //"namespace", "phosh home",
         NULL
     );
