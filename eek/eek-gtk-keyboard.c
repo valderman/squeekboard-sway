@@ -484,45 +484,6 @@ magnify_bounds (GtkWidget *self,
     large_bounds->y = CLAMP(y, 0, allocation.height - large_bounds->height);
 }
 
-/*
- * Alleviate the asymmetry between drawing a pressed key and a released key,
- * and consistently draw to the exact same area.
- *
- * By saving the dirty rectangle we can limit drawing of the backbuffer to
- * the screen as well, eg gdk_window_invalidate_rect() instead of
- * gtk_widget_queue_draw() which redraws the entire widget.
- *
- * b1 is mandatory, b2 is optional
- */
-static GdkRectangle
-clip_bounds_to_dirty_rectangle (cairo_t *cr, EekBounds *b1, EekBounds *b2)
-{
-    if (b2)
-        cairo_rectangle (cr, b2->x, b2->y, b2->width, b2->height);
-
-    cairo_rectangle (cr, b1->x, b1->y, b1->width, b1->height);
-    cairo_clip (cr);
-
-    /*
-     * save the clipped region to a bounding box so we can limit
-     * the drawing of the backbuffer to the screen to the same area
-     */
-    cairo_rectangle_t bbox;
-
-    cairo_clip_extents (cr, &bbox.x, &bbox.y, &bbox.width, &bbox.height);
-
-    /* convert double to int, making sure r strictly covers bbox to avoid
-     * artefacts. floor() is unnecessary, ceil() is not */
-    GdkRectangle r = {
-        floor (bbox.x),
-        floor (bbox.y),
-        ceil  (bbox.width),
-        ceil  (bbox.height)
-    };
-
-    return r;
-}
-
 static void
 render_pressed_key (GtkWidget *widget,
                     EekKey    *key)
@@ -538,12 +499,6 @@ render_pressed_key (GtkWidget *widget,
 
     eek_renderer_get_key_bounds (priv->renderer, key, &bounds, TRUE);
     magnify_bounds (widget, &bounds, &large_bounds, 1.5);
-
-    /*
-     * clip to limit drawing to backbuffer and save clip region to dirty_rect
-     * to limit redrawing of the backbuffer to the same area
-     */
-    GdkRectangle dirty_rect = clip_bounds_to_dirty_rectangle (cr, &bounds, &large_bounds);
 
     cairo_save (cr);
     cairo_translate (cr, bounds.x, bounds.y);
@@ -575,12 +530,6 @@ render_locked_key (GtkWidget *widget,
 
     eek_renderer_get_key_bounds (priv->renderer, key, &bounds, TRUE);
 
-    /*
-     * clip to limit drawing to backbuffer and save clip region to dirty_rect
-     * to limit redrawing of the backbuffer to the same area
-     */
-    GdkRectangle dirty_rect = clip_bounds_to_dirty_rectangle (cr, &bounds, NULL);
-
     cairo_translate (cr, bounds.x, bounds.y);
     eek_renderer_render_key (priv->renderer, cr, key, 1.0, TRUE);
 
@@ -604,12 +553,6 @@ render_released_key (GtkWidget *widget,
 
     eek_renderer_get_key_bounds (priv->renderer, key, &bounds, TRUE);
     magnify_bounds (widget, &bounds, &large_bounds, 1.5);
-
-    /*
-     * clip to limit drawing to backbuffer and save clip region to dirty_rect
-     * to limit redrawing of the backbuffer to the same area
-     */
-    GdkRectangle dirty_rect = clip_bounds_to_dirty_rectangle(cr, &bounds, &large_bounds);
 
     eek_renderer_render_keyboard (priv->renderer, cr);
 
