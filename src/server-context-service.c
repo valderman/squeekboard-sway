@@ -238,6 +238,7 @@ make_window (ServerContextService *context)
 static void
 destroy_window (ServerContextService *context)
 {
+    gtk_widget_destroy (GTK_WIDGET (context->window));
     context->window = NULL;
 }
 
