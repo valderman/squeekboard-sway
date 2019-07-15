@@ -86,6 +86,48 @@ struct _EekboardContextServicePrivate {
 G_DEFINE_TYPE_WITH_PRIVATE (EekboardContextService, eekboard_context_service, G_TYPE_OBJECT);
 
 /*static Display *display = NULL; */
+gchar *
+get_keymap_from_resource(const gchar *keyboard_type)
+{
+    g_autoptr (GFile) file = NULL;
+    g_autoptr (GFileInfo) info = NULL;
+    g_autoptr (GFileInputStream) stream = NULL;
+    goffset size = 0;
+    gsize bytes_read = 0;
+    g_autofree gchar *contents = NULL;
+    g_autofree gchar *path = NULL;
+    GError *error = NULL;
+
+    path = g_strconcat ("resource:///sm/puri/squeekboard/keyboards/keymaps/",
+                        keyboard_type, ".xkb", NULL);
+    file = g_file_new_for_uri (path);
+    stream = g_file_read (file, NULL, &error);
+
+    if (!stream)
+        goto keymap_error;
+
+    info = g_file_input_stream_query_info (stream,
+                                           G_FILE_ATTRIBUTE_STANDARD_SIZE,
+                                           NULL,
+                                           &error);
+
+    if (!info)
+        goto keymap_error;
+
+    size = g_file_info_get_size (info);
+    contents = g_malloc0 (size);
+
+    if (!g_input_stream_read_all (G_INPUT_STREAM(stream), contents, size,
+                                  &bytes_read, NULL, &error))
+        goto keymap_error;
+
+    return g_utf8_make_valid (contents, -1);
+
+keymap_error:
+    g_error ("failed to load keymap from resource: %s", error->message);
+    g_error_free (error);
+    return NULL;
+}
 
 static EekKeyboard *
 eekboard_context_service_real_create_keyboard (EekboardContextService *self,
@@ -146,11 +188,14 @@ eekboard_context_service_real_create_keyboard (EekboardContextService *self,
     if (!context) {
         g_error("No context created");
     }
-
+/*
     struct xkb_rule_names rules = { 0 };
     rules.layout = strdup(keyboard_type);
-    struct xkb_keymap *keymap = xkb_keymap_new_from_string(context, default_keymap,
+*/
+    struct xkb_keymap *keymap = xkb_keymap_new_from_string(context,
+        get_keymap_from_resource(keyboard_type),
         XKB_KEYMAP_FORMAT_TEXT_V1, XKB_KEYMAP_COMPILE_NO_FLAGS);
+
     xkb_context_unref(context);
     if (!keymap) {
         g_error("Bad keymap");
