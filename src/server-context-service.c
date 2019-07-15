@@ -293,7 +293,7 @@ make_window (ServerContextService *context)
         "layer", ZWLR_LAYER_SHELL_V1_LAYER_TOP,
         "kbd-interactivity", FALSE,
         "exclusive-zone", KEYBOARD_HEIGHT,
-        //"namespace", "phosh home",
+        "namespace", "osk",
         NULL
     );
 
