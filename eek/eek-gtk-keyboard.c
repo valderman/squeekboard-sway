@@ -327,6 +327,15 @@ eek_gtk_keyboard_set_keyboard (EekGtkKeyboard *self,
                                EekKeyboard    *keyboard)
 {
     EekGtkKeyboardPrivate *priv = eek_gtk_keyboard_get_instance_private (self);
+
+    if (priv->keyboard == keyboard)
+        return;
+
+    if (priv->keyboard) {
+        g_signal_handlers_disconnect_by_data(priv->keyboard, self);
+        g_object_unref (priv->keyboard);
+    }
+
     priv->keyboard = g_object_ref (keyboard);
 
     g_signal_connect (priv->keyboard, "key-locked",
@@ -368,9 +377,9 @@ eek_gtk_keyboard_dispose (GObject *object)
     }
 
     if (priv->keyboard) {
-        g_signal_handlers_disconnect_by_data(priv->keyboard, self);
         GList *list, *head;
 
+        g_signal_handlers_disconnect_by_data(priv->keyboard, self);
         list = eek_keyboard_get_pressed_keys (priv->keyboard);
         for (head = list; head; head = g_list_next (head)) {
             g_log("squeek", G_LOG_LEVEL_DEBUG, "emit EekKey pressed");
