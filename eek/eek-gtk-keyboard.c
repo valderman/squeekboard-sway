@@ -558,9 +558,6 @@ render_pressed_key (GtkWidget *widget,
     gdk_window_end_draw_frame (window, context);
 
     cairo_region_destroy (region);
-
-    /* force immediate drawing of the backbuffer to the screen */
-    gdk_window_invalidate_rect (window, &dirty_rect, FALSE);
 }
 
 static void
@@ -590,9 +587,6 @@ render_locked_key (GtkWidget *widget,
     gdk_window_end_draw_frame (window, context);
 
     cairo_region_destroy (region);
-
-    /* force immediate drawing of the backbuffer to the screen */
-    gdk_window_invalidate_rect (window, &dirty_rect, FALSE);
 }
 
 static void
@@ -622,9 +616,6 @@ render_released_key (GtkWidget *widget,
     gdk_window_end_draw_frame (window, context);
 
     cairo_region_destroy (region);
-
-    /* force immediate drawing of the backbuffer to the screen */
-    gdk_window_invalidate_rect (window, &dirty_rect, FALSE);
 }
 
 static void
@@ -638,6 +629,7 @@ on_key_pressed (EekKey      *key,
         return;
 
     render_pressed_key (GTK_WIDGET(self), key);
+    gtk_widget_queue_draw (GTK_WIDGET(self));
 
 #if HAVE_LIBCANBERRA
     ca_gtk_play_for_widget (widget, 0,
@@ -659,6 +651,7 @@ on_key_released (EekKey      *key,
         return;
 
     render_released_key (GTK_WIDGET(self), key);
+    gtk_widget_queue_draw (GTK_WIDGET(self));
 
 #if HAVE_LIBCANBERRA
     ca_gtk_play_for_widget (widget, 0,
@@ -682,6 +675,7 @@ on_key_locked (EekKeyboard *keyboard,
         return;
 
     render_locked_key (widget, key);
+    gtk_widget_queue_draw (widget);
 }
 
 static void
@@ -697,6 +691,7 @@ on_key_unlocked (EekKeyboard *keyboard,
         return;
 
     render_released_key (widget, key);
+    gtk_widget_queue_draw (GTK_WIDGET(widget));
 }
 
 static void
