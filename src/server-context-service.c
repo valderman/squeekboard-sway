@@ -362,6 +362,7 @@ server_context_service_real_show_keyboard (EekboardContextService *_context)
 
     EEKBOARD_CONTEXT_SERVICE_CLASS (server_context_service_parent_class)->
         show_keyboard (_context);
+    gtk_widget_show_all (context->window);
 }
 
 static void
