@@ -1,4 +1,4 @@
-<?xml version="1.0"?>
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <symbols version="0.90">
   <key name="AD01">
     <keysym keyval="113">q</keysym>
@@ -22,41 +22,49 @@
     <keysym keyval="114">r</keysym>
     <keysym keyval="82">R</keysym>
     <keysym keyval="52">4</keysym>
-    <keysym keyval="183">middledot</keysym>
+    <symbol label="·">U00B7</symbol>
   </key>
   <key name="AD05">
     <keysym keyval="116">t</keysym>
     <keysym keyval="84">T</keysym>
     <keysym keyval="53">5</keysym>
+    <symbol label="√">squareroot</symbol>
   </key>
   <key name="AD06">
     <keysym keyval="121">y</keysym>
     <keysym keyval="89">Y</keysym>
     <keysym keyval="54">6</keysym>
+    <symbol label="π">Greek_pi</symbol>
   </key>
   <key name="AD07">
     <keysym keyval="117">u</keysym>
     <keysym keyval="85">U</keysym>
     <keysym keyval="55">7</keysym>
+    <symbol label="÷">division</symbol>
   </key>
   <key name="AD08">
     <keysym keyval="105">i</keysym>
     <keysym keyval="73">I</keysym>
     <keysym keyval="56">8</keysym>
+    <symbol label="×">multiply</symbol>
   </key>
   <key name="AD09">
     <keysym keyval="111">o</keysym>
     <keysym keyval="79">O</keysym>
     <keysym keyval="57">9</keysym>
+    <keysym keyval="182">paragraph</keysym>
   </key>
   <key name="AD10">
     <keysym keyval="112">p</keysym>
     <keysym keyval="80">P</keysym>
     <keysym keyval="48">0</keysym>
+    <symbol label="△">U25B3</symbol>
   </key>
   <key name="AD11">
-    <keysym keyval="229">å</keysym>
-    <keysym keyval="197">Å</keysym>
+    <symbol keyval="229" label="å">aring</symbol>
+    <symbol keyval="197" label="Å">Aring</symbol>
+    <symbol label="±">U00B1</symbol>
+    <symbol label="§">U00A7</symbol>
   </key>
   <key name="AC01">
     <keysym keyval="97">a</keysym>
@@ -68,57 +76,61 @@
     <keysym keyval="115">s</keysym>
     <keysym keyval="83">S</keysym>
     <keysym keyval="35">numbersign</keysym>
-    <keysym keyval="174">registeredtrademark</keysym>
+    <symbol label="®">U00AE</symbol>
   </key>
   <key name="AC03">
     <keysym keyval="100">d</keysym>
     <keysym keyval="68">D</keysym>
     <keysym keyval="36">dollar</keysym>
-    <keysym keyval="163">poundsign</keysym>
+    <symbol label="£">U00A3</symbol>
   </key>
   <key name="AC04">
     <keysym keyval="102">f</keysym>
     <keysym keyval="70">F</keysym>
     <keysym keyval="37">percent</keysym>
-    <text>€</text>
+    <symbol label="€">EuroSign</symbol>
   </key>
   <key name="AC05">
     <keysym keyval="103">g</keysym>
     <keysym keyval="71">G</keysym>
     <keysym keyval="38">ampersand</keysym>
-    <keysym keyval="165">yensign</keysym>
+    <symbol label="¥">U00A5</symbol>
   </key>
   <key name="AC06">
     <keysym keyval="104">h</keysym>
     <keysym keyval="72">H</keysym>
     <keysym keyval="45">minus</keysym>
-    <keysym keyval="94">asciicircum</keysym>
+    <keysym keyval="95">underscore</keysym>
   </key>
   <key name="AC07">
     <keysym keyval="106">j</keysym>
     <keysym keyval="74">J</keysym>
     <keysym keyval="43">plus</keysym>
-    <keysym keyval="176">degreesign</keysym>
+    <keysym keyval="61">equal</keysym>
   </key>
   <key name="AC08">
     <keysym keyval="107">k</keysym>
     <keysym keyval="75">K</keysym>
-    <keysym keyval="40">parenleft</keysym>
-    <keysym keyval="123">braceleft</keysym>
+    <symbol label="ü">U00FC</symbol>
+    <keysym keyval="94">asciicircum</keysym>
   </key>
   <key name="AC09">
     <keysym keyval="108">l</keysym>
     <keysym keyval="76">L</keysym>
-    <keysym keyval="41">parenright</keysym>
-    <keysym keyval="125">braceright</keysym>
+    <symbol label="ö">U00F6</symbol>
+    <keysym keyval="176">degree</keysym>
   </key>
   <key name="AC10">
     <symbol keyval="248" label="ø">oslash</symbol>
     <symbol keyval="216" label="Ø">Oslash</symbol>
+    <keysym keyval="40">parenleft</keysym>
+    <keysym keyval="123">braceleft</keysym>
   </key>
   <key name="AC11">
     <symbol keyval="230" label="æ">ae</symbol>
     <symbol keyval="198" label="Æ">AE</symbol>
+    <keysym keyval="41">parenright</keysym>
+    <keysym keyval="125">braceright</keysym>
   </key>
   <key name="RTRN">
     <keysym keyval="65293" icon="key-enter">Return</keysym>
@@ -187,6 +199,6 @@
     <keysym keyval="32">space</keysym>
   </key>
   <key name="BKSP">
-    <keysym keyval="65288" icon="edit-clear-symbolic">backspace</keysym>
+    <keysym keyval="65288" icon="edit-clear-symbolic">Backspace</keysym>
   </key>
 </symbols>

@@ -268,26 +268,26 @@ xkb_keycodes \"squeekboard\" {\
         key <AD01> { [ q, Q ], [ 1, asciitilde ] };\
         key <AD02> { [ w, W ], [ 2, quoteleft ] };\
         key <AD03> { [ e, E ], [ 3, bar ] };\
-        key <AD04> { [ r, R ], [ 4, middledot ] };\
+        key <AD04> { [ r, R ], [ 4, U00B7 ] };\
         key <AD05> { [ t, T ], [ 5, squareroot ] };\
         key <AD06> { [ y, Y ], [ 6, Greek_pi ] };\
         key <AD07> { [ u, U ], [ 7, division ] };\
         key <AD08> { [ i, I ], [ 8, multiply ] };\
         key <AD09> { [ o, O ], [ 9, paragraph ] };\
-        key <AD10> { [ p, P ], [ 0, 0 ] };\
-        key <AD11> { [ aring, Aring ], [  ] };\
+        key <AD10> { [ p, P ], [ 0, U25B3 ] };\
+        key <AD11> { [ aring, Aring ], [ U00B1, U00A7 ] };\
         key <AC01> { [ a, A ], [ at, copyright ] };\
-        key <AC02> { [ s, S ], [ numbersign, registeredtrademark ] };\
-        key <AC03> { [ d, D ], [ dollar, poundsign ] };\
+        key <AC02> { [ s, S ], [ numbersign, U00AE ] };\
+        key <AC03> { [ d, D ], [ dollar, U00A3 ] };\
         key <AC04> { [ f, F ], [ percent, EuroSign ] };\
-        key <AC05> { [ g, G ], [ ampersand, yensign ] };\
-        key <AC06> { [ h, H ], [ minus, asciicircum ] };\
-        key <AC07> { [ j, J ], [ plus, degreesign ] };\
-        key <AC08> { [ k, K ], [ parenleft, braceleft ] };\
-        key <AC09> { [ l, L ], [ parenright, braceright ] };\
-        key <AC10> { [ oslash, Oslash ], [  ] };\
-        key <AC11> { [ ae, AE ], [  ] };\
-        key <RTRN> { [ Return, Return ], [  ] };\
+        key <AC05> { [ g, G ], [ ampersand, U00A5 ] };\
+        key <AC06> { [ h, H ], [ minus, underscore ] };\
+        key <AC07> { [ j, J ], [ plus, equal ] };\
+        key <AC08> { [ k, K ], [ U00FC, asciicircum ] };\
+        key <AC09> { [ l, L ], [ U00F6, degree ] };\
+        key <AC10> { [ oslash, Oslash ], [ parenleft, braceleft ] };\
+        key <AC11> { [ ae, AE ], [ parenright, braceright ] };\
+        key <RTRN> { [ Return, Return ], [ Return, Return ] };\
         key <LFSH> { [ Shift_L, Shift_L ], [ Shift_L, Shift_L ] };\
         key <AB01> { [ z, Z ], [ comma, backslash ] };\
         key <AB02> { [ x, X ], [ quotedbl, slash ] };\
@@ -296,10 +296,10 @@ xkb_keycodes \"squeekboard\" {\
         key <AB05> { [ b, B ], [ semicolon, equal ] };\
         key <AB06> { [ n, N ], [ exclam, bracketleft ] };\
         key <AB07> { [ m, M ], [ question, bracketright ] };\
-        key <AB08> { [ period, period ], [  ] };\
-        key <I149> { [ preferences, preferences ], [  ] };\
-        key <SPCE> { [ space, space ], [  ] };\
-        key <BKSP> { [ BackSpace, BackSpace ], [  ] };\
+        key <AB08> { [ period, period ], [ period, period ] };\
+        key <I149> { [ preferences, preferences ], [ preferences, preferences ] };\
+        key <SPCE> { [ space, space ], [ space, space ] };\
+        key <BKSP> { [ Backspace, Backspace ], [ Backspace, Backspace ] };\
     };\
 \
     xkb_types \"squeekboard\" {\
