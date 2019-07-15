@@ -1,190 +1,190 @@
-<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<?xml version='1.0' encoding='ASCII' standalone='yes'?>
 <symbols version="0.90">
   <key name="AD01">
-    <keysym keyval="113">q</keysym>
-    <keysym keyval="81">Q</keysym>
-    <keysym keyval="49">1</keysym>
-    <keysym keyval="126">asciitilde</keysym>
+    <symbol label="q">q</symbol>
+    <symbol label="Q">Q</symbol>
+    <symbol label="1">1</symbol>
+    <symbol label="~">asciitilde</symbol>
   </key>
   <key name="AD02">
-    <keysym keyval="119">w</keysym>
-    <keysym keyval="87">W</keysym>
-    <keysym keyval="50">2</keysym>
-    <keysym keyval="96">quoteleft</keysym>
+    <symbol label="w">w</symbol>
+    <symbol label="W">W</symbol>
+    <symbol label="2">2</symbol>
+    <symbol label="`">quoteleft</symbol>
   </key>
   <key name="AD03">
-    <keysym keyval="101">e</keysym>
-    <keysym keyval="69">E</keysym>
-    <keysym keyval="51">3</keysym>
-    <keysym keyval="124">bar</keysym>
+    <symbol label="e">e</symbol>
+    <symbol label="E">E</symbol>
+    <symbol label="3">3</symbol>
+    <symbol label="|">bar</symbol>
   </key>
   <key name="AD04">
-    <keysym keyval="114">r</keysym>
-    <keysym keyval="82">R</keysym>
-    <keysym keyval="52">4</keysym>
-    <symbol label="·">U00B7</symbol>
+    <symbol label="r">r</symbol>
+    <symbol label="R">R</symbol>
+    <symbol label="4">4</symbol>
+    <symbol label="&#183;">U00B7</symbol>
   </key>
   <key name="AD05">
-    <keysym keyval="116">t</keysym>
-    <keysym keyval="84">T</keysym>
-    <keysym keyval="53">5</keysym>
-    <symbol label="√">squareroot</symbol>
+    <symbol label="t">t</symbol>
+    <symbol label="T">T</symbol>
+    <symbol label="5">5</symbol>
+    <symbol label="&#8730;">squareroot</symbol>
   </key>
   <key name="AD06">
-    <keysym keyval="121">y</keysym>
-    <keysym keyval="89">Y</keysym>
-    <keysym keyval="54">6</keysym>
-    <symbol label="π">Greek_pi</symbol>
+    <symbol label="y">y</symbol>
+    <symbol label="Y">Y</symbol>
+    <symbol label="6">6</symbol>
+    <symbol label="&#960;">Greek_pi</symbol>
   </key>
   <key name="AD07">
-    <keysym keyval="117">u</keysym>
-    <keysym keyval="85">U</keysym>
-    <keysym keyval="55">7</keysym>
-    <symbol label="÷">division</symbol>
+    <symbol label="u">u</symbol>
+    <symbol label="U">U</symbol>
+    <symbol label="7">7</symbol>
+    <symbol label="&#247;">division</symbol>
   </key>
   <key name="AD08">
-    <keysym keyval="105">i</keysym>
-    <keysym keyval="73">I</keysym>
-    <keysym keyval="56">8</keysym>
-    <symbol label="×">multiply</symbol>
+    <symbol label="i">i</symbol>
+    <symbol label="I">I</symbol>
+    <symbol label="8">8</symbol>
+    <symbol label="&#215;">multiply</symbol>
   </key>
   <key name="AD09">
-    <keysym keyval="111">o</keysym>
-    <keysym keyval="79">O</keysym>
-    <keysym keyval="57">9</keysym>
-    <keysym keyval="182">paragraph</keysym>
+    <symbol label="o">o</symbol>
+    <symbol label="O">O</symbol>
+    <symbol label="9">9</symbol>
+    <symbol label="&#182;">paragraph</symbol>
   </key>
   <key name="AD10">
-    <keysym keyval="112">p</keysym>
-    <keysym keyval="80">P</keysym>
-    <keysym keyval="48">0</keysym>
-    <symbol label="△">U25B3</symbol>
+    <symbol label="p">p</symbol>
+    <symbol label="P">P</symbol>
+    <symbol label="0">0</symbol>
+    <symbol label="&#9651;">U25B3</symbol>
   </key>
   <key name="AD11">
-    <symbol keyval="229" label="å">aring</symbol>
-    <symbol keyval="197" label="Å">Aring</symbol>
-    <symbol label="±">U00B1</symbol>
-    <symbol label="§">U00A7</symbol>
+    <symbol keyval="229" label="&#229;">aring</symbol>
+    <symbol keyval="197" label="&#197;">Aring</symbol>
+    <symbol label="&#177;">U00B1</symbol>
+    <symbol label="&#167;">U00A7</symbol>
   </key>
   <key name="AC01">
-    <keysym keyval="97">a</keysym>
-    <keysym keyval="65">A</keysym>
-    <keysym keyval="64">at</keysym>
-    <keysym keyval="169">copyright</keysym>
+    <symbol label="a">a</symbol>
+    <symbol label="A">A</symbol>
+    <symbol label="@">at</symbol>
+    <symbol label="&#169;">copyright</symbol>
   </key>
   <key name="AC02">
-    <keysym keyval="115">s</keysym>
-    <keysym keyval="83">S</keysym>
-    <keysym keyval="35">numbersign</keysym>
-    <symbol label="®">U00AE</symbol>
+    <symbol label="s">s</symbol>
+    <symbol label="S">S</symbol>
+    <symbol label="#">numbersign</symbol>
+    <symbol label="&#174;">U00AE</symbol>
   </key>
   <key name="AC03">
-    <keysym keyval="100">d</keysym>
-    <keysym keyval="68">D</keysym>
-    <keysym keyval="36">dollar</keysym>
-    <symbol label="£">U00A3</symbol>
+    <symbol label="d">d</symbol>
+    <symbol label="D">D</symbol>
+    <symbol label="$">dollar</symbol>
+    <symbol label="&#163;">U00A3</symbol>
   </key>
   <key name="AC04">
-    <keysym keyval="102">f</keysym>
-    <keysym keyval="70">F</keysym>
-    <keysym keyval="37">percent</keysym>
-    <symbol label="€">EuroSign</symbol>
+    <symbol label="f">f</symbol>
+    <symbol label="F">F</symbol>
+    <symbol label="%">percent</symbol>
+    <symbol label="&#8364;">EuroSign</symbol>
   </key>
   <key name="AC05">
-    <keysym keyval="103">g</keysym>
-    <keysym keyval="71">G</keysym>
-    <keysym keyval="38">ampersand</keysym>
-    <symbol label="¥">U00A5</symbol>
+    <symbol label="g">g</symbol>
+    <symbol label="G">G</symbol>
+    <symbol label="&amp;">ampersand</symbol>
+    <symbol label="&#165;">U00A5</symbol>
   </key>
   <key name="AC06">
-    <keysym keyval="104">h</keysym>
-    <keysym keyval="72">H</keysym>
-    <keysym keyval="45">minus</keysym>
-    <keysym keyval="95">underscore</keysym>
+    <symbol label="h">h</symbol>
+    <symbol label="H">H</symbol>
+    <symbol label="-">minus</symbol>
+    <symbol label="_">underscore</symbol>
   </key>
   <key name="AC07">
-    <keysym keyval="106">j</keysym>
-    <keysym keyval="74">J</keysym>
-    <keysym keyval="43">plus</keysym>
-    <keysym keyval="61">equal</keysym>
+    <symbol label="j">j</symbol>
+    <symbol label="J">J</symbol>
+    <symbol label="+">plus</symbol>
+    <symbol label="=">equal</symbol>
   </key>
   <key name="AC08">
-    <keysym keyval="107">k</keysym>
-    <keysym keyval="75">K</keysym>
-    <symbol label="ü">U00FC</symbol>
-    <keysym keyval="94">asciicircum</keysym>
+    <symbol label="k">k</symbol>
+    <symbol label="K">K</symbol>
+    <symbol label="&#252;">U00FC</symbol>
+    <symbol label="^">asciicircum</symbol>
   </key>
   <key name="AC09">
-    <keysym keyval="108">l</keysym>
-    <keysym keyval="76">L</keysym>
-    <symbol label="ö">U00F6</symbol>
-    <keysym keyval="176">degree</keysym>
+    <symbol label="l">l</symbol>
+    <symbol label="L">L</symbol>
+    <symbol label="&#246;">U00F6</symbol>
+    <symbol label="&#176;">degree</symbol>
   </key>
   <key name="AC10">
-    <symbol keyval="248" label="ø">oslash</symbol>
-    <symbol keyval="216" label="Ø">Oslash</symbol>
-    <keysym keyval="40">parenleft</keysym>
-    <keysym keyval="123">braceleft</keysym>
+    <symbol keyval="248" label="&#248;">oslash</symbol>
+    <symbol keyval="216" label="&#216;">Oslash</symbol>
+    <symbol label="(">parenleft</symbol>
+    <symbol label="{">braceleft</symbol>
   </key>
   <key name="AC11">
-    <symbol keyval="230" label="æ">ae</symbol>
-    <symbol keyval="198" label="Æ">AE</symbol>
-    <keysym keyval="41">parenright</keysym>
-    <keysym keyval="125">braceright</keysym>
+    <symbol keyval="230" label="&#230;">ae</symbol>
+    <symbol keyval="198" label="&#198;">AE</symbol>
+    <symbol label=")">parenright</symbol>
+    <symbol label="}">braceright</symbol>
   </key>
   <key name="RTRN">
-    <keysym keyval="65293" icon="key-enter">Return</keysym>
+    <symbol keyval="65293" icon="key-enter">Return</symbol>
   </key>
   <key name="LFSH">
-    <keysym keyval="65505" icon="key-shift">Shift_L</keysym>
-    <keysym keyval="65505" icon="key-shift">Shift_L</keysym>
-    <keysym keyval="65505" label="=/+">Shift_L</keysym>
-    <keysym keyval="65505" label="123">Shift_L</keysym>
+    <symbol keyval="65505" icon="key-shift">Shift_L</symbol>
+    <symbol keyval="65505" icon="key-shift">Shift_L</symbol>
+    <symbol label="=/+">Shift_L</symbol>
+    <symbol label="123">Shift_L</symbol>
   </key>
   <key name="AB01">
-    <keysym keyval="122">z</keysym>
-    <keysym keyval="90">Z</keysym>
-    <keysym keyval="44">comma</keysym>
-    <keysym keyval="92">backslash</keysym>
+    <symbol label="z">z</symbol>
+    <symbol label="Z">Z</symbol>
+    <symbol label=",">comma</symbol>
+    <symbol label="\">backslash</symbol>
   </key>
   <key name="AB02">
-    <keysym keyval="120">x</keysym>
-    <keysym keyval="88">X</keysym>
-    <keysym keyval="34">quotedbl</keysym>
-    <keysym keyval="47">slash</keysym>
+    <symbol label="x">x</symbol>
+    <symbol label="X">X</symbol>
+    <symbol label="&quot;">quotedbl</symbol>
+    <symbol label="/">slash</symbol>
   </key>
   <key name="AB03">
-    <keysym keyval="99">c</keysym>
-    <keysym keyval="67">C</keysym>
-    <keysym keyval="39">quoteright</keysym>
-    <keysym keyval="60">less</keysym>
+    <symbol label="c">c</symbol>
+    <symbol label="C">C</symbol>
+    <symbol label="'">quoteright</symbol>
+    <symbol label="&lt;">less</symbol>
   </key>
   <key name="AB04">
-    <keysym keyval="118">v</keysym>
-    <keysym keyval="86">V</keysym>
-    <keysym keyval="58">colon</keysym>
-    <keysym keyval="62">greater</keysym>
+    <symbol label="v">v</symbol>
+    <symbol label="V">V</symbol>
+    <symbol label=":">colon</symbol>
+    <symbol label="&gt;">greater</symbol>
   </key>
   <key name="AB05">
-    <keysym keyval="98">b</keysym>
-    <keysym keyval="66">B</keysym>
-    <keysym keyval="59">semicolon</keysym>
-    <keysym keyval="61">equal</keysym>
+    <symbol label="b">b</symbol>
+    <symbol label="B">B</symbol>
+    <symbol label=";">semicolon</symbol>
+    <symbol label="=">equal</symbol>
   </key>
   <key name="AB06">
-    <keysym keyval="110">n</keysym>
-    <keysym keyval="78">N</keysym>
-    <keysym keyval="33">exclam</keysym>
-    <keysym keyval="91">bracketleft</keysym>
+    <symbol label="n">n</symbol>
+    <symbol label="N">N</symbol>
+    <symbol label="!">exclam</symbol>
+    <symbol label="[">bracketleft</symbol>
   </key>
   <key name="AB07">
-    <keysym keyval="109">m</keysym>
-    <keysym keyval="77">M</keysym>
-    <keysym keyval="63">question</keysym>
-    <keysym keyval="93">bracketright</keysym>
+    <symbol label="m">m</symbol>
+    <symbol label="M">M</symbol>
+    <symbol label="?">question</symbol>
+    <symbol label="]">bracketright</symbol>
   </key>
   <key name="AB08">
-    <keysym keyval="46">period</keysym>
+    <symbol label=".">period</symbol>
   </key>
   <key name="ABC123">
     <symbol label="123">show-numbers</symbol>
@@ -193,12 +193,12 @@
     <symbol label="ABC">show-letters</symbol>
   </key>
   <key name="I149">
-    <symbol label="☺" icon="keyboard-mode-symbolic" tooltip="Setup">preferences</symbol>
+    <symbol icon="keyboard-mode-symbolic" tooltip="Setup">preferences</symbol>
   </key>
   <key name="SPCE">
-    <keysym keyval="32">space</keysym>
+    <symbol label=" ">space</symbol>
   </key>
   <key name="BKSP">
-    <keysym keyval="65288" icon="edit-clear-symbolic">Backspace</keysym>
+    <symbol keyval="65288" icon="edit-clear-symbolic">BackSpace</symbol>
   </key>
 </symbols>
