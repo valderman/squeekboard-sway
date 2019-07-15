@@ -87,7 +87,7 @@ G_DEFINE_TYPE_WITH_PRIVATE (EekboardContextService, eekboard_context_service, G_
 
 /*static Display *display = NULL; */
 gchar *
-get_keymap_from_resource(const gchar *keyboard_type)
+get_keymap_from_resource(const gchar *keyboard_type, gboolean fallback)
 {
     g_autoptr (GFile) file = NULL;
     g_autoptr (GFileInfo) info = NULL;
@@ -97,6 +97,9 @@ get_keymap_from_resource(const gchar *keyboard_type)
     g_autofree gchar *contents = NULL;
     g_autofree gchar *path = NULL;
     GError *error = NULL;
+
+    if (fallback)
+        g_debug ("falling back to loading a %s keymap", keyboard_type);
 
     path = g_strconcat ("resource:///sm/puri/squeekboard/keyboards/keymaps/",
                         keyboard_type, ".xkb", NULL);
@@ -124,7 +127,9 @@ get_keymap_from_resource(const gchar *keyboard_type)
     return g_utf8_make_valid (contents, -1);
 
 keymap_error:
-    g_error ("failed to load keymap from resource: %s", error->message);
+    if (fallback)
+        g_error ("failed to load keymap from resource: %s", error->message);
+
     g_error_free (error);
     return NULL;
 }
@@ -192,9 +197,14 @@ eekboard_context_service_real_create_keyboard (EekboardContextService *self,
     struct xkb_rule_names rules = { 0 };
     rules.layout = strdup(keyboard_type);
 */
-    struct xkb_keymap *keymap = xkb_keymap_new_from_string(context,
-        get_keymap_from_resource(keyboard_type),
+    char *keymap_str = get_keymap_from_resource(keyboard_type, FALSE);
+    if (!keymap_str)
+        keymap_str = get_keymap_from_resource("us", TRUE);
+
+    struct xkb_keymap *keymap = xkb_keymap_new_from_string(context, keymap_str,
         XKB_KEYMAP_FORMAT_TEXT_V1, XKB_KEYMAP_COMPILE_NO_FLAGS);
+
+    free(keymap_str);
 
     xkb_context_unref(context);
     if (!keymap) {
@@ -202,7 +212,7 @@ eekboard_context_service_real_create_keyboard (EekboardContextService *self,
     }
     keyboard->keymap = keymap;
 
-    char *keymap_str = xkb_keymap_get_as_string(keymap, XKB_KEYMAP_FORMAT_TEXT_V1);
+    keymap_str = xkb_keymap_get_as_string(keymap, XKB_KEYMAP_FORMAT_TEXT_V1);
     keyboard->keymap_len = strlen(keymap_str) + 1;
 
     g_autofree char *path = strdup("/eek_keymap-XXXXXX");
