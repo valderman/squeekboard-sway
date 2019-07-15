@@ -136,10 +136,10 @@
     <symbol keyval="65293" icon="key-enter">Return</symbol>
   </key>
   <key name="LFSH">
-    <symbol keyval="65505" icon="key-shift">Shift_L</symbol>
-    <symbol keyval="65505" icon="key-shift">Shift_L</symbol>
-    <symbol label="=/+">Shift_L</symbol>
-    <symbol label="123">Shift_L</symbol>
+    <keysym keyval="65505" icon="key-shift">Shift_L</keysym>
+    <keysym keyval="65505" icon="key-shift">Shift_L</keysym>
+    <keysym keyval="65505" label="=/+">Shift_L</keysym>
+    <keysym keyval="65505" label="123">Shift_L</keysym>
   </key>
   <key name="AB01">
     <symbol label="z">z</symbol>
