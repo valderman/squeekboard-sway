@@ -48,6 +48,8 @@ eek_gtk_renderer_real_get_icon_surface (EekRenderer *self,
                                            &error);
     if (surface == NULL) {
         g_warning ("can't get icon surface for %s: %s",
+                   icon_name,
+                   error->message);
         g_error_free (error);
         return NULL;
     }
@@ -65,6 +67,9 @@ eek_gtk_renderer_class_init (EekGtkRendererClass *klass)
 static void
 eek_gtk_renderer_init (EekGtkRenderer *self)
 {
+    GtkIconTheme *theme = gtk_icon_theme_get_default ();
+
+    gtk_icon_theme_add_resource_path (theme, "/sm/puri/squeekboard/icons");
 }
 
 EekRenderer *
