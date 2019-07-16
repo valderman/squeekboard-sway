@@ -254,7 +254,8 @@ server_context_service_real_show_keyboard (EekboardContextService *_context)
 {
     ServerContextService *context = SERVER_CONTEXT_SERVICE(_context);
 
-    make_window (context);
+    if (!context->window)
+        make_window (context);
     update_widget (context);
 
     EEKBOARD_CONTEXT_SERVICE_CLASS (server_context_service_parent_class)->
@@ -269,8 +270,6 @@ server_context_service_real_hide_keyboard (EekboardContextService *_context)
 
     gtk_widget_hide (context->window);
     g_clear_pointer (&context->widget, gtk_widget_destroy);
-
-    destroy_window (context);
 
     EEKBOARD_CONTEXT_SERVICE_CLASS (server_context_service_parent_class)->
         hide_keyboard (_context);
@@ -315,7 +314,7 @@ server_context_service_dispose (GObject *object)
 {
     ServerContextService *context = SERVER_CONTEXT_SERVICE(object);
 
-    g_clear_pointer (&context->window, gtk_widget_destroy);
+    destroy_window (context);
     context->widget = NULL;
 
     G_OBJECT_CLASS (server_context_service_parent_class)->dispose (object);
