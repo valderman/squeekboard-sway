@@ -99,24 +99,6 @@ on_notify_keyboard (GObject              *object,
     // but simpler than adding a check in the window showing procedure
     eekboard_context_service_set_keymap(EEKBOARD_CONTEXT_SERVICE(context),
                                         keyboard);
-
-    if (context->window) {
-        if (keyboard == NULL) {
-            gtk_widget_hide (context->window);
-            g_clear_pointer (&context->widget, gtk_widget_destroy);
-        } else {
-            gboolean was_visible = gtk_widget_get_visible (context->window);
-            /* avoid to send KeyboardVisibilityChanged */
-            g_signal_handler_block (context->window,
-                                    context->notify_visible_handler);
-            update_widget (context);
-            if (was_visible) {
-                gtk_widget_show_all (context->window);
-            }
-            g_signal_handler_unblock (context->window,
-                                      context->notify_visible_handler);
-        }
-    }
 }
 
 static void
