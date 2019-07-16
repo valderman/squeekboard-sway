@@ -45,8 +45,6 @@ struct _ServerContextService {
     GtkWidget *window;
     GtkWidget *widget;
 
-    gulong notify_visible_handler;
-
     gdouble size_constraint_landscape[2];
     gdouble size_constraint_portrait[2];
 };
@@ -111,15 +109,20 @@ on_notify_fullscreen (GObject              *object,
 }
 
 static void
-on_notify_visible (GObject    *object,
-                   GParamSpec *spec,
-                   ServerContextService *context)
+on_notify_map (GObject    *object,
+               ServerContextService *context)
 {
-    gboolean visible;
-
-    g_object_get (object, "visible", &visible, NULL);
-    g_object_set (context, "visible", visible, NULL);
+    g_object_set (context, "visible", TRUE, NULL);
 }
+
+
+static void
+on_notify_unmap (GObject    *object,
+                 ServerContextService *context)
+{
+    g_object_set (context, "visible", FALSE, NULL);
+}
+
 
 static void
 set_geometry (ServerContextService *context)
@@ -193,14 +196,11 @@ make_window (ServerContextService *context)
         NULL
     );
 
-    g_signal_connect (context->window, "destroy",
-                      G_CALLBACK(on_destroy),
-                      context);
-
-    context->notify_visible_handler =
-        g_signal_connect (context->window, "notify::visible",
-                          G_CALLBACK(on_notify_visible),
-                          context);
+    g_object_connect (context->window,
+                      "signal::destroy", G_CALLBACK(on_destroy), context,
+                      "signal::map", G_CALLBACK(on_notify_map), context,
+                      "signal::unmap", G_CALLBACK(on_notify_unmap), context,
+                      NULL);
 
     // The properties below are just to make hacking easier.
     // The way we use layer-shell overrides some,
