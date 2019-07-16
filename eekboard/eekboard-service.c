@@ -135,6 +135,11 @@ eekboard_service_dispose (GObject *object)
         priv->introspection_data = NULL;
     }
 
+    if (priv->context) {
+        g_signal_handlers_disconnect_by_data (priv->context, service);
+        priv->context = NULL;
+    }
+
     G_OBJECT_CLASS (eekboard_service_parent_class)->dispose (object);
 }
 
@@ -166,6 +171,22 @@ handle_set_visible(SmPuriOSK0 *object, GDBusMethodInvocation *invocation,
     return TRUE;
 }
 
+static void on_visible(EekboardService *service,
+                       GParamSpec *pspec,
+                       EekboardContextService *context)
+{
+    gboolean visible;
+    EekboardServicePrivate *priv;
+
+    g_return_if_fail (EEKBOARD_IS_SERVICE (service));
+    g_return_if_fail (EEKBOARD_IS_CONTEXT_SERVICE (context));
+
+    priv = eekboard_service_get_instance_private (service);
+    g_object_get (context, "visible", &visible, NULL);
+
+    sm_puri_osk0_set_visible(priv->dbus_interface, visible);
+}
+
 static void
 eekboard_service_constructed (GObject *object)
 {
@@ -173,7 +194,6 @@ eekboard_service_constructed (GObject *object)
     EekboardServicePrivate *priv = eekboard_service_get_instance_private (service);
 
     priv->dbus_interface = sm_puri_osk0_skeleton_new();
-    sm_puri_osk0_set_visible(priv->dbus_interface, FALSE); // TODO: use actual value
     g_signal_connect(priv->dbus_interface, "handle-set-visible",
                      G_CALLBACK(handle_set_visible), service);
 
@@ -279,5 +299,12 @@ eekboard_service_set_context(EekboardService *service,
 {
     EekboardServicePrivate *priv = eekboard_service_get_instance_private (service);
 
+    g_return_if_fail (!priv->context);
+
     priv->context = context;
+
+    g_signal_connect_swapped (priv->context,
+                              "notify::visible",
+                              G_CALLBACK(on_visible),
+                              service);
 }
