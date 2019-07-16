@@ -42,8 +42,6 @@ typedef struct _ServerContextServiceClass ServerContextServiceClass;
 struct _ServerContextService {
     EekboardContextService parent;
 
-    gboolean was_visible;
-
     GtkWidget *window;
     GtkWidget *widget;
 
@@ -297,26 +295,6 @@ server_context_service_real_hide_keyboard (EekboardContextService *_context)
 }
 
 static void
-server_context_service_real_enabled (EekboardContextService *_context)
-{
-    ServerContextService *context = SERVER_CONTEXT_SERVICE(_context);
-
-    if (context->was_visible && context->window)
-        gtk_widget_show_all (context->window);
-}
-
-static void
-server_context_service_real_disabled (EekboardContextService *_context)
-{
-    ServerContextService *context = SERVER_CONTEXT_SERVICE(_context);
-
-    if (context->window) {
-        context->was_visible = gtk_widget_get_visible (context->window);
-        gtk_widget_hide (context->window);
-    }
-}
-
-static void
 server_context_service_real_destroyed (EekboardContextService *_context)
 {
 }
@@ -370,8 +348,6 @@ server_context_service_class_init (ServerContextServiceClass *klass)
 
     context_class->show_keyboard = server_context_service_real_show_keyboard;
     context_class->hide_keyboard = server_context_service_real_hide_keyboard;
-    context_class->enabled = server_context_service_real_enabled;
-    context_class->disabled = server_context_service_real_disabled;
     context_class->destroyed = server_context_service_real_destroyed;
 
     gobject_class->set_property = server_context_service_set_property;
