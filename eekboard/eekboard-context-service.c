@@ -212,12 +212,7 @@ eekboard_context_service_set_property (GObject      *object,
         context->priv->keyboard = g_value_get_object (value);
         break;
     case PROP_VISIBLE:
-        /*if (context->priv->keyboard) {
-            if (g_value_get_boolean (value))
-                eekboard_context_service_show_keyboard (context);
-            else
-                eekboard_context_service_hide_keyboard (context);
-        }*/
+        context->priv->visible = g_value_get_boolean (value);
         break;
     case PROP_FULLSCREEN:
         context->priv->fullscreen = g_value_get_boolean (value);
