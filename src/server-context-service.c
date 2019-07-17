@@ -246,6 +246,7 @@ update_widget (ServerContextService *context)
 
     gtk_widget_set_has_tooltip (context->widget, TRUE);
     gtk_container_add (GTK_CONTAINER(context->window), context->widget);
+    gtk_widget_show (context->widget);
     set_geometry (context);
 }
 
@@ -260,7 +261,7 @@ server_context_service_real_show_keyboard (EekboardContextService *_context)
 
     EEKBOARD_CONTEXT_SERVICE_CLASS (server_context_service_parent_class)->
         show_keyboard (_context);
-    gtk_widget_show_all (context->window);
+    gtk_widget_show (context->window);
 }
 
 static void
