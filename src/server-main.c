@@ -25,10 +25,6 @@
 
 #include "config.h"
 
-#if HAVE_CLUTTER_GTK
-#include <clutter-gtk/clutter-gtk.h>
-#endif
-
 #include "eekboard/eekboard-service.h"
 #include "eek/eek.h"
 #include "imservice.h"
