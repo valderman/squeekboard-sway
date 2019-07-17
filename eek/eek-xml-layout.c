@@ -21,9 +21,7 @@
  * @short_description: Layout engine which loads layout information from XML
  */
 
-#ifdef HAVE_CONFIG_H
 #include "config.h"
-#endif  /* HAVE_CONFIG_H */
 
 #include <gio/gio.h> /* GResource */
 #include <stdlib.h>

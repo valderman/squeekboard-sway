@@ -4,7 +4,10 @@ dbus_src = gnome.gdbus_codegen(
     join_paths(meson.source_root() / 'data' / 'dbus', 'sm.puri.OSK0.xml')
 )
 
+config_h = configure_file(input: 'config.h.in', output: 'config.h',configuration: conf_data)
+
 sources = [
+  config_h,
   'imservice.c',
   'server-context-service.c',
   'server-main.c',

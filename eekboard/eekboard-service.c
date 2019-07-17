@@ -26,9 +26,7 @@
  * implementation of eekboard service.
  */
 
-#ifdef HAVE_CONFIG_H
 #include "config.h"
-#endif  /* HAVE_CONFIG_H */
 
 #include "eekboard/eekboard-service.h"
 

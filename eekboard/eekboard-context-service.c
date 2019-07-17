@@ -25,9 +25,7 @@
  * implementation of eekboard input context service.
  */
 
-#ifdef HAVE_CONFIG_H
 #include "config.h"
-#endif  /* HAVE_CONFIG_H */
 
 #include "eekboard/eekboard-context-service.h"
 

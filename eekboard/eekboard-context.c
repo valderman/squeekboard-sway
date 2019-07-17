@@ -24,9 +24,7 @@
  * context.
  */
 
-#ifdef HAVE_CONFIG_H
 #include "config.h"
-#endif  /* HAVE_CONFIG_H */
 
 #include "eekboard/eekboard-context.h"
 //#include "eekboard/eekboard-marshalers.h"

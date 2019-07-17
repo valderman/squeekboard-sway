@@ -23,9 +23,7 @@
  * @short_description: an #EekText represents a text symbol
  */
 
-#ifdef HAVE_CONFIG_H
 #include "config.h"
-#endif  /* HAVE_CONFIG_H */
 
 #include "eek-text.h"
 #include "eek-serializable.h"

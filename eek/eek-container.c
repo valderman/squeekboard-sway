@@ -26,9 +26,7 @@
  * shall be used to implement #EekKeyboard and #EekSection.
  */
 
-#ifdef HAVE_CONFIG_H
 #include "config.h"
-#endif  /* HAVE_CONFIG_H */
 
 #include "eek-container.h"
 

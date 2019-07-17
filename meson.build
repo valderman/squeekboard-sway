@@ -9,6 +9,8 @@ project(
 
 i18n = import('i18n')
 
+conf_data = configuration_data()
+
 if get_option('buildtype').startswith('debug')
     add_project_arguments('-DDEBUG=1', language : 'c')
 endif
@@ -25,6 +27,16 @@ else
   depdatadir = get_option('depdatadir')
 endif
 dbusdir = join_paths(depdatadir, 'dbus-1/interfaces')
+
+summary = [
+        '',
+        '------------------',
+        'squeekboard @0@'.format(meson.project_version()),
+        '',
+        '------------------',
+        ''
+]
+message('\n'.join(summary))
 
 subdir('data')
 subdir('protocols')

@@ -23,9 +23,7 @@
  * @short_description: a #GtkWidget displaying #EekKeyboard
  */
 
-#ifdef HAVE_CONFIG_H
 #include "config.h"
-#endif  /* HAVE_CONFIG_H */
 
 #ifdef HAVE_LIBCANBERRA
 #include <canberra-gtk.h>

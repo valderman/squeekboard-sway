@@ -27,9 +27,7 @@
  * of one or more sections of the #EekSectionClass class.
  */
 
-#ifdef HAVE_CONFIG_H
 #include "config.h"
-#endif  /* HAVE_CONFIG_H */
 
 #include "eek-keyboard.h"
 #include "eek-marshalers.h"

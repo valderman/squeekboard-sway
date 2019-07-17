@@ -25,9 +25,7 @@
  * The #EekSymbolClass class represents a symbol assigned to a key.
  */
 
-#ifdef HAVE_CONFIG_H
 #include "config.h"
-#endif  /* HAVE_CONFIG_H */
 
 #include "eek-symbol.h"
 #include "eek-serializable.h"
