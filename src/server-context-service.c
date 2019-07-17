@@ -55,7 +55,6 @@ struct _ServerContextServiceClass {
 
 G_DEFINE_TYPE (ServerContextService, server_context_service, EEKBOARD_TYPE_CONTEXT_SERVICE);
 
-static void update_widget (ServerContextService *context);
 static void set_geometry  (ServerContextService *context);
 
 static void
@@ -223,16 +222,12 @@ destroy_window (ServerContextService *context)
 }
 
 static void
-update_widget (ServerContextService *context)
+make_widget (ServerContextService *context)
 {
     EekKeyboard *keyboard;
     EekTheme *theme;
 
-    if (context->widget) {
-        gtk_widget_destroy (context->widget);
-        context->widget = NULL;
-    }
-
+    g_return_if_fail (!context->widget);
     theme = eek_theme_new ("resource:///sm/puri/squeekboard/style.css",
                            NULL,
                            NULL);
@@ -246,6 +241,7 @@ update_widget (ServerContextService *context)
 
     gtk_widget_set_has_tooltip (context->widget, TRUE);
     gtk_container_add (GTK_CONTAINER(context->window), context->widget);
+    gtk_widget_show (context->widget);
     set_geometry (context);
 }
 
@@ -256,11 +252,12 @@ server_context_service_real_show_keyboard (EekboardContextService *_context)
 
     if (!context->window)
         make_window (context);
-    update_widget (context);
+    if (!context->widget)
+        make_widget (context);
 
     EEKBOARD_CONTEXT_SERVICE_CLASS (server_context_service_parent_class)->
         show_keyboard (_context);
-    gtk_widget_show_all (context->window);
+    gtk_widget_show (context->window);
 }
 
 static void
@@ -269,7 +266,6 @@ server_context_service_real_hide_keyboard (EekboardContextService *_context)
     ServerContextService *context = SERVER_CONTEXT_SERVICE(_context);
 
     gtk_widget_hide (context->window);
-    g_clear_pointer (&context->widget, gtk_widget_destroy);
 
     EEKBOARD_CONTEXT_SERVICE_CLASS (server_context_service_parent_class)->
         hide_keyboard (_context);
