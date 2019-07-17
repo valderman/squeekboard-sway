@@ -28,6 +28,10 @@
 #include "eek-gtk-renderer.h"
 #include "eek-key.h"
 
+struct _EekGtkRenderer {
+    EekRenderer parent;
+};
+
 G_DEFINE_TYPE (EekGtkRenderer, eek_gtk_renderer, EEK_TYPE_RENDERER);
 
 static cairo_surface_t *
