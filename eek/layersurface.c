@@ -65,9 +65,9 @@ static void layer_surface_configure(void                         *data,
                                     uint32_t                      height)
 {
   PhoshLayerSurface *self = data;
+
   gtk_window_resize (GTK_WINDOW (self), width, height);
   zwlr_layer_surface_v1_ack_configure(surface, serial);
-  gtk_widget_show_all (GTK_WIDGET (self));
 
   g_signal_emit (self, signals[CONFIGURED], 0);
 }
@@ -180,21 +180,38 @@ phosh_layer_surface_get_property (GObject    *object,
 
 
 static void
-phosh_layer_surface_constructed (GObject *object)
+on_phosh_layer_surface_realized (PhoshLayerSurface *self, gpointer unused)
 {
-  PhoshLayerSurface *self = PHOSH_LAYER_SURFACE (object);
-  PhoshLayerSurfacePrivate *priv = phosh_layer_surface_get_instance_private (self);
+  PhoshLayerSurfacePrivate *priv;
   GdkWindow *gdk_window;
 
-  G_OBJECT_CLASS (phosh_layer_surface_parent_class)->constructed (object);
+  g_return_if_fail (PHOSH_IS_LAYER_SURFACE (self));
 
-  gtk_window_set_decorated (GTK_WINDOW (self), FALSE);
-  /* Realize the window so we can get the GDK window */
-  gtk_widget_realize(GTK_WIDGET (self));
+  priv = phosh_layer_surface_get_instance_private (self);
 
   gdk_window = gtk_widget_get_window (GTK_WIDGET (self));
   gdk_wayland_window_set_use_custom_surface (gdk_window);
   priv->wl_surface = gdk_wayland_window_get_wl_surface (gdk_window);
+
+  gtk_window_set_decorated (GTK_WINDOW (self), FALSE);
+}
+
+
+static void
+on_phosh_layer_surface_mapped (PhoshLayerSurface *self, gpointer unused)
+{
+  PhoshLayerSurfacePrivate *priv;
+  GdkWindow *gdk_window;
+
+  g_return_if_fail (PHOSH_IS_LAYER_SURFACE (self));
+  priv = phosh_layer_surface_get_instance_private (self);
+
+  if (!priv->wl_surface) {
+      gdk_window = gtk_widget_get_window (GTK_WIDGET (self));
+      gdk_wayland_window_set_use_custom_surface (gdk_window);
+      priv->wl_surface = gdk_wayland_window_get_wl_surface (gdk_window);
+  }
+  g_debug ("Mapped %p", priv->wl_surface);
 
   priv->layer_surface = zwlr_layer_shell_v1_get_layer_surface(priv->layer_shell,
                                                               priv->wl_surface,
@@ -209,7 +226,44 @@ phosh_layer_surface_constructed (GObject *object)
                                      &layer_surface_listener,
                                      self);
   wl_surface_commit(priv->wl_surface);
+
+  /* Process all pending events, otherwise we end up sending ack configure
+   * to a not yet configured surface */
+  wl_display_roundtrip (gdk_wayland_display_get_wl_display (gdk_display_get_default ()));
 }
+
+static void
+on_phosh_layer_surface_unmapped (PhoshLayerSurface *self, gpointer unused)
+{
+  PhoshLayerSurfacePrivate *priv;
+
+  g_return_if_fail (PHOSH_IS_LAYER_SURFACE (self));
+  priv = phosh_layer_surface_get_instance_private (self);
+
+  priv = phosh_layer_surface_get_instance_private (self);
+  if (priv->layer_surface) {
+    zwlr_layer_surface_v1_destroy(priv->layer_surface);
+    priv->layer_surface = NULL;
+  }
+  priv->wl_surface = NULL;
+}
+
+static void
+phosh_layer_surface_constructed (GObject *object)
+{
+  PhoshLayerSurface *self = PHOSH_LAYER_SURFACE (object);
+
+  g_signal_connect (self, "realize",
+                    G_CALLBACK (on_phosh_layer_surface_realized),
+                    NULL);
+  g_signal_connect (self, "map",
+                    G_CALLBACK (on_phosh_layer_surface_mapped),
+                    NULL);
+  g_signal_connect (self, "unmap",
+                    G_CALLBACK (on_phosh_layer_surface_unmapped),
+                    NULL);
+}
+
 
 static void
 phosh_layer_surface_dispose (GObject *object)
@@ -352,6 +406,12 @@ phosh_layer_surface_new (gpointer layer_shell,
                        "wl-output", wl_output);
 }
 
+/**
+ * phosh_layer_surface_get_surface:
+ *
+ * Get the layer layer surface or #NULL if the window
+ * is not yet realized.
+ */
 struct zwlr_layer_surface_v1 *
 phosh_layer_surface_get_layer_surface(PhoshLayerSurface *self)
 {
@@ -363,6 +423,12 @@ phosh_layer_surface_get_layer_surface(PhoshLayerSurface *self)
 }
 
 
+/**
+ * phosh_layer_surface_get_wl_surface:
+ *
+ * Get the layer wayland surface or #NULL if the window
+ * is not yet realized.
+ */
 struct wl_surface *
 phosh_layer_surface_get_wl_surface(PhoshLayerSurface *self)
 {

@@ -42,12 +42,8 @@ typedef struct _ServerContextServiceClass ServerContextServiceClass;
 struct _ServerContextService {
     EekboardContextService parent;
 
-    gboolean was_visible;
-
     GtkWidget *window;
     GtkWidget *widget;
-
-    gulong notify_visible_handler;
 
     gdouble size_constraint_landscape[2];
     gdouble size_constraint_portrait[2];
@@ -61,8 +57,6 @@ G_DEFINE_TYPE (ServerContextService, server_context_service, EEKBOARD_TYPE_CONTE
 
 static void update_widget (ServerContextService *context);
 static void set_geometry  (ServerContextService *context);
-static void set_dock      (GtkWidget            *widget,
-                           GtkAllocation        *allocation);
 
 static void
 on_monitors_changed (GdkScreen            *screen,
@@ -103,24 +97,6 @@ on_notify_keyboard (GObject              *object,
     // but simpler than adding a check in the window showing procedure
     eekboard_context_service_set_keymap(EEKBOARD_CONTEXT_SERVICE(context),
                                         keyboard);
-
-    if (context->window) {
-        if (keyboard == NULL) {
-            gtk_widget_hide (context->window);
-            g_clear_pointer (&context->widget, gtk_widget_destroy);
-        } else {
-            gboolean was_visible = gtk_widget_get_visible (context->window);
-            /* avoid to send KeyboardVisibilityChanged */
-            g_signal_handler_block (context->window,
-                                    context->notify_visible_handler);
-            update_widget (context);
-            if (was_visible) {
-                gtk_widget_show_all (context->window);
-            }
-            g_signal_handler_unblock (context->window,
-                                      context->notify_visible_handler);
-        }
-    }
 }
 
 static void
@@ -133,81 +109,20 @@ on_notify_fullscreen (GObject              *object,
 }
 
 static void
-on_notify_visible (GObject    *object,
-                   GParamSpec *spec,
-                   ServerContextService *context)
+on_notify_map (GObject    *object,
+               ServerContextService *context)
 {
-    gboolean visible;
-
-    g_object_get (object, "visible", &visible, NULL);
-    g_object_set (context, "visible", visible, NULL);
+    g_object_set (context, "visible", TRUE, NULL);
 }
+
 
 static void
-set_dock (GtkWidget *widget, GtkAllocation *allocation)
+on_notify_unmap (GObject    *object,
+                 ServerContextService *context)
 {
-#ifdef HAVE_XDOCK
-    GdkWindow *window = gtk_widget_get_window (widget);
-    long vals[12];
-
-    /* set window type to dock */
-    gdk_window_set_type_hint (window, GDK_WINDOW_TYPE_HINT_DOCK);
-
-    vals[0] = 0;
-    vals[1] = 0;
-    vals[2] = 0;
-    vals[3] = allocation->height;
-    vals[4] = 0;
-    vals[5] = 0;
-    vals[6] = 0;
-    vals[7] = 0;
-    vals[8] = 0;
-    vals[9] = 0;
-    vals[10] = allocation->x;
-    vals[11] = allocation->x + allocation->width;
-
-    XChangeProperty (GDK_WINDOW_XDISPLAY (window),
-                     GDK_WINDOW_XID (window),
-                     XInternAtom (GDK_WINDOW_XDISPLAY (window),
-                                  "_NET_WM_STRUT_PARTIAL", False),
-                     XA_CARDINAL, 32, PropModeReplace,
-                     (guchar *)vals, 12);
-#endif  /* HAVE_XDOCK */
+    g_object_set (context, "visible", FALSE, NULL);
 }
 
-static void
-on_realize_set_dock (GtkWidget *widget,
-                     gpointer   user_data)
-{
-    GtkAllocation allocation;
-
-    gtk_widget_get_allocation (widget, &allocation);
-    set_dock (widget, &allocation);
-}
-
-static void
-on_size_allocate_set_dock (GtkWidget *widget,
-                           GdkRectangle *allocation,
-                           gpointer user_data)
-{
-    if (gtk_widget_get_realized (widget))
-        set_dock (widget, allocation);
-}
-
-static void
-on_realize_set_non_maximizable (GtkWidget            *widget,
-                                ServerContextService *context)
-{
-
-    g_assert (context && context->window == widget);
-
-    /* make the window not maximizable */
-    gdk_window_set_functions (gtk_widget_get_window (widget),
-                              GDK_FUNC_RESIZE |
-                              GDK_FUNC_MOVE |
-                              GDK_FUNC_MINIMIZE |
-                              GDK_FUNC_CLOSE);
-}
 
 static void
 set_geometry (ServerContextService *context)
@@ -223,13 +138,6 @@ set_geometry (ServerContextService *context)
 
     gdk_monitor_get_geometry (monitor, &rect);
     eek_element_get_bounds (EEK_ELEMENT(keyboard), &bounds);
-
-    g_signal_handlers_disconnect_by_func (context->window,
-                                          on_realize_set_dock,
-                                          context);
-    g_signal_handlers_disconnect_by_func (context->window,
-                                          on_realize_set_non_maximizable,
-                                          context);
 
     if (eekboard_context_service_get_fullscreen (EEKBOARD_CONTEXT_SERVICE(context))) {
         gint width  = rect.width;
@@ -256,12 +164,6 @@ set_geometry (ServerContextService *context)
 
         gtk_window_set_decorated (GTK_WINDOW(context->window), FALSE);
         gtk_window_set_resizable (GTK_WINDOW(context->window), FALSE);
-        g_signal_connect_after (context->window, "realize",
-                                G_CALLBACK(on_realize_set_dock),
-                                context);
-        g_signal_connect_after (context->window, "size-allocate",
-                                G_CALLBACK(on_size_allocate_set_dock),
-                                context);
     } else {
         gtk_window_resize (GTK_WINDOW(context->window),
                            bounds.width,
@@ -269,9 +171,6 @@ set_geometry (ServerContextService *context)
         gtk_window_move (GTK_WINDOW(context->window),
                          MAX(rect.width - 20 - bounds.width, 0),
                          MAX(rect.height - 40 - bounds.height, 0));
-        g_signal_connect_after (context->window, "realize",
-                                G_CALLBACK(on_realize_set_non_maximizable),
-                                context);
     }
 }
 
@@ -293,18 +192,15 @@ make_window (ServerContextService *context)
         "layer", ZWLR_LAYER_SHELL_V1_LAYER_TOP,
         "kbd-interactivity", FALSE,
         "exclusive-zone", KEYBOARD_HEIGHT,
-        //"namespace", "phosh home",
+        "namespace", "osk",
         NULL
     );
 
-    g_signal_connect (context->window, "destroy",
-                      G_CALLBACK(on_destroy),
-                      context);
-
-    context->notify_visible_handler =
-        g_signal_connect (context->window, "notify::visible",
-                          G_CALLBACK(on_notify_visible),
-                          context);
+    g_object_connect (context->window,
+                      "signal::destroy", G_CALLBACK(on_destroy), context,
+                      "signal::map", G_CALLBACK(on_notify_map), context,
+                      "signal::unmap", G_CALLBACK(on_notify_unmap), context,
+                      NULL);
 
     // The properties below are just to make hacking easier.
     // The way we use layer-shell overrides some,
@@ -322,6 +218,7 @@ make_window (ServerContextService *context)
 static void
 destroy_window (ServerContextService *context)
 {
+    gtk_widget_destroy (GTK_WIDGET (context->window));
     context->window = NULL;
 }
 
@@ -357,11 +254,13 @@ server_context_service_real_show_keyboard (EekboardContextService *_context)
 {
     ServerContextService *context = SERVER_CONTEXT_SERVICE(_context);
 
-    make_window (context);
+    if (!context->window)
+        make_window (context);
     update_widget (context);
 
     EEKBOARD_CONTEXT_SERVICE_CLASS (server_context_service_parent_class)->
         show_keyboard (_context);
+    gtk_widget_show_all (context->window);
 }
 
 static void
@@ -372,30 +271,8 @@ server_context_service_real_hide_keyboard (EekboardContextService *_context)
     gtk_widget_hide (context->window);
     g_clear_pointer (&context->widget, gtk_widget_destroy);
 
-    destroy_window (context);
-
     EEKBOARD_CONTEXT_SERVICE_CLASS (server_context_service_parent_class)->
         hide_keyboard (_context);
-}
-
-static void
-server_context_service_real_enabled (EekboardContextService *_context)
-{
-    ServerContextService *context = SERVER_CONTEXT_SERVICE(_context);
-
-    if (context->was_visible && context->window)
-        gtk_widget_show_all (context->window);
-}
-
-static void
-server_context_service_real_disabled (EekboardContextService *_context)
-{
-    ServerContextService *context = SERVER_CONTEXT_SERVICE(_context);
-
-    if (context->window) {
-        context->was_visible = gtk_widget_get_visible (context->window);
-        gtk_widget_hide (context->window);
-    }
 }
 
 static void
@@ -437,7 +314,7 @@ server_context_service_dispose (GObject *object)
 {
     ServerContextService *context = SERVER_CONTEXT_SERVICE(object);
 
-    g_clear_pointer (&context->window, gtk_widget_destroy);
+    destroy_window (context);
     context->widget = NULL;
 
     G_OBJECT_CLASS (server_context_service_parent_class)->dispose (object);
@@ -452,8 +329,6 @@ server_context_service_class_init (ServerContextServiceClass *klass)
 
     context_class->show_keyboard = server_context_service_real_show_keyboard;
     context_class->hide_keyboard = server_context_service_real_hide_keyboard;
-    context_class->enabled = server_context_service_real_enabled;
-    context_class->disabled = server_context_service_real_disabled;
     context_class->destroyed = server_context_service_real_destroyed;
 
     gobject_class->set_property = server_context_service_set_property;
