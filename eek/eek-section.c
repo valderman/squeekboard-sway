@@ -500,10 +500,6 @@ keysizer(EekElement *element, gpointer user_data)
 {
     EekKey *key = EEK_KEY(element);
 
-    /* Skip keys without symbols for the current level. */
-    if (!eek_key_get_symbol(key))
-        return;
-
     EekKeyboard *keyboard = EEK_KEYBOARD(user_data);
     uint oref = eek_key_get_oref (key);
     EekOutline *outline = eek_keyboard_get_outline (keyboard, oref);
@@ -539,8 +535,8 @@ keycounter (EekElement *element, gpointer user_data)
 {
     EekKey *key = EEK_KEY(element);
 
-    /* Skip keys without symbols for the current level. */
-    if (!eek_key_get_symbol(key))
+    /* Skip keys without labels for the current level. */
+    if (!eek_key_has_label(key))
         return;
 
     struct keys_info *data = user_data;
@@ -558,8 +554,8 @@ keyplacer(EekElement *element, gpointer user_data)
 {
     EekKey *key = EEK_KEY(element);
 
-    /* Skip keys without symbols for the current level. */
-    if (!eek_key_get_symbol(key))
+    /* Skip keys without labels for the current level. */
+    if (!eek_key_has_label(key))
         return;
 
     double *current_offset = user_data;

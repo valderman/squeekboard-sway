@@ -609,3 +609,11 @@ void eek_key_set_pressed(EekKey *key, gboolean value)
 
     priv->is_pressed = value;
 }
+
+gboolean
+eek_key_has_label(EekKey *key)
+{
+    EekSymbol *symbol = eek_key_get_symbol(key);
+    return (eek_symbol_get_label(symbol) != NULL) ||
+           (eek_symbol_get_icon_name(symbol) != NULL);
+}

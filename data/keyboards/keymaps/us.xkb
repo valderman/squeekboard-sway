@@ -271,10 +271,11 @@ xkb_keymap {
         key <AC03> { [ d, D ], [ dollar, U00A3 ] };
         key <AC04> { [ f, F ], [ percent, EuroSign ] };
         key <AC05> { [ g, G ], [ ampersand, U00A5 ] };
-        key <AC06> { [ h, H ], [ minus, underscore ] };
-        key <AC07> { [ j, J ], [ plus, equal ] };
-        key <AC08> { [ k, K ], [ U00FC, asciicircum ] };
-        key <AC09> { [ l, L ], [ U00F6, degree ] };
+        key <AC06> { [ h, H ], [ minus, asciicircum ] };
+        key <AC07> { [ j, J ], [ underscore, degree ] };
+        key <AC08> { [ k, K ], [ plus, equal ] };
+        key <AC09> { [ l, L ], [ parenleft, braceleft ] };
+        key <AC10> { [   ], [ parenright, braceright ] };
         key <RTRN> { [ Return, Return ], [ Return, Return ] };
         key <LFSH> { [ Shift_L, Shift_L ], [ Shift_L, Shift_L ] };
         key <AB01> { [ z, Z ], [ comma, backslash ] };

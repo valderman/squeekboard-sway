@@ -447,6 +447,9 @@ render_key (EekRenderer *self,
     PangoRectangle extents = { 0, };
     EekColor foreground;
 
+    if (!eek_key_has_label(key))
+        return;
+
     oref = eek_key_get_oref (key);
     outline = eek_keyboard_get_outline (priv->keyboard, oref);
     if (outline == NULL)
