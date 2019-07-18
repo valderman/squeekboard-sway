@@ -943,7 +943,9 @@ eek_xml_layout_real_create_keyboard (EekboardContextService *manager,
         return NULL;
     }
 
-    /* Fit keyboard in the given width and hight. */
+    eek_layout_place_sections(keyboard);
+
+    /* Fit keyboard in the given width and height. */
     scale_keyboard (keyboard, initial_width, initial_height);
 
     /* Use pre-defined modifier mask here. */
@@ -1277,9 +1279,6 @@ parse_symbols (const gchar *path, EekKeyboard *keyboard, GError **error)
         return FALSE;
     }
     symbols_parse_data_free (data);
-
-    eek_layout_place_sections(keyboard);
-
     return TRUE;
 }
 
@@ -1358,43 +1357,12 @@ parse_keyboards (const gchar *path, GError **error)
     return keyboards;
 }
 
-static void scale_bounds_callback (EekElement *element,
-                                   gpointer    user_data);
-
-static void
-scale_bounds (EekElement *element,
-              gdouble     scale)
-{
-    EekBounds bounds;
-
-    eek_element_get_bounds (element, &bounds);
-    bounds.x *= scale;
-    bounds.y *= scale;
-    bounds.width *= scale;
-    bounds.height *= scale;
-    eek_element_set_bounds (element, &bounds);
-
-    if (EEK_IS_CONTAINER(element))
-        eek_container_foreach_child (EEK_CONTAINER(element),
-                                     scale_bounds_callback,
-                                     &scale);
-}
-
-static void
-scale_bounds_callback (EekElement *element,
-                       gpointer    user_data)
-{
-    scale_bounds (element, *(gdouble *)user_data);
-}
-
 static void scale_keyboard (EekKeyboard *keyboard,
                             gdouble      width,
                             gdouble      height)
 {
     gdouble scale;
     EekBounds bounds;
-    gsize n_outlines;
-    guint i;
 
     eek_element_get_bounds (EEK_ELEMENT(keyboard), &bounds);
 
@@ -1403,18 +1371,7 @@ static void scale_keyboard (EekKeyboard *keyboard,
     else
         scale = height / bounds.height;
 
-    scale_bounds (EEK_ELEMENT(keyboard), scale);
-
-    n_outlines = eek_keyboard_get_n_outlines (keyboard);
-    for (i = 0; i < n_outlines; i++) {
-        EekOutline *outline = eek_keyboard_get_outline (keyboard, i);
-        gint j;
-
-        for (j = 0; j < outline->num_points; j++) {
-            outline->points[j].x *= scale;
-            outline->points[j].y *= scale;
-        }
-    }
+    eek_layout_scale_keyboard(keyboard, scale);
 }
 
 static gboolean
