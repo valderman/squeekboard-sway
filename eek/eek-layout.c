@@ -67,3 +67,64 @@ eek_keyboard_new (EekboardContextService *manager,
                                                           initial_width,
                                                           initial_height);
 }
+
+const double section_spacing = 7.0;
+
+struct place_data {
+    double desired_width;
+    double current_offset;
+    EekKeyboard *keyboard;
+};
+
+static void
+section_placer(EekElement *element, gpointer user_data)
+{
+    struct place_data *data = (struct place_data*)user_data;
+
+    EekBounds section_bounds = {0};
+    eek_element_get_bounds(element, &section_bounds);
+    section_bounds.width = data->desired_width;
+    eek_element_set_bounds(element, &section_bounds);
+
+    // Sections are rows now. Gather up all the keys and adjust their bounds.
+    eek_section_place_keys(EEK_SECTION(element), EEK_KEYBOARD(data->keyboard));
+
+    eek_element_get_bounds(element, &section_bounds);
+    section_bounds.y = data->current_offset;
+    eek_element_set_bounds(element, &section_bounds);
+    data->current_offset += section_bounds.height + section_spacing;
+}
+
+static void
+section_counter(EekElement *element, gpointer user_data) {
+
+    double *total_height = user_data;
+    EekBounds section_bounds = {0};
+    eek_element_get_bounds(element, &section_bounds);
+    *total_height += section_bounds.height + section_spacing;
+}
+
+void
+eek_layout_place_sections(EekKeyboard *keyboard)
+{
+    /* Order rows */
+    // This needs to be done after outlines, because outlines define key sizes
+    // TODO: do this only for rows without bounds
+
+    // The keyboard width is given by the user via screen size. The height will be given dynamically.
+    // TODO: calculate max line width beforehand for button centering. Leave keyboard centering to the renderer later
+    EekBounds keyboard_bounds = {0};
+    eek_element_get_bounds(EEK_ELEMENT(keyboard), &keyboard_bounds);
+
+    struct place_data placer_data = {
+        .desired_width = keyboard_bounds.width,
+        .current_offset = 0,
+        .keyboard = keyboard,
+    };
+    eek_container_foreach_child(EEK_CONTAINER(keyboard), section_placer, &placer_data);
+
+    double total_height = 0;
+    eek_container_foreach_child(EEK_CONTAINER(keyboard), section_counter, &total_height);
+    keyboard_bounds.height = total_height;
+    eek_element_set_bounds(EEK_ELEMENT(keyboard), &keyboard_bounds);
+}
