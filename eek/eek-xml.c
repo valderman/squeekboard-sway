@@ -22,9 +22,7 @@
  * @short_description: #EekKeyboard to XML conversion utilities
  */
 
-#ifdef HAVE_CONFIG_H
 #include "config.h"
-#endif  /* HAVE_CONFIG_H */
 
 #include <stdio.h>
 #include <stdarg.h>

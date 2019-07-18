@@ -21,9 +21,7 @@
 /* For gdk_x11_display_get_xdisplay().  See main(). */
 #include <gtk/gtk.h>
 
-#ifdef HAVE_CONFIG_H
 #include "config.h"
-#endif  /* HAVE_CONFIG_H */
 
 #include "eek/eek.h"
 

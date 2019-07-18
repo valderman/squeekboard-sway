@@ -3,11 +3,13 @@ project(
     'c', 'rust',
     version: '1.0.10',
     license: 'GPLv3',
-    meson_version: '>=0.43.0',
+    meson_version: '>=0.49.0',
     default_options: [ 'warning_level=1', 'buildtype=debugoptimized', 'c_std=gnu11' ],
 )
 
 i18n = import('i18n')
+
+conf_data = configuration_data()
 
 if get_option('buildtype').startswith('debug')
     add_project_arguments('-DDEBUG=1', language : 'c')
@@ -25,6 +27,16 @@ else
   depdatadir = get_option('depdatadir')
 endif
 dbusdir = join_paths(depdatadir, 'dbus-1/interfaces')
+
+summary = [
+        '',
+        '------------------',
+        'squeekboard @0@'.format(meson.project_version()),
+        '',
+        '------------------',
+        ''
+]
+message('\n'.join(summary))
 
 subdir('data')
 subdir('protocols')

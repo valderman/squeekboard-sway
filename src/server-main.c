@@ -23,13 +23,7 @@
 #include <gtk/gtk.h>
 #include <glib/gi18n.h>
 
-#ifdef HAVE_CONFIG_H
 #include "config.h"
-#endif  /* HAVE_CONFIG_H */
-
-#if HAVE_CLUTTER_GTK
-#include <clutter-gtk/clutter-gtk.h>
-#endif
 
 #include "eekboard/eekboard-service.h"
 #include "eek/eek.h"
