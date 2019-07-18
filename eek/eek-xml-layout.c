@@ -1162,10 +1162,35 @@ static void section_placer(EekElement *element, gpointer user_data) {
 }
 
 static void section_counter(EekElement *element, gpointer user_data) {
+
     double *total_height = user_data;
     EekBounds section_bounds = {0};
     eek_element_get_bounds(element, &section_bounds);
     *total_height += section_bounds.height + section_spacing;
+}
+
+static void place_sections(EekKeyboard *keyboard)
+{
+    /* Order rows */
+    // This needs to be done after outlines, because outlines define key sizes
+    // TODO: do this only for rows without bounds
+
+    // The keyboard width is given by the user via screen size. The height will be given dynamically.
+    // TODO: calculate max line width beforehand for button centering. Leave keyboard centering to the renderer later
+    EekBounds keyboard_bounds = {0};
+    eek_element_get_bounds(EEK_ELEMENT(keyboard), &keyboard_bounds);
+
+    struct place_data placer_data = {
+        .desired_width = keyboard_bounds.width,
+        .current_offset = 0,
+        .keyboard = keyboard,
+    };
+    eek_container_foreach_child(EEK_CONTAINER(keyboard), section_placer, &placer_data);
+
+    double total_height = 0;
+    eek_container_foreach_child(EEK_CONTAINER(keyboard), section_counter, &total_height);
+    keyboard_bounds.height = total_height;
+    eek_element_set_bounds(EEK_ELEMENT(keyboard), &keyboard_bounds);
 }
 
 static gboolean
@@ -1222,26 +1247,7 @@ parse_geometry (const gchar *path, EekKeyboard *keyboard, GError **error)
     }
     g_hash_table_destroy (oref_hash);
 
-    /* Order rows */
-    // This needs to be done after outlines, because outlines define key sizes
-    // TODO: do this only for rows without bounds
-
-    // The keyboard width is given by the user via screen size. The height will be given dynamically.
-    // TODO: calculate max line width beforehand for button centering. Leave keyboard centering to the renderer later
-    EekBounds keyboard_bounds = {0};
-    eek_element_get_bounds(EEK_ELEMENT(keyboard), &keyboard_bounds);
-
-    struct place_data placer_data = {
-        .desired_width = keyboard_bounds.width,
-        .current_offset = 0,
-        .keyboard = keyboard,
-    };
-    eek_container_foreach_child(EEK_CONTAINER(keyboard), section_placer, &placer_data);
-
-    double total_height = 0;
-    eek_container_foreach_child(EEK_CONTAINER(keyboard), section_counter, &total_height);
-    keyboard_bounds.height = total_height;
-    eek_element_set_bounds(EEK_ELEMENT(keyboard), &keyboard_bounds);
+    place_sections(keyboard);
 
     geometry_parse_data_free (data);
     return TRUE;
