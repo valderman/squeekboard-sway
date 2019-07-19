@@ -79,6 +79,8 @@ struct _EekboardContextServicePrivate {
     gboolean repeat_triggered;
 
     GSettings *settings;
+    uint32_t hint;
+    uint32_t purpose;
 };
 
 G_DEFINE_TYPE_WITH_PRIVATE (EekboardContextService, eekboard_context_service, G_TYPE_OBJECT);
@@ -353,11 +355,15 @@ settings_update_layout(EekboardContextService *context)
         keyboard_layout = g_strdup("undefined");
     }
 
+    EekboardContextServicePrivate *priv = EEKBOARD_CONTEXT_SERVICE_GET_PRIVATE(context);
+
+    if (priv->purpose == ZWP_TEXT_INPUT_V3_CONTENT_PURPOSE_PHONE)
+        keyboard_layout = g_strdup("numbers");
+
     // generic part follows
     static guint keyboard_id = 0;
     EekKeyboard *keyboard = g_hash_table_lookup(context->priv->keyboard_hash,
                                                 GUINT_TO_POINTER(keyboard_id));
-    g_debug("type=%s, layout=%s, keyboard=%p", keyboard_type, keyboard_layout, keyboard);
     // create a keyboard
     if (!keyboard) {
         EekboardContextServiceClass *klass = EEKBOARD_CONTEXT_SERVICE_GET_CLASS(context);
@@ -640,4 +646,16 @@ void eekboard_context_service_set_keymap(EekboardContextService *context,
     zwp_virtual_keyboard_v1_keymap(context->virtual_keyboard,
         WL_KEYBOARD_KEYMAP_FORMAT_XKB_V1,
         keyboard->keymap_fd, keyboard->keymap_len);
+}
+
+void eekboard_context_service_set_hint_purpose(EekboardContextService *context,
+                                               uint32_t hint, uint32_t purpose)
+{
+    EekboardContextServicePrivate *priv = EEKBOARD_CONTEXT_SERVICE_GET_PRIVATE(context);
+
+    if (priv->hint != hint || priv->purpose != purpose) {
+        priv->hint = hint;
+        priv->purpose = purpose;
+        settings_update_layout(context);
+    }
 }

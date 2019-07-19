@@ -25,6 +25,7 @@
 #include <eek/eek.h>
 
 #include "virtual-keyboard-unstable-v1-client-protocol.h"
+#include "text-input-unstable-v3-client-protocol.h"
 
 G_BEGIN_DECLS
 
@@ -103,6 +104,10 @@ gboolean      eekboard_context_service_get_fullscreen
 
 void eekboard_context_service_set_keymap(EekboardContextService *context,
                                          const EekKeyboard *keyboard);
+
+void eekboard_context_service_set_hint_purpose(EekboardContextService *context,
+                                               uint32_t hint,
+                                               uint32_t purpose);
 
 G_END_DECLS
 #endif  /* EEKBOARD_CONTEXT_SERVICE_H */
