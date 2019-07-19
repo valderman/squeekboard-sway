@@ -4,9 +4,11 @@
    <file compressed="true">style.css</file>
    <file compressed="true" preprocess="xml-stripblanks">keyboards/geometry/compact.xml</file>
    <file compressed="true" preprocess="xml-stripblanks">keyboards/geometry/extended.xml</file>
+   <file compressed="true" preprocess="xml-stripblanks">keyboards/geometry/numbers-keypad.xml</file>
    <file compressed="true" preprocess="xml-stripblanks">keyboards/keyboards.xml</file>
    <file compressed="true">keyboards/keymaps/nb.xkb</file>
    <file compressed="true">keyboards/keymaps/us.xkb</file>
+   <file compressed="true">keyboards/keymaps/numbers.xkb</file>
    <file compressed="true" preprocess="xml-stripblanks">keyboards/symbols/ar.xml</file>
    <file compressed="true" preprocess="xml-stripblanks">keyboards/symbols/as-inscript.xml</file>
    <file compressed="true" preprocess="xml-stripblanks">keyboards/symbols/be.xml</file>
@@ -36,6 +38,7 @@
    <file compressed="true" preprocess="xml-stripblanks">keyboards/symbols/ug.xml</file>
    <file compressed="true" preprocess="xml-stripblanks">keyboards/symbols/us.xml</file>
    <file compressed="true" preprocess="xml-stripblanks">keyboards/symbols/zh-bopomofo.xml</file>
+   <file compressed="true" preprocess="xml-stripblanks">keyboards/symbols/special/numbers.xml</file>
    <file>icons/key-enter.svg</file>
    <file>icons/key-shift.svg</file>
    <file>icons/keyboard-mode-symbolic.svg</file>
