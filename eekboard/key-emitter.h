@@ -3,7 +3,6 @@
 
 #include <inttypes.h>
 #include <glib.h>
-#include <X11/XKBlib.h>
 
 #include "eek/eek.h"
 
