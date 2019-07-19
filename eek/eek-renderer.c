@@ -22,6 +22,8 @@
 
 #include <math.h>
 #include <string.h>
+#include <gdk-pixbuf/gdk-pixbuf.h>
+#include <gtk/gtk.h>
 
 #include "eek-key.h"
 #include "eek-section.h"
@@ -52,6 +54,7 @@ typedef struct _EekRendererPrivate
     PangoFontDescription *font;
     GHashTable *outline_surface_cache;
     GHashTable *active_outline_surface_cache;
+    GHashTable *icons;
     cairo_surface_t *keyboard_surface;
     gulong symbol_index_changed_handler;
 
@@ -776,6 +779,8 @@ eek_renderer_dispose (GObject *object)
         priv->pcontext = NULL;
     }
 
+    g_clear_pointer (&priv->icons, g_hash_table_destroy);
+
     /* this will release all allocated surfaces and font if any */
     invalidate (EEK_RENDERER(object));
 
@@ -857,6 +862,14 @@ eek_renderer_init (EekRenderer *self)
                                (GDestroyNotify)cairo_surface_destroy);
     priv->keyboard_surface = NULL;
     priv->symbol_index_changed_handler = 0;
+
+    GtkIconTheme *theme = gtk_icon_theme_get_default ();
+
+    gtk_icon_theme_add_resource_path (theme, "/sm/puri/squeekboard/icons");
+    priv->icons = g_hash_table_new_full (g_str_hash,
+                                         g_str_equal,
+                                         g_free,
+                                         (GDestroyNotify)cairo_surface_destroy);
 }
 
 static void
@@ -1083,14 +1096,32 @@ eek_renderer_get_icon_surface (EekRenderer *renderer,
                                gint size,
                                gint scale)
 {
-    EekRendererClass *klass;
+    GError *error = NULL;
+    cairo_surface_t *surface;
 
     g_return_val_if_fail (EEK_IS_RENDERER(renderer), NULL);
 
-    klass = EEK_RENDERER_GET_CLASS(renderer);
-    if (klass->get_icon_surface)
-        return klass->get_icon_surface (renderer, icon_name, size, scale);
-    return NULL;
+    EekRendererPrivate *priv = eek_renderer_get_instance_private (renderer);
+
+    surface = g_hash_table_lookup (priv->icons, icon_name);
+    if (!surface) {
+        surface = gtk_icon_theme_load_surface (gtk_icon_theme_get_default (),
+                                               icon_name,
+                                               size,
+                                               scale,
+                                               NULL,
+                                               0,
+                                               &error);
+        g_hash_table_insert (priv->icons, g_strdup(icon_name), surface);
+        if (surface == NULL) {
+            g_warning ("can't get icon surface for %s: %s",
+                       icon_name,
+                       error->message);
+            g_error_free (error);
+            return NULL;
+        }
+    }
+    return surface;
 }
 
 void
