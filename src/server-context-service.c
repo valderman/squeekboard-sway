@@ -82,7 +82,7 @@ on_notify_keyboard (GObject              *object,
                     GParamSpec           *spec,
                     ServerContextService *context)
 {
-    EekKeyboard *keyboard;
+    const EekKeyboard *keyboard;
 
     keyboard = eekboard_context_service_get_keyboard (EEKBOARD_CONTEXT_SERVICE(context));
 
@@ -96,13 +96,12 @@ on_notify_keyboard (GObject              *object,
                                         keyboard);
 
     /* Recreate the keyboard widget to keep in sync with the keymap. */
-    EekboardContextService *service = EEKBOARD_CONTEXT_SERVICE(context);
     gboolean visible;
-    g_object_get(service, "visible", &visible, NULL);
+    g_object_get (context, "visible", &visible, NULL);
 
     if (visible) {
-        eekboard_context_service_hide_keyboard (service);
-        eekboard_context_service_show_keyboard (service);
+        eekboard_context_service_hide_keyboard(EEKBOARD_CONTEXT_SERVICE(context));
+        eekboard_context_service_show_keyboard(EEKBOARD_CONTEXT_SERVICE(context));
     }
 }
 
@@ -261,7 +260,7 @@ server_context_service_real_show_keyboard (EekboardContextService *_context)
     if (!context->window)
         make_window (context);
     if (context->widget) {
-        gtk_widget_destroy (GTK_WIDGET (context->widget));
+        gtk_widget_destroy(context->widget);
         context->widget = NULL;
     }
 
