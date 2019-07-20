@@ -262,6 +262,8 @@ set_level_from_modifiers (EekKeyboard *self, EekKey *key)
 
     priv->old_level = level;
     eek_element_set_level (EEK_ELEMENT(self), level);
+
+    eek_layout_update_layout(self);
 }
 
 static void
@@ -528,6 +530,7 @@ eek_keyboard_init (EekKeyboard *self)
     self->priv->outline_array = g_array_new (FALSE, TRUE, sizeof (EekOutline));
     self->priv->keycodes = g_hash_table_new (g_direct_hash, g_direct_equal);
     eek_element_set_symbol_index (EEK_ELEMENT(self), 0, 0);
+    self->scale = 1.0;
 }
 
 /**

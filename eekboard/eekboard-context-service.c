@@ -282,7 +282,8 @@ settings_get_layout(GSettings *settings, char **type, char **layout)
 }
 
 static void
-settings_update_layout(EekboardContextService *context) {
+settings_update_layout(EekboardContextService *context)
+{
     g_autofree gchar *keyboard_type = NULL;
     g_autofree gchar *keyboard_layout = NULL;
     settings_get_layout(context->priv->settings, &keyboard_type, &keyboard_layout);

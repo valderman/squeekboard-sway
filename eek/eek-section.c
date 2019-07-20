@@ -482,8 +482,23 @@ eek_section_create_key (EekSection *section,
                                                        row);
 }
 
-static void keysizer(EekElement *element, gpointer user_data) {
+const double keyspacing = 4.0;
+
+struct keys_info {
+    uint count;
+    double total_width;
+    double biggest_height;
+};
+
+static void
+keysizer(EekElement *element, gpointer user_data)
+{
     EekKey *key = EEK_KEY(element);
+
+    /* Skip keys without symbols for the current level. */
+    if (!eek_key_get_symbol(key))
+        return;
+
     EekKeyboard *keyboard = EEK_KEYBOARD(user_data);
     uint oref = eek_key_get_oref (key);
     EekOutline *outline = eek_keyboard_get_outline (keyboard, oref);
@@ -514,13 +529,15 @@ static void keysizer(EekElement *element, gpointer user_data) {
     }
 }
 
-struct keys_info {
-    uint count;
-    double total_width;
-    double biggest_height;
-};
+static void
+keycounter (EekElement *element, gpointer user_data)
+{
+    EekKey *key = EEK_KEY(element);
 
-static void keycounter (EekElement *element, gpointer user_data) {
+    /* Skip keys without symbols for the current level. */
+    if (!eek_key_get_symbol(key))
+        return;
+
     struct keys_info *data = user_data;
     data->count++;
     EekBounds key_bounds = {0};
@@ -531,9 +548,15 @@ static void keycounter (EekElement *element, gpointer user_data) {
     }
 }
 
-const double keyspacing = 4.0;
+static void
+keyplacer(EekElement *element, gpointer user_data)
+{
+    EekKey *key = EEK_KEY(element);
 
-static void keyplacer(EekElement *element, gpointer user_data) {
+    /* Skip keys without symbols for the current level. */
+    if (!eek_key_get_symbol(key))
+        return;
+
     double *current_offset = user_data;
     EekBounds key_bounds = {0};
     eek_element_get_bounds(element, &key_bounds);
@@ -543,7 +566,8 @@ static void keyplacer(EekElement *element, gpointer user_data) {
     *current_offset += key_bounds.width + keyspacing;
 }
 
-void eek_section_place_keys(EekSection *section, EekKeyboard *keyboard)
+void
+eek_section_place_keys(EekSection *section, EekKeyboard *keyboard)
 {
     eek_container_foreach_child(EEK_CONTAINER(section), keysizer, keyboard);
 

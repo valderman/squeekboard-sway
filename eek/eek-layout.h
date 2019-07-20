@@ -55,5 +55,11 @@ struct _EekLayoutClass
 
 GType        eek_layout_get_type  (void) G_GNUC_CONST;
 
+void         eek_layout_place_sections(EekKeyboard *keyboard);
+
+void         eek_layout_scale_keyboard(EekKeyboard *keyboard, gdouble scale);
+
+void         eek_layout_update_layout(EekKeyboard *keyboard);
+
 G_END_DECLS
 #endif  /* EEK_LAYOUT_H */
