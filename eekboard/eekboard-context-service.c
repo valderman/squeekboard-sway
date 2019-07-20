@@ -345,7 +345,6 @@ settings_update_layout(EekboardContextService *context)
     g_autofree gchar *keyboard_type = NULL;
     g_autofree gchar *keyboard_layout = NULL;
     settings_get_layout(context->priv->settings, &keyboard_type, &keyboard_layout);
-    g_debug("type=%s, layout=%s", keyboard_type, keyboard_layout);
 
     if (!keyboard_type) {
         keyboard_type = g_strdup("us");
@@ -358,6 +357,7 @@ settings_update_layout(EekboardContextService *context)
     static guint keyboard_id = 0;
     EekKeyboard *keyboard = g_hash_table_lookup(context->priv->keyboard_hash,
                                                 GUINT_TO_POINTER(keyboard_id));
+    g_debug("type=%s, layout=%s, keyboard=%p", keyboard_type, keyboard_layout, keyboard);
     // create a keyboard
     if (!keyboard) {
         EekboardContextServiceClass *klass = EEKBOARD_CONTEXT_SERVICE_GET_CLASS(context);
