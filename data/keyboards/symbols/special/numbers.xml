@@ -1,0 +1,60 @@
+<?xml version='1.0' encoding='ASCII' standalone='yes'?>
+<symbols version="0.90">
+  <key name="AD01">
+    <symbol label="1">1</symbol>
+  </key>
+  <key name="AD02">
+    <symbol label="2">2</symbol>
+  </key>
+  <key name="AD03">
+    <symbol label="3">3</symbol>
+  </key>
+  <key name="AD04">
+    <symbol label="(">parenleft</symbol>
+  </key>
+  <key name="AD05">
+    <symbol label=")">parenright</symbol>
+  </key>
+  <key name="AC01">
+    <symbol label="4">4</symbol>
+  </key>
+  <key name="AC02">
+    <symbol label="5">5</symbol>
+  </key>
+  <key name="AC03">
+    <symbol label="6">6</symbol>
+  </key>
+  <key name="AC04">
+    <symbol label="#">numbersign</symbol>
+  </key>
+  <key name="AC05">
+    <symbol label="*">asterisk</symbol>
+  </key>
+  <key name="AB01">
+    <symbol label="7">7</symbol>
+  </key>
+  <key name="AB02">
+    <symbol label="8">8</symbol>
+  </key>
+  <key name="AB03">
+    <symbol label="9">9</symbol>
+  </key>
+  <key name="AB04">
+    <symbol label="+">plus</symbol>
+  </key>
+  <key name="AB05">
+    <symbol label="-">minus</symbol>
+  </key>
+  <key name="AB06">
+    <symbol label="0">0</symbol>
+  </key>
+  <key name="RTRN">
+    <symbol keyval="65293" icon="key-enter">Return</symbol>
+  </key>
+  <key name="SPCE">
+    <symbol label=" ">space</symbol>
+  </key>
+  <key name="BKSP">
+    <symbol keyval="65288" icon="edit-clear-symbolic">BackSpace</symbol>
+  </key>
+</symbols>

@@ -88,4 +88,10 @@
   <keyboard id="te-inscript" name="te-inscript"
 	    geometry="compact" symbols="te-inscript"
 	    longname="Telugu (Inscript)" language="te"/>
+
+  <!-- Common keyboards -->
+  <keyboard id="numbers" name="numbers"
+	    geometry="numbers-keypad" symbols="special/numbers"
+	    longname="Numeric keypad" language="all"/>
+
 </keyboards>

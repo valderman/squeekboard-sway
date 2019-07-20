@@ -4,7 +4,11 @@
 #include "input-method-unstable-v2-client-protocol.h"
 #include "eek/eek-types.h"
 
-struct imservice;
+struct imservice
+{
+    struct zwp_input_method_v2 *im;
+    EekboardContextService *ui_manager;
+};
 
 struct imservice* get_imservice(EekboardContextService *context,
                                 struct zwp_input_method_manager_v2 *manager,

@@ -6,7 +6,15 @@
 
 
 void imservice_handle_text_change_cause(void *data, struct zwp_input_method_v2 *input_method, uint32_t cause) {}
-void imservice_handle_content_type(void *data, struct zwp_input_method_v2 *input_method, uint32_t hint, uint32_t purpose) {}
+
+void imservice_handle_content_type(void *data, struct zwp_input_method_v2 *input_method, uint32_t hint, uint32_t purpose)
+{
+    struct imservice *ims = (struct imservice*)data;
+    EekboardContextService *context = EEKBOARD_CONTEXT_SERVICE(ims->ui_manager);
+
+    eekboard_context_service_set_hint_purpose(context, hint, purpose);
+}
+
 void imservice_handle_unavailable(void *data, struct zwp_input_method_v2 *input_method) {}
 
 
@@ -25,8 +33,11 @@ struct imservice* get_imservice(EekboardContextService *context,
                                 struct wl_seat *seat) {
     struct zwp_input_method_v2 *im = zwp_input_method_manager_v2_get_input_method(manager, seat);
     struct imservice *imservice = imservice_new(im, context);
-    zwp_input_method_v2_add_listener(im,
-        &input_method_listener, imservice);
+
+    /* Add a listener, passing the imservice instance to make it available to
+       callbacks. */
+    zwp_input_method_v2_add_listener(im, &input_method_listener, imservice);
+
     return imservice;
 }
 
