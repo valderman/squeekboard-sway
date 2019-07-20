@@ -1,0 +1,189 @@
+<?xml version="1.0"?>
+<geometry version="0.90">
+  <bounds x="0.000000" y="10.000000" width="426.0000" height="296.5853"/>
+  <section angle="0">
+    <bounds x="0" y="0" width="608.7804" height="201.3658"/>
+    <row orientation="1">
+      <key keycode="24" name="AD01" oref="outline2">
+	<bounds x="65.56097" y="42.14634" width="37.46341" height="52.44877"/>
+      </key>
+      <key keycode="25" name="AD02" oref="outline2">
+	<bounds x="106.1463" y="42.14634" width="37.46341" height="37.46341"/>
+      </key>
+      <key keycode="26" name="AD03" oref="outline2">
+	<bounds x="145.1707" y="42.14634" width="37.46341" height="37.46341"/>
+      </key>
+      <key keycode="27" name="AD04" oref="outline2">
+	<bounds x="185.7560" y="42.14634" width="37.46341" height="37.46341"/>
+      </key>
+      <key keycode="28" name="AD05" oref="outline2">
+	<bounds x="226.3414" y="42.14634" width="37.46341" height="37.46341"/>
+      </key>
+      <key keycode="29" name="AD06" oref="outline2">
+	<bounds x="266.9268" y="42.14634" width="37.46341" height="37.46341"/>
+      </key>
+      <key keycode="30" name="AD07" oref="outline2">
+	<bounds x="307.5121" y="42.14634" width="37.46341" height="37.46341"/>
+      </key>
+      <key keycode="31" name="AD08" oref="outline2">
+	<bounds x="348.0975" y="42.14634" width="37.46341" height="37.46341"/>
+      </key>
+      <key keycode="32" name="AD09" oref="outline2">
+	<bounds x="388.6829" y="42.14634" width="37.46341" height="37.46341"/>
+      </key>
+      <key keycode="33" name="AD10" oref="outline2">
+	<bounds x="429.2682" y="42.14634" width="37.46341" height="37.46341"/>
+      </key>
+    </row>
+  </section>
+  <section angle="0">
+    <bounds x="0" y="0" width="608.7804" height="201.3658"/>
+    <row orientation="1">
+      <key keycode="38" name="AC01" oref="outline2">
+	<bounds x="76.48780" y="82.73170" width="37.46341" height="37.46341"/>
+      </key>
+      <key keycode="39" name="AC02" oref="outline2">
+	<bounds x="115.5121" y="82.73170" width="37.46341" height="37.46341"/>
+      </key>
+      <key keycode="40" name="AC03" oref="outline2">
+	<bounds x="156.0975" y="82.73170" width="37.46341" height="37.46341"/>
+      </key>
+      <key keycode="41" name="AC04" oref="outline2">
+	<bounds x="196.6829" y="82.73170" width="37.46341" height="37.46341"/>
+      </key>
+      <key keycode="42" name="AC05" oref="outline2">
+	<bounds x="237.2682" y="82.73170" width="37.46341" height="37.46341"/>
+      </key>
+      <key keycode="43" name="AC06" oref="outline2">
+	<bounds x="277.8536" y="82.73170" width="37.46341" height="37.46341"/>
+      </key>
+      <key keycode="44" name="AC07" oref="outline2">
+	<bounds x="318.4390" y="82.73170" width="37.46341" height="37.46341"/>
+      </key>
+      <key keycode="45" name="AC08" oref="outline2">
+	<bounds x="359.0243" y="82.73170" width="37.46341" height="37.46341"/>
+      </key>
+      <key keycode="46" name="AC09" oref="outline2">
+	<bounds x="399.6097" y="82.73170" width="37.46341" height="37.46341"/>
+      </key>
+    </row>
+  </section>
+  <section angle="0">
+    <bounds x="0" y="0" width="608.7804" height="201.3658"/>
+    <row orientation="1">
+      <key keycode="50" name="LFSH" oref="altline">
+	<bounds x="3.121951" y="121.7560" width="88.97561" height="37.46341"/>
+      </key>
+      <key keycode="52" name="AB01" oref="outline2">
+	<bounds x="95.21951" y="121.7560" width="37.46341" height="37.46341"/>
+      </key>
+      <key keycode="53" name="AB02" oref="outline2">
+	<bounds x="135.8048" y="121.7560" width="37.46341" height="37.46341"/>
+      </key>
+      <key keycode="54" name="AB03" oref="outline2">
+	<bounds x="176.3902" y="121.7560" width="37.46341" height="37.46341"/>
+      </key>
+      <key keycode="55" name="AB04" oref="outline2">
+	<bounds x="215.4146" y="121.7560" width="37.46341" height="37.46341"/>
+      </key>
+      <key keycode="56" name="AB05" oref="outline2">
+	<bounds x="256.0000" y="121.7560" width="37.46341" height="37.46341"/>
+      </key>
+      <key keycode="57" name="AB06" oref="outline2">
+	<bounds x="296.5853" y="121.7560" width="37.46341" height="37.46341"/>
+      </key>
+      <key keycode="58" name="AB07" oref="outline2">
+	<bounds x="337.1707" y="121.7560" width="37.46341" height="37.46341"/>
+      </key>
+      <key keycode="22" name="BKSP" oref="altline">
+	<bounds x="529.1707" y="1.560976" width="79.60975" height="37.46341"/>
+      </key>
+    </row>
+  </section>
+  <section angle="0">
+    <bounds x="0" y="0" width="608.7804" height="201.3658"/>
+    <row orientation="1">
+      <key keycode="0" name="ABC123" oref="altline">
+	<bounds x="62.43902" y="162.3414" width="48.39024" height="37.46341"/>
+      </key>
+      <key keycode="150" name="I150" oref="altline">
+	<bounds x="113.9512" y="162.3414" width="48.39024" height="37.46341"/>
+      </key>
+      <key keycode="65" name="SPCE" oref="spaceline">
+	<bounds x="165.4634" y="162.3414" width="217.5853" height="37.46341"/>
+      </key>
+      <key keycode="60" name="AB09" oref="outline2">
+       <bounds x="418.3414" y="121.7560" width="37.46341" height="37.46341"/>
+      </key>
+      <key keycode="36" name="RTRN" oref="outline7">
+	<bounds x="519.8048" y="82.73170" width="88.97561" height="37.46341"/>
+      </key>
+    </row>
+  </section>
+  <outline id="outline2" corner-radius="1.000000">
+    <point x="0.000000" y="0.000000"/>
+    <point x="37.46341" y="0.000000"/>
+    <point x="37.46341" y="52.44877"/>
+    <point x="0.000000" y="52.44877"/>
+  </outline>
+  <outline id="altline" corner-radius="1.000000">
+    <point x="0.000000" y="0.000000"/>
+    <point x="48.39024" y="0.000000"/>
+    <point x="48.39024" y="52.44877"/>
+    <point x="0.000000" y="52.44877"/>
+  </outline>
+  <outline id="outline4" corner-radius="1.000000">
+    <point x="0.000000" y="0.000000"/>
+    <point x="59.31707" y="0.000000"/>
+    <point x="59.31707" y="52.44877"/>
+    <point x="0.000000" y="52.44877"/>
+  </outline>
+  <outline id="outline5" corner-radius="1.000000">
+    <point x="0.000000" y="0.000000"/>
+    <point x="59.31707" y="0.000000"/>
+    <point x="59.31707" y="52.44877"/>
+    <point x="0.000000" y="52.44877"/>
+  </outline>
+  <outline id="outline6" corner-radius="1.000000">
+    <point x="0.000000" y="0.000000"/>
+    <point x="68.68292" y="0.000000"/>
+    <point x="68.68292" y="52.44877"/>
+    <point x="0.000000" y="52.44877"/>
+  </outline>
+  <outline id="outline7" corner-radius="1.000000">
+    <point x="0.000000" y="0.000000"/>
+    <point x="88.97561" y="0.000000"/>
+    <point x="88.97561" y="52.44877"/>
+    <point x="0.000000" y="52.44877"/>
+  </outline>
+  <outline id="outline8" corner-radius="1.000000">
+    <point x="0.000000" y="0.000000"/>
+    <point x="88.97561" y="0.000000"/>
+    <point x="88.97561" y="52.44877"/>
+    <point x="0.000000" y="52.44877"/>
+  </outline>
+  <outline id="outline9" corner-radius="1.000000">
+    <point x="0.000000" y="0.000000"/>
+    <point x="109.2682" y="0.000000"/>
+    <point x="109.2682" y="52.44877"/>
+    <point x="0.000000" y="52.44877"/>
+  </outline>
+  <outline id="outline10" corner-radius="1.000000">
+    <point x="0.000000" y="0.000000"/>
+    <point x="37.46341" y="0.000000"/>
+    <point x="37.46341" y="52.44877"/>
+    <point x="0.000000" y="52.44877"/>
+  </outline>
+  <outline id="outline13" corner-radius="1.000000">
+    <point x="0.000000" y="0.000000"/>
+    <point x="79.60975" y="0.000000"/>
+    <point x="79.60975" y="52.44877"/>
+    <point x="0.000000" y="52.44877"/>
+  </outline>
+  <outline id="spaceline" corner-radius="1.000000">
+    <point x="0.000000" y="0.000000"/>
+    <point x="150.5853" y="0.000000"/>
+    <point x="150.5853" y="52.44877"/>
+    <point x="0.000000" y="52.44877"/>
+  </outline>
+</geometry>

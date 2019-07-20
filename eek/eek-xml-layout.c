@@ -247,6 +247,7 @@ struct _GeometryParseData {
     gchar *name;
     EekOutline outline;
     gchar *oref;
+    gint keycode;
 
     GHashTable *key_oref_hash;
     GHashTable *oref_outline_hash;
@@ -269,6 +270,7 @@ geometry_parse_data_new (EekKeyboard *keyboard)
                                g_str_equal,
                                g_free,
                                (GDestroyNotify)eek_outline_free);
+    data->keycode = 8;
     return data;
 }
 
@@ -397,17 +399,6 @@ geometry_start_element_callback (GMarkupParseContext *pcontext,
         guint keycode;
 
         attribute = get_attribute (attribute_names, attribute_values,
-                                   "keycode");
-        if (attribute == NULL) {
-            g_set_error (error,
-                         G_MARKUP_ERROR,
-                         G_MARKUP_ERROR_MISSING_ATTRIBUTE,
-                         "no \"keycode\" attribute for \"key\"");
-            return;
-        }
-        keycode = strtol (attribute, NULL, 10);
-
-        attribute = get_attribute (attribute_names, attribute_values,
                                    "name");
         if (attribute == NULL) {
             g_set_error (error,
@@ -416,9 +407,17 @@ geometry_start_element_callback (GMarkupParseContext *pcontext,
                          "no \"name\" attribute for \"key\"");
             return;
         }
+        gchar *name = g_strdup (attribute);
+
+        attribute = get_attribute (attribute_names, attribute_values,
+                                   "keycode");
+        if (attribute != NULL)
+            keycode = strtol (attribute, NULL, 10);
+        else
+            keycode = data->keycode++;
 
         data->key = eek_section_create_key (data->section,
-                                            g_strdup (attribute),
+                                            name,
                                             keycode,
                                             data->num_columns,
                                             data->num_rows - 1);
@@ -727,7 +726,6 @@ symbols_end_element_callback (GMarkupParseContext *pcontext,
         gint levels = num_symbols / data->groups;
         EekSymbolMatrix *matrix = eek_symbol_matrix_new (data->groups,
                                                          levels);
-
         head = data->symbols = g_slist_reverse (data->symbols);
         for (i = 0; i < num_symbols; i++) {
             if (head && head->data) {

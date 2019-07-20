@@ -195,5 +195,8 @@ void                eek_modifier_key_free
 void eek_keyboard_press_key(EekKeyboard *keyboard, EekKey *key, guint32 timestamp);
 void eek_keyboard_release_key(EekKeyboard *keyboard, EekKey *key, guint32 timestamp);
 
+gchar *             eek_keyboard_get_keymap
+                                     (EekKeyboard        *keyboard);
+
 G_END_DECLS
 #endif  /* EEK_KEYBOARD_H */

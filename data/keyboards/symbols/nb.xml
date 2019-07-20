@@ -63,8 +63,8 @@
   <key name="AD11">
     <symbol keyval="229" label="&#229;">aring</symbol>
     <symbol keyval="197" label="&#197;">Aring</symbol>
-    <symbol label="&#177;">U00B1</symbol>
-    <symbol label="&#167;">U00A7</symbol>
+    <symbol label=""></symbol>
+    <symbol label=""></symbol>
   </key>
   <key name="AC01">
     <symbol label="a">a</symbol>
@@ -100,37 +100,37 @@
     <symbol label="h">h</symbol>
     <symbol label="H">H</symbol>
     <symbol label="-">minus</symbol>
-    <symbol label="_">underscore</symbol>
+    <symbol label="^">asciicircum</symbol>
   </key>
   <key name="AC07">
     <symbol label="j">j</symbol>
     <symbol label="J">J</symbol>
-    <symbol label="+">plus</symbol>
-    <symbol label="=">equal</symbol>
+    <symbol label="_">underscore</symbol>
+    <symbol label="&#176;">degree</symbol>
   </key>
   <key name="AC08">
     <symbol label="k">k</symbol>
     <symbol label="K">K</symbol>
-    <symbol label="&#252;">U00FC</symbol>
-    <symbol label="^">asciicircum</symbol>
+    <symbol label="+">plus</symbol>
+    <symbol label="=">equal</symbol>
   </key>
   <key name="AC09">
     <symbol label="l">l</symbol>
     <symbol label="L">L</symbol>
-    <symbol label="&#246;">U00F6</symbol>
-    <symbol label="&#176;">degree</symbol>
+    <symbol label="(">parenleft</symbol>
+    <symbol label="{">braceleft</symbol>
   </key>
   <key name="AC10">
     <symbol keyval="248" label="&#248;">oslash</symbol>
     <symbol keyval="216" label="&#216;">Oslash</symbol>
-    <symbol label="(">parenleft</symbol>
-    <symbol label="{">braceleft</symbol>
+    <symbol label=")">parenright</symbol>
+    <symbol label="}">braceright</symbol>
   </key>
   <key name="AC11">
     <symbol keyval="230" label="&#230;">ae</symbol>
     <symbol keyval="198" label="&#198;">AE</symbol>
-    <symbol label=")">parenright</symbol>
-    <symbol label="}">braceright</symbol>
+    <symbol label=""></symbol>
+    <symbol label=""></symbol>
   </key>
   <key name="RTRN">
     <symbol keyval="65293" icon="key-enter">Return</symbol>
