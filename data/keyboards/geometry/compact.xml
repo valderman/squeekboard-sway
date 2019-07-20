@@ -26,6 +26,7 @@
       <key keycode="44" name="AC07" oref="outline2" />
       <key keycode="45" name="AC08" oref="outline2" />
       <key keycode="46" name="AC09" oref="outline2" />
+      <key keycode="47" name="AC10" oref="outline2" />
     </row>
   </section>
   <section angle="0">

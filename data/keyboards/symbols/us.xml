@@ -94,23 +94,29 @@
     <symbol label="h">h</symbol>
     <symbol label="H">H</symbol>
     <symbol label="-">minus</symbol>
-    <symbol label="_">underscore</symbol>
+    <symbol label="^">asciicircum</symbol>
   </key>
   <key name="AC07">
     <symbol label="j">j</symbol>
     <symbol label="J">J</symbol>
-    <symbol label="+">plus</symbol>
-    <symbol label="=">equal</symbol>
+    <symbol label="_">underscore</symbol>
+    <symbol label="&#176;">degree</symbol>
   </key>
   <key name="AC08">
     <symbol label="k">k</symbol>
     <symbol label="K">K</symbol>
-    <symbol label="(">parenleft</symbol>
-    <symbol label="{">braceleft</symbol>
+    <symbol label="+">plus</symbol>
+    <symbol label="=">equal</symbol>
   </key>
   <key name="AC09">
     <symbol label="l">l</symbol>
     <symbol label="L">L</symbol>
+    <symbol label="(">parenleft</symbol>
+    <symbol label="{">braceleft</symbol>
+  </key>
+  <key name="AC10">
+    <symbol label=""></symbol>
+    <symbol label=""></symbol>
     <symbol label=")">parenright</symbol>
     <symbol label="}">braceright</symbol>
   </key>
@@ -181,6 +187,6 @@
     <symbol label=" ">space</symbol>
   </key>
   <key name="BKSP">
-    <symbol keyval="65288" icon="edit-clear-symbolic">backspace</symbol>
+    <symbol keyval="65288" icon="edit-clear-symbolic">BackSpace</symbol>
   </key>
 </symbols>
