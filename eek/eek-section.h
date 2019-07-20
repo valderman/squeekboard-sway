@@ -62,7 +62,8 @@ struct _EekSectionClass
                                      EekOrientation *orientation);
 
     EekKey *(* create_key)          (EekSection     *self,
-                                     guint           keycode,
+                                     const gchar    *name,
+                                     gint            keycode,
                                      gint            row,
                                      gint            column);
 
@@ -99,7 +100,8 @@ void    eek_section_get_row              (EekSection     *section,
                                           EekOrientation *orientation);
 
 EekKey *eek_section_create_key           (EekSection     *section,
-                                          guint           keycode,
+                                          const gchar    *name,
+                                          gint            keycode,
                                           gint            column,
                                           gint            row);
 

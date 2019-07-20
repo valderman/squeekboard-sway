@@ -70,8 +70,8 @@ struct _EekKeyboard
 /**
  * EekKeyboardClass:
  * @create_section: virtual function for creating a section
- * @find_key_by_keycode: virtual function for finding a key in the
- * keyboard by keycode
+ * @find_key_by_name: virtual function for finding a key in the
+ * keyboard by name
  * @key_pressed: class handler for #EekKeyboard::key-pressed signal
  * @key_released: class handler for #EekKeyboard::key-released signal
  * @key_locked: class handler for #EekKeyboard::key-locked signal
@@ -90,8 +90,8 @@ struct _EekKeyboardClass
     /*< public >*/
     EekSection *(* create_section)      (EekKeyboard *self);
 
-    EekKey     *(* find_key_by_keycode) (EekKeyboard *self,
-                                         guint        keycode);
+    EekKey     *(* find_key_by_name)    (EekKeyboard *self,
+                                         const gchar *name);
 
     /*< private >*/
     /* obsolete members moved to EekElement */
@@ -156,9 +156,9 @@ EekModifierType     eek_keyboard_get_modifiers
 EekSection         *eek_keyboard_create_section
                                      (EekKeyboard        *keyboard);
 
-EekKey             *eek_keyboard_find_key_by_keycode
+EekKey             *eek_keyboard_find_key_by_name
                                      (EekKeyboard        *keyboard,
-                                      guint               keycode);
+                                      const gchar        *name);
 
 guint               eek_keyboard_add_outline
                                      (EekKeyboard        *keyboard,

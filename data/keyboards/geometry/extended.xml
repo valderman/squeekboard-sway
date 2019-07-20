@@ -1,6 +1,10 @@
 <?xml version="1.0"?>
 <geometry version="0.90">
   <bounds x="0" y="10.000000" width="426.0000" height="296.5853"/>
+  <!-- Keycodes correspond to those used in /usr/share/X11/xkb/keycodes/evdev.
+       For Squeekboard, the values have no connection to evdev. They are only
+       used as indices into the keymap sent to the compositor. They must have
+       values in the range from 8 to 255. -->
   <section angle="0">
     <row orientation="1">
       <key keycode="24" name="AD01" oref="outline2" />
@@ -13,6 +17,7 @@
       <key keycode="31" name="AD08" oref="outline2" />
       <key keycode="32" name="AD09" oref="outline2" />
       <key keycode="33" name="AD10" oref="outline2" />
+      <key keycode="34" name="AD11" oref="outline2" />
     </row>
   </section>
   <section angle="0">
@@ -26,6 +31,8 @@
       <key keycode="44" name="AC07" oref="outline2" />
       <key keycode="45" name="AC08" oref="outline2" />
       <key keycode="46" name="AC09" oref="outline2" />
+      <key keycode="47" name="AC10" oref="outline2" />
+      <key keycode="48" name="AC11" oref="outline2" />
     </row>
   </section>
   <section angle="0">
@@ -52,8 +59,8 @@
   </section>
   <outline id="outline2" corner-radius="1.000000">
     <point x="0.000000" y="0.000000"/>
-    <point x="37.46341" y="0.000000"/>
-    <point x="37.46341" y="52.44877"/>
+    <point x="32" y="0.000000"/>
+    <point x="32" y="52.44877"/>
     <point x="0.000000" y="52.44877"/>
   </outline>
   <outline id="altline" corner-radius="1.000000">

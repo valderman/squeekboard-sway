@@ -143,8 +143,8 @@ int send_virtual_keyboard_key(
 
 static void
 send_fake_modifiers_events (SeatEmitter         *emitter,
-                              EekModifierType modifiers,
-                              uint32_t        timestamp)
+                            EekModifierType      modifiers,
+                            uint32_t             timestamp)
 {
     (void)timestamp;
 
@@ -284,6 +284,26 @@ update_modifier_info (SeatEmitter *client)
     }*/
 }
 
+static void
+send_fake_key (SeatEmitter *emitter,
+               EekKeyboard *keyboard,
+               guint    keycode,
+               guint    keyboard_modifiers,
+               gboolean pressed,
+               uint32_t timestamp)
+{
+    uint32_t proto_modifiers = 0;
+    guint level = eek_element_get_level(EEK_ELEMENT(keyboard));
+    uint32_t group = (level / 2);
+
+    if (keyboard_modifiers & EEK_SHIFT_MASK)
+        proto_modifiers |= 1<<MOD_IDX_SHIFT;
+
+    zwp_virtual_keyboard_v1_modifiers(emitter->virtual_keyboard, proto_modifiers, 0, 0, group);
+    send_virtual_keyboard_key (emitter->virtual_keyboard, keycode - 8, (unsigned)pressed, timestamp);
+    zwp_virtual_keyboard_v1_modifiers(emitter->virtual_keyboard, proto_modifiers, 0, 0, group);
+}
+
 void
 emit_key_activated (EekboardContextService *manager,
                     EekKeyboard     *keyboard,
@@ -324,5 +344,5 @@ emit_key_activated (EekboardContextService *manager,
     emitter.virtual_keyboard = manager->virtual_keyboard;
     emitter.keymap = keyboard->keymap;
     update_modifier_info (&emitter);
-    send_fake_key_events (&emitter, symbol, modifiers, pressed, timestamp);
+    send_fake_key (&emitter, keyboard, keycode, modifiers, pressed, timestamp);
 }

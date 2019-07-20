@@ -3,7 +3,10 @@
   <gresource prefix="/sm/puri/squeekboard">
    <file compressed="true">style.css</file>
    <file compressed="true" preprocess="xml-stripblanks">keyboards/geometry/compact.xml</file>
+   <file compressed="true" preprocess="xml-stripblanks">keyboards/geometry/extended.xml</file>
    <file compressed="true" preprocess="xml-stripblanks">keyboards/keyboards.xml</file>
+   <file compressed="true">keyboards/keymaps/nb.xkb</file>
+   <file compressed="true">keyboards/keymaps/us.xkb</file>
    <file compressed="true" preprocess="xml-stripblanks">keyboards/symbols/ar.xml</file>
    <file compressed="true" preprocess="xml-stripblanks">keyboards/symbols/as-inscript.xml</file>
    <file compressed="true" preprocess="xml-stripblanks">keyboards/symbols/be.xml</file>
@@ -21,6 +24,7 @@
    <file compressed="true" preprocess="xml-stripblanks">keyboards/symbols/ml-inscript.xml</file>
    <file compressed="true" preprocess="xml-stripblanks">keyboards/symbols/mr-inscript.xml</file>
    <file compressed="true" preprocess="xml-stripblanks">keyboards/symbols/my.xml</file>
+   <file compressed="true" preprocess="xml-stripblanks">keyboards/symbols/nb.xml</file>
    <file compressed="true" preprocess="xml-stripblanks">keyboards/symbols/or-inscript.xml</file>
    <file compressed="true" preprocess="xml-stripblanks">keyboards/symbols/pa-inscript.xml</file>
    <file compressed="true" preprocess="xml-stripblanks">keyboards/symbols/ru.xml</file>

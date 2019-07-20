@@ -60,6 +60,12 @@
     <symbol label="0">0</symbol>
     <symbol label="&#9651;">U25B3</symbol>
   </key>
+  <key name="AD11">
+    <symbol keyval="229" label="&#229;">aring</symbol>
+    <symbol keyval="197" label="&#197;">Aring</symbol>
+    <symbol label="&#177;">U00B1</symbol>
+    <symbol label="&#167;">U00A7</symbol>
+  </key>
   <key name="AC01">
     <symbol label="a">a</symbol>
     <symbol label="A">A</symbol>
@@ -105,12 +111,24 @@
   <key name="AC08">
     <symbol label="k">k</symbol>
     <symbol label="K">K</symbol>
-    <symbol label="(">parenleft</symbol>
-    <symbol label="{">braceleft</symbol>
+    <symbol label="&#252;">U00FC</symbol>
+    <symbol label="^">asciicircum</symbol>
   </key>
   <key name="AC09">
     <symbol label="l">l</symbol>
     <symbol label="L">L</symbol>
+    <symbol label="&#246;">U00F6</symbol>
+    <symbol label="&#176;">degree</symbol>
+  </key>
+  <key name="AC10">
+    <symbol keyval="248" label="&#248;">oslash</symbol>
+    <symbol keyval="216" label="&#216;">Oslash</symbol>
+    <symbol label="(">parenleft</symbol>
+    <symbol label="{">braceleft</symbol>
+  </key>
+  <key name="AC11">
+    <symbol keyval="230" label="&#230;">ae</symbol>
+    <symbol keyval="198" label="&#198;">AE</symbol>
     <symbol label=")">parenright</symbol>
     <symbol label="}">braceright</symbol>
   </key>
@@ -175,12 +193,12 @@
     <symbol label="ABC">show-letters</symbol>
   </key>
   <key name="I149">
-    <symbol label="&#9786;" icon="keyboard-mode-symbolic" tooltip="Setup">preferences</symbol>
+    <symbol icon="keyboard-mode-symbolic" tooltip="Setup">preferences</symbol>
   </key>
   <key name="SPCE">
     <symbol label=" ">space</symbol>
   </key>
   <key name="BKSP">
-    <symbol keyval="65288" icon="edit-clear-symbolic">backspace</symbol>
+    <symbol keyval="65288" icon="edit-clear-symbolic">BackSpace</symbol>
   </key>
 </symbols>

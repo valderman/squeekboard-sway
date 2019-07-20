@@ -72,7 +72,7 @@ struct _EekKeyboardPrivate
     GList *pressed_keys;
     GList *locked_keys;
     GArray *outline_array;
-    GHashTable *keycodes;
+    GHashTable *names;
 
     /* modifiers dynamically assigned at run time */
     EekModifierType num_lock_mask;
@@ -127,9 +127,9 @@ section_child_added_cb (EekContainer *container,
                         EekElement   *element,
                         EekKeyboard  *keyboard)
 {
-    guint keycode = eek_key_get_keycode (EEK_KEY(element));
-    g_hash_table_insert (keyboard->priv->keycodes,
-                         GUINT_TO_POINTER(keycode),
+    const gchar *name = eek_element_get_name(element);
+    g_hash_table_insert (keyboard->priv->names,
+                         (gpointer)name,
                          element);
 }
 
@@ -138,9 +138,9 @@ section_child_removed_cb (EekContainer *container,
                           EekElement   *element,
                           EekKeyboard  *keyboard)
 {
-    guint keycode = eek_key_get_keycode (EEK_KEY(element));
-    g_hash_table_remove (keyboard->priv->keycodes,
-                         GUINT_TO_POINTER(keycode));
+    const gchar *name = eek_element_get_name(element);
+    g_hash_table_remove (keyboard->priv->names,
+                         name);
 }
 
 static EekSection *
@@ -219,7 +219,7 @@ set_level_from_modifiers (EekKeyboard *self, EekKey *key)
     gint level = priv->old_level & 2;
 
     /* Handle non-emitting keys */
-    if (key && (eek_key_get_keycode(key) == 0)) {
+    if (key) {
         const gchar *name = eek_element_get_name(EEK_ELEMENT(key));
         if (g_strcmp0(name, "ABC123") == 0)
             level ^= 2;
@@ -400,7 +400,7 @@ eek_keyboard_finalize (GObject *object)
     g_list_free_full (priv->locked_keys,
                       (GDestroyNotify) eek_modifier_key_free);
 
-    g_hash_table_destroy (priv->keycodes);
+    g_hash_table_destroy (priv->names);
 
     for (i = 0; i < priv->outline_array->len; i++) {
         EekOutline *outline = &g_array_index (priv->outline_array,
@@ -528,7 +528,7 @@ eek_keyboard_init (EekKeyboard *self)
     self->priv = EEK_KEYBOARD_GET_PRIVATE(self);
     self->priv->modifier_behavior = EEK_MODIFIER_BEHAVIOR_NONE;
     self->priv->outline_array = g_array_new (FALSE, TRUE, sizeof (EekOutline));
-    self->priv->keycodes = g_hash_table_new (g_direct_hash, g_direct_equal);
+    self->priv->names = g_hash_table_new (g_str_hash, g_str_equal);
     eek_element_set_symbol_index (EEK_ELEMENT(self), 0, 0);
     self->scale = 1.0;
 }
@@ -549,20 +549,20 @@ eek_keyboard_create_section (EekKeyboard *keyboard)
 }
 
 /**
- * eek_keyboard_find_key_by_keycode:
+ * eek_keyboard_find_key_by_name:
  * @keyboard: an #EekKeyboard
- * @keycode: a keycode
+ * @name: a key name
  *
- * Find an #EekKey whose keycode is @keycode.
- * Return value: (transfer none): #EekKey whose keycode is @keycode
+ * Find an #EekKey whose name is @name.
+ * Return value: (transfer none): #EekKey whose name is @name
  */
 EekKey *
-eek_keyboard_find_key_by_keycode (EekKeyboard *keyboard,
-                                  guint        keycode)
+eek_keyboard_find_key_by_name (EekKeyboard *keyboard,
+                               const gchar *name)
 {
     g_return_val_if_fail (EEK_IS_KEYBOARD(keyboard), NULL);
-    return g_hash_table_lookup (keyboard->priv->keycodes,
-                                GUINT_TO_POINTER(keycode));
+    return g_hash_table_lookup (keyboard->priv->names,
+                                name);
 }
 
 /**
