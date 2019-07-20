@@ -302,8 +302,14 @@ settings_update_layout(EekboardContextService *context)
 
     EekboardContextServicePrivate *priv = EEKBOARD_CONTEXT_SERVICE_GET_PRIVATE(context);
 
-    if (priv->purpose == ZWP_TEXT_INPUT_V3_CONTENT_PURPOSE_PHONE)
-        keyboard_layout = g_strdup("numbers");
+    switch (priv->purpose) {
+    case ZWP_TEXT_INPUT_V3_CONTENT_PURPOSE_NUMBER:
+    case ZWP_TEXT_INPUT_V3_CONTENT_PURPOSE_PHONE:
+        keyboard_layout = g_strdup("number");
+        break;
+    default:
+        ;
+    }
 
     // generic part follows
     static guint keyboard_id = 0;

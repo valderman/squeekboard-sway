@@ -90,8 +90,11 @@
 	    longname="Telugu (Inscript)" language="te"/>
 
   <!-- Common keyboards -->
-  <keyboard id="numbers" name="numbers"
-	    geometry="numbers-keypad" symbols="special/numbers"
+  <keyboard id="number" name="number"
+	    geometry="number-keypad" symbols="special/number"
 	    longname="Numeric keypad" language="all"/>
+  <keyboard id="phone" name="phone"
+	    geometry="number-keypad" symbols="special/number"
+	    longname="Phone keypad" language="all"/>
 
 </keyboards>
