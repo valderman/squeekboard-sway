@@ -36,7 +36,9 @@ test_output_parse (void)
     layout = eek_xml_layout_new ("us", &error);
     g_assert_no_error (error);
 
-    keyboard = eek_keyboard_new (layout, 640, 480);
+    /* We don't need the context service to parse an XML file, so we can pass
+       NULL when creating a keyboard. */
+    keyboard = eek_keyboard_new (NULL, layout, 640, 480);
     g_object_unref (layout);
     g_object_unref (keyboard);
 }
@@ -44,7 +46,6 @@ test_output_parse (void)
 int
 main (int argc, char **argv)
 {
-    g_type_init ();
     g_test_init (&argc, &argv, NULL);
     gtk_init (&argc, &argv);  /* for gdk_x11_display_get_xdisplay() */
 
