@@ -28,15 +28,11 @@ struct imservice* get_imservice(EekboardContextService *context,
     return imservice;
 }
 
-void imservice_make_visible(EekboardContextService *context,
-                            struct zwp_input_method_v2 *im) {
-    (void)im;
+void imservice_make_visible(EekboardContextService *context) {
     eekboard_context_service_show_keyboard (context);
 }
 
-void imservice_try_hide(EekboardContextService *context,
-                        struct zwp_input_method_v2 *im) {
-    (void)im;
+void imservice_try_hide(EekboardContextService *context) {
     eekboard_context_service_hide_keyboard (context);
 }
 
