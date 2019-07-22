@@ -1,8 +1,10 @@
+#[macro_use]
+mod bitflags;
+
 use std::boxed::Box;
 use std::ffi::CString;
 use std::num::Wrapping;
 use std::string::String;
-
 
 /// Gathers stuff defined in C or called by C
 pub mod c {
@@ -18,7 +20,7 @@ pub mod c {
     }
     
     // The following defined in C
-    
+        
     /// struct zwp_input_method_v2*
     #[repr(transparent)]
     pub struct InputMethod(*const c_void);
@@ -31,6 +33,7 @@ pub mod c {
     extern "C" {
         fn imservice_make_visible(imservice: *const UIManager);
         fn imservice_try_hide(imservice: *const UIManager);
+        fn eekboard_context_service_set_hint_purpose(imservice: *const UIManager, hint: u32, purpose: u32);
     }
     
     // The following defined in Rust. TODO: wrap naked pointers to Rust data inside RefCells to prevent multiple writers
@@ -86,7 +89,31 @@ pub mod c {
         imservice.pending = IMProtocolState {
             surrounding_text: into_cstring(text).expect("Received invalid string"),
             surrounding_cursor: cursor,
-            ..imservice.pending
+            ..imservice.pending.clone()
+        };
+    }
+    
+    #[no_mangle]
+    pub unsafe extern "C"
+    fn imservice_handle_content_type(imservice: *mut IMService,
+        _im: *const InputMethod,
+        hint: u32, purpose: u32)
+    {
+        let imservice = &mut *imservice;
+        imservice.pending = IMProtocolState {
+            content_hint: {
+                ContentHint::from_bits(hint).unwrap_or_else(|| {
+                    eprintln!("Warning: received invalid hint flags");
+                    ContentHint::default()
+                })
+            },
+            content_purpose: {
+                ContentPurpose::from_num(purpose).unwrap_or_else(|| {
+                    eprintln!("Warning: Received invalid purpose flags");
+                    ContentPurpose::Normal
+                })
+            },
+            ..imservice.pending.clone()
         };
     }
     
@@ -107,6 +134,10 @@ pub mod c {
         if active_changed {
             if imservice.current.active {
                 imservice_make_visible(imservice.ui_manager);
+                eekboard_context_service_set_hint_purpose(
+                    imservice.ui_manager,
+                    imservice.current.content_hint.bits(),
+                    imservice.current.content_purpose.as_num());
             } else {
                 imservice_try_hide(imservice.ui_manager);
             }
@@ -116,11 +147,98 @@ pub mod c {
     // FIXME: destroy and deallocate
 }
 
+
+bitflags!{
+    /// Map to `text_input_unstable_v3.content_hint` values
+    #[derive(Default)]
+    pub struct ContentHint: u32 {
+        const COMPLETION = 0x1;
+        const SPELLCHECK = 0x2;
+        const AUTO_CAPITALIZATION = 0x4;
+        const LOWERCASE = 0x8;
+        const UPPERCASE = 0x10;
+        const TITLECASE = 0x20;
+        const HIDDEN_TEXT = 0x40;
+        const SENSITIVE_DATA = 0x80;
+        const LATIN = 0x100;
+        const MULTILINE = 0x200;
+    }
+}
+
+/// Map to `text_input_unstable_v3.content_purpose` values
+#[derive(Debug, Clone)]
+pub enum ContentPurpose {
+    Normal,
+    Alpha,
+    Digits,
+    Number,
+    Phone,
+    Url,
+    Email,
+    Name,
+    Password,
+    Pin,
+    Date,
+    Time,
+    Datetime,
+    Terminal,
+}
+
+impl Default for ContentPurpose {
+    fn default() -> ContentPurpose {
+        ContentPurpose::Normal
+    }
+}
+
+impl ContentPurpose {
+    fn from_num(num: u32) -> Option<ContentPurpose> {
+        use ContentPurpose::*;
+        match num {
+            0 => Some(Normal),
+            1 => Some(Alpha),
+            2 => Some(Digits),
+            3 => Some(Number),
+            4 => Some(Phone),
+            5 => Some(Url),
+            6 => Some(Email),
+            7 => Some(Name),
+            8 => Some(Password),
+            9 => Some(Pin),
+            10 => Some(Date),
+            11 => Some(Time),
+            12 => Some(Datetime),
+            13 => Some(Terminal),
+            _ => None,
+        }
+    }
+    fn as_num(self: &ContentPurpose) -> u32 {
+        use ContentPurpose::*;
+        match self {
+            Normal => 0,
+            Alpha => 1,
+            Digits => 2,
+            Number => 3,
+            Phone => 4,
+            Url => 5,
+            Email => 6,
+            Name => 7,
+            Password => 8,
+            Pin => 9,
+            Date => 10,
+            Time => 11,
+            Datetime => 12,
+            Terminal => 13,
+        }
+    }
+}
+
 /// Describes the desired state of the input method as requested by the server
 #[derive(Default, Clone)]
 struct IMProtocolState {
     surrounding_text: CString,
     surrounding_cursor: u32,
+    content_purpose: ContentPurpose,
+    content_hint: ContentHint,
     active: bool,
 }
 

@@ -22,5 +22,6 @@ void imservice_handle_input_method_deactivate(void *data, struct zwp_input_metho
 void imservice_handle_surrounding_text(void *data, struct zwp_input_method_v2 *input_method,
                                        const char *text, uint32_t cursor, uint32_t anchor);
 void imservice_handle_commit_state(void *data, struct zwp_input_method_v2 *input_method);
+void imservice_handle_content_type(void *data, struct zwp_input_method_v2 *input_method, uint32_t hint, uint32_t purpose);
 
 #endif
