@@ -2,16 +2,29 @@ image: debian:buster
 
 stages:
   - build
+  - test
+
+.tags: &tags
+  tags:
+    - librem5
 
 before_script:
   - apt-get -y update
   - apt-get -y build-dep .
 
 build_meson:
+  <<: *tags
   stage: build
-  tags:
-    - librem5
   script:
     - meson . _build/ -Ddepdatadir=/usr/share
     - ninja -C _build install
+
+test:
+  <<: *tags
+  stage: test
+  dependencies:
+    - build_meson
+  script:
+    - export LC_ALL=C.UTF-8
+    - ninja -C _build test
 
