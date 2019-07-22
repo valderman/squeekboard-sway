@@ -19,5 +19,6 @@ void imservice_handle_surrounding_text(void *data, struct zwp_input_method_v2 *i
                                        const char *text, uint32_t cursor, uint32_t anchor);
 void imservice_handle_commit_state(void *data, struct zwp_input_method_v2 *input_method);
 void imservice_handle_content_type(void *data, struct zwp_input_method_v2 *input_method, uint32_t hint, uint32_t purpose);
+void imservice_handle_text_change_cause(void *data, struct zwp_input_method_v2 *input_method, uint32_t cause);
 
 #endif

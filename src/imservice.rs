@@ -104,13 +104,31 @@ pub mod c {
             content_hint: {
                 ContentHint::from_bits(hint).unwrap_or_else(|| {
                     eprintln!("Warning: received invalid hint flags");
-                    ContentHint::default()
+                    ContentHint::NONE
                 })
             },
             content_purpose: {
                 ContentPurpose::from_num(purpose).unwrap_or_else(|| {
                     eprintln!("Warning: Received invalid purpose flags");
                     ContentPurpose::Normal
+                })
+            },
+            ..imservice.pending.clone()
+        };
+    }
+    
+    #[no_mangle]
+    pub unsafe extern "C"
+    fn imservice_handle_text_change_cause(imservice: *mut IMService,
+        _im: *const InputMethod,
+        cause: u32)
+    {
+        let imservice = &mut *imservice;
+        imservice.pending = IMProtocolState {
+            text_change_cause: {
+                ChangeCause::from_num(cause).unwrap_or_else(|| {
+                    eprintln!("Warning: received invalid cause flags");
+                    ChangeCause::InputMethod
                 })
             },
             ..imservice.pending.clone()
@@ -150,8 +168,8 @@ pub mod c {
 
 bitflags!{
     /// Map to `text_input_unstable_v3.content_hint` values
-    #[derive(Default)]
     pub struct ContentHint: u32 {
+        const NONE = 0x0;
         const COMPLETION = 0x1;
         const SPELLCHECK = 0x2;
         const AUTO_CAPITALIZATION = 0x4;
@@ -182,12 +200,6 @@ pub enum ContentPurpose {
     Time,
     Datetime,
     Terminal,
-}
-
-impl Default for ContentPurpose {
-    fn default() -> ContentPurpose {
-        ContentPurpose::Normal
-    }
 }
 
 impl ContentPurpose {
@@ -232,14 +244,51 @@ impl ContentPurpose {
     }
 }
 
+/// Map to `text_input_unstable_v3.change_cause` values
+#[derive(Debug, Clone)]
+pub enum ChangeCause {
+    InputMethod,
+    Other,
+}
+
+impl ChangeCause {
+    pub fn from_num(num: u32) -> Option<ChangeCause> {
+        match num {
+            0 => Some(ChangeCause::InputMethod),
+            1 => Some(ChangeCause::Other),
+            _ => None
+        }
+    }
+    pub fn as_num(&self) -> u32 {
+        match &self {
+            ChangeCause::InputMethod => 0,
+            ChangeCause::Other => 1,
+        }
+    }
+}
+
 /// Describes the desired state of the input method as requested by the server
-#[derive(Default, Clone)]
+#[derive(Clone)]
 struct IMProtocolState {
     surrounding_text: CString,
     surrounding_cursor: u32,
     content_purpose: ContentPurpose,
     content_hint: ContentHint,
+    text_change_cause: ChangeCause,
     active: bool,
+}
+
+impl Default for IMProtocolState {
+    fn default() -> IMProtocolState {
+        IMProtocolState {
+            surrounding_text: CString::default(),
+            surrounding_cursor: 0, // TODO: mark that there's no cursor
+            content_hint: ContentHint::NONE,
+            content_purpose: ContentPurpose::Normal,
+            text_change_cause: ChangeCause::InputMethod,
+            active: false,
+        }
+    }
 }
 
 pub struct IMService {
