@@ -33,6 +33,7 @@ pub mod c {
     extern "C" {
         fn imservice_make_visible(imservice: *const UIManager);
         fn imservice_try_hide(imservice: *const UIManager);
+        fn imservice_destroy_im(im: *mut c::InputMethod);
         fn eekboard_context_service_set_hint_purpose(imservice: *const UIManager, hint: u32, purpose: u32);
     }
     
@@ -162,6 +163,22 @@ pub mod c {
         }
     }
     
+    #[no_mangle]
+    pub unsafe extern "C"
+    fn imservice_handle_unavailable(imservice: *mut IMService,
+        im: *mut InputMethod)
+    {
+        imservice_destroy_im(im);
+
+        let imservice = &mut *imservice;
+
+        // no need to care about proper double-buffering,
+        // the keyboard is already decommissioned
+        imservice.current.active = false;
+
+        imservice_try_hide(imservice.ui_manager);
+    }
+
     // FIXME: destroy and deallocate
 }
 

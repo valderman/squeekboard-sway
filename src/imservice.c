@@ -5,9 +5,6 @@
 #include "eekboard/eekboard-context-service.h"
 
 
-void imservice_handle_unavailable(void *data, struct zwp_input_method_v2 *input_method) {}
-
-
 static const struct zwp_input_method_v2_listener input_method_listener = {
     .activate = imservice_handle_input_method_activate,
     .deactivate = imservice_handle_input_method_deactivate,
@@ -41,4 +38,10 @@ void imservice_try_hide(EekboardContextService *context,
                         struct zwp_input_method_v2 *im) {
     (void)im;
     eekboard_context_service_hide_keyboard (context);
+}
+
+/// Declared explicitly because _destroy is inline,
+/// making it unavailable in Rust
+void imservice_destroy_im(struct zwp_input_method_v2 *im) {
+    zwp_input_method_v2_destroy(im);
 }
