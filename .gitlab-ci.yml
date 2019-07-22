@@ -15,6 +15,9 @@ before_script:
 build_meson:
   <<: *tags
   stage: build
+  artifacts:
+    paths:
+      - _build
   script:
     - meson . _build/ -Ddepdatadir=/usr/share
     - ninja -C _build install
