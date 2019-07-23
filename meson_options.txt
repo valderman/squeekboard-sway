@@ -1,1 +1,8 @@
-option('depdatadir', type : 'string', value : '', description : 'System data path. Will be searched for definitions instead of datadir when provided')
+option('depdatadir',
+       type : 'string',
+       value : '',
+       description : 'System data path. Will be searched for definitions instead of datadir when provided')
+
+option('tests',
+       type: 'boolean', value: true,
+       description: 'Whether to compile unit tests')

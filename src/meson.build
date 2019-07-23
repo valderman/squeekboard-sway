@@ -4,13 +4,16 @@ dbus_src = gnome.gdbus_codegen(
     join_paths(meson.source_root() / 'data' / 'dbus', 'sm.puri.OSK0.xml')
 )
 
-config_h = configure_file(input: 'config.h.in', output: 'config.h',configuration: conf_data)
+config_h = configure_file(
+    input: 'config.h.in',
+    output: 'config.h',
+    configuration: conf_data
+)
 
 sources = [
   config_h,
   'imservice.c',
   'server-context-service.c',
-  'server-main.c',
   'wayland.c',
   '../eek/eek.c',
   '../eek/eek-container.c',
@@ -71,9 +74,22 @@ rslib = static_library(
   rust_crate_type: 'staticlib'
 )
 
-squeekboard = executable('squeekboard',
+libsqueekboard = static_library('libsqueekboard',
   sources,
   link_with: rslib,
+  include_directories: [include_directories('..'), include_directories('../eek')],
+  dependencies: deps,
+  c_args: [
+    '-DTHEMESDIR="' + pkgdatadir + '/themes"',
+    '-DKEYBOARDSDIR="' + pkgdatadir + '/keyboards"',
+    '-DEEKBOARD_COMPILATION=1',
+    '-DEEK_COMPILATION=1'],
+)
+
+squeekboard = executable('squeekboard',
+  'server-main.c',
+  wl_proto_sources,
+  link_with: libsqueekboard,
   include_directories: [include_directories('..'), include_directories('../eek')],
   dependencies: deps,
   install: true,
@@ -83,4 +99,3 @@ squeekboard = executable('squeekboard',
     '-DEEKBOARD_COMPILATION=1',
     '-DEEK_COMPILATION=1'],
 )
-

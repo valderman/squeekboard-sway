@@ -11,7 +11,10 @@ Build-Depends:
  libcroco3-dev,
  libwayland-dev (>= 1.16),
  rustc,
- wayland-protocols (>= 1.14)
+ wayland-protocols (>= 1.14),
+# for running the tests
+ xvfb,
+ xauth,
 Standards-Version: 4.1.3
 Homepage: https://source.puri.sm/Librem5/squeekboard
 
