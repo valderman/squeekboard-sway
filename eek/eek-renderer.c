@@ -697,11 +697,12 @@ eek_renderer_real_render_keyboard (EekRenderer *self,
     g_return_if_fail (priv->allocation_width > 0.0);
     g_return_if_fail (priv->allocation_height > 0.0);
 
-    if (!priv->keyboard_surface) {
-        priv->keyboard_surface = cairo_surface_create_for_rectangle (
-            cairo_get_target (cr), 0, 0,
-            priv->allocation_width, priv->allocation_height);
-    }
+    if (priv->keyboard_surface)
+        cairo_surface_destroy (priv->keyboard_surface);
+
+    priv->keyboard_surface = cairo_surface_create_for_rectangle (
+        cairo_get_target (cr), 0, 0,
+        priv->allocation_width, priv->allocation_height);
 
     render_keyboard_surface (self);
 
