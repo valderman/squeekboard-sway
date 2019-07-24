@@ -124,7 +124,7 @@ get_keymap_from_resource(const gchar *keyboard_type, gboolean fallback)
                                   &bytes_read, NULL, &error))
         goto keymap_error;
 
-    return g_utf8_make_valid (contents, -1);
+    return g_utf8_make_valid (contents, size);
 
 keymap_error:
     if (fallback)
