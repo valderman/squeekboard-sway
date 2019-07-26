@@ -174,13 +174,6 @@ set_geometry (ServerContextService *context)
 
         gtk_window_set_decorated (GTK_WINDOW(context->window), FALSE);
         gtk_window_set_resizable (GTK_WINDOW(context->window), FALSE);
-    } else {
-        gtk_window_resize (GTK_WINDOW(context->window),
-                           bounds.width,
-                           bounds.height);
-        gtk_window_move (GTK_WINDOW(context->window),
-                         MAX(rect.width - 20 - bounds.width, 0),
-                         MAX(rect.height - 40 - bounds.height, 0));
     }
 }
 
