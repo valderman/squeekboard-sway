@@ -152,7 +152,6 @@ render_keyboard_surface (EekRenderer *renderer)
 {
     EekRendererPrivate *priv = eek_renderer_get_instance_private (renderer);
     EekBounds bounds;
-    cairo_surface_t *keyboard_surface;
     CreateKeyboardSurfaceCallbackData data;
     EekColor foreground, background;
 
