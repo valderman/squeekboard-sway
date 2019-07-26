@@ -502,13 +502,12 @@ render_key (EekRenderer *self,
     if (!symbol)
         return;
 
- #define SCALE 0.4
     if (eek_symbol_get_icon_name (symbol)) {
         gint scale = priv->scale_factor;
         cairo_surface_t *icon_surface =
             eek_renderer_get_icon_surface (self,
                                            eek_symbol_get_icon_name (symbol),
-                                           SCALE * MIN(bounds.width, bounds.height),
+                                           16,
                                            scale);
         if (icon_surface) {
             gint width = cairo_image_surface_get_width (icon_surface);
