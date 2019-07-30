@@ -63,8 +63,7 @@ test_check_xkb (void)
 int
 main (int argc, char **argv)
 {
-    g_test_init (&argc, &argv, NULL);
-    gtk_init (&argc, &argv);  /* for gdk_x11_display_get_xdisplay() */
+    gtk_test_init (&argc, &argv, NULL);
 
     g_test_add_func ("/test-keymap-generation/check-xkb", test_check_xkb);
 
