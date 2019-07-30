@@ -33,8 +33,8 @@ See `.gitlab-ci.yml`.
 ### Build from git repo
 
 ```
-$ git clone https://source.puri.sm/Librem5/eekboard.git
-$ cd eekboard
+$ git clone https://source.puri.sm/Librem5/squeekboard.git
+$ cd squeekboard
 $ mkdir ../build
 $ meson ../build/
 $ cd ../build
