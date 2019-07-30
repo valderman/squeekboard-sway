@@ -40,7 +40,6 @@ sources = [
   enums,
   keysym_entries,
   marshalers,
-  '../eekboard/keymap.c',
   '../eekboard/key-emitter.c',
   '../eekboard/eekboard-context-service.c',
   '../eekboard/eekboard-context.c',

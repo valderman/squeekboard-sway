@@ -21,7 +21,8 @@ test_link_args = [
 
 tests = [
   'eek-simple-test',
-  'eek-xml-test'
+  'eek-xml-test',
+  'test-keymap-generation'
 ]
 
 foreach name : tests

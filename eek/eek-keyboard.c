@@ -28,6 +28,7 @@
  */
 
 #include "config.h"
+#include <glib/gprintf.h>
 
 #include "eek-keyboard.h"
 #include "eek-marshalers.h"
@@ -36,6 +37,7 @@
 #include "eek-symbol.h"
 #include "eek-enumtypes.h"
 #include "eekboard/key-emitter.h"
+#include "keymap.h"
 
 enum {
     PROP_0,
@@ -72,6 +74,8 @@ struct _EekKeyboardPrivate
     GList *pressed_keys;
     GList *locked_keys;
     GArray *outline_array;
+
+    /* Map key names to key objects: */
     GHashTable *names;
 
     /* modifiers dynamically assigned at run time */
@@ -795,4 +799,94 @@ eek_keyboard_get_locked_keys (EekKeyboard *keyboard)
 {
     g_return_val_if_fail (EEK_IS_KEYBOARD(keyboard), NULL);
     return g_list_copy (keyboard->priv->locked_keys);
+}
+
+/**
+ * eek_keyboard_get_keymap:
+ * @keyboard: an #EekKeyboard
+ *
+ * Get the keymap for the keyboard.
+ * Returns: a string containing the XKB keymap.
+ */
+gchar *
+eek_keyboard_get_keymap(EekKeyboard *keyboard)
+{
+    /* Start the keycodes and symbols sections with their respective headers. */
+    gchar *keycodes = g_strdup(keymap_keycodes_header);
+    gchar *symbols = g_strdup(keymap_symbols_header);
+
+    /* Iterate over the keys in the name-to-key hash table. */
+    GHashTableIter iter;
+    gpointer key_name, key_ptr;
+    g_hash_table_iter_init(&iter, keyboard->priv->names);
+
+    while (g_hash_table_iter_next(&iter, &key_name, &key_ptr)) {
+
+        gchar *current, *line;
+        EekKey *key = EEK_KEY(key_ptr);
+        int keycode = eek_key_get_keycode(key);
+
+        /* Don't include invalid keycodes in the keymap. */
+        if (keycode == EEK_INVALID_KEYCODE)
+            continue;
+
+        /* Append a key name-to-keycode definition to the keycodes section. */
+        current = keycodes;
+        line = g_strdup_printf("        <%s> = %i;\n", (char *)key_name, keycode);
+
+        keycodes = g_strconcat(current, line, NULL);
+        g_free(line);
+        g_free(current);
+
+        /* Find the symbols associated with the key. */
+        EekSymbolMatrix *matrix = eek_key_get_symbol_matrix(key);
+        EekSymbol *syms[4];
+        int i, j;
+
+        /* Get the symbols for all the levels defined for the key, then
+           pad it out with the first symbol for all levels up to the fourth. */
+        for (i = 0; i < matrix->num_levels; ++i)
+            syms[i] = eek_symbol_matrix_get_symbol(matrix, 0, i);
+
+        while (i < 4) {
+            syms[i] = eek_symbol_matrix_get_symbol(matrix, 0, 0);
+            i++;
+        }
+
+        /* The four levels are split into two groups in the keymap.
+           Generate strings for each of these groups, where an empty group is
+           treated specially. */
+
+        gchar *groups[2];
+        for (i = 0, j = 0; i < 2; ++i, j += 2) {
+            if (syms[j] && syms[j + 1])
+                groups[i] = g_strjoin(", ", eek_symbol_get_name(syms[j]),
+                                            eek_symbol_get_name(syms[j + 1]),
+                                            NULL);
+            else
+                groups[i] = "";
+        }
+
+        /* Append a key definition to the symbols section. */
+        current = symbols;
+        line = g_strdup_printf("        key <%s> { [ %s ], [ %s ] };\n",
+                               (char *)key_name, groups[0], groups[1]);
+
+        g_free(groups[0]);
+        g_free(groups[1]);
+
+        symbols = g_strconcat(current, line, NULL);
+        g_free(line);
+        g_free(current);
+    }
+
+    /* Assemble the keymap file from the header, sections and footer. */
+    gchar *keymap = g_strconcat(keymap_header,
+                                keycodes, "    };\n\n",
+                                symbols, "    };\n\n",
+                                keymap_footer, NULL);
+
+    g_free(keycodes);
+    g_free(symbols);
+    return keymap;
 }

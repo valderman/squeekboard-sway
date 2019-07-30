@@ -46,8 +46,7 @@ test_output_parse (void)
 int
 main (int argc, char **argv)
 {
-    g_test_init (&argc, &argv, NULL);
-    gtk_init (&argc, &argv);  /* for gdk_x11_display_get_xdisplay() */
+    gtk_test_init (&argc, &argv, NULL);
 
     g_test_add_func ("/eek-xml-test/output-parse", test_output_parse);
 

@@ -20,7 +20,6 @@
 /* This file is responsible for managing keycode data and emitting keycodes. */
 
 #include "eekboard/key-emitter.h"
-#include "eekboard/keymap.h"
 
 #include <gdk/gdk.h>
 
@@ -38,98 +37,6 @@ typedef struct {
     guint group;
 } SeatEmitter;
 
-
-/* The following functions for keyboard mapping change are direct
-   translation of the code in Caribou (in libcaribou/xadapter.vala):
-
-   - get_replaced_keycode (Caribou: get_reserved_keycode)
-   - replace_keycode
-   - get_keycode_from_gdk_keymap (Caribou: best_keycode_keyval_match)
-*/
-
-/* Find an unused keycode where a keysym can be assigned. Restricted to Level 1 */
-static guint
-get_replaced_keycode (SeatEmitter *client)
-{
-    guint keycode;
-return 0; // FIXME: no xkb allocated yet
-    for (keycode = client->xkb->max_key_code;
-         keycode >= client->xkb->min_key_code;
-         --keycode) {
-        guint offset = client->xkb->map->key_sym_map[keycode].offset;
-        if (client->xkb->map->key_sym_map[keycode].kt_index[0] == XkbOneLevelIndex &&
-            client->xkb->map->syms[offset] != NoSymbol) {
-            return keycode;
-        }
-    }
-
-    return 0;
-}
-
-/* Replace keysym assigned to KEYCODE to KEYSYM.  Both args are used
-   as in-out.  If KEYCODE points to 0, this function picks a keycode
-   from the current map and replace the associated keysym to KEYSYM.
-   In that case, the replaced keycode is stored in KEYCODE and the old
-   keysym is stored in KEYSYM.  If otherwise (KEYCODE points to
-   non-zero keycode), it simply changes the current map with the
-   specified KEYCODE and KEYSYM. */
-static gboolean
-replace_keycode (SeatEmitter *emitter,
-                 guint   keycode,
-                 guint  *keysym)
-{
-/*  GdkDisplay *display = gdk_display_get_default ();
-    Display *xdisplay = GDK_DISPLAY_XDISPLAY (display);
-    guint old_keysym;
-    int keysyms_per_keycode;
-    KeySym *syms;
-*/
-return TRUE; // FIXME: no xkb allocated at the moment, pretending all is fine
-    g_return_val_if_fail (emitter->xkb->min_key_code <= keycode &&
-                          keycode <= emitter->xkb->max_key_code,
-                          FALSE);
-    g_return_val_if_fail (keysym != NULL, FALSE);
-/*
- * Update keyboard mapping. Wayland receives keyboard mapping as a string, so XChangeKeyboardMapping needs to translate from the symbol tbale t the string. TODO.
- *
-    syms = XGetKeyboardMapping (xdisplay, keycode, 1, &keysyms_per_keycode);
-    old_keysym = syms[0];
-    syms[0] = *keysym;
-    XChangeKeyboardMapping (xdisplay, keycode, 1, syms, 1);
-    XSync (xdisplay, False);
-    XFree (syms);
-    *keysym = old_keysym;
-*/
-    return TRUE;
-}
-
-static gboolean
-get_keycode_from_gdk_keymap (SeatEmitter *emitter,
-                             guint           keysym,
-                             guint          *keycode,
-                             guint          *modifiers)
-{
-    GdkKeymapKey *keys, *best_match = NULL;
-    guint n_keys, i;
-
-    if (!squeek_keymap_get_entries_for_keyval (emitter->keymap, keysym, &keys, &n_keys))
-        return FALSE;
-
-    for (i = 0; i < n_keys; i++)
-        if ((guint)keys[i].group == emitter->group)
-            best_match = &keys[i];
-
-    if (!best_match) {
-        g_free (keys);
-        return FALSE;
-    }
-
-    *keycode = best_match->keycode;
-    *modifiers = best_match->level == 1 ? EEK_SHIFT_MASK : 0;
-
-    g_free (keys);
-    return TRUE;
-}
 
 int send_virtual_keyboard_key(
     struct zwp_virtual_keyboard_v1 *keyboard,
@@ -160,95 +67,6 @@ send_fake_modifiers_events (SeatEmitter         *emitter,
     }
     zwp_virtual_keyboard_v1_modifiers(emitter->virtual_keyboard, proto_modifiers, 0, 0, emitter->group);
 }
-
-static void
-send_fake_key_event (SeatEmitter *emitter,
-                     guint    xkeysym,
-                     guint    keyboard_modifiers,
-                     gboolean pressed,
-                     uint32_t timestamp)
-{
-    EekModifierType modifiers;
-    guint old_keysym = xkeysym;
-
-    g_return_if_fail (xkeysym > 0);
-
-    guint keycode;
-    if (!get_keycode_from_gdk_keymap (emitter, xkeysym, &keycode, &modifiers)) {
-        keycode = get_replaced_keycode (emitter);
-        if (keycode == 0) {
-            g_warning ("no available keycode to replace");
-            return;
-        }
-
-        if (!replace_keycode (emitter, keycode, &old_keysym)) {
-            g_warning ("failed to lookup X keysym %X", xkeysym);
-            return;
-        }
-    }
-    /* Clear level shift modifiers */
-    keyboard_modifiers &= (unsigned)~EEK_SHIFT_MASK;
-    keyboard_modifiers &= (unsigned)~EEK_LOCK_MASK;
-    /* FIXME: may need to remap ISO_Level3_Shift and NumLock */
-
-    modifiers |= keyboard_modifiers;
-
-    send_fake_modifiers_events (emitter, modifiers, timestamp);
-
-    // There's something magical about subtracting/adding 8 to keycodes for some reason
-    send_virtual_keyboard_key (emitter->virtual_keyboard, keycode - 8, (unsigned)pressed, timestamp);
-    send_fake_modifiers_events (emitter, modifiers, timestamp);
-
-    if (old_keysym != xkeysym)
-        replace_keycode (emitter, keycode, &old_keysym);
-}
-
-static void
-send_fake_key_events (SeatEmitter *emitter,
-                      EekSymbol *symbol,
-                      EekModifierType      keyboard_modifiers,
-                      gboolean   pressed,
-                      uint32_t   timestamp)
-{
-    /* Ignore modifier keys */
-    if (eek_symbol_is_modifier (symbol))
-        return;
-
-    /* If symbol is a text, convert chars in it to keysym */
-    if (EEK_IS_TEXT(symbol)) {
-        const gchar *utf8 = eek_text_get_text (EEK_TEXT(symbol));
-        printf("Attempting to send text %s\n", utf8);
-        /* FIXME:
-        glong items_written;
-        gunichar *ucs4 = g_utf8_to_ucs4_fast (utf8, -1, &items_written);
-        gint i;
-
-        for (i = 0; i < items_written; i++) {
-            guint xkeysym;
-            EekKeysym *keysym;
-            gchar *name;
-
-            name = g_strdup_printf ("U%04X", ucs4[i]);
-            xkeysym = XStringToKeysym (name); // TODO: use xkb_get_keysym_from_name
-            g_free (name);
-
-            keysym = eek_keysym_new (xkeysym);
-            send_fake_key_events (client,
-                                  EEK_SYMBOL(keysym),
-                                  keyboard_modifiers);
-        }
-        g_free (ucs4);
-        */
-        return;
-    }
-
-    if (EEK_IS_KEYSYM(symbol)) {
-        guint xkeysym = eek_keysym_get_xkeysym (EEK_KEYSYM(symbol));
-        send_fake_key_event (emitter, xkeysym, keyboard_modifiers, pressed, timestamp);
-    }
-}
-
-
 
 /* Finds the first key code for each modifier and saves it in modifier_keycodes */
 static void
