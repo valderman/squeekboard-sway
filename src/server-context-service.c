@@ -76,6 +76,9 @@ on_destroy (GtkWidget *widget, gpointer user_data)
 }
 
 static void
+make_widget (ServerContextService *context);
+
+static void
 on_notify_keyboard (GObject              *object,
                     GParamSpec           *spec,
                     ServerContextService *context)
@@ -94,6 +97,9 @@ on_notify_keyboard (GObject              *object,
                                         keyboard);
 
     /* Recreate the keyboard widget to keep in sync with the keymap. */
+    if (context->window)
+        make_widget(context);
+
     gboolean visible;
     g_object_get (context, "visible", &visible, NULL);
 
@@ -168,13 +174,6 @@ set_geometry (ServerContextService *context)
 
         gtk_window_set_decorated (GTK_WINDOW(context->window), FALSE);
         gtk_window_set_resizable (GTK_WINDOW(context->window), FALSE);
-    } else {
-        gtk_window_resize (GTK_WINDOW(context->window),
-                           bounds.width,
-                           bounds.height);
-        gtk_window_move (GTK_WINDOW(context->window),
-                         MAX(rect.width - 20 - bounds.width, 0),
-                         MAX(rect.height - 40 - bounds.height, 0));
     }
 }
 
@@ -232,7 +231,11 @@ make_widget (ServerContextService *context)
     EekKeyboard *keyboard;
     EekTheme *theme;
 
-    g_return_if_fail (!context->widget);
+    if (context->widget) {
+        gtk_widget_destroy(context->widget);
+        context->widget = NULL;
+    }
+
     theme = eek_theme_new ("resource:///sm/puri/squeekboard/style.css",
                            NULL,
                            NULL);
@@ -257,12 +260,8 @@ server_context_service_real_show_keyboard (EekboardContextService *_context)
 
     if (!context->window)
         make_window (context);
-    if (context->widget) {
-        gtk_widget_destroy(context->widget);
-        context->widget = NULL;
-    }
-
-    make_widget (context);
+    if (!context->widget)
+        make_widget (context);
 
     EEKBOARD_CONTEXT_SERVICE_CLASS (server_context_service_parent_class)->
         show_keyboard (_context);

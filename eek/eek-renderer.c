@@ -147,12 +147,11 @@ create_keyboard_surface_section_callback (EekElement *element,
     cairo_restore (data->cr);
 }
 
-static cairo_surface_t *
-create_keyboard_surface (EekRenderer *renderer)
+void
+render_keyboard_surface (EekRenderer *renderer)
 {
     EekRendererPrivate *priv = eek_renderer_get_instance_private (renderer);
     EekBounds bounds;
-    cairo_surface_t *keyboard_surface;
     CreateKeyboardSurfaceCallbackData data;
     EekColor foreground, background;
 
@@ -165,14 +164,7 @@ create_keyboard_surface (EekRenderer *renderer)
 
     eek_element_get_bounds (EEK_ELEMENT(priv->keyboard), &bounds);
 
-    /* Create a surface that encompasses the dimensions of the keyboard as well
-       as the margin around the edge. */
-    keyboard_surface = cairo_image_surface_create (
-        CAIRO_FORMAT_ARGB32,
-        ceil(((bounds.x * 2) + bounds.width) * priv->scale),
-        ceil(((bounds.y * 2) + bounds.height) * priv->scale));
-
-    data.cr = cairo_create (keyboard_surface);
+    data.cr = cairo_create (priv->keyboard_surface);
     data.renderer = renderer;
 
     cairo_translate (data.cr, bounds.x * priv->scale, bounds.y * priv->scale);
@@ -196,8 +188,6 @@ create_keyboard_surface (EekRenderer *renderer)
                                  create_keyboard_surface_section_callback,
                                  &data);
     cairo_destroy (data.cr);
-
-    return keyboard_surface;
 }
 
 static void
@@ -705,8 +695,14 @@ eek_renderer_real_render_keyboard (EekRenderer *self,
     g_return_if_fail (priv->allocation_width > 0.0);
     g_return_if_fail (priv->allocation_height > 0.0);
 
-    if (!priv->keyboard_surface)
-        priv->keyboard_surface = create_keyboard_surface (self);
+    if (priv->keyboard_surface)
+        cairo_surface_destroy (priv->keyboard_surface);
+
+    priv->keyboard_surface = cairo_surface_create_for_rectangle (
+        cairo_get_target (cr), 0, 0,
+        priv->allocation_width, priv->allocation_height);
+
+    render_keyboard_surface (self);
 
     cairo_set_source_surface (cr, priv->keyboard_surface, 0.0, 0.0);
     source = cairo_get_source (cr);
