@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <geometry version="0.90">
-  <bounds x="0" y="10.000000" width="426.0000" height="296.5853"/>
+  <bounds x="10" y="10" width="410.0000" height="229"/>
   <section angle="0">
     <row orientation="1">
       <key name="AD01" oref="outline2" />
@@ -54,67 +54,67 @@
   <outline id="outline2" corner-radius="1.000000">
     <point x="0.000000" y="0.000000"/>
     <point x="37.46341" y="0.000000"/>
-    <point x="37.46341" y="52.44877"/>
-    <point x="0.000000" y="52.44877"/>
+    <point x="37.46341" y="52"/>
+    <point x="0.000000" y="52"/>
   </outline>
   <outline id="altline" corner-radius="1.000000">
     <point x="0.000000" y="0.000000"/>
     <point x="48.39024" y="0.000000"/>
-    <point x="48.39024" y="52.44877"/>
-    <point x="0.000000" y="52.44877"/>
+    <point x="48.39024" y="52"/>
+    <point x="0.000000" y="52"/>
   </outline>
   <outline id="outline4" corner-radius="1.000000">
     <point x="0.000000" y="0.000000"/>
     <point x="59.31707" y="0.000000"/>
-    <point x="59.31707" y="52.44877"/>
-    <point x="0.000000" y="52.44877"/>
+    <point x="59.31707" y="52"/>
+    <point x="0.000000" y="52"/>
   </outline>
   <outline id="outline5" corner-radius="1.000000">
     <point x="0.000000" y="0.000000"/>
     <point x="59.31707" y="0.000000"/>
-    <point x="59.31707" y="52.44877"/>
-    <point x="0.000000" y="52.44877"/>
+    <point x="59.31707" y="52"/>
+    <point x="0.000000" y="52"/>
   </outline>
   <outline id="outline6" corner-radius="1.000000">
     <point x="0.000000" y="0.000000"/>
     <point x="68.68292" y="0.000000"/>
-    <point x="68.68292" y="52.44877"/>
-    <point x="0.000000" y="52.44877"/>
+    <point x="68.68292" y="52"/>
+    <point x="0.000000" y="52"/>
   </outline>
   <outline id="outline7" corner-radius="1.000000">
     <point x="0.000000" y="0.000000"/>
     <point x="88.97561" y="0.000000"/>
-    <point x="88.97561" y="52.44877"/>
-    <point x="0.000000" y="52.44877"/>
+    <point x="88.97561" y="52"/>
+    <point x="0.000000" y="52"/>
   </outline>
   <outline id="outline8" corner-radius="1.000000">
     <point x="0.000000" y="0.000000"/>
     <point x="88.97561" y="0.000000"/>
-    <point x="88.97561" y="52.44877"/>
-    <point x="0.000000" y="52.44877"/>
+    <point x="88.97561" y="52"/>
+    <point x="0.000000" y="52"/>
   </outline>
   <outline id="outline9" corner-radius="1.000000">
     <point x="0.000000" y="0.000000"/>
     <point x="109.2682" y="0.000000"/>
-    <point x="109.2682" y="52.44877"/>
-    <point x="0.000000" y="52.44877"/>
+    <point x="109.2682" y="52"/>
+    <point x="0.000000" y="52"/>
   </outline>
   <outline id="outline10" corner-radius="1.000000">
     <point x="0.000000" y="0.000000"/>
     <point x="37.46341" y="0.000000"/>
-    <point x="37.46341" y="52.44877"/>
-    <point x="0.000000" y="52.44877"/>
+    <point x="37.46341" y="52"/>
+    <point x="0.000000" y="52"/>
   </outline>
   <outline id="outline13" corner-radius="1.000000">
     <point x="0.000000" y="0.000000"/>
     <point x="79.60975" y="0.000000"/>
-    <point x="79.60975" y="52.44877"/>
-    <point x="0.000000" y="52.44877"/>
+    <point x="79.60975" y="52"/>
+    <point x="0.000000" y="52"/>
   </outline>
   <outline id="spaceline" corner-radius="1.000000">
     <point x="0.000000" y="0.000000"/>
     <point x="150.5853" y="0.000000"/>
-    <point x="150.5853" y="52.44877"/>
-    <point x="0.000000" y="52.44877"/>
+    <point x="150.5853" y="52"/>
+    <point x="0.000000" y="52"/>
   </outline>
 </geometry>
