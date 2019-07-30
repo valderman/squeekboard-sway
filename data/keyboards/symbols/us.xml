@@ -115,6 +115,8 @@
     <symbol label="{">braceleft</symbol>
   </key>
   <key name="AC10">
+    <!-- Empty labels cause keys to be hidden when the level they are defined
+         for is shown. -->
     <symbol label=""></symbol>
     <symbol label=""></symbol>
     <symbol label=")">parenright</symbol>

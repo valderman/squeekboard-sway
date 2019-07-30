@@ -535,7 +535,8 @@ keycounter (EekElement *element, gpointer user_data)
 {
     EekKey *key = EEK_KEY(element);
 
-    /* Skip keys without labels for the current level. */
+    /* Skip keys without labels for the current level. This causes those
+       keys to be hidden in the visible layout. */
     if (!eek_key_has_label(key))
         return;
 

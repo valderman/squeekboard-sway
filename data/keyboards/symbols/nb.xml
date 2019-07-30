@@ -65,6 +65,8 @@
     <symbol keyval="197" label="&#197;">Aring</symbol>
     <symbol label=""></symbol>
     <symbol label=""></symbol>
+    <!-- Empty labels cause keys to be hidden when the level they are defined
+         for is shown. -->
   </key>
   <key name="AC01">
     <symbol label="a">a</symbol>
