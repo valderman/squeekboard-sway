@@ -735,14 +735,14 @@ symbols_end_element_callback (GMarkupParseContext *pcontext,
         EekSymbol *symbol;
 
         if (g_strcmp0 (element_name, "keysym") == 0) {
-            EekKeysym *keysym;
+            EekSymbol *keysym;
             if (data->keyval != EEK_INVALID_KEYSYM)
                 keysym = eek_keysym_new (data->keyval);
             else
                 keysym = eek_keysym_new_from_name (text);
-            symbol = EEK_SYMBOL(keysym);
+            symbol = keysym;
         } else if (g_strcmp0 (element_name, "text") == 0) {
-            symbol = EEK_SYMBOL(eek_text_new (text));
+            symbol = eek_text_new (text);
         } else {
             symbol = eek_symbol_new (text);
         }

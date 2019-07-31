@@ -36,24 +36,19 @@ EekSymbolMatrix *
 eek_symbol_matrix_copy (const EekSymbolMatrix *matrix)
 {
     EekSymbolMatrix *retval;
-    gint i, num_symbols = matrix->num_groups * matrix->num_levels;
+    guint num_symbols = matrix->num_groups * matrix->num_levels;
 
     retval = g_slice_dup (EekSymbolMatrix, matrix);
     retval->data = g_slice_copy (sizeof (EekSymbol *) * num_symbols,
                                  matrix->data);
-    for (i = 0; i < num_symbols; i++)
-        if (retval->data[i])
-            g_object_ref (retval->data[i]);
+    // FIXME: do a deep copy over the data in EekSymbol
     return retval;
 }
 
 void
 eek_symbol_matrix_free (EekSymbolMatrix *matrix)
 {
-    gint i, num_symbols = matrix->num_groups * matrix->num_levels;
-    for (i = 0; i < num_symbols; i++)
-        if (matrix->data[i])
-            g_object_unref (matrix->data[i]);
+    guint num_symbols = matrix->num_groups * matrix->num_levels;
     g_slice_free1 (sizeof (EekSymbol *) * num_symbols, matrix->data);
     g_slice_free (EekSymbolMatrix, matrix);
 }
@@ -79,7 +74,6 @@ eek_symbol_matrix_set_symbol (EekSymbolMatrix *matrix,
 {
     g_return_if_fail (group >= 0 && group < matrix->num_groups);
     g_return_if_fail (level >= 0 && level < matrix->num_levels);
-    g_return_if_fail (EEK_IS_SYMBOL(symbol));
     matrix->data[group * matrix->num_levels + level] = g_object_ref (symbol);
 }
 

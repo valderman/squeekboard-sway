@@ -35,7 +35,6 @@ enum {
     ENABLED,
     DISABLED,
     DESTROYED,
-    KEY_ACTIVATED,
     LAST_SIGNAL
 };
 
@@ -78,28 +77,6 @@ eekboard_context_real_g_signal (GDBusProxy  *self,
 
     if (g_strcmp0 (signal_name, "Destroyed") == 0) {
         g_signal_emit (context, signals[DESTROYED], 0);
-        return;
-    }
-
-    if (g_strcmp0 (signal_name, "KeyActivated") == 0) {
-        guint keycode;
-        GVariant *variant = NULL;
-        guint modifiers = 0;
-        EekSerializable *serializable;
-
-        g_variant_get (parameters, "(uvu)",
-                       &keycode, &variant, &modifiers);
-        g_return_if_fail (variant != NULL);
-
-        serializable = eek_serializable_deserialize (variant);
-        g_variant_unref (variant);
-
-        g_return_if_fail (EEK_IS_SYMBOL(serializable));
-        
-        g_signal_emit (context, signals[KEY_ACTIVATED], 0,
-                       keycode, EEK_SYMBOL(serializable), modifiers);
-        g_object_unref (serializable);
-
         return;
     }
 

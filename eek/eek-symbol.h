@@ -29,26 +29,65 @@
 
 G_BEGIN_DECLS
 
-#define EEK_TYPE_SYMBOL (eek_symbol_get_type())
-G_DECLARE_DERIVABLE_TYPE(EekSymbol, eek_symbol, EEK, SYMBOL, GObject)
-
 /**
- * EekSymbolClass:
+ * EekSymbolCategory:
+ * @EEK_SYMBOL_CATEGORY_LETTER: the symbol represents an alphabet letter
+ * @EEK_SYMBOL_CATEGORY_FUNCTION: the symbol represents a function
+ * @EEK_SYMBOL_CATEGORY_KEYNAME: the symbol does not have meaning but
+ * have a name
+ * @EEK_SYMBOL_CATEGORY_USER0: reserved for future use
+ * @EEK_SYMBOL_CATEGORY_USER1: reserved for future use
+ * @EEK_SYMBOL_CATEGORY_USER2: reserved for future use
+ * @EEK_SYMBOL_CATEGORY_USER3: reserved for future use
+ * @EEK_SYMBOL_CATEGORY_USER4: reserved for future use
+ * @EEK_SYMBOL_CATEGORY_UNKNOWN: used for error reporting
+ * @EEK_SYMBOL_CATEGORY_LAST: the last symbol category
+ *
+ * Category of the key symbols.
  */
-struct _EekSymbolClass {
-    /*< private >*/
-    GObjectClass parent_class;
-};
+typedef enum {
+    EEK_SYMBOL_CATEGORY_LETTER,
+    EEK_SYMBOL_CATEGORY_FUNCTION,
+    EEK_SYMBOL_CATEGORY_KEYNAME,
+    EEK_SYMBOL_CATEGORY_USER0,
+    EEK_SYMBOL_CATEGORY_USER1,
+    EEK_SYMBOL_CATEGORY_USER2,
+    EEK_SYMBOL_CATEGORY_USER3,
+    EEK_SYMBOL_CATEGORY_USER4,
+    EEK_SYMBOL_CATEGORY_UNKNOWN,
+    EEK_SYMBOL_CATEGORY_LAST = EEK_SYMBOL_CATEGORY_UNKNOWN
+} EekSymbolCategory;
 
-GType             eek_symbol_get_type           (void) G_GNUC_CONST;
+
+typedef struct _EekSymbol
+{
+    /// Canonical name of the symbol
+    gchar *name;
+    /// Text used to display the symbol
+    gchar *label;
+    EekSymbolCategory category;
+    EekModifierType modifier_mask;
+    /// Icon name used to render the symbol
+    gchar *icon_name;
+    /// Tooltip text
+    gchar *tooltip;
+
+    // May not be present
+    guint xkeysym;
+    gchar *text;
+} EekSymbol;
 
 EekSymbol        *eek_symbol_new                (const gchar      *name);
+void              eek_symbol_free               (EekSymbol        *symbol);
 void              eek_symbol_set_name           (EekSymbol        *symbol,
                                                  const gchar      *name);
 const gchar      *eek_symbol_get_name           (EekSymbol        *symbol);
 void              eek_symbol_set_label          (EekSymbol        *symbol,
                                                  const gchar      *label);
 const gchar      *eek_symbol_get_label          (EekSymbol        *symbol);
+void              eek_symbol_set_category       (EekSymbol        *symbol,
+                                                 EekSymbolCategory category);
+EekSymbolCategory eek_symbol_get_category       (EekSymbol        *symbol);
 EekModifierType   eek_symbol_get_modifier_mask  (EekSymbol        *symbol);
 void              eek_symbol_set_modifier_mask  (EekSymbol        *symbol,
                                                  EekModifierType   mask);
@@ -59,6 +98,9 @@ const gchar      *eek_symbol_get_icon_name      (EekSymbol        *symbol);
 void              eek_symbol_set_tooltip        (EekSymbol        *symbol,
                                                  const gchar      *tooltip);
 const gchar *     eek_symbol_get_tooltip        (EekSymbol        *symbol);
+
+const gchar      *eek_symbol_category_get_name  (EekSymbolCategory category);
+EekSymbolCategory eek_symbol_category_from_name (const gchar      *name);
 
 G_END_DECLS
 
