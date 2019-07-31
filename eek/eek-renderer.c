@@ -157,19 +157,15 @@ render_keyboard_surface (EekRenderer *renderer)
     data.cr = cairo_create (priv->keyboard_surface);
     data.renderer = renderer;
 
+    /* Paint the background covering the entire widget area */
+    gtk_render_background (priv->scontext,
+                           data.cr,
+                           0, 0,
+                           priv->allocation_width, priv->allocation_height);
+
     cairo_save (data.cr);
     cairo_scale (data.cr, priv->scale, priv->scale);
     cairo_translate (data.cr, bounds.x, bounds.y);
-
-    /* blank background */
-    cairo_save (data.cr);
-    cairo_scale (data.cr, priv->scale, priv->scale);
-    gtk_render_background (priv->scontext,
-                           data.cr,
-                           -bounds.x, -bounds.y,
-                           (bounds.x * 2) + bounds.width,
-                           (bounds.y * 2) + bounds.height);
-    cairo_restore (data.cr);
 
     cairo_set_source_rgba (data.cr,
                            foreground.red,
