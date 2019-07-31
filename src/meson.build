@@ -73,6 +73,15 @@ rslib = static_library(
   rust_crate_type: 'staticlib'
 )
 
+rstests = executable(
+  'rstests',
+  sources: ['lib.rs'],
+  rust_args: ['--test'],
+  install: false
+)
+
+test('rstests', rstests)
+
 libsqueekboard = static_library('libsqueekboard',
   sources,
   link_with: rslib,
