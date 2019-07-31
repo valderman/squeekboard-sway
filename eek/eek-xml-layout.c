@@ -79,10 +79,6 @@ static gboolean      parse_symbols   (const gchar         *path,
                                       EekKeyboard         *keyboard,
                                       GError             **error);
 
-static void          scale_keyboard  (EekKeyboard         *keyboard,
-                                      gdouble              width,
-                                      gdouble              height);
-
 static gboolean      validate        (const gchar        **valid_path_list,
                                       gsize                valid_path_list_len,
                                       const gchar         *element_name,
@@ -946,9 +942,6 @@ eek_xml_layout_real_create_keyboard (EekboardContextService *manager,
 
     eek_layout_place_sections(keyboard);
 
-    /* Fit keyboard in the given width and height. */
-    scale_keyboard (keyboard, initial_width, initial_height);
-
     /* Use pre-defined modifier mask here. */
     eek_keyboard_set_num_lock_mask (keyboard, EEK_MOD2_MASK);
     eek_keyboard_set_alt_gr_mask (keyboard, EEK_BUTTON1_MASK);
@@ -1356,23 +1349,6 @@ parse_keyboards (const gchar *path, GError **error)
     data->keyboards = NULL;
     keyboards_parse_data_free (data);
     return keyboards;
-}
-
-static void scale_keyboard (EekKeyboard *keyboard,
-                            gdouble      width,
-                            gdouble      height)
-{
-    gdouble scale;
-    EekBounds bounds;
-
-    eek_element_get_bounds (EEK_ELEMENT(keyboard), &bounds);
-
-    if (width * bounds.height < height * bounds.width)
-        scale = width / bounds.width;
-    else
-        scale = height / bounds.height;
-
-    eek_layout_scale_keyboard(keyboard, scale);
 }
 
 static gboolean

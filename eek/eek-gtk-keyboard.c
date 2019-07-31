@@ -57,9 +57,6 @@ typedef struct _EekGtkKeyboardPrivate
     EekKeyboard *keyboard;
     EekTheme *theme;
 
-    int origin_x;
-    int origin_y;
-
     GdkEventSequence *sequence; // unowned reference
 } EekGtkKeyboardPrivate;
 
@@ -111,9 +108,6 @@ eek_gtk_keyboard_real_draw (GtkWidget *self,
 
     gtk_widget_get_allocation (self, &allocation);
 
-    cairo_save (cr);
-    cairo_translate (cr, priv->origin_x, priv->origin_y);
-
     if (!priv->renderer) {
         PangoContext *pcontext;
 
@@ -130,8 +124,6 @@ eek_gtk_keyboard_real_draw (GtkWidget *self,
     }
 
     eek_renderer_render_keyboard (priv->renderer, cr);
-
-    cairo_restore (cr);
 
     /* redraw pressed key */
     list = eek_keyboard_get_pressed_keys (priv->keyboard);
@@ -157,9 +149,6 @@ eek_gtk_keyboard_real_size_allocate (GtkWidget     *self,
     EekGtkKeyboardPrivate *priv =
 	    eek_gtk_keyboard_get_instance_private (EEK_GTK_KEYBOARD (self));
 
-    priv->origin_x = (allocation->width - 360) / 2;
-    priv->origin_y = 0;
-
     if (priv->renderer)
         eek_renderer_set_allocation_size (priv->renderer,
                                           allocation->width,
@@ -172,8 +161,7 @@ eek_gtk_keyboard_real_size_allocate (GtkWidget     *self,
 static void depress(EekGtkKeyboard *self,
                     gdouble x, gdouble y, guint32 time) {
     EekGtkKeyboardPrivate *priv = eek_gtk_keyboard_get_instance_private (self);
-    EekKey *key = eek_renderer_find_key_by_position (priv->renderer,
-        x - priv->origin_x, y - priv->origin_y);
+    EekKey *key = eek_renderer_find_key_by_position (priv->renderer, x, y);
 
     if (key) {
         eek_keyboard_press_key(priv->keyboard, key, time);
@@ -184,8 +172,7 @@ static void depress(EekGtkKeyboard *self,
 static void drag(EekGtkKeyboard *self,
                  gdouble x, gdouble y, guint32 time) {
     EekGtkKeyboardPrivate *priv = eek_gtk_keyboard_get_instance_private (self);
-    EekKey *key = eek_renderer_find_key_by_position (priv->renderer,
-        x - priv->origin_x, y - priv->origin_y);
+    EekKey *key = eek_renderer_find_key_by_position (priv->renderer, x, y);
 
     if (key) {
         GList *list, *head;
@@ -501,13 +488,13 @@ render_pressed_key (GtkWidget *widget,
     cairo_region_t    *region  = gdk_window_get_clip_region (window);
     GdkDrawingContext *context = gdk_window_begin_draw_frame (window, region);
     cairo_t           *cr      = gdk_drawing_context_get_cairo_context (context);
-
-    cairo_translate (cr, priv->origin_x, priv->origin_y);
+    gdouble            scale   = eek_renderer_get_scale (priv->renderer);
 
     eek_renderer_get_key_bounds (priv->renderer, key, &bounds, TRUE);
     magnify_bounds (widget, &bounds, &large_bounds, 1.5);
 
     cairo_save (cr);
+    cairo_scale (cr, scale, scale);
     cairo_translate (cr, bounds.x, bounds.y);
     eek_renderer_render_key (priv->renderer, cr, key, 1.0, TRUE);
     cairo_restore (cr);
@@ -534,13 +521,15 @@ render_locked_key (GtkWidget *widget,
     cairo_region_t    *region  = gdk_window_get_clip_region (window);
     GdkDrawingContext *context = gdk_window_begin_draw_frame (window, region);
     cairo_t           *cr      = gdk_drawing_context_get_cairo_context (context);
-
-    cairo_translate (cr, priv->origin_x, priv->origin_y);
+    gdouble            scale   = eek_renderer_get_scale (priv->renderer);
 
     eek_renderer_get_key_bounds (priv->renderer, key, &bounds, TRUE);
 
+    cairo_save (cr);
+    cairo_scale (cr, scale, scale);
     cairo_translate (cr, bounds.x, bounds.y);
     eek_renderer_render_key (priv->renderer, cr, key, 1.0, TRUE);
+    cairo_restore (cr);
 
     gdk_window_end_draw_frame (window, context);
 
@@ -559,11 +548,6 @@ render_released_key (GtkWidget *widget,
     cairo_region_t    *region  = gdk_window_get_clip_region (window);
     GdkDrawingContext *context = gdk_window_begin_draw_frame (window, region);
     cairo_t           *cr      = gdk_drawing_context_get_cairo_context (context);
-
-    cairo_translate (cr, priv->origin_x, priv->origin_y);
-
-    eek_renderer_get_key_bounds (priv->renderer, key, &bounds, TRUE);
-    magnify_bounds (widget, &bounds, &large_bounds, 1.5);
 
     eek_renderer_render_keyboard (priv->renderer, cr);
 
