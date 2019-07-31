@@ -100,6 +100,7 @@ eek_element_set_property (GObject      *object,
         break;
     case PROP_LEVEL:
         eek_element_set_level (element, g_value_get_int (value));
+        break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
         break;
