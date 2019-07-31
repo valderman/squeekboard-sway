@@ -46,8 +46,6 @@ struct _EekGtkKeyboardClass
 
 GType      eek_gtk_keyboard_get_type  (void) G_GNUC_CONST;
 GtkWidget *eek_gtk_keyboard_new       (EekKeyboard    *keyboard);
-void       eek_gtk_keyboard_set_theme (EekGtkKeyboard *keyboard,
-                                       EekTheme       *theme);
 
 G_END_DECLS
 #endif  /* EEK_GTK_KEYBOARD_H */
