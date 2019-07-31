@@ -162,6 +162,10 @@ render_keyboard_surface (EekRenderer *renderer)
                            data.cr,
                            0, 0,
                            priv->allocation_width, priv->allocation_height);
+    gtk_render_frame (priv->scontext,
+                      data.cr,
+                      0, 0,
+                      priv->allocation_width, priv->allocation_height);
 
     cairo_save (data.cr);
     cairo_scale (data.cr, priv->scale, priv->scale);
@@ -208,6 +212,8 @@ render_key_outline (EekRenderer *renderer,
 
     gtk_render_background (priv->key_context,
                            cr, 0, 0, bounds.width, bounds.height);
+    gtk_render_frame (priv->key_context,
+                      cr, 0, 0, bounds.width, bounds.height);
 
     gtk_style_context_set_state(priv->key_context, GTK_STATE_FLAG_NORMAL);
 }

@@ -7,6 +7,7 @@
 .key {
     color: #deddda;
     background: #464448;
+    border-style: inset;
     border-width: 0.5px;
     border-color: #5e5c64;
     border-radius: 2px;
