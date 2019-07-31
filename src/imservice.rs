@@ -1,10 +1,9 @@
-#[macro_use]
-mod bitflags;
-
 use std::boxed::Box;
 use std::ffi::CString;
 use std::num::Wrapping;
 use std::string::String;
+
+use super::bitflags;
 
 /// Gathers stuff defined in C or called by C
 pub mod c {
@@ -221,7 +220,7 @@ pub enum ContentPurpose {
 
 impl ContentPurpose {
     fn from_num(num: u32) -> Option<ContentPurpose> {
-        use ContentPurpose::*;
+        use self::ContentPurpose::*;
         match num {
             0 => Some(Normal),
             1 => Some(Alpha),
@@ -241,7 +240,7 @@ impl ContentPurpose {
         }
     }
     fn as_num(self: &ContentPurpose) -> u32 {
-        use ContentPurpose::*;
+        use self::ContentPurpose::*;
         match self {
             Normal => 0,
             Alpha => 1,
