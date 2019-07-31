@@ -143,8 +143,6 @@ eek_section_real_create_key (EekSection *self,
     key = g_object_new (EEK_TYPE_KEY,
                         "name", name,
                         "keycode", keycode,
-                        "column", column_index,
-                        "row", row_index,
                         NULL);
     g_return_val_if_fail (key, NULL);
 

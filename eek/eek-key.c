@@ -38,8 +38,6 @@ enum {
     PROP_0,
     PROP_KEYCODE,
     PROP_SYMBOL_MATRIX,
-    PROP_COLUMN,
-    PROP_ROW,
     PROP_OREF,
     PROP_LAST
 };
@@ -105,8 +103,6 @@ eek_key_set_property (GObject      *object,
                       GParamSpec   *pspec)
 {
     EekSymbolMatrix *matrix;
-    gint column, row;
-
     switch (prop_id) {
     case PROP_KEYCODE:
         eek_key_set_keycode (EEK_KEY(object), g_value_get_uint (value));
@@ -114,14 +110,6 @@ eek_key_set_property (GObject      *object,
     case PROP_SYMBOL_MATRIX:
         matrix = g_value_get_boxed (value);
         eek_key_set_symbol_matrix (EEK_KEY(object), matrix);
-        break;
-    case PROP_COLUMN:
-        eek_key_get_index (EEK_KEY(object), &column, &row);
-        eek_key_set_index (EEK_KEY(object), g_value_get_int (value), row);
-        break;
-    case PROP_ROW:
-        eek_key_get_index (EEK_KEY(object), &column, &row);
-        eek_key_set_index (EEK_KEY(object), column, g_value_get_int (value));
         break;
     case PROP_OREF:
         eek_key_set_oref (EEK_KEY(object), g_value_get_uint (value));
@@ -138,8 +126,6 @@ eek_key_get_property (GObject    *object,
                       GValue     *value,
                       GParamSpec *pspec)
 {
-    gint column, row;
-
     switch (prop_id) {
     case PROP_KEYCODE:
         g_value_set_uint (value, eek_key_get_keycode (EEK_KEY(object)));
@@ -147,14 +133,6 @@ eek_key_get_property (GObject    *object,
     case PROP_SYMBOL_MATRIX:
         g_value_set_boxed (value,
                            eek_key_get_symbol_matrix (EEK_KEY(object)));
-        break;
-    case PROP_COLUMN:
-        eek_key_get_index (EEK_KEY(object), &column, &row);
-        g_value_set_int (value, column);
-        break;
-    case PROP_ROW:
-        eek_key_get_index (EEK_KEY(object), &column, &row);
-        g_value_set_int (value, row);
         break;
     case PROP_OREF:
         g_value_set_uint (value, eek_key_get_oref (EEK_KEY(object)));
@@ -202,30 +180,6 @@ eek_key_class_init (EekKeyClass *klass)
                                 EEK_TYPE_SYMBOL_MATRIX,
                                 G_PARAM_READWRITE);
     g_object_class_install_property (gobject_class, PROP_SYMBOL_MATRIX, pspec);
-
-    /**
-     * EekKey:column:
-     *
-     * The column index of #EekKey in the parent #EekSection.
-     */
-    pspec = g_param_spec_int ("column",
-                              "Column",
-                              "Column index of the key in section",
-                              -1, G_MAXINT, -1,
-                              G_PARAM_READWRITE);
-    g_object_class_install_property (gobject_class, PROP_COLUMN, pspec);
-
-    /**
-     * EekKey:row:
-     *
-     * The row index of #EekKey in the parent #EekSection.
-     */
-    pspec = g_param_spec_int ("row",
-                              "Row",
-                              "Row index of the key in section",
-                              -1, G_MAXINT, -1,
-                              G_PARAM_READWRITE);
-    g_object_class_install_property (gobject_class, PROP_ROW, pspec);
 
     /**
      * EekKey:oref:
