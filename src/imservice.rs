@@ -61,9 +61,9 @@ pub mod c {
     #[no_mangle]
     pub unsafe extern "C"
     fn imservice_handle_input_method_activate(imservice: *mut IMService,
-        _im: *const InputMethod)
+        im: *const InputMethod)
     {
-        let imservice = &mut *imservice;
+        let imservice = check_imservice(imservice, im).unwrap();
         imservice.preedit_string = String::new();
         imservice.pending = IMProtocolState {
             active: true,
@@ -74,9 +74,9 @@ pub mod c {
     #[no_mangle]
     pub unsafe extern "C"
     fn imservice_handle_input_method_deactivate(imservice: *mut IMService,
-        _im: *const InputMethod)
+        im: *const InputMethod)
     {
-        let imservice = &mut *imservice;
+        let imservice = check_imservice(imservice, im).unwrap();
         imservice.pending = IMProtocolState {
             active: false,
             ..imservice.pending.clone()
@@ -86,10 +86,10 @@ pub mod c {
     #[no_mangle]
     pub unsafe extern "C"
     fn imservice_handle_surrounding_text(imservice: *mut IMService,
-        _im: *const InputMethod,
+        im: *const InputMethod,
         text: *const c_char, cursor: u32, _anchor: u32)
     {
-        let imservice = &mut *imservice;
+        let imservice = check_imservice(imservice, im).unwrap();
         imservice.pending = IMProtocolState {
             surrounding_text: into_cstring(text).expect("Received invalid string"),
             surrounding_cursor: cursor,
@@ -100,10 +100,10 @@ pub mod c {
     #[no_mangle]
     pub unsafe extern "C"
     fn imservice_handle_content_type(imservice: *mut IMService,
-        _im: *const InputMethod,
+        im: *const InputMethod,
         hint: u32, purpose: u32)
     {
-        let imservice = &mut *imservice;
+        let imservice = check_imservice(imservice, im).unwrap();
         imservice.pending = IMProtocolState {
             content_hint: {
                 ContentHint::from_bits(hint).unwrap_or_else(|| {
@@ -124,10 +124,10 @@ pub mod c {
     #[no_mangle]
     pub unsafe extern "C"
     fn imservice_handle_text_change_cause(imservice: *mut IMService,
-        _im: *const InputMethod,
+        im: *const InputMethod,
         cause: u32)
     {
-        let imservice = &mut *imservice;
+        let imservice = check_imservice(imservice, im).unwrap();
         imservice.pending = IMProtocolState {
             text_change_cause: {
                 ChangeCause::try_from(cause).unwrap_or_else(|_e| {
@@ -142,9 +142,9 @@ pub mod c {
     #[no_mangle]
     pub unsafe extern "C"
     fn imservice_handle_commit_state(imservice: *mut IMService,
-        _im: *const InputMethod)
+        im: *const InputMethod)
     {
-        let imservice = &mut *imservice;
+        let imservice = check_imservice(imservice, im).unwrap();
         let active_changed = imservice.current.active ^ imservice.pending.active;
         
         imservice.serial += Wrapping(1u32);
@@ -171,9 +171,8 @@ pub mod c {
     fn imservice_handle_unavailable(imservice: *mut IMService,
         im: *mut InputMethod)
     {
+        let imservice = check_imservice(imservice, im).unwrap();
         imservice_destroy_im(im);
-
-        let imservice = &mut *imservice;
 
         // no need to care about proper double-buffering,
         // the keyboard is already decommissioned
@@ -183,6 +182,31 @@ pub mod c {
     }
 
     // FIXME: destroy and deallocate
+    
+    // Helpers
+    
+    /// Convenience method for referencing the IMService raw pointer,
+    /// and for verifying that the input method passed along
+    /// matches the one in the `imservice`.
+    ///
+    /// The lifetime of the returned value is 'static,
+    /// due to the fact that the lifetime of a raw pointer is undefined.
+    /// Care must be take
+    /// not to exceed the lifetime of the pointer with the reference,
+    /// especially not to store it.
+    fn check_imservice(imservice: *mut IMService, im: *const InputMethod)
+        -> Result<&'static mut IMService, &'static str>
+    {
+        if imservice.is_null() {
+            return Err("Null imservice pointer");
+        }
+        let imservice: &mut IMService = unsafe { &mut *imservice };
+        if im == imservice.im {
+            Ok(imservice)
+        } else {
+            Err("Imservice doesn't contain the input method")
+        }
+    }
 }
 
 
@@ -298,7 +322,7 @@ impl Default for IMProtocolState {
 
 pub struct IMService {
     /// Owned reference (still created and destroyed in C)
-    im: *const c::InputMethod,
+    pub im: *const c::InputMethod,
     /// Unowned reference. Be careful, it's shared with C at large
     ui_manager: *const c::UIManager,
 
