@@ -69,7 +69,7 @@ deps = [
 # Replacement for eekboard-server
 rslib = static_library(
   'rslib',
-  sources: ['imservice.rs'],
+  sources: ['lib.rs'],
   rust_crate_type: 'staticlib'
 )
 

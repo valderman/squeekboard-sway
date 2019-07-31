@@ -1,10 +1,13 @@
-#[macro_use]
-mod bitflags;
-
 use std::boxed::Box;
 use std::ffi::CString;
 use std::num::Wrapping;
 use std::string::String;
+
+use super::bitflags;
+
+// Traits
+use std::convert::TryFrom;
+
 
 /// Gathers stuff defined in C or called by C
 pub mod c {
@@ -58,9 +61,9 @@ pub mod c {
     #[no_mangle]
     pub unsafe extern "C"
     fn imservice_handle_input_method_activate(imservice: *mut IMService,
-        _im: *const InputMethod)
+        im: *const InputMethod)
     {
-        let imservice = &mut *imservice;
+        let imservice = check_imservice(imservice, im).unwrap();
         imservice.preedit_string = String::new();
         imservice.pending = IMProtocolState {
             active: true,
@@ -71,9 +74,9 @@ pub mod c {
     #[no_mangle]
     pub unsafe extern "C"
     fn imservice_handle_input_method_deactivate(imservice: *mut IMService,
-        _im: *const InputMethod)
+        im: *const InputMethod)
     {
-        let imservice = &mut *imservice;
+        let imservice = check_imservice(imservice, im).unwrap();
         imservice.pending = IMProtocolState {
             active: false,
             ..imservice.pending.clone()
@@ -83,10 +86,10 @@ pub mod c {
     #[no_mangle]
     pub unsafe extern "C"
     fn imservice_handle_surrounding_text(imservice: *mut IMService,
-        _im: *const InputMethod,
+        im: *const InputMethod,
         text: *const c_char, cursor: u32, _anchor: u32)
     {
-        let imservice = &mut *imservice;
+        let imservice = check_imservice(imservice, im).unwrap();
         imservice.pending = IMProtocolState {
             surrounding_text: into_cstring(text).expect("Received invalid string"),
             surrounding_cursor: cursor,
@@ -97,10 +100,10 @@ pub mod c {
     #[no_mangle]
     pub unsafe extern "C"
     fn imservice_handle_content_type(imservice: *mut IMService,
-        _im: *const InputMethod,
+        im: *const InputMethod,
         hint: u32, purpose: u32)
     {
-        let imservice = &mut *imservice;
+        let imservice = check_imservice(imservice, im).unwrap();
         imservice.pending = IMProtocolState {
             content_hint: {
                 ContentHint::from_bits(hint).unwrap_or_else(|| {
@@ -109,8 +112,8 @@ pub mod c {
                 })
             },
             content_purpose: {
-                ContentPurpose::from_num(purpose).unwrap_or_else(|| {
-                    eprintln!("Warning: Received invalid purpose flags");
+                ContentPurpose::try_from(purpose).unwrap_or_else(|_e| {
+                    eprintln!("Warning: Received invalid purpose value");
                     ContentPurpose::Normal
                 })
             },
@@ -121,14 +124,14 @@ pub mod c {
     #[no_mangle]
     pub unsafe extern "C"
     fn imservice_handle_text_change_cause(imservice: *mut IMService,
-        _im: *const InputMethod,
+        im: *const InputMethod,
         cause: u32)
     {
-        let imservice = &mut *imservice;
+        let imservice = check_imservice(imservice, im).unwrap();
         imservice.pending = IMProtocolState {
             text_change_cause: {
-                ChangeCause::from_num(cause).unwrap_or_else(|| {
-                    eprintln!("Warning: received invalid cause flags");
+                ChangeCause::try_from(cause).unwrap_or_else(|_e| {
+                    eprintln!("Warning: received invalid cause value");
                     ChangeCause::InputMethod
                 })
             },
@@ -139,9 +142,9 @@ pub mod c {
     #[no_mangle]
     pub unsafe extern "C"
     fn imservice_handle_commit_state(imservice: *mut IMService,
-        _im: *const InputMethod)
+        im: *const InputMethod)
     {
-        let imservice = &mut *imservice;
+        let imservice = check_imservice(imservice, im).unwrap();
         let active_changed = imservice.current.active ^ imservice.pending.active;
         
         imservice.serial += Wrapping(1u32);
@@ -156,7 +159,7 @@ pub mod c {
                 eekboard_context_service_set_hint_purpose(
                     imservice.ui_manager,
                     imservice.current.content_hint.bits(),
-                    imservice.current.content_purpose.as_num());
+                    imservice.current.content_purpose.clone() as u32);
             } else {
                 eekboard_context_service_hide_keyboard(imservice.ui_manager);
             }
@@ -168,9 +171,8 @@ pub mod c {
     fn imservice_handle_unavailable(imservice: *mut IMService,
         im: *mut InputMethod)
     {
+        let imservice = check_imservice(imservice, im).unwrap();
         imservice_destroy_im(im);
-
-        let imservice = &mut *imservice;
 
         // no need to care about proper double-buffering,
         // the keyboard is already decommissioned
@@ -180,6 +182,31 @@ pub mod c {
     }
 
     // FIXME: destroy and deallocate
+    
+    // Helpers
+    
+    /// Convenience method for referencing the IMService raw pointer,
+    /// and for verifying that the input method passed along
+    /// matches the one in the `imservice`.
+    ///
+    /// The lifetime of the returned value is 'static,
+    /// due to the fact that the lifetime of a raw pointer is undefined.
+    /// Care must be take
+    /// not to exceed the lifetime of the pointer with the reference,
+    /// especially not to store it.
+    fn check_imservice(imservice: *mut IMService, im: *const InputMethod)
+        -> Result<&'static mut IMService, &'static str>
+    {
+        if imservice.is_null() {
+            return Err("Null imservice pointer");
+        }
+        let imservice: &mut IMService = unsafe { &mut *imservice };
+        if im == imservice.im {
+            Ok(imservice)
+        } else {
+            Err("Imservice doesn't contain the input method")
+        }
+    }
 }
 
 
@@ -201,62 +228,50 @@ bitflags!{
 }
 
 /// Map to `text_input_unstable_v3.content_purpose` values
+///
+/// ```
+/// assert_eq!(ContentPurpose::Alpha as u32, 0);
+/// ```
 #[derive(Debug, Clone)]
 pub enum ContentPurpose {
-    Normal,
-    Alpha,
-    Digits,
-    Number,
-    Phone,
-    Url,
-    Email,
-    Name,
-    Password,
-    Pin,
-    Date,
-    Time,
-    Datetime,
-    Terminal,
+    Normal = 0,
+    Alpha = 1,
+    Digits = 2,
+    Number = 3,
+    Phone = 4,
+    Url = 5,
+    Email = 6,
+    Name = 7,
+    Password = 8,
+    Pin = 9,
+    Date = 10,
+    Time = 11,
+    Datetime = 12,
+    Terminal = 13,
 }
 
-impl ContentPurpose {
-    fn from_num(num: u32) -> Option<ContentPurpose> {
-        use ContentPurpose::*;
+impl TryFrom<u32> for ContentPurpose {
+    // There's only one way to fail: number not in protocol,
+    // so no special error type is needed
+    type Error = ();
+    fn try_from(num: u32) -> Result<Self, Self::Error> {
+        use self::ContentPurpose::*;
         match num {
-            0 => Some(Normal),
-            1 => Some(Alpha),
-            2 => Some(Digits),
-            3 => Some(Number),
-            4 => Some(Phone),
-            5 => Some(Url),
-            6 => Some(Email),
-            7 => Some(Name),
-            8 => Some(Password),
-            9 => Some(Pin),
-            10 => Some(Date),
-            11 => Some(Time),
-            12 => Some(Datetime),
-            13 => Some(Terminal),
-            _ => None,
-        }
-    }
-    fn as_num(self: &ContentPurpose) -> u32 {
-        use ContentPurpose::*;
-        match self {
-            Normal => 0,
-            Alpha => 1,
-            Digits => 2,
-            Number => 3,
-            Phone => 4,
-            Url => 5,
-            Email => 6,
-            Name => 7,
-            Password => 8,
-            Pin => 9,
-            Date => 10,
-            Time => 11,
-            Datetime => 12,
-            Terminal => 13,
+            0 => Ok(Normal),
+            1 => Ok(Alpha),
+            2 => Ok(Digits),
+            3 => Ok(Number),
+            4 => Ok(Phone),
+            5 => Ok(Url),
+            6 => Ok(Email),
+            7 => Ok(Name),
+            8 => Ok(Password),
+            9 => Ok(Pin),
+            10 => Ok(Date),
+            11 => Ok(Time),
+            12 => Ok(Datetime),
+            13 => Ok(Terminal),
+            _ => Err(()),
         }
     }
 }
@@ -264,22 +279,19 @@ impl ContentPurpose {
 /// Map to `text_input_unstable_v3.change_cause` values
 #[derive(Debug, Clone)]
 pub enum ChangeCause {
-    InputMethod,
-    Other,
+    InputMethod = 0,
+    Other = 1,
 }
 
-impl ChangeCause {
-    pub fn from_num(num: u32) -> Option<ChangeCause> {
+impl TryFrom<u32> for ChangeCause {
+    // There's only one way to fail: number not in protocol,
+    // so no special error type is needed
+    type Error = ();
+    fn try_from(num: u32) -> Result<Self, Self::Error> {
         match num {
-            0 => Some(ChangeCause::InputMethod),
-            1 => Some(ChangeCause::Other),
-            _ => None
-        }
-    }
-    pub fn as_num(&self) -> u32 {
-        match &self {
-            ChangeCause::InputMethod => 0,
-            ChangeCause::Other => 1,
+            0 => Ok(ChangeCause::InputMethod),
+            1 => Ok(ChangeCause::Other),
+            _ => Err(())
         }
     }
 }
@@ -310,7 +322,7 @@ impl Default for IMProtocolState {
 
 pub struct IMService {
     /// Owned reference (still created and destroyed in C)
-    im: *const c::InputMethod,
+    pub im: *const c::InputMethod,
     /// Unowned reference. Be careful, it's shared with C at large
     ui_manager: *const c::UIManager,
 
