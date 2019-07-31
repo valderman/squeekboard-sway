@@ -63,9 +63,7 @@ struct _EekSectionClass
 
     EekKey *(* create_key)          (EekSection     *self,
                                      const gchar    *name,
-                                     gint            keycode,
-                                     gint            row,
-                                     gint            column);
+                                     gint            keycode);
 
     /* signals */
     void    (* key_pressed)         (EekSection     *self,
@@ -101,9 +99,7 @@ void    eek_section_get_row              (EekSection     *section,
 
 EekKey *eek_section_create_key           (EekSection     *section,
                                           const gchar    *name,
-                                          gint            keycode,
-                                          gint            column,
-                                          gint            row);
+                                          gint            keycode);
 
 EekKey *eek_section_find_key_by_keycode  (EekSection     *section,
                                           guint           keycode);

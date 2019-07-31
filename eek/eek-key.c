@@ -54,8 +54,6 @@ typedef struct _EekKeyPrivate
 {
     guint keycode;
     EekSymbolMatrix *symbol_matrix;
-    gint column;
-    gint row;
     gulong oref; // UI outline reference
     gboolean is_pressed;
     gboolean is_locked;
@@ -430,59 +428,6 @@ eek_key_get_symbol_at_index (EekKey *key,
 
     return priv->symbol_matrix->data[group * priv->symbol_matrix->num_levels +
                                      level];
-}
-
-/**
- * eek_key_set_index:
- * @key: an #EekKey
- * @column: column index of @key in #EekSection
- * @row: row index of @key in #EekSection
- *
- * Set the location of @key in #EekSection with @column and @row.
- */
-void
-eek_key_set_index (EekKey *key,
-                   gint    column,
-                   gint    row)
-{
-    g_return_if_fail (EEK_IS_KEY(key));
-    g_return_if_fail (0 <= column);
-    g_return_if_fail (0 <= row);
-
-    EekKeyPrivate *priv = eek_key_get_instance_private (key);
-
-    if (priv->column != column) {
-        priv->column = column;
-        g_object_notify (G_OBJECT(key), "column");
-    }
-    if (priv->row != row) {
-        priv->row = row;
-        g_object_notify (G_OBJECT(key), "row");
-    }
-}
-
-/**
- * eek_key_get_index:
- * @key: an #EekKey
- * @column: (allow-none): pointer where the column index of @key in #EekSection will be stored
- * @row: (allow-none): pointer where the row index of @key in #EekSection will be stored
- *
- * Get the location of @key in #EekSection.
- */
-void
-eek_key_get_index (EekKey *key,
-                   gint   *column,
-                   gint   *row)
-{
-    g_return_if_fail (EEK_IS_KEY(key));
-    g_return_if_fail (column != NULL || row != NULL);
-
-    EekKeyPrivate *priv = eek_key_get_instance_private (key);
-
-    if (column != NULL)
-        *column = priv->column;
-    if (row != NULL)
-        *row = priv->row;
 }
 
 /**

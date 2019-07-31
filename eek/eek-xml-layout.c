@@ -414,9 +414,7 @@ geometry_start_element_callback (GMarkupParseContext *pcontext,
 
         data->key = eek_section_create_key (data->section,
                                             name,
-                                            keycode,
-                                            data->num_columns,
-                                            data->num_rows - 1);
+                                            keycode);
 
         attribute = get_attribute (attribute_names, attribute_values,
                                    "oref");
