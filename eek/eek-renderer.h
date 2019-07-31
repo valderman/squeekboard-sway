@@ -25,8 +25,6 @@
 #include "eek-keyboard.h"
 #include "eek-keysym.h"
 #include "eek-types.h"
-#include "eek-theme.h"
-#include "eek-theme-context.h"
 
 G_BEGIN_DECLS
 
@@ -64,7 +62,8 @@ struct _EekRendererClass
 
 GType            eek_renderer_get_type         (void) G_GNUC_CONST;
 EekRenderer     *eek_renderer_new              (EekKeyboard     *keyboard,
-                                                PangoContext    *pcontext);
+                                                PangoContext    *pcontext,
+                                                GtkStyleContext *scontext);
 void             eek_renderer_set_allocation_size
                                                (EekRenderer     *renderer,
                                                 gdouble          width,
@@ -116,18 +115,8 @@ void             eek_renderer_set_default_background_color
                                                 const EekColor  *color);
 void             eek_renderer_get_foreground_color
                                                (EekRenderer     *renderer,
-                                                EekElement      *element,
+                                                GtkStyleContext *context,
                                                 EekColor        *color);
-void             eek_renderer_get_background_color
-                                               (EekRenderer     *renderer,
-                                                EekElement      *element,
-                                                EekColor        *color);
-void             eek_renderer_get_background_gradient
-                                               (EekRenderer     *renderer,
-                                                EekElement      *element,
-                                                EekGradientType *type,
-                                                EekColor        *start,
-                                                EekColor        *end);
 void             eek_renderer_set_border_width (EekRenderer     *renderer,
                                                 gdouble          border_width);
 EekKey          *eek_renderer_find_key_by_position
@@ -140,9 +129,6 @@ void             eek_renderer_apply_transformation_for_key
                                                 EekKey          *key,
                                                 gdouble          scale,
                                                 gboolean         rotate);
-
-void             eek_renderer_set_theme        (EekRenderer     *renderer,
-                                                EekTheme        *theme);
 
 G_END_DECLS
 #endif  /* EEK_RENDERER_H */
