@@ -1236,10 +1236,15 @@ find_key_by_position_section_callback (EekElement *element,
     return data->key ? 0 : -1;
 }
 
-/*
-    Returns the key located at the position x, y in widget coordinates, or
-    NULL if no key can be found at that location.
-*/
+/**
+ * eek_renderer_find_key_by_position:
+ * @renderer: The renderer normally used to render the key
+ * @x: The horizontal widget coordinate of the position to test for a key
+ * @y: The vertical widget coordinate of the position to test for a key
+ *
+ * Return value: the key located at the position x, y in widget coordinates, or
+ *   NULL if no key can be found at that location
+ **/
 EekKey *
 eek_renderer_find_key_by_position (EekRenderer *renderer,
                                    gdouble      x,
