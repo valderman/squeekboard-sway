@@ -211,8 +211,6 @@ static void
 eek_section_finalize (GObject *object)
 {
     EekSection        *self = EEK_SECTION (object);
-    EekSectionPrivate *priv = (EekSectionPrivate*)eek_section_get_instance_private (self);
-
     G_OBJECT_CLASS (eek_section_parent_class)->finalize (object);
 }
 
@@ -512,11 +510,6 @@ keycounter (EekElement *element, gpointer user_data)
 {
     EekKey *key = EEK_KEY(element);
 
-    /* Skip keys without labels for the current level. This causes those
-       keys to be hidden in the visible layout. */
-    if (!eek_key_has_label(key))
-        return;
-
     struct keys_info *data = user_data;
     data->count++;
     EekBounds key_bounds = {0};
@@ -531,10 +524,6 @@ static void
 keyplacer(EekElement *element, gpointer user_data)
 {
     EekKey *key = EEK_KEY(element);
-
-    /* Skip keys without labels for the current level. */
-    if (!eek_key_has_label(key))
-        return;
 
     double *current_offset = user_data;
     EekBounds key_bounds = {0};

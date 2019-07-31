@@ -26,6 +26,8 @@
 #define EEK_SYMBOL_H 1
 
 #include "eek-types.h"
+#include "src/symbol.h"
+
 
 G_BEGIN_DECLS
 
@@ -91,7 +93,6 @@ EekSymbolCategory eek_symbol_get_category       (EekSymbol        *symbol);
 EekModifierType   eek_symbol_get_modifier_mask  (EekSymbol        *symbol);
 void              eek_symbol_set_modifier_mask  (EekSymbol        *symbol,
                                                  EekModifierType   mask);
-gboolean          eek_symbol_is_modifier        (EekSymbol        *symbol);
 void              eek_symbol_set_icon_name      (EekSymbol        *symbol,
                                                  const gchar      *icon_name);
 const gchar      *eek_symbol_get_icon_name      (EekSymbol        *symbol);

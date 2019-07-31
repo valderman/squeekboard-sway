@@ -40,6 +40,7 @@ G_BEGIN_DECLS
 EekSymbol *eek_keysym_new               (guint           xkeysym);
 guint      eek_keysym_get_xkeysym       (EekSymbol      *keysym);
 
+guint32    eek_keysym_from_name         (const gchar    *name);
 EekSymbol *eek_keysym_new_from_name     (const gchar    *name);
 EekSymbol *eek_keysym_new_with_modifier (guint           xkeysym,
                                          EekModifierType modifier_mask);

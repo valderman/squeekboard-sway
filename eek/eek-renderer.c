@@ -231,9 +231,6 @@ render_key (EekRenderer *self,
     PangoRectangle extents = { 0, };
     EekColor foreground;
 
-    if (!eek_key_has_label(key))
-        return;
-
     oref = eek_key_get_oref (key);
     outline = eek_keyboard_get_outline (priv->keyboard, oref);
     if (outline == NULL)
@@ -284,11 +281,11 @@ render_key (EekRenderer *self,
     if (!symbol)
         return;
 
-    if (eek_symbol_get_icon_name (symbol)) {
+    if (squeek_symbol_get_icon_name (symbol)) {
         gint scale = priv->scale_factor;
         cairo_surface_t *icon_surface =
             eek_renderer_get_icon_surface (self,
-                                           eek_symbol_get_icon_name (symbol),
+                                           squeek_symbol_get_icon_name (symbol),
                                            16 / priv->scale,
                                            scale);
         if (icon_surface) {
@@ -397,7 +394,7 @@ eek_renderer_real_render_key_label (EekRenderer *self,
     if (!symbol)
         return;
 
-    label = eek_symbol_get_label (symbol);
+    label = squeek_symbol_get_label (symbol);
     if (!label)
         return;
 

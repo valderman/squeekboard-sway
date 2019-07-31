@@ -33,6 +33,7 @@
 #include "eek-key.h"
 #include "eek-keysym.h"
 #include "eek-text.h"
+#include "src/symbol.h"
 
 #include "squeekboard-resources.h"
 
@@ -732,38 +733,25 @@ symbols_end_element_callback (GMarkupParseContext *pcontext,
     if (g_strcmp0 (element_name, "symbol") == 0 ||
         g_strcmp0 (element_name, "keysym") == 0 ||
         g_strcmp0 (element_name, "text") == 0) {
-        EekSymbol *symbol;
 
-        if (g_strcmp0 (element_name, "keysym") == 0) {
-            EekSymbol *keysym;
-            if (data->keyval != EEK_INVALID_KEYSYM)
-                keysym = eek_keysym_new (data->keyval);
-            else
-                keysym = eek_keysym_new_from_name (text);
-            symbol = keysym;
-        } else if (g_strcmp0 (element_name, "text") == 0) {
-            symbol = eek_text_new (text);
-        } else {
-            symbol = eek_symbol_new (text);
-        }
-
-        if (data->label) {
-            eek_symbol_set_label (symbol, data->label);
-            g_free (data->label);
-            data->label = NULL;
-        }
-        if (data->icon) {
-            eek_symbol_set_icon_name (symbol, data->icon);
-            g_free (data->icon);
-            data->icon = NULL;
-        }
-        if (data->tooltip) {
-            eek_symbol_set_tooltip (symbol, data->tooltip);
-            g_free (data->tooltip);
-            data->tooltip = NULL;
-        }
-
-        data->symbols = g_slist_prepend (data->symbols, symbol);
+        data->symbols = g_slist_prepend (
+            data->symbols,
+            squeek_symbol_new(
+                element_name,
+                text,
+                data->keyval,
+                data->label,
+                data->icon,
+                data->tooltip
+            )
+        );
+        data->keyval = 0;
+        g_free(data->label);
+        data->label = NULL;
+        g_free(data->icon);
+        data->icon = NULL;
+        g_free(data->tooltip);
+        data->tooltip = NULL;
         goto out;
     }
 

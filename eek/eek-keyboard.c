@@ -305,7 +305,7 @@ void eek_keyboard_press_key(EekKeyboard *keyboard, EekKey *key, guint32 timestam
     if (!symbol)
         return;
 
-    EekModifierType modifier = eek_symbol_get_modifier_mask (symbol);
+    EekModifierType modifier = squeek_symbol_get_modifier_mask (symbol);
     if (priv->modifier_behavior == EEK_MODIFIER_BEHAVIOR_NONE) {
         set_modifiers_with_key (keyboard, key, priv->modifiers | modifier);
         set_level_from_modifiers (keyboard, key);
@@ -336,12 +336,10 @@ void eek_keyboard_release_key( EekKeyboard *keyboard,
     if (!symbol)
         return;
 
-    EekModifierType modifier = eek_symbol_get_modifier_mask (symbol);
-
     if (!symbol)
         return;
 
-    modifier = eek_symbol_get_modifier_mask (symbol);
+    EekModifierType modifier = squeek_symbol_get_modifier_mask (symbol);
     switch (priv->modifier_behavior) {
     case EEK_MODIFIER_BEHAVIOR_NONE:
         set_modifiers_with_key (keyboard, key, priv->modifiers & ~modifier);
@@ -810,11 +808,13 @@ eek_keyboard_get_keymap(EekKeyboard *keyboard)
 
         gchar *groups[2];
         for (i = 0, j = 0; i < 2; ++i, j += 2) {
-            if (syms[j] && syms[j + 1])
-                groups[i] = g_strjoin(", ", eek_symbol_get_name(syms[j]),
-                                            eek_symbol_get_name(syms[j + 1]),
+            if (syms[j] && syms[j + 1]) {
+                char *tleft = squeek_symbol_get_name(syms[j]);
+                char *tright = squeek_symbol_get_name(syms[j + 1]);
+                groups[i] = g_strjoin(", ", tleft,
+                                            tright,
                                             NULL);
-            else
+            } else
                 groups[i] = "";
         }
 

@@ -82,7 +82,5 @@ gboolean         eek_key_is_locked           (EekKey          *key);
 void             eek_key_set_pressed         (EekKey          *key,
                                               gboolean         value);
 
-gboolean         eek_key_has_label           (EekKey          *key);
-
 G_END_DECLS
 #endif  /* EEK_KEY_H */

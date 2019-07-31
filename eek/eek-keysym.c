@@ -228,6 +228,17 @@ eek_keysym_new (guint xkeysym)
     return eek_keysym_new_with_modifier (xkeysym, get_modifier_mask (xkeysym));
 }
 
+guint32
+eek_keysym_from_name (const gchar *name)
+{
+    for (uint i = 0; i < G_N_ELEMENTS(xkeysym_keysym_entries); i++) {
+        if (g_strcmp0 (xkeysym_keysym_entries[i].name, name) == 0) {
+            return xkeysym_keysym_entries[i].xkeysym;
+        }
+    }
+    return 0;
+}
+
 /**
  * eek_keysym_new_from_name:
  * @name: an X keysym name
@@ -237,9 +248,10 @@ eek_keysym_new (guint xkeysym)
 EekSymbol*
 eek_keysym_new_from_name (const gchar *name)
 {
-    for (uint i = 0; i < G_N_ELEMENTS(xkeysym_keysym_entries); i++)
-        if (g_strcmp0 (xkeysym_keysym_entries[i].name, name) == 0)
-            return eek_keysym_new (xkeysym_keysym_entries[i].xkeysym);
+    guint32 xkeysym = eek_keysym_from_name(name);
+    if (xkeysym != 0) {
+        return eek_keysym_new(xkeysym);
+    }
 
     EekSymbol *ret = eek_symbol_new(name);
     eek_symbol_set_label(ret, name);
