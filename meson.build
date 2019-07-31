@@ -11,6 +11,16 @@ project(
     ]
 )
 
+add_project_arguments(
+  [
+    '-Werror=implicit-function-declaration',
+    '-Werror=implicit-fallthrough=3',
+    '-Werror=maybe-uninitialized',
+#    '-Werror=missing-field-initializers', // fix eek-unicode-keysym-entries first
+  ],
+  language: 'c'
+)
+
 i18n = import('i18n')
 
 conf_data = configuration_data()

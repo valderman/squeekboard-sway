@@ -19,6 +19,8 @@
  */
 #include "eek/eek.h"
 
+#include <gtk/gtk.h>
+
 static void
 test_create (void)
 {
