@@ -207,10 +207,7 @@ render_key_outline (EekRenderer *renderer,
         active ? GTK_STATE_FLAG_ACTIVE : GTK_STATE_FLAG_NORMAL);
 
     gtk_render_background (priv->key_context,
-                           cr,
-                           0, 0,
-                           bounds.width * priv->scale,
-                           bounds.height * priv->scale);
+                           cr, 0, 0, bounds.width, bounds.height);
 
     gtk_style_context_set_state(priv->key_context, GTK_STATE_FLAG_NORMAL);
 }
