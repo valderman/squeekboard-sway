@@ -5,6 +5,10 @@ use std::string::String;
 
 use super::bitflags;
 
+// Traits
+use std::convert::TryFrom;
+
+
 /// Gathers stuff defined in C or called by C
 pub mod c {
     use super::*;
@@ -108,8 +112,8 @@ pub mod c {
                 })
             },
             content_purpose: {
-                ContentPurpose::from_num(purpose).unwrap_or_else(|| {
-                    eprintln!("Warning: Received invalid purpose flags");
+                ContentPurpose::try_from(purpose).unwrap_or_else(|_e| {
+                    eprintln!("Warning: Received invalid purpose value");
                     ContentPurpose::Normal
                 })
             },
@@ -126,8 +130,8 @@ pub mod c {
         let imservice = &mut *imservice;
         imservice.pending = IMProtocolState {
             text_change_cause: {
-                ChangeCause::from_num(cause).unwrap_or_else(|| {
-                    eprintln!("Warning: received invalid cause flags");
+                ChangeCause::try_from(cause).unwrap_or_else(|_e| {
+                    eprintln!("Warning: received invalid cause value");
                     ChangeCause::InputMethod
                 })
             },
@@ -222,25 +226,28 @@ pub enum ContentPurpose {
     Terminal = 13,
 }
 
-impl ContentPurpose {
-    fn from_num(num: u32) -> Option<ContentPurpose> {
+impl TryFrom<u32> for ContentPurpose {
+    // There's only one way to fail: number not in protocol,
+    // so no special error type is needed
+    type Error = ();
+    fn try_from(num: u32) -> Result<Self, Self::Error> {
         use self::ContentPurpose::*;
         match num {
-            0 => Some(Normal),
-            1 => Some(Alpha),
-            2 => Some(Digits),
-            3 => Some(Number),
-            4 => Some(Phone),
-            5 => Some(Url),
-            6 => Some(Email),
-            7 => Some(Name),
-            8 => Some(Password),
-            9 => Some(Pin),
-            10 => Some(Date),
-            11 => Some(Time),
-            12 => Some(Datetime),
-            13 => Some(Terminal),
-            _ => None,
+            0 => Ok(Normal),
+            1 => Ok(Alpha),
+            2 => Ok(Digits),
+            3 => Ok(Number),
+            4 => Ok(Phone),
+            5 => Ok(Url),
+            6 => Ok(Email),
+            7 => Ok(Name),
+            8 => Ok(Password),
+            9 => Ok(Pin),
+            10 => Ok(Date),
+            11 => Ok(Time),
+            12 => Ok(Datetime),
+            13 => Ok(Terminal),
+            _ => Err(()),
         }
     }
 }
@@ -252,12 +259,15 @@ pub enum ChangeCause {
     Other = 1,
 }
 
-impl ChangeCause {
-    pub fn from_num(num: u32) -> Option<ChangeCause> {
+impl TryFrom<u32> for ChangeCause {
+    // There's only one way to fail: number not in protocol,
+    // so no special error type is needed
+    type Error = ();
+    fn try_from(num: u32) -> Result<Self, Self::Error> {
         match num {
-            0 => Some(ChangeCause::InputMethod),
-            1 => Some(ChangeCause::Other),
-            _ => None
+            0 => Ok(ChangeCause::InputMethod),
+            1 => Ok(ChangeCause::Other),
+            _ => Err(())
         }
     }
 }
