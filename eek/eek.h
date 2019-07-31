@@ -30,7 +30,6 @@
 #include "eek-keysym.h"
 #include "eek-text.h"
 #include "eek-serializable.h"
-#include "eek-theme.h"
 
 void eek_init (void);
 
