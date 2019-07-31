@@ -155,7 +155,7 @@ pub mod c {
                 eekboard_context_service_set_hint_purpose(
                     imservice.ui_manager,
                     imservice.current.content_hint.bits(),
-                    imservice.current.content_purpose.as_num());
+                    imservice.current.content_purpose.clone() as u32);
             } else {
                 eekboard_context_service_hide_keyboard(imservice.ui_manager);
             }
@@ -200,22 +200,26 @@ bitflags!{
 }
 
 /// Map to `text_input_unstable_v3.content_purpose` values
+///
+/// ```
+/// assert_eq!(ContentPurpose::Alpha as u32, 0);
+/// ```
 #[derive(Debug, Clone)]
 pub enum ContentPurpose {
-    Normal,
-    Alpha,
-    Digits,
-    Number,
-    Phone,
-    Url,
-    Email,
-    Name,
-    Password,
-    Pin,
-    Date,
-    Time,
-    Datetime,
-    Terminal,
+    Normal = 0,
+    Alpha = 1,
+    Digits = 2,
+    Number = 3,
+    Phone = 4,
+    Url = 5,
+    Email = 6,
+    Name = 7,
+    Password = 8,
+    Pin = 9,
+    Date = 10,
+    Time = 11,
+    Datetime = 12,
+    Terminal = 13,
 }
 
 impl ContentPurpose {
@@ -239,32 +243,13 @@ impl ContentPurpose {
             _ => None,
         }
     }
-    fn as_num(self: &ContentPurpose) -> u32 {
-        use self::ContentPurpose::*;
-        match self {
-            Normal => 0,
-            Alpha => 1,
-            Digits => 2,
-            Number => 3,
-            Phone => 4,
-            Url => 5,
-            Email => 6,
-            Name => 7,
-            Password => 8,
-            Pin => 9,
-            Date => 10,
-            Time => 11,
-            Datetime => 12,
-            Terminal => 13,
-        }
-    }
 }
 
 /// Map to `text_input_unstable_v3.change_cause` values
 #[derive(Debug, Clone)]
 pub enum ChangeCause {
-    InputMethod,
-    Other,
+    InputMethod = 0,
+    Other = 1,
 }
 
 impl ChangeCause {
@@ -273,12 +258,6 @@ impl ChangeCause {
             0 => Some(ChangeCause::InputMethod),
             1 => Some(ChangeCause::Other),
             _ => None
-        }
-    }
-    pub fn as_num(&self) -> u32 {
-        match &self {
-            ChangeCause::InputMethod => 0,
-            ChangeCause::Other => 1,
         }
     }
 }
