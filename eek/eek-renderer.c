@@ -452,10 +452,20 @@ render_key (EekRenderer *self,
     g_object_unref (layout);
 }
 
-/*
-    Applies a transformation to the bounds for a given key, consisting of
-    scaling and rotation. The scale factor is separate to the normal scale
-    factor for the keyboard as a whole and is applied cumulatively.
+/**
+ * eek_renderer_apply_transformation_for_key:
+ * @self: The renderer used to render the key
+ * @cr: The Cairo rendering context used for rendering
+ * @key: The key to be transformed
+ * @scale: The factor used to scale the key bounds before rendering
+ * @rotate: Whether to rotate the key by the angle defined for the key's
+ *   in its section definition
+ *
+ *  Applies a transformation, consisting of scaling and rotation, to the
+ *  current rendering context using the bounds for the given key. The scale
+ *  factor is separate to the normal scale factor for the keyboard as a whole
+ *  and is applied cumulatively. It is typically used to render larger than
+ *  normal keys for popups.
 */
 void
 eek_renderer_apply_transformation_for_key (EekRenderer *self,
@@ -587,8 +597,15 @@ eek_renderer_real_render_key_outline (EekRenderer *self,
 }
 
 /*
-    Renders a key separately from the normal keyboard rendering. As a result,
-    the transformation for the context needs to be set up.
+ * eek_renderer_real_render_key:
+ * @self: The renderer used to render the key
+ * @cr: The Cairo rendering context used for rendering
+ * @key: The key to be transformed
+ * @scale: The factor used to scale the key bounds before rendering
+ * @rotate: Whether to rotate the key by the angle defined for the key's
+ *   in its section definition
+ *
+ *   Renders a key separately from the normal keyboard rendering.
 */
 static void
 eek_renderer_real_render_key (EekRenderer *self,
@@ -603,9 +620,12 @@ eek_renderer_real_render_key (EekRenderer *self,
     eek_renderer_get_key_bounds (self, key, &bounds, rotate);
 
     cairo_save (cr);
+    /* Because this function is called separately from the keyboard rendering
+       function, the transformation for the context needs to be set up */
     cairo_translate (cr, priv->origin_x, priv->origin_y);
     cairo_scale (cr, priv->scale, priv->scale);
     cairo_translate (cr, bounds.x, bounds.y);
+
     eek_renderer_apply_transformation_for_key (self, cr, key, scale, rotate);
     render_key (self, cr, key, eek_key_is_pressed (key) || eek_key_is_locked (key));
     cairo_restore (cr);
