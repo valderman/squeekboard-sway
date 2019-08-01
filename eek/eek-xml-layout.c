@@ -568,7 +568,6 @@ struct _SymbolsParseData {
     gchar *label;
     gchar *icon;
     gchar *tooltip;
-    EekSymbolCategory category;
     guint keyval;
     gint groups;
 };
@@ -681,13 +680,6 @@ symbols_start_element_callback (GMarkupParseContext *pcontext,
                                    "tooltip");
         if (attribute != NULL)
             data->tooltip = g_strdup (attribute);
-
-        attribute = get_attribute (attribute_names, attribute_values,
-                                   "category");
-        if (attribute != NULL)
-            data->category = strtoul (attribute, NULL, 10);
-        else
-            data->category = EEK_SYMBOL_CATEGORY_KEYNAME;
     }
 
  out:
@@ -755,7 +747,6 @@ symbols_end_element_callback (GMarkupParseContext *pcontext,
             symbol = EEK_SYMBOL(eek_text_new (text));
         } else {
             symbol = eek_symbol_new (text);
-            eek_symbol_set_category (symbol, EEK_SYMBOL_CATEGORY_KEYNAME);
         }
 
         if (data->label) {

@@ -68,14 +68,6 @@ G_DEFINE_TYPE_WITH_PRIVATE (EekRenderer, eek_renderer, G_TYPE_OBJECT)
 static const EekColor DEFAULT_FOREGROUND_COLOR = {0.3, 0.3, 0.3, 1.0};
 static const EekColor DEFAULT_BACKGROUND_COLOR = {1.0, 1.0, 1.0, 1.0};
 
-struct _TextProperty {
-    gint category;
-    gboolean ascii;
-    gdouble scale;
-    gboolean ellipses;
-};
-typedef struct _TextProperty TextProperty;
-
 /* eek-keyboard-drawing.c */
 extern void _eek_rounded_polygon               (cairo_t     *cr,
                                                 gdouble      radius,
@@ -481,22 +473,6 @@ eek_renderer_apply_transformation_for_key (EekRenderer *self,
     }
 }
 
-static const TextProperty *
-get_text_property_for_category (EekSymbolCategory category)
-{
-    static const TextProperty props[EEK_SYMBOL_CATEGORY_LAST] = {
-        { EEK_SYMBOL_CATEGORY_LETTER, FALSE, 1.0, FALSE },
-        { EEK_SYMBOL_CATEGORY_FUNCTION, TRUE, 0.5, FALSE },
-        { EEK_SYMBOL_CATEGORY_KEYNAME, TRUE, 0.5, TRUE }
-    };
-
-    for (uint i = 0; i < G_N_ELEMENTS(props); i++)
-        if (props[i].category == category)
-            return &props[i];
-
-    g_return_val_if_reached (NULL);
-}
-
 static void
 eek_renderer_real_render_key_label (EekRenderer *self,
                                     PangoLayout *layout,
@@ -504,10 +480,8 @@ eek_renderer_real_render_key_label (EekRenderer *self,
 {
     EekRendererPrivate *priv = eek_renderer_get_instance_private (self);
     EekSymbol *symbol;
-    EekSymbolCategory category;
     const gchar *label;
     EekBounds bounds;
-    const TextProperty *prop;
     PangoFontDescription *font;
     PangoLayoutLine *line;
     gdouble scale;
@@ -546,15 +520,9 @@ eek_renderer_real_render_key_label (EekRenderer *self,
     scale = MIN((bounds.width - priv->border_width) / bounds.width,
                 (bounds.height - priv->border_width) / bounds.height);
 
-    category = eek_symbol_get_category (symbol);
-    prop = get_text_property_for_category (category);
-
-    font = pango_font_description_copy (prop->ascii ?
-                                        priv->ascii_font :
-                                        priv->font);
+    font = pango_font_description_copy (priv->font);
     pango_font_description_set_size (font,
-                                     (gint)round(pango_font_description_get_size (font) *
-                                     prop->scale * scale));
+                                     (gint)round(pango_font_description_get_size (font) * scale));
     pango_layout_set_font_description (layout, font);
     pango_font_description_free (font);
 
@@ -564,8 +532,6 @@ eek_renderer_real_render_key_label (EekRenderer *self,
         pango_layout_set_alignment (layout, PANGO_ALIGN_RIGHT);
     pango_layout_set_width (layout,
                             PANGO_SCALE * bounds.width * scale);
-    if (prop->ellipses)
-        pango_layout_set_ellipsize (layout, PANGO_ELLIPSIZE_END);
 }
 
 static void

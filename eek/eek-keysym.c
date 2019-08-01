@@ -56,7 +56,6 @@ typedef struct _EekKeysymPrivate
 struct _EekKeysymEntry {
     guint xkeysym;
     const gchar *name;
-    EekSymbolCategory category;
 };
 
 typedef struct _EekKeysymEntry EekKeysymEntry;
@@ -226,7 +225,6 @@ eek_keysym_new_with_modifier (guint           xkeysym,
     EekKeysymEntry *special_entry, *xkeysym_entry, *unicode_entry,
         *unichar_entry;
     gchar *name, *label;
-    EekSymbolCategory category;
     gunichar uc;
 
     special_entry =
@@ -246,23 +244,17 @@ eek_keysym_new_with_modifier (guint           xkeysym,
         unichar_entry = g_slice_new (EekKeysymEntry);
         unichar_entry->xkeysym = xkeysym;
         unichar_entry->name = unichar_to_utf8 (uc);
-        unichar_entry->category = EEK_SYMBOL_CATEGORY_LETTER;
     }
 
-    /* name and category */
     name = NULL;
     if (xkeysym_entry) {
         name = g_strdup (xkeysym_entry->name);
-        category = xkeysym_entry->category;
     } else if (unichar_entry) {
         name = g_strdup (unichar_entry->name);
-        category = unichar_entry->category;
     } else if (unicode_entry) {
         name = g_strdup (unicode_entry->name);
-        category = unicode_entry->category;
     } else {
         name = g_strdup ("");
-        category = EEK_SYMBOL_CATEGORY_UNKNOWN;
     }
 
     /* label */
@@ -278,7 +270,6 @@ eek_keysym_new_with_modifier (guint           xkeysym,
     keysym = g_object_new (EEK_TYPE_KEYSYM,
                            "name", name,
                            "label", label,
-                           "category", category,
                            "modifier-mask", modifier_mask,
                            NULL);
     g_free (name);
@@ -326,7 +317,6 @@ eek_keysym_new_from_name (const gchar *name)
     return g_object_new (EEK_TYPE_KEYSYM,
                          "name", name,
                          "label", name,
-                         "category", EEK_SYMBOL_CATEGORY_UNKNOWN,
                          "modifier-mask", 0,
                          NULL);
 }

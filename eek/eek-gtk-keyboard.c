@@ -542,7 +542,6 @@ render_released_key (GtkWidget *widget,
 {
     EekGtkKeyboard        *self = EEK_GTK_KEYBOARD (widget);
     EekGtkKeyboardPrivate *priv = eek_gtk_keyboard_get_instance_private (self);
-    EekBounds bounds, large_bounds;
 
     GdkWindow         *window  = gtk_widget_get_window (widget);
     cairo_region_t    *region  = gdk_window_get_clip_region (window);
