@@ -424,7 +424,7 @@ render_key (EekRenderer *self,
 
     /* render label */
     layout = pango_cairo_create_layout (cr);
-    eek_renderer_render_key_label (self, layout, key);
+    eek_renderer_real_render_key_label (self, layout, key);
     pango_layout_get_extents (layout, NULL, &extents);
 
     cairo_save (cr);
@@ -689,7 +689,6 @@ eek_renderer_class_init (EekRendererClass *klass)
     GObjectClass      *gobject_class = G_OBJECT_CLASS (klass);
     GParamSpec        *pspec;
 
-    klass->render_key_label = eek_renderer_real_render_key_label;
     klass->render_key_outline = eek_renderer_real_render_key_outline;
     klass->render_key = eek_renderer_real_render_key;
     klass->render_keyboard = eek_renderer_real_render_keyboard;
@@ -930,18 +929,6 @@ eek_renderer_create_pango_layout (EekRenderer  *renderer)
     EekRendererPrivate *priv = eek_renderer_get_instance_private (renderer);
 
     return pango_layout_new (priv->pcontext);
-}
-
-void
-eek_renderer_render_key_label (EekRenderer *renderer,
-                               PangoLayout *layout,
-                               EekKey      *key)
-{
-    g_return_if_fail (EEK_IS_RENDERER(renderer));
-    g_return_if_fail (EEK_IS_KEY(key));
-
-    EEK_RENDERER_GET_CLASS(renderer)->
-        render_key_label (renderer, layout, key);
 }
 
 void
