@@ -107,7 +107,6 @@ create_keyboard_surface_key_callback (EekElement *element,
                                       gpointer    user_data)
 {
     CreateKeyboardSurfaceCallbackData *data = user_data;
-    EekRendererPrivate *priv = eek_renderer_get_instance_private (data->renderer);
     EekBounds bounds;
 
     cairo_save (data->cr);
@@ -130,7 +129,6 @@ create_keyboard_surface_section_callback (EekElement *element,
                                           gpointer    user_data)
 {
     CreateKeyboardSurfaceCallbackData *data = user_data;
-    EekRendererPrivate *priv = eek_renderer_get_instance_private (data->renderer);
     EekBounds bounds;
     gint angle;
 
@@ -332,91 +330,6 @@ render_key_outline (EekRenderer *renderer,
     eek_outline_free (outline);
 }
 
-struct _CalculateFontSizeCallbackData {
-    gdouble size;
-    gboolean ascii;
-    EekRenderer *renderer;
-    const PangoFontDescription *base_font;
-};
-typedef struct _CalculateFontSizeCallbackData CalculateFontSizeCallbackData;
-
-static void
-calculate_font_size_key_callback (EekElement *element, gpointer user_data)
-{
-    CalculateFontSizeCallbackData *data = user_data;
-    EekRendererPrivate *priv = eek_renderer_get_instance_private (data->renderer);
-    gdouble sx, sy;
-    PangoFontDescription *font;
-    PangoRectangle extents = { 0, };
-    PangoLayout *layout;
-    gdouble size;
-    EekBounds bounds;
-    const gchar *label = NULL;
-
-    if (data->ascii)
-        label = "M";
-    else {
-        EekSymbol *symbol;
-
-        symbol = eek_key_get_symbol (EEK_KEY(element));
-        if (symbol &&
-            eek_symbol_get_category (symbol) == EEK_SYMBOL_CATEGORY_LETTER)
-            label = eek_symbol_get_label (symbol);
-        if (!label)
-            label = "M";
-    }
-
-    font = pango_font_description_copy (data->base_font);
-
-    eek_element_get_bounds (element, &bounds);
-    size = eek_bounds_long_side (&bounds) * PANGO_SCALE;
-    pango_font_description_set_size (font, size);
-    layout = pango_layout_new (priv->pcontext);
-    pango_layout_set_font_description (layout, font);
-    pango_font_description_free (font);
-
-    pango_layout_set_text (layout, label, -1);
-
-    pango_layout_get_extents (layout, NULL, &extents);
-    g_object_unref (layout);
-
-    sx = sy = 1.0;
-    if (extents.width > bounds.width * PANGO_SCALE)
-        sx = bounds.width * PANGO_SCALE / extents.width;
-    if (extents.height > bounds.height * PANGO_SCALE)
-        sy = bounds.height * PANGO_SCALE / extents.height;
-
-    size *= MIN(sx, sy);
-    if (size < data->size)
-        data->size = size;
-}
-
-static void
-calculate_font_size_section_callback (EekElement *element, gpointer user_data)
-{
-    eek_container_foreach_child (EEK_CONTAINER(element),
-                                 calculate_font_size_key_callback,
-                                 user_data);
-}
-
-static gdouble
-calculate_font_size (EekRenderer                *renderer,
-                     const PangoFontDescription *base_font,
-                     gboolean                    ascii)
-{
-    EekRendererPrivate *priv = eek_renderer_get_instance_private (renderer);
-    CalculateFontSizeCallbackData data;
-
-    data.size = G_MAXDOUBLE;
-    data.ascii = ascii;
-    data.renderer = renderer;
-    data.base_font = base_font;
-    eek_container_foreach_child (EEK_CONTAINER(priv->keyboard),
-                                 calculate_font_size_section_callback,
-                                 &data);
-    return data.size;
-}
-
 static void
 render_key (EekRenderer *self,
             cairo_t     *cr,
@@ -576,9 +489,8 @@ get_text_property_for_category (EekSymbolCategory category)
         { EEK_SYMBOL_CATEGORY_FUNCTION, TRUE, 0.5, FALSE },
         { EEK_SYMBOL_CATEGORY_KEYNAME, TRUE, 0.5, TRUE }
     };
-    gint i;
 
-    for (i = 0; i < G_N_ELEMENTS(props); i++)
+    for (uint i = 0; i < G_N_ELEMENTS(props); i++)
         if (props[i].category == category)
             return &props[i];
 
@@ -618,13 +530,16 @@ eek_renderer_real_render_key_label (EekRenderer *self,
             base_font = eek_theme_node_get_font (theme_node);
         else
             base_font = pango_context_get_font_description (priv->pcontext);
-        ascii_size = calculate_font_size (self, base_font, TRUE);
+        // FIXME: Base font size on the same size unit used for button sizing,
+        // and make the default about 1/3 of the current row height
+        ascii_size = 30000.0;
         priv->ascii_font = pango_font_description_copy (base_font);
-        pango_font_description_set_size (priv->ascii_font, ascii_size);
+        pango_font_description_set_size (priv->ascii_font,
+                                         (gint)round(ascii_size));
 
-        size = calculate_font_size (self, base_font, FALSE);
+        size = 30000.0;
         priv->font = pango_font_description_copy (base_font);
-        pango_font_description_set_size (priv->font, size * 0.6);
+        pango_font_description_set_size (priv->font, (gint)round(size * 0.6));
     }
 
     eek_element_get_bounds (EEK_ELEMENT(key), &bounds);
@@ -638,8 +553,8 @@ eek_renderer_real_render_key_label (EekRenderer *self,
                                         priv->ascii_font :
                                         priv->font);
     pango_font_description_set_size (font,
-                                     pango_font_description_get_size (font) *
-                                     prop->scale * scale);
+                                     (gint)round(pango_font_description_get_size (font) *
+                                     prop->scale * scale));
     pango_layout_set_font_description (layout, font);
     pango_font_description_free (font);
 
@@ -972,7 +887,6 @@ eek_renderer_get_key_bounds (EekRenderer *renderer,
     EekBounds section_bounds, keyboard_bounds;
     gint angle = 0;
     EekPoint points[4], min, max;
-    gint i;
 
     g_return_if_fail (EEK_IS_RENDERER(renderer));
     g_return_if_fail (EEK_IS_KEY(key));
@@ -1006,7 +920,7 @@ eek_renderer_get_key_bounds (EekRenderer *renderer,
 
     min = points[2];
     max = points[0];
-    for (i = 0; i < G_N_ELEMENTS(points); i++) {
+    for (uint i = 0; i < G_N_ELEMENTS(points); i++) {
         eek_point_rotate (&points[i], angle);
         if (points[i].x < min.x)
             min.x = points[i].x;
@@ -1248,7 +1162,6 @@ find_key_by_position_key_callback (EekElement *element,
     FindKeyByPositionCallbackData *data = user_data;
     EekBounds bounds;
     EekPoint points[4];
-    gint i;
     gboolean b1, b2, b3;
 
     eek_element_get_bounds (element, &bounds);
@@ -1262,9 +1175,7 @@ find_key_by_position_key_callback (EekElement *element,
     points[3].x = points[0].x;
     points[3].y = points[2].y;
 
-    EekRendererPrivate *priv = eek_renderer_get_instance_private (data->renderer);
-
-    for (i = 0; i < G_N_ELEMENTS(points); i++) {
+    for (uint i = 0; i < G_N_ELEMENTS(points); i++) {
         eek_point_rotate (&points[i], data->angle);
         points[i].x += data->origin.x;
         points[i].y += data->origin.y;
