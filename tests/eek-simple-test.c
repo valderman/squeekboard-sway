@@ -41,7 +41,7 @@ test_create (void)
 int
 main (int argc, char **argv)
 {
-    gtk_test_init (&argc, &argv, NULL);
+    g_test_init (&argc, &argv, NULL);
     g_test_add_func ("/eek-simple-test/create", test_create);
     return g_test_run ();
 }
