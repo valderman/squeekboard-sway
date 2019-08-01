@@ -27,8 +27,6 @@
 
 #include "config.h"
 
-#include "eekboard/eekboard-context-service.h"
-
 #include <fcntl.h>
 #include <stdio.h>
 #include <string.h>
@@ -36,10 +34,14 @@
 #include <sys/random.h> // TODO: this is Linux-specific
 #include <xkbcommon/xkbcommon.h>
 
+#include <gio/gio.h>
+
 #include "eekboard/key-emitter.h"
 #include "wayland.h"
-//#include "eekboard/eekboard-xklutil.h"
-//#include "eek/eek-xkl.h"
+
+#include "eek/eek-xml-layout.h"
+
+#include "eekboard/eekboard-context-service.h"
 
 #define CSW 640
 #define CSH 480
