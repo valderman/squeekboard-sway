@@ -127,14 +127,6 @@ eekboard_context_real_destroyed (EekboardContext *self)
 }
 
 static void
-eekboard_context_real_key_activated (EekboardContext *self,
-                                     guint            keycode,
-                                     EekSymbol       *symbol,
-                                     guint            modifiers)
-{
-}
-
-static void
 eekboard_context_get_property (GObject    *object,
                                guint       prop_id,
                                GValue     *value,
@@ -163,7 +155,6 @@ eekboard_context_class_init (EekboardContextClass *klass)
     klass->enabled = eekboard_context_real_enabled;
     klass->disabled = eekboard_context_real_disabled;
     klass->destroyed = eekboard_context_real_destroyed;
-    klass->key_activated = eekboard_context_real_key_activated;
 
     proxy_class->g_signal = eekboard_context_real_g_signal;
 
@@ -217,31 +208,6 @@ eekboard_context_class_init (EekboardContextClass *klass)
                       G_TYPE_NONE,
                       0);
 
-    /**
-     * EekboardContext::key-activated:
-     * @context: an #EekboardContext
-     * @keycode: a keycode
-     * @symbol: an #EekSymbol
-     * @modifiers: modifiers
-     *
-     * The ::key-activated signal is emitted each time a key is
-     * pressed in @context.
-     */
-    /*
-    signals[KEY_ACTIVATED] =
-        g_signal_new (I_("key-activated"),
-                      G_TYPE_FROM_CLASS(gobject_class),
-                      G_SIGNAL_RUN_LAST,
-                      G_STRUCT_OFFSET(EekboardContextClass, key_activated),
-                      NULL,
-                      NULL,
-                      _eekboard_marshal_VOID__UINT_OBJECT_UINT,
-                      G_TYPE_NONE,
-                      3,
-                      G_TYPE_UINT,
-                      G_TYPE_OBJECT,
-                      G_TYPE_UINT);
-*/
     /**
      * EekboardContext::destroyed:
      * @context: an #EekboardContext
