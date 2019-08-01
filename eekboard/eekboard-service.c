@@ -28,11 +28,13 @@
 
 #include "config.h"
 
-#include "eekboard/eekboard-service.h"
-
 #include "sm.puri.OSK0.h"
 
 #include <stdio.h>
+
+#include <gio/gio.h>
+
+#include "eekboard/eekboard-service.h"
 
 enum {
     PROP_0,

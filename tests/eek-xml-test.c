@@ -24,6 +24,7 @@
 #include "config.h"
 
 #include "eek/eek.h"
+#include "eek/eek-xml-layout.h"
 
 static void
 test_output_parse (void)
