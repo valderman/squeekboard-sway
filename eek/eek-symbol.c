@@ -28,7 +28,6 @@
 #include "config.h"
 
 #include "eek-symbol.h"
-#include "eek-serializable.h"
 #include "eek-enumtypes.h"
 
 enum {
@@ -52,54 +51,11 @@ typedef struct _EekSymbolPrivate
     gchar *tooltip;
 } EekSymbolPrivate;
 
-static void eek_serializable_iface_init (EekSerializableIface *iface);
-
 G_DEFINE_TYPE_EXTENDED (EekSymbol,
 			eek_symbol,
 			G_TYPE_OBJECT,
 			0, /* GTypeFlags */
-			G_ADD_PRIVATE (EekSymbol)
-                        G_IMPLEMENT_INTERFACE (EEK_TYPE_SERIALIZABLE,
-                                               eek_serializable_iface_init))
-
-static void
-eek_symbol_real_serialize (EekSerializable *self,
-                           GVariantBuilder *builder)
-{
-    EekSymbolPrivate *priv = eek_symbol_get_instance_private (EEK_SYMBOL (self));
-#define NOTNULL(s) ((s) != NULL ? (s) : "")
-    g_variant_builder_add (builder, "s", NOTNULL(priv->name));
-    g_variant_builder_add (builder, "s", NOTNULL(priv->label));
-    g_variant_builder_add (builder, "u", priv->category);
-    g_variant_builder_add (builder, "u", priv->modifier_mask);
-    g_variant_builder_add (builder, "s", NOTNULL(priv->icon_name));
-    g_variant_builder_add (builder, "s", NOTNULL(priv->tooltip));
-#undef NOTNULL
-}
-
-static gsize
-eek_symbol_real_deserialize (EekSerializable *self,
-                             GVariant        *variant,
-                             gsize            index)
-{
-    EekSymbolPrivate *priv = eek_symbol_get_instance_private (EEK_SYMBOL (self));
-
-    g_variant_get_child (variant, index++, "s", &priv->name);
-    g_variant_get_child (variant, index++, "s", &priv->label);
-    g_variant_get_child (variant, index++, "u", &priv->category);
-    g_variant_get_child (variant, index++, "u", &priv->modifier_mask);
-    g_variant_get_child (variant, index++, "s", &priv->icon_name);
-    g_variant_get_child (variant, index++, "s", &priv->tooltip);
-
-    return index;
-}
-
-static void
-eek_serializable_iface_init (EekSerializableIface *iface)
-{
-    iface->serialize = eek_symbol_real_serialize;
-    iface->deserialize = eek_symbol_real_deserialize;
-}
+            G_ADD_PRIVATE (EekSymbol))
 
 static void
 eek_symbol_set_property (GObject      *object,
