@@ -28,4 +28,4 @@ test:
   dependencies:
     - build_meson
   script:
-    - xvfb-run -s -noreset ninja -C _build test
+    - ninja -C _build test
