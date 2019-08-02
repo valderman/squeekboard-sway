@@ -733,7 +733,6 @@ symbols_end_element_callback (GMarkupParseContext *pcontext,
     SymbolsParseData *data = user_data;
     GSList *head = data->element_stack;
     gchar *text;
-    gint i;
 
     g_free (head->data);
     data->element_stack = g_slist_next (data->element_stack);

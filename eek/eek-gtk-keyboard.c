@@ -113,7 +113,7 @@ eek_gtk_keyboard_real_draw (GtkWidget *self,
 
     eek_renderer_render_keyboard (priv->renderer, cr);
 
-    uint level = eek_element_get_level(EEK_ELEMENT(priv->keyboard));
+    uint level = priv->keyboard->level;
 
     /* redraw pressed key */
     list = eek_keyboard_get_pressed_keys (priv->keyboard);
@@ -156,7 +156,7 @@ static void depress(EekGtkKeyboard *self,
 
     if (key) {
         eek_keyboard_press_key(priv->keyboard, key, time);
-        guint level = eek_element_get_level(EEK_ELEMENT(priv->keyboard));
+        guint level = priv->keyboard->level;
         on_key_pressed(key, self, level);
     }
 }
@@ -184,7 +184,7 @@ static void drag(EekGtkKeyboard *self,
 
         if (!found) {
             eek_keyboard_press_key(priv->keyboard, key, time);
-            guint level = eek_element_get_level(EEK_ELEMENT(priv->keyboard));
+            guint level = priv->keyboard->level;
             on_key_pressed(key, self, level);
         }
     } else {
@@ -313,7 +313,7 @@ eek_gtk_keyboard_real_query_tooltip (GtkWidget  *widget,
                                              (gdouble)x,
                                              (gdouble)y);
     if (key) {
-        EekSymbol *symbol = eek_key_get_symbol (key);
+        EekSymbol *symbol = eek_key_get_symbol_at_index(key, 0, priv->keyboard->level);
         const gchar *text = eek_symbol_get_tooltip (symbol);
         if (text) {
             gtk_tooltip_set_text (tooltip, text);

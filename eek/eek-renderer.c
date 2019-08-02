@@ -62,7 +62,6 @@ typedef struct _EekRendererPrivate
     GHashTable *active_outline_surface_cache;
     GHashTable *icons;
     cairo_surface_t *keyboard_surface;
-    gulong symbol_index_changed_handler;
 
 } EekRendererPrivate;
 
@@ -178,7 +177,7 @@ render_keyboard_surface (EekRenderer *renderer)
                            foreground.blue,
                            foreground.alpha);
 
-    data.level = eek_element_get_level(EEK_ELEMENT(priv->keyboard));
+    data.level = priv->keyboard->level;
     /* draw sections */
     eek_container_foreach_child (EEK_CONTAINER(priv->keyboard),
                                  create_keyboard_surface_section_callback,
@@ -280,7 +279,7 @@ render_key (EekRenderer *self,
 
     eek_renderer_get_foreground_color (self, priv->key_context, &foreground);
     /* render icon (if any) */
-    symbol = eek_key_get_symbol_at_index (key, 0, level, 0, 0);
+    symbol = eek_key_get_symbol_at_index (key, 0, level);
     if (!symbol)
         return;
 
@@ -394,7 +393,7 @@ eek_renderer_real_render_key_label (EekRenderer *self,
     PangoLayoutLine *line;
     gdouble scale;
 
-    symbol = eek_key_get_symbol_at_index(key, 0, level, 0, 0);
+    symbol = eek_key_get_symbol_at_index(key, 0, level);
     if (!symbol)
         return;
 
@@ -531,11 +530,6 @@ eek_renderer_set_property (GObject      *object,
     case PROP_KEYBOARD:
         priv->keyboard = g_value_get_object (value);
         g_object_ref (priv->keyboard);
-
-        priv->symbol_index_changed_handler =
-            g_signal_connect (priv->keyboard, "symbol-index-changed",
-                              G_CALLBACK(on_symbol_index_changed),
-                              object);
         break;
     case PROP_PCONTEXT:
         priv->pcontext = g_value_get_object (value);
@@ -577,10 +571,6 @@ eek_renderer_dispose (GObject *object)
     EekRendererPrivate *priv = eek_renderer_get_instance_private (self);
 
     if (priv->keyboard) {
-        if (g_signal_handler_is_connected (priv->keyboard,
-                                           priv->symbol_index_changed_handler))
-            g_signal_handler_disconnect (priv->keyboard,
-                                         priv->symbol_index_changed_handler);
         g_object_unref (priv->keyboard);
         priv->keyboard = NULL;
     }
@@ -679,7 +669,6 @@ eek_renderer_init (EekRenderer *self)
                                NULL,
                                (GDestroyNotify)cairo_surface_destroy);
     priv->keyboard_surface = NULL;
-    priv->symbol_index_changed_handler = 0;
 
     GtkIconTheme *theme = gtk_icon_theme_get_default ();
 

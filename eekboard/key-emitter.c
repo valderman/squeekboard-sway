@@ -91,7 +91,7 @@ send_fake_key (SeatEmitter *emitter,
                uint32_t timestamp)
 {
     uint32_t proto_modifiers = 0;
-    guint level = eek_element_get_level(EEK_ELEMENT(keyboard));
+    guint level = keyboard->level;
     uint32_t group = (level / 2);
 
     if (keyboard_modifiers & EEK_SHIFT_MASK)

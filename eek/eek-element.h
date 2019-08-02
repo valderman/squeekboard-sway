@@ -36,11 +36,6 @@ struct _EekElementClass
 {
     /*< private >*/
     GObjectClass parent_class;
-
-    /* signals */
-    void                  (* symbol_index_changed) (EekElement  *self,
-                                                    gint         group,
-                                                    gint         level);
 };
 
 GType        eek_element_get_type              (void) G_GNUC_CONST;
@@ -69,19 +64,6 @@ void         eek_element_set_size              (EekElement  *element,
 void         eek_element_get_absolute_position (EekElement  *element,
                                                 gdouble     *x,
                                                 gdouble     *y);
-
-void         eek_element_set_symbol_index      (EekElement  *element,
-                                                gint         group,
-                                                gint         level);
-void         eek_element_get_symbol_index      (EekElement  *element,
-                                                gint        *group,
-                                                gint        *level);
-void         eek_element_set_group             (EekElement  *element,
-                                                gint         group);
-void         eek_element_set_level             (EekElement  *element,
-                                                gint         level);
-gint         eek_element_get_group             (EekElement  *element);
-gint         eek_element_get_level             (EekElement  *element);
 
 G_END_DECLS
 #endif  /* EEK_ELEMENT_H */

@@ -116,15 +116,6 @@ on_key_unlocked (EekSection  *section,
 }
 
 static void
-on_symbol_index_changed (EekSection *section,
-                         gint group,
-                         gint level,
-                         EekKeyboard *keyboard)
-{
-    g_signal_emit_by_name (keyboard, "symbol-index-changed", group, level);
-}
-
-static void
 section_child_added_cb (EekContainer *container,
                         EekElement   *element,
                         EekKeyboard  *keyboard)
@@ -251,7 +242,7 @@ set_level_from_modifiers (EekKeyboard *self, EekKey *key)
         priv->modifier_behavior = EEK_MODIFIER_BEHAVIOR_LATCH;
 
     priv->old_level = level;
-    eek_element_set_level (EEK_ELEMENT(self), level);
+    self->level = level;
 
     eek_layout_update_layout(self);
 }
@@ -302,7 +293,7 @@ void eek_keyboard_press_key(EekKeyboard *keyboard, EekKey *key, guint32 timestam
     priv->pressed_keys = g_list_prepend (priv->pressed_keys, key);
 
     struct squeek_symbol *symbol = eek_key_get_symbol_at_index(
-        key, 0, eek_element_get_level (EEK_ELEMENT(keyboard)), 0, 0
+        key, 0, keyboard->level
     );
     if (!symbol)
         return;
@@ -335,8 +326,7 @@ void eek_keyboard_release_key( EekKeyboard *keyboard,
     }
 
     struct squeek_symbol *symbol = eek_key_get_symbol_at_index(
-        key, 0, eek_element_get_level (EEK_ELEMENT(keyboard)), 0, 0
-    );
+        key, 0, keyboard->level);
     if (!symbol)
         return;
 
@@ -404,8 +394,6 @@ eek_keyboard_real_child_added (EekContainer *self,
                       G_CALLBACK(on_key_locked), self);
     g_signal_connect (element, "key-unlocked",
                       G_CALLBACK(on_key_unlocked), self);
-    g_signal_connect (element, "symbol-index-changed",
-                      G_CALLBACK(on_symbol_index_changed), self);
 }
 
 static void
@@ -495,7 +483,7 @@ eek_keyboard_init (EekKeyboard *self)
     self->priv->modifier_behavior = EEK_MODIFIER_BEHAVIOR_NONE;
     self->priv->outline_array = g_array_new (FALSE, TRUE, sizeof (EekOutline));
     self->priv->names = g_hash_table_new (g_str_hash, g_str_equal);
-    eek_element_set_symbol_index (EEK_ELEMENT(self), 0, 0);
+    self->level = 0;
     self->scale = 1.0;
 }
 

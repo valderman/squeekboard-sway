@@ -60,16 +60,9 @@ void             eek_key_set_keycode         (EekKey          *key,
 guint            eek_key_get_keycode         (EekKey          *key);
 struct squeek_symbols *
 eek_key_get_symbol_matrix (EekKey *key);
-EekSymbol       *eek_key_get_symbol          (EekKey          *key);
-EekSymbol       *eek_key_get_symbol_with_fallback
-                                             (EekKey          *key,
-                                              gint             fallback_group,
-                                              gint             fallback_level);
 struct squeek_symbol *eek_key_get_symbol_at_index (EekKey          *key,
                                               gint             group,
-                                              gint level,
-                                              guint fallback_group,
-                                              guint fallback_level);
+                                              guint level);
 
 void             eek_key_set_oref            (EekKey          *key,
                                               guint            oref);

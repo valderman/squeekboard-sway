@@ -270,73 +270,6 @@ eek_key_get_symbol_matrix (EekKey *key)
 }
 
 /**
- * eek_key_get_symbol:
- * @key: an #EekKey
- *
- * Get the current symbol of @key.
- * Return value: (transfer none): the current #EekSymbol or %NULL on failure
- */
-EekSymbol *
-eek_key_get_symbol (EekKey *key)
-{
-    return eek_key_get_symbol_with_fallback (key, 0, 0);
-}
-
-/**
- * eek_key_get_symbol_with_fallback:
- * @key: an #EekKey
- * @fallback_group: fallback group index
- * @fallback_level: fallback level index
- *
- * Get the current symbol of @key.
- * Return value: (transfer none): the current #EekSymbol or %NULL on failure
- */
-EekSymbol *
-eek_key_get_symbol_with_fallback (EekKey *key,
-                                  gint    fallback_group,
-                                  gint    fallback_level)
-{
-    gint group, level;
-
-    g_return_val_if_fail (EEK_IS_KEY (key), NULL);
-    g_return_val_if_fail (fallback_group >= 0, NULL);
-    g_return_val_if_fail (fallback_level >= 0, NULL);
-
-    eek_element_get_symbol_index (EEK_ELEMENT(key), &group, &level);
-
-    if (group < 0 || level < 0) {
-        EekElement *section;
-
-        section = eek_element_get_parent (EEK_ELEMENT(key));
-        g_return_val_if_fail (EEK_IS_SECTION (section), NULL);
-
-        if (group < 0)
-            group = eek_element_get_group (section);
-
-        if (level < 0)
-            level = eek_element_get_level (section);
-
-        if (group < 0 || level < 0) {
-            EekElement *keyboard;
-
-            keyboard = eek_element_get_parent (section);
-            g_return_val_if_fail (EEK_IS_KEYBOARD (keyboard), NULL);
-
-            if (group < 0)
-                group = eek_element_get_group (keyboard);
-            if (level < 0)
-                level = eek_element_get_level (keyboard);
-        }
-    }
-
-    return eek_key_get_symbol_at_index (key,
-                                        group,
-                                        level,
-                                        fallback_group,
-                                        fallback_level);
-}
-
-/**
  * eek_key_get_symbol_at_index:
  * @key: an #EekKey
  * @group: group index of the symbol matrix
@@ -350,14 +283,9 @@ eek_key_get_symbol_with_fallback (EekKey *key,
 struct squeek_symbol*
 eek_key_get_symbol_at_index (EekKey *key,
                              gint    group,
-                             gint    level,
-                             guint    fallback_group,
-                             guint    fallback_level)
+                             guint    level)
 {
     struct squeek_symbols *symbols = eek_key_get_symbol_matrix(key);
-    if (level < 0) {
-        level = fallback_level;
-    }
     return squeek_symbols_get(symbols, level);
 }
 

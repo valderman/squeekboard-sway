@@ -63,6 +63,7 @@ struct _EekKeyboard
     int keymap_fd; // keymap formatted as XKB string
     size_t keymap_len; // length of the data inside keymap_fd
     double scale;
+    guint level;
 
     EekboardContextService *manager; // unowned reference
 };
