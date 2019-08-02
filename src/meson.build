@@ -28,7 +28,6 @@ sources = [
   '../eek/eek-section.c',
   '../eek/eek-serializable.c',
   '../eek/eek-symbol.c',
-  '../eek/eek-symbol-matrix.c',
   '../eek/eek-text.c',
   '../eek/eek-types.c',
   '../eek/eek-xml-layout.c',

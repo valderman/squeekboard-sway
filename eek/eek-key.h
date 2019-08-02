@@ -26,7 +26,6 @@
 #define EEK_KEY_H 1
 
 #include "eek-element.h"
-#include "eek-symbol-matrix.h"
 
 G_BEGIN_DECLS
 
@@ -59,19 +58,18 @@ GType            eek_key_get_type            (void) G_GNUC_CONST;
 void             eek_key_set_keycode         (EekKey          *key,
                                               guint            keycode);
 guint            eek_key_get_keycode         (EekKey          *key);
-void             eek_key_set_symbol_matrix   (EekKey          *key,
-                                              EekSymbolMatrix *matrix);
-EekSymbolMatrix *eek_key_get_symbol_matrix   (EekKey          *key);
+struct squeek_symbols *
+eek_key_get_symbol_matrix (EekKey *key);
 EekSymbol       *eek_key_get_symbol          (EekKey          *key);
 EekSymbol       *eek_key_get_symbol_with_fallback
                                              (EekKey          *key,
                                               gint             fallback_group,
                                               gint             fallback_level);
-EekSymbol       *eek_key_get_symbol_at_index (EekKey          *key,
+struct squeek_symbol *eek_key_get_symbol_at_index (EekKey          *key,
                                               gint             group,
                                               gint             level,
-                                              gint             fallback_group,
-                                              gint             fallback_level);
+                                              guint fallback_group,
+                                              guint fallback_level);
 
 void             eek_key_set_oref            (EekKey          *key,
                                               guint            oref);

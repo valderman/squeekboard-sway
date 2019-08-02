@@ -602,7 +602,6 @@ struct _SymbolsParseData {
 
     EekKeyboard *keyboard;
     EekKey *key;
-    GSList *symbols;
     gchar *label;
     gchar *icon;
     gchar *tooltip;
@@ -684,7 +683,6 @@ symbols_start_element_callback (GMarkupParseContext *pcontext,
             data->groups = strtol (attribute, NULL, 10);
         else
             data->groups = 1;
-        data->symbols = NULL;
         goto out;
     }
 
@@ -744,27 +742,6 @@ symbols_end_element_callback (GMarkupParseContext *pcontext,
     text = g_strndup (data->text->str, data->text->len);
 
     if (g_strcmp0 (element_name, "key") == 0) {
-        if (!data->key) {
-            return;
-        }
-
-        gint num_symbols = g_slist_length (data->symbols);
-        gint levels = num_symbols / data->groups;
-        EekSymbolMatrix *matrix = eek_symbol_matrix_new (data->groups,
-                                                         levels);
-        head = data->symbols = g_slist_reverse (data->symbols);
-        for (i = 0; i < num_symbols; i++) {
-            if (head && head->data) {
-                matrix->data[i] = head->data;
-                head = g_slist_next (head);
-            } else
-                matrix->data[i] = NULL;
-        }
-        g_slist_free (data->symbols);
-        data->symbols = NULL;
-
-        eek_key_set_symbol_matrix (data->key, matrix);
-        eek_symbol_matrix_free (matrix);
         data->key = NULL;
         goto out;
     }
@@ -773,17 +750,16 @@ symbols_end_element_callback (GMarkupParseContext *pcontext,
         g_strcmp0 (element_name, "keysym") == 0 ||
         g_strcmp0 (element_name, "text") == 0) {
 
-        data->symbols = g_slist_prepend (
-            data->symbols,
-            squeek_symbol_new(
-                element_name,
-                text,
-                data->keyval,
-                data->label,
-                data->icon,
-                data->tooltip
-            )
+        struct squeek_symbol *symbol = squeek_symbol_new(
+            element_name,
+            text,
+            data->keyval,
+            data->label,
+            data->icon,
+            data->tooltip
         );
+
+        squeek_symbols_append(eek_key_get_symbol_matrix(data->key), symbol);
         data->keyval = 0;
         g_free(data->label);
         data->label = NULL;
@@ -795,7 +771,6 @@ symbols_end_element_callback (GMarkupParseContext *pcontext,
     }
 
     if (g_strcmp0 (element_name, "invalid") == 0) {
-        data->symbols = g_slist_prepend (data->symbols, NULL);
         goto out;
     }
 

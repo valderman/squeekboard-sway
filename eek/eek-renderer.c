@@ -277,7 +277,12 @@ render_key (EekRenderer *self,
 
     eek_renderer_get_foreground_color (self, priv->key_context, &foreground);
     /* render icon (if any) */
-    symbol = eek_key_get_symbol_with_fallback (key, 0, 0);
+
+    EekSection *section = EEK_SECTION(eek_element_get_parent(EEK_ELEMENT(key)));
+    gint group = eek_element_get_group(EEK_ELEMENT(section));
+    gint level = eek_element_get_level(EEK_ELEMENT(section));
+
+    symbol = eek_key_get_symbol_at_index (key, group, level, 0, 0);
     if (!symbol)
         return;
 

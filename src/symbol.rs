@@ -209,6 +209,85 @@ pub mod c {
         let symbol = unsafe { &*symbol };
         println!("{:?}", symbol);
     }
+    
+    #[no_mangle]
+    pub extern "C"
+    fn squeek_symbols_new() -> *const Vec<*const Symbol> {
+        Box::into_raw(Box::new(Vec::new()))
+    }
+    
+    #[no_mangle]
+    pub extern "C"
+    fn squeek_symbols_append(v: *mut Vec<*const Symbol>, symbol: *const Symbol) {
+        let v = unsafe { &mut *v };
+        v.push(symbol);
+    }
+    
+    #[no_mangle]
+    pub extern "C"
+    fn squeek_symbols_get(v: *mut Vec<*const Symbol>, index: u32) -> *const Symbol {
+        let v = unsafe { &mut *v };
+        let index = index as usize;
+        v[
+            if index < v.len() { index } else { 0 }
+        ]
+    }
+    
+    #[no_mangle]
+    pub extern "C"
+    fn squeek_symbols_free(symbols: *mut Vec<*const Symbol>) {
+        unsafe { Box::from_raw(symbols) }; // Will just get dropped, together with the contents
+    }
+    
+    #[no_mangle]
+    pub extern "C"
+    fn squeek_key_to_keymap_entry(
+        key_name: *const c_char,
+        symbols: *const Vec<*const Symbol>,
+    ) -> *const c_char {
+        let key_name = as_cstr(&key_name)
+            .expect("Missing key name")
+            .to_str()
+            .expect("Bad key name");
+        let symbols = unsafe { &*symbols };
+        let symbol_names = symbols.iter()
+            .map(|symbol| {
+                let symbol: &Symbol = unsafe { &**symbol };
+                match &symbol.action {
+                    Action::Submit { text: Some(text), .. } => {
+                        Some(
+                            text.clone()
+                                .into_string().expect("Bad symbol")
+                        )
+                    },
+                    _ => None
+                }
+            })
+            .collect::<Vec<_>>();
+
+        let inner = match symbol_names.len() {
+            1 => match &symbol_names[0] {
+                Some(name) => format!("[ {} ]", name),
+                _ => format!("[ ]"),
+            },
+            4 => {
+                let first = match (&symbol_names[0], &symbol_names[1]) {
+                    (Some(left), Some(right)) => format!("{}, {}", left, right),
+                    _ => format!(""),
+                };
+                let second = match (&symbol_names[2], &symbol_names[3]) {
+                    (Some(left), Some(right)) => format!("{}, {}", left, right),
+                    _ => format!(""),
+                };
+                format!("[ {} ], [ {} ]", first, second)
+            },
+            _ => panic!("Unsupported number of symbols"),
+        };
+
+        CString::new(format!("        key <{}> {{ {} }};\n", key_name, inner))
+            .expect("Couldn't convert string")
+            .into_raw()
+    }
 }
 
 /// Just defines some int->identifier mappings for convenience

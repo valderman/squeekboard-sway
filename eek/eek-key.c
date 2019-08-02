@@ -37,7 +37,6 @@
 enum {
     PROP_0,
     PROP_KEYCODE,
-    PROP_SYMBOL_MATRIX,
     PROP_OREF,
     PROP_LAST
 };
@@ -53,7 +52,7 @@ static guint signals[LAST_SIGNAL] = { 0, };
 typedef struct _EekKeyPrivate
 {
     guint keycode;
-    EekSymbolMatrix *symbol_matrix;
+    struct squeek_symbols *symbols;
     gulong oref; // UI outline reference
     gboolean is_pressed;
     gboolean is_locked;
@@ -89,7 +88,7 @@ eek_key_finalize (GObject *object)
     EekKey        *self = EEK_KEY (object);
     EekKeyPrivate *priv = eek_key_get_instance_private (self);
 
-    eek_symbol_matrix_free (priv->symbol_matrix);
+    squeek_symbols_free (priv->symbols);
 
     G_OBJECT_CLASS (eek_key_parent_class)->finalize (object);
 }
@@ -100,14 +99,9 @@ eek_key_set_property (GObject      *object,
                       const GValue *value,
                       GParamSpec   *pspec)
 {
-    EekSymbolMatrix *matrix;
     switch (prop_id) {
     case PROP_KEYCODE:
         eek_key_set_keycode (EEK_KEY(object), g_value_get_uint (value));
-        break;
-    case PROP_SYMBOL_MATRIX:
-        matrix = g_value_get_boxed (value);
-        eek_key_set_symbol_matrix (EEK_KEY(object), matrix);
         break;
     case PROP_OREF:
         eek_key_set_oref (EEK_KEY(object), g_value_get_uint (value));
@@ -127,10 +121,6 @@ eek_key_get_property (GObject    *object,
     switch (prop_id) {
     case PROP_KEYCODE:
         g_value_set_uint (value, eek_key_get_keycode (EEK_KEY(object)));
-        break;
-    case PROP_SYMBOL_MATRIX:
-        g_value_set_boxed (value,
-                           eek_key_get_symbol_matrix (EEK_KEY(object)));
         break;
     case PROP_OREF:
         g_value_set_uint (value, eek_key_get_oref (EEK_KEY(object)));
@@ -166,18 +156,6 @@ eek_key_class_init (EekKeyClass *klass)
                                0, G_MAXUINT, 0,
                                G_PARAM_READWRITE);
     g_object_class_install_property (gobject_class, PROP_KEYCODE, pspec);
-
-    /**
-     * EekKey:symbol-matrix:
-     *
-     * The symbol matrix of #EekKey.
-     */
-    pspec = g_param_spec_boxed ("symbol-matrix",
-                                "Symbol matrix",
-                                "Symbol matrix of the key",
-                                EEK_TYPE_SYMBOL_MATRIX,
-                                G_PARAM_READWRITE);
-    g_object_class_install_property (gobject_class, PROP_SYMBOL_MATRIX, pspec);
 
     /**
      * EekKey:oref:
@@ -232,7 +210,7 @@ static void
 eek_key_init (EekKey *self)
 {
     EekKeyPrivate *priv = eek_key_get_instance_private (self);
-    priv->symbol_matrix = eek_symbol_matrix_new (0, 0);
+    priv->symbols = squeek_symbols_new ();
 }
 
 /**
@@ -275,39 +253,20 @@ eek_key_get_keycode (EekKey *key)
 }
 
 /**
- * eek_key_set_symbol_matrix:
- * @key: an #EekKey
- * @matrix: an #EekSymbolMatrix
- *
- * Set the symbol matrix of @key to @matrix.
- */
-void
-eek_key_set_symbol_matrix (EekKey          *key,
-                           EekSymbolMatrix *matrix)
-{
-    g_return_if_fail (EEK_IS_KEY(key));
-
-    EekKeyPrivate *priv = eek_key_get_instance_private (key);
-
-    eek_symbol_matrix_free (priv->symbol_matrix);
-    priv->symbol_matrix = eek_symbol_matrix_copy (matrix);
-}
-
-/**
  * eek_key_get_symbol_matrix:
  * @key: an #EekKey
  *
  * Get the symbol matrix of @key.
  * Returns: (transfer none): #EekSymbolMatrix or %NULL
  */
-EekSymbolMatrix *
+struct squeek_symbols *
 eek_key_get_symbol_matrix (EekKey *key)
 {
     g_return_val_if_fail (EEK_IS_KEY(key), NULL);
 
     EekKeyPrivate *priv = eek_key_get_instance_private (key);
 
-    return priv->symbol_matrix;
+    return priv->symbols;
 }
 
 /**
@@ -388,46 +347,18 @@ eek_key_get_symbol_with_fallback (EekKey *key,
  * Get the symbol at (@group, @level) in the symbol matrix of @key.
  * Return value: (transfer none): an #EekSymbol at (@group, @level), or %NULL
  */
-EekSymbol *
+struct squeek_symbol*
 eek_key_get_symbol_at_index (EekKey *key,
                              gint    group,
                              gint    level,
-                             gint    fallback_group,
-                             gint    fallback_level)
+                             guint    fallback_group,
+                             guint    fallback_level)
 {
-    EekKeyPrivate *priv = eek_key_get_instance_private (key);
-    gint num_symbols;
-
-    g_return_val_if_fail (fallback_group >= 0, NULL);
-    g_return_val_if_fail (fallback_level >= 0, NULL);
-
-    if (group < 0)
-        group = fallback_group;
-    if (level < 0)
-        level = fallback_level;
-
-    if (!priv->symbol_matrix)
-        return NULL;
-
-    num_symbols = priv->symbol_matrix->num_groups *
-        priv->symbol_matrix->num_levels;
-    if (num_symbols == 0)
-        return NULL;
-
-    if (group >= priv->symbol_matrix->num_groups) {
-        if (fallback_group < 0)
-            return NULL;
-        group = fallback_group;
-    }
-
-    if (level >= priv->symbol_matrix->num_levels) {
-        if (fallback_level < 0)
-            return NULL;
+    struct squeek_symbols *symbols = eek_key_get_symbol_matrix(key);
+    if (level < 0) {
         level = fallback_level;
     }
-
-    return priv->symbol_matrix->data[group * priv->symbol_matrix->num_levels +
-                                     level];
+    return squeek_symbols_get(symbols, level);
 }
 
 /**

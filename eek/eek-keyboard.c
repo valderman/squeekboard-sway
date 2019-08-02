@@ -770,47 +770,13 @@ eek_keyboard_get_keymap(EekKeyboard *keyboard)
         g_free(line);
         g_free(current);
 
-        /* Find the symbols associated with the key. */
-        EekSymbolMatrix *matrix = eek_key_get_symbol_matrix(key);
-        EekSymbol *syms[4];
-        int i, j;
-
-        /* Get the symbols for all the levels defined for the key, then
-           pad it out with the first symbol for all levels up to the fourth. */
-        for (i = 0; i < matrix->num_levels; ++i)
-            syms[i] = eek_symbol_matrix_get_symbol(matrix, 0, i);
-
-        while (i < 4) {
-            syms[i] = eek_symbol_matrix_get_symbol(matrix, 0, 0);
-            i++;
-        }
-
-        /* The four levels are split into two groups in the keymap.
-           Generate strings for each of these groups, where an empty group is
-           treated specially. */
-
-        gchar *groups[2];
-        for (i = 0, j = 0; i < 2; ++i, j += 2) {
-            if (syms[j] && syms[j + 1]) {
-                char *tleft = squeek_symbol_get_name(syms[j]);
-                char *tright = squeek_symbol_get_name(syms[j + 1]);
-                groups[i] = g_strjoin(", ", tleft,
-                                            tright,
-                                            NULL);
-            } else
-                groups[i] = "";
-        }
-
-        /* Append a key definition to the symbols section. */
+        // FIXME: free
+        char *key_str = squeek_key_to_keymap_entry(
+            (char*)key_name,
+            eek_key_get_symbol_matrix(key)
+        );
         current = symbols;
-        line = g_strdup_printf("        key <%s> { [ %s ], [ %s ] };\n",
-                               (char *)key_name, groups[0], groups[1]);
-
-        g_free(groups[0]);
-        g_free(groups[1]);
-
-        symbols = g_strconcat(current, line, NULL);
-        g_free(line);
+        symbols = g_strconcat(current, key_str, NULL);
         g_free(current);
     }
 
