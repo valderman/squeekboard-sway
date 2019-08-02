@@ -417,11 +417,7 @@ geometry_start_element_callback (GMarkupParseContext *pcontext,
         attribute = get_attribute (attribute_names, attribute_values,
                                    "oref");
         if (attribute == NULL) {
-            g_set_error (error,
-                         G_MARKUP_ERROR,
-                         G_MARKUP_ERROR_MISSING_ATTRIBUTE,
-                         "no \"oref\" attribute for \"key\"");
-            return;
+            attribute = g_strdup("default");
         }
         g_hash_table_insert (data->key_oref_hash,
                              data->key,
