@@ -285,10 +285,7 @@ static const gchar *geometry_valid_path_list[] = {
     "bounds/geometry",
     "section/geometry",
     "outline/geometry",
-    "bounds/section/geometry",
-    "row/section/geometry",
-    "key/row/section/geometry",
-    "bounds/key/row/section/geometry",
+    "key/section/geometry",
     "point/outline/geometry",
 };
 

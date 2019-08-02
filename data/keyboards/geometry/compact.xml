@@ -2,7 +2,6 @@
 <geometry version="0.90">
   <bounds x="10" y="10" width="410.0000" height="229"/>
   <section angle="0">
-    <row orientation="1">
       <key name="AD01" oref="outline2" />
       <key name="AD02" oref="outline2" />
       <key name="AD03" oref="outline2" />
@@ -13,10 +12,8 @@
       <key name="AD08" oref="outline2" />
       <key name="AD09" oref="outline2" />
       <key name="AD10" oref="outline2" />
-    </row>
   </section>
   <section angle="0">
-    <row orientation="1">
       <key name="AC01" oref="outline2" />
       <key name="AC02" oref="outline2" />
       <key name="AC03" oref="outline2" />
@@ -27,10 +24,8 @@
       <key name="AC08" oref="outline2" />
       <key name="AC09" oref="outline2" />
       <key name="AC10" oref="outline2" />
-    </row>
   </section>
   <section angle="0">
-    <row orientation="1">
       <key name="LFSH" oref="altline" />
       <key name="AB01" oref="outline2" />
       <key name="AB02" oref="outline2" />
@@ -40,16 +35,13 @@
       <key name="AB06" oref="outline2" />
       <key name="AB07" oref="outline2" />
       <key name="BKSP" oref="altline" />
-    </row>
   </section>
   <section angle="0">
-    <row orientation="1">
       <key keycode="0" name="ABC123" oref="altline" />
       <key name="I149" oref="altline" />
       <key name="SPCE" oref="spaceline" />
       <key name="AB08" oref="outline2" />
       <key name="RTRN" oref="outline7" />
-    </row>
   </section>
   <outline id="outline2" corner-radius="1.000000">
     <point x="0.000000" y="0.000000"/>
