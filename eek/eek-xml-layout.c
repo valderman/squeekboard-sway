@@ -372,7 +372,7 @@ geometry_start_element_callback (GMarkupParseContext *pcontext,
     }
 
     if (g_strcmp0 (element_name, "section") == 0) {
-        data->section = eek_keyboard_create_section (data->keyboard);
+        data->section = eek_keyboard_real_create_section (data->keyboard);
         attribute = get_attribute (attribute_names, attribute_values,
                                    "id");
         if (attribute != NULL)

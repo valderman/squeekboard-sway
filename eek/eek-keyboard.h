@@ -88,8 +88,6 @@ struct _EekKeyboardClass
     gpointer get_symbol_index;
 
     /*< public >*/
-    EekSection *(* create_section)      (EekKeyboard *self);
-
     EekKey     *(* find_key_by_name)    (EekKeyboard *self,
                                          const gchar *name);
 
@@ -195,6 +193,13 @@ void eek_keyboard_release_key(EekKeyboard *keyboard, EekKey *key, guint32 timest
 
 gchar *             eek_keyboard_get_keymap
                                      (EekKeyboard        *keyboard);
+
+/* Create an #EekSection instance and append it to @keyboard.  This
+* function is rarely called by application but called by #EekLayout
+* implementation.
+*/
+EekSection *
+eek_keyboard_real_create_section (EekKeyboard *self);
 
 G_END_DECLS
 #endif  /* EEK_KEYBOARD_H */

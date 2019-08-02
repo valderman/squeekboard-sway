@@ -145,7 +145,7 @@ section_child_removed_cb (EekContainer *container,
                          name);
 }
 
-static EekSection *
+EekSection *
 eek_keyboard_real_create_section (EekKeyboard *self)
 {
     EekSection *section;
@@ -422,8 +422,6 @@ eek_keyboard_class_init (EekKeyboardClass *klass)
     GObjectClass      *gobject_class = G_OBJECT_CLASS (klass);
     GParamSpec        *pspec;
 
-    klass->create_section = eek_keyboard_real_create_section;
-
     /* signals */
     container_class->child_added = eek_keyboard_real_child_added;
     container_class->child_removed = eek_keyboard_real_child_removed;
@@ -498,21 +496,6 @@ eek_keyboard_init (EekKeyboard *self)
     self->priv->names = g_hash_table_new (g_str_hash, g_str_equal);
     eek_element_set_symbol_index (EEK_ELEMENT(self), 0, 0);
     self->scale = 1.0;
-}
-
-/**
- * eek_keyboard_create_section:
- * @keyboard: an #EekKeyboard
- *
- * Create an #EekSection instance and append it to @keyboard.  This
- * function is rarely called by application but called by #EekLayout
- * implementation.
- */
-EekSection *
-eek_keyboard_create_section (EekKeyboard *keyboard)
-{
-    g_return_val_if_fail (EEK_IS_KEYBOARD(keyboard), NULL);
-    return EEK_KEYBOARD_GET_CLASS(keyboard)->create_section (keyboard);
 }
 
 /**
