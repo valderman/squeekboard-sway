@@ -67,7 +67,7 @@ EekSymbol       *eek_key_get_symbol_with_fallback
                                               gint             fallback_level);
 struct squeek_symbol *eek_key_get_symbol_at_index (EekKey          *key,
                                               gint             group,
-                                              gint             level,
+                                              gint level,
                                               guint fallback_group,
                                               guint fallback_level);
 

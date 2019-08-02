@@ -44,6 +44,7 @@ struct _EekRendererClass
     void             (* render_key)         (EekRenderer *self,
                                              cairo_t     *cr,
                                              EekKey      *key,
+                                             guint        level,
                                              gdouble      scale,
                                              gboolean     rotate);
 
@@ -95,7 +96,7 @@ void             eek_renderer_render_key_outline
 
 void             eek_renderer_render_key       (EekRenderer     *renderer,
                                                 cairo_t         *cr,
-                                                EekKey          *key,
+                                                EekKey          *key, guint level,
                                                 gdouble          scale,
                                                 gboolean         rotate);
 

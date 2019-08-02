@@ -64,13 +64,13 @@ typedef struct _EekGtkKeyboardPrivate
 G_DEFINE_TYPE_WITH_PRIVATE (EekGtkKeyboard, eek_gtk_keyboard, GTK_TYPE_DRAWING_AREA)
 
 static void       on_key_pressed          (EekKey      *key,
-                                           EekGtkKeyboard *self);
+                                           EekGtkKeyboard *self, guint level);
 static void       on_key_released         (EekKey      *key,
                                            EekGtkKeyboard *self);
 static void       render_pressed_key      (GtkWidget   *widget,
-                                           EekKey      *key);
+                                           EekKey      *key, guint level);
 static void       render_locked_key       (GtkWidget   *widget,
-                                           EekKey      *key);
+                                           EekKey      *key, guint level);
 static void       render_released_key     (GtkWidget   *widget,
                                            EekKey      *key);
 
@@ -113,17 +113,19 @@ eek_gtk_keyboard_real_draw (GtkWidget *self,
 
     eek_renderer_render_keyboard (priv->renderer, cr);
 
+    uint level = eek_element_get_level(EEK_ELEMENT(priv->keyboard));
+
     /* redraw pressed key */
     list = eek_keyboard_get_pressed_keys (priv->keyboard);
     for (head = list; head; head = g_list_next (head)) {
-        render_pressed_key (self, head->data);
+        render_pressed_key (self, head->data, level);
     }
     g_list_free (list);
 
     /* redraw locked key */
     list = eek_keyboard_get_locked_keys (priv->keyboard);
     for (head = list; head; head = g_list_next (head)) {
-        render_locked_key (self, ((EekModifierKey *)head->data)->key);
+        render_locked_key (self, ((EekModifierKey *)head->data)->key, level);
     }
     g_list_free (list);
 
@@ -154,7 +156,8 @@ static void depress(EekGtkKeyboard *self,
 
     if (key) {
         eek_keyboard_press_key(priv->keyboard, key, time);
-        on_key_pressed(key, self);
+        guint level = eek_element_get_level(EEK_ELEMENT(priv->keyboard));
+        on_key_pressed(key, self, level);
     }
 }
 
@@ -181,7 +184,8 @@ static void drag(EekGtkKeyboard *self,
 
         if (!found) {
             eek_keyboard_press_key(priv->keyboard, key, time);
-            on_key_pressed(key, self);
+            guint level = eek_element_get_level(EEK_ELEMENT(priv->keyboard));
+            on_key_pressed(key, self, level);
         }
     } else {
         for (head = list; head; head = g_list_next (head)) {
@@ -473,7 +477,8 @@ magnify_bounds (GtkWidget *self,
 
 static void
 render_pressed_key (GtkWidget *widget,
-                    EekKey    *key)
+                    EekKey    *key,
+                    guint      level)
 {
     EekGtkKeyboard        *self = EEK_GTK_KEYBOARD (widget);
     EekGtkKeyboardPrivate *priv = eek_gtk_keyboard_get_instance_private (self);
@@ -483,7 +488,7 @@ render_pressed_key (GtkWidget *widget,
     GdkDrawingContext *context = gdk_window_begin_draw_frame (window, region);
     cairo_t           *cr      = gdk_drawing_context_get_cairo_context (context);
 
-    eek_renderer_render_key (priv->renderer, cr, key, 1.0, TRUE);
+    eek_renderer_render_key (priv->renderer, cr, key, level, 1.0, TRUE);
 /*
     eek_renderer_render_key (priv->renderer, cr, key, 1.5, TRUE);
 */
@@ -494,7 +499,8 @@ render_pressed_key (GtkWidget *widget,
 
 static void
 render_locked_key (GtkWidget *widget,
-                   EekKey    *key)
+                   EekKey    *key,
+                   guint      level)
 {
     EekGtkKeyboard        *self = EEK_GTK_KEYBOARD (widget);
     EekGtkKeyboardPrivate *priv = eek_gtk_keyboard_get_instance_private (self);
@@ -504,7 +510,7 @@ render_locked_key (GtkWidget *widget,
     GdkDrawingContext *context = gdk_window_begin_draw_frame (window, region);
     cairo_t           *cr      = gdk_drawing_context_get_cairo_context (context);
 
-    eek_renderer_render_key (priv->renderer, cr, key, 1.0, TRUE);
+    eek_renderer_render_key (priv->renderer, cr, key, level, 1.0, TRUE);
 
     gdk_window_end_draw_frame (window, context);
 
@@ -532,7 +538,8 @@ render_released_key (GtkWidget *widget,
 
 static void
 on_key_pressed (EekKey      *key,
-                EekGtkKeyboard *self)
+                EekGtkKeyboard *self,
+                guint level)
 {
     EekGtkKeyboardPrivate *priv = eek_gtk_keyboard_get_instance_private (self);
 
@@ -540,7 +547,7 @@ on_key_pressed (EekKey      *key,
     if (!priv->renderer)
         return;
 
-    render_pressed_key (GTK_WIDGET(self), key);
+    render_pressed_key (GTK_WIDGET(self), key, level);
     gtk_widget_queue_draw (GTK_WIDGET(self));
 
 #if HAVE_LIBCANBERRA

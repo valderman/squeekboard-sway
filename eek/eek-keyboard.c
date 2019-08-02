@@ -301,7 +301,9 @@ void eek_keyboard_press_key(EekKeyboard *keyboard, EekKey *key, guint32 timestam
     eek_key_set_pressed(key, TRUE);
     priv->pressed_keys = g_list_prepend (priv->pressed_keys, key);
 
-    EekSymbol *symbol = eek_key_get_symbol_with_fallback (key, 0, 0);
+    struct squeek_symbol *symbol = eek_key_get_symbol_at_index(
+        key, 0, eek_element_get_level (EEK_ELEMENT(keyboard)), 0, 0
+    );
     if (!symbol)
         return;
 
@@ -332,10 +334,9 @@ void eek_keyboard_release_key( EekKeyboard *keyboard,
         }
     }
 
-    EekSymbol *symbol = eek_key_get_symbol_with_fallback (key, 0, 0);
-    if (!symbol)
-        return;
-
+    struct squeek_symbol *symbol = eek_key_get_symbol_at_index(
+        key, 0, eek_element_get_level (EEK_ELEMENT(keyboard)), 0, 0
+    );
     if (!symbol)
         return;
 

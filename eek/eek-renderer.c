@@ -79,12 +79,12 @@ extern void _eek_rounded_polygon               (cairo_t     *cr,
 
 static void eek_renderer_real_render_key_label (EekRenderer *self,
                                                 PangoLayout *layout,
-                                                EekKey      *key);
+                                                EekKey      *key, guint level);
 
 static void invalidate                         (EekRenderer *renderer);
 static void render_key                         (EekRenderer *self,
                                                 cairo_t     *cr,
-                                                EekKey      *key,
+                                                EekKey      *key, guint level,
                                                 gboolean     active);
 static void on_symbol_index_changed            (EekKeyboard *keyboard,
                                                 gint         group,
@@ -94,6 +94,7 @@ static void on_symbol_index_changed            (EekKeyboard *keyboard,
 struct _CreateKeyboardSurfaceCallbackData {
     cairo_t *cr;
     EekRenderer *renderer;
+    uint level;
 };
 typedef struct _CreateKeyboardSurfaceCallbackData CreateKeyboardSurfaceCallbackData;
 
@@ -114,7 +115,7 @@ create_keyboard_surface_key_callback (EekElement *element,
                      bounds.width + 100,
                      bounds.height + 100);
     cairo_clip (data->cr);
-    render_key (data->renderer, data->cr, EEK_KEY(element), FALSE);
+    render_key (data->renderer, data->cr, EEK_KEY(element), data->level, FALSE);
 
     cairo_restore (data->cr);
 }
@@ -177,6 +178,7 @@ render_keyboard_surface (EekRenderer *renderer)
                            foreground.blue,
                            foreground.alpha);
 
+    data.level = eek_element_get_level(EEK_ELEMENT(priv->keyboard));
     /* draw sections */
     eek_container_foreach_child (EEK_CONTAINER(priv->keyboard),
                                  create_keyboard_surface_section_callback,
@@ -218,6 +220,7 @@ static void
 render_key (EekRenderer *self,
             cairo_t     *cr,
             EekKey      *key,
+            guint        level,
             gboolean     active)
 {
     EekRendererPrivate *priv = eek_renderer_get_instance_private (self);
@@ -225,7 +228,7 @@ render_key (EekRenderer *self,
     cairo_surface_t *outline_surface;
     EekBounds bounds;
     guint oref;
-    EekSymbol *symbol;
+    struct squeek_symbol *symbol;
     GHashTable *outline_surface_cache;
     PangoLayout *layout;
     PangoRectangle extents = { 0, };
@@ -277,12 +280,7 @@ render_key (EekRenderer *self,
 
     eek_renderer_get_foreground_color (self, priv->key_context, &foreground);
     /* render icon (if any) */
-
-    EekSection *section = EEK_SECTION(eek_element_get_parent(EEK_ELEMENT(key)));
-    gint group = eek_element_get_group(EEK_ELEMENT(section));
-    gint level = eek_element_get_level(EEK_ELEMENT(section));
-
-    symbol = eek_key_get_symbol_at_index (key, group, level, 0, 0);
+    symbol = eek_key_get_symbol_at_index (key, 0, level, 0, 0);
     if (!symbol)
         return;
 
@@ -318,7 +316,7 @@ render_key (EekRenderer *self,
 
     /* render label */
     layout = pango_cairo_create_layout (cr);
-    eek_renderer_real_render_key_label (self, layout, key);
+    eek_renderer_real_render_key_label (self, layout, key, level);
     pango_layout_get_extents (layout, NULL, &extents);
 
     cairo_save (cr);
@@ -385,17 +383,18 @@ eek_renderer_apply_transformation_for_key (EekRenderer *self,
 static void
 eek_renderer_real_render_key_label (EekRenderer *self,
                                     PangoLayout *layout,
-                                    EekKey      *key)
+                                    EekKey      *key,
+                                    guint        level)
 {
     EekRendererPrivate *priv = eek_renderer_get_instance_private (self);
-    EekSymbol *symbol;
+    struct squeek_symbol *symbol;
     const gchar *label;
     EekBounds bounds;
     PangoFontDescription *font;
     PangoLayoutLine *line;
     gdouble scale;
 
-    symbol = eek_key_get_symbol_with_fallback (key, 0, 0);
+    symbol = eek_key_get_symbol_at_index(key, 0, level, 0, 0);
     if (!symbol)
         return;
 
@@ -466,6 +465,7 @@ static void
 eek_renderer_real_render_key (EekRenderer *self,
                               cairo_t     *cr,
                               EekKey      *key,
+                              guint        level,
                               gdouble      scale,
                               gboolean     rotate)
 {
@@ -482,7 +482,7 @@ eek_renderer_real_render_key (EekRenderer *self,
     cairo_translate (cr, bounds.x, bounds.y);
 
     eek_renderer_apply_transformation_for_key (self, cr, key, scale, rotate);
-    render_key (self, cr, key, eek_key_is_pressed (key) || eek_key_is_locked (key));
+    render_key (self, cr, key, level, eek_key_is_pressed (key) || eek_key_is_locked (key));
     cairo_restore (cr);
 }
 
@@ -942,6 +942,7 @@ void
 eek_renderer_render_key (EekRenderer *renderer,
                          cairo_t     *cr,
                          EekKey      *key,
+                         guint        level,
                          gdouble      scale,
                          gboolean     rotate)
 {
@@ -950,7 +951,7 @@ eek_renderer_render_key (EekRenderer *renderer,
     g_return_if_fail (scale >= 0.0);
 
     EEK_RENDERER_GET_CLASS(renderer)->
-        render_key (renderer, cr, key, scale, rotate);
+        render_key (renderer, cr, key, level, scale, rotate);
 }
 
 void
