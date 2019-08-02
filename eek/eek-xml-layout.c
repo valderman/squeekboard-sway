@@ -384,8 +384,6 @@ geometry_start_element_callback (GMarkupParseContext *pcontext,
     }
 
     if (g_strcmp0 (element_name, "key") == 0) {
-        guint keycode;
-
         attribute = get_attribute (attribute_names, attribute_values,
                                    "name");
         if (attribute == NULL) {
@@ -397,12 +395,7 @@ geometry_start_element_callback (GMarkupParseContext *pcontext,
         }
         gchar *name = g_strdup (attribute);
 
-        attribute = get_attribute (attribute_names, attribute_values,
-                                   "keycode");
-        if (attribute != NULL)
-            keycode = strtol (attribute, NULL, 10);
-        else
-            keycode = data->keycode++;
+        guint keycode = data->keycode++;
 
         data->key = eek_section_create_key (data->section,
                                             name,
@@ -440,6 +433,12 @@ geometry_start_element_callback (GMarkupParseContext *pcontext,
         g_hash_table_insert (data->key_oref_hash,
                              key,
                              g_strdup (attribute));
+
+        attribute = get_attribute (attribute_names, attribute_values,
+                                   "keycode");
+        if (attribute != NULL) {
+            eek_key_set_keycode(key, strtol (attribute, NULL, 10));
+        }
 
         goto out;
     }

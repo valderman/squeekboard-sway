@@ -37,7 +37,7 @@
       <key name="BKSP" />
   </section>
   <section angle="0">
-      <key keycode="0" name="ABC123" />
+      <key name="ABC123" />
       <key name="I149" />
       <key name="SPCE" />
       <key name="AB08" />
@@ -46,7 +46,7 @@
   <button name="LFSH" oref="altline" />
   <button name="BKSP" oref="altline" />
   <button name="I149" oref="altline" />
-  <button name="ABC123" oref="altline" />
+  <button name="ABC123" oref="altline" keycode="0" />
   <button name="SPCE" oref="spaceline" />
   <button name="RTRN" oref="outline7" />
   <outline id="default" corner-radius="1.000000">
