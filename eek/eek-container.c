@@ -50,7 +50,7 @@ static void
 eek_container_real_add_child (EekContainer *self,
                               EekElement   *child)
 {
-    EekContainerPrivate *priv = eek_container_get_instance_private (self);
+    EekContainerPrivate *priv = (EekContainerPrivate*)eek_container_get_instance_private (self);
 
     g_return_if_fail (EEK_IS_ELEMENT(child));
     g_object_ref (child);

@@ -73,13 +73,6 @@ EekSymbol       *eek_key_get_symbol_at_index (EekKey          *key,
                                               gint             fallback_group,
                                               gint             fallback_level);
 
-void             eek_key_set_index           (EekKey          *key,
-                                              gint             column,
-                                              gint             row);
-void             eek_key_get_index           (EekKey          *key,
-                                              gint            *column,
-                                              gint            *row);
-
 void             eek_key_set_oref            (EekKey          *key,
                                               guint            oref);
 guint            eek_key_get_oref            (EekKey          *key);

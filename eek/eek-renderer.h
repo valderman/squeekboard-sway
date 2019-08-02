@@ -37,10 +37,6 @@ struct _EekRendererClass
 {
     GObjectClass parent_class;
 
-    void             (* render_key_label)   (EekRenderer *self,
-                                             PangoLayout *layout,
-                                             EekKey      *key);
-
     void             (* render_key_outline) (EekRenderer *self,
                                              cairo_t     *cr,
                                              EekKey      *key,

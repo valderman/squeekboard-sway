@@ -38,8 +38,6 @@ enum {
     PROP_0,
     PROP_KEYCODE,
     PROP_SYMBOL_MATRIX,
-    PROP_COLUMN,
-    PROP_ROW,
     PROP_OREF,
     PROP_LAST
 };
@@ -56,8 +54,6 @@ typedef struct _EekKeyPrivate
 {
     guint keycode;
     EekSymbolMatrix *symbol_matrix;
-    gint column;
-    gint row;
     gulong oref; // UI outline reference
     gboolean is_pressed;
     gboolean is_locked;
@@ -105,8 +101,6 @@ eek_key_set_property (GObject      *object,
                       GParamSpec   *pspec)
 {
     EekSymbolMatrix *matrix;
-    gint column, row;
-
     switch (prop_id) {
     case PROP_KEYCODE:
         eek_key_set_keycode (EEK_KEY(object), g_value_get_uint (value));
@@ -114,14 +108,6 @@ eek_key_set_property (GObject      *object,
     case PROP_SYMBOL_MATRIX:
         matrix = g_value_get_boxed (value);
         eek_key_set_symbol_matrix (EEK_KEY(object), matrix);
-        break;
-    case PROP_COLUMN:
-        eek_key_get_index (EEK_KEY(object), &column, &row);
-        eek_key_set_index (EEK_KEY(object), g_value_get_int (value), row);
-        break;
-    case PROP_ROW:
-        eek_key_get_index (EEK_KEY(object), &column, &row);
-        eek_key_set_index (EEK_KEY(object), column, g_value_get_int (value));
         break;
     case PROP_OREF:
         eek_key_set_oref (EEK_KEY(object), g_value_get_uint (value));
@@ -138,8 +124,6 @@ eek_key_get_property (GObject    *object,
                       GValue     *value,
                       GParamSpec *pspec)
 {
-    gint column, row;
-
     switch (prop_id) {
     case PROP_KEYCODE:
         g_value_set_uint (value, eek_key_get_keycode (EEK_KEY(object)));
@@ -147,14 +131,6 @@ eek_key_get_property (GObject    *object,
     case PROP_SYMBOL_MATRIX:
         g_value_set_boxed (value,
                            eek_key_get_symbol_matrix (EEK_KEY(object)));
-        break;
-    case PROP_COLUMN:
-        eek_key_get_index (EEK_KEY(object), &column, &row);
-        g_value_set_int (value, column);
-        break;
-    case PROP_ROW:
-        eek_key_get_index (EEK_KEY(object), &column, &row);
-        g_value_set_int (value, row);
         break;
     case PROP_OREF:
         g_value_set_uint (value, eek_key_get_oref (EEK_KEY(object)));
@@ -202,30 +178,6 @@ eek_key_class_init (EekKeyClass *klass)
                                 EEK_TYPE_SYMBOL_MATRIX,
                                 G_PARAM_READWRITE);
     g_object_class_install_property (gobject_class, PROP_SYMBOL_MATRIX, pspec);
-
-    /**
-     * EekKey:column:
-     *
-     * The column index of #EekKey in the parent #EekSection.
-     */
-    pspec = g_param_spec_int ("column",
-                              "Column",
-                              "Column index of the key in section",
-                              -1, G_MAXINT, -1,
-                              G_PARAM_READWRITE);
-    g_object_class_install_property (gobject_class, PROP_COLUMN, pspec);
-
-    /**
-     * EekKey:row:
-     *
-     * The row index of #EekKey in the parent #EekSection.
-     */
-    pspec = g_param_spec_int ("row",
-                              "Row",
-                              "Row index of the key in section",
-                              -1, G_MAXINT, -1,
-                              G_PARAM_READWRITE);
-    g_object_class_install_property (gobject_class, PROP_ROW, pspec);
 
     /**
      * EekKey:oref:
@@ -476,59 +428,6 @@ eek_key_get_symbol_at_index (EekKey *key,
 
     return priv->symbol_matrix->data[group * priv->symbol_matrix->num_levels +
                                      level];
-}
-
-/**
- * eek_key_set_index:
- * @key: an #EekKey
- * @column: column index of @key in #EekSection
- * @row: row index of @key in #EekSection
- *
- * Set the location of @key in #EekSection with @column and @row.
- */
-void
-eek_key_set_index (EekKey *key,
-                   gint    column,
-                   gint    row)
-{
-    g_return_if_fail (EEK_IS_KEY(key));
-    g_return_if_fail (0 <= column);
-    g_return_if_fail (0 <= row);
-
-    EekKeyPrivate *priv = eek_key_get_instance_private (key);
-
-    if (priv->column != column) {
-        priv->column = column;
-        g_object_notify (G_OBJECT(key), "column");
-    }
-    if (priv->row != row) {
-        priv->row = row;
-        g_object_notify (G_OBJECT(key), "row");
-    }
-}
-
-/**
- * eek_key_get_index:
- * @key: an #EekKey
- * @column: (allow-none): pointer where the column index of @key in #EekSection will be stored
- * @row: (allow-none): pointer where the row index of @key in #EekSection will be stored
- *
- * Get the location of @key in #EekSection.
- */
-void
-eek_key_get_index (EekKey *key,
-                   gint   *column,
-                   gint   *row)
-{
-    g_return_if_fail (EEK_IS_KEY(key));
-    g_return_if_fail (column != NULL || row != NULL);
-
-    EekKeyPrivate *priv = eek_key_get_instance_private (key);
-
-    if (column != NULL)
-        *column = priv->column;
-    if (row != NULL)
-        *row = priv->row;
 }
 
 /**

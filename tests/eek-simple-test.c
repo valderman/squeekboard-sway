@@ -32,9 +32,9 @@ test_create (void)
     section = eek_keyboard_create_section (keyboard);
     g_assert (EEK_IS_SECTION(section));
     eek_section_add_row (section, 2, EEK_ORIENTATION_HORIZONTAL);
-    key0 = eek_section_create_key (section, "key0", 1, 0, 0);
+    key0 = eek_section_create_key (section, "key0", 1);
     g_assert (EEK_IS_KEY(key0));
-    key1 = eek_section_create_key (section, "key1", 2, 1, 0);
+    key1 = eek_section_create_key (section, "key1", 2);
     g_assert (EEK_IS_KEY(key1));
 }
 

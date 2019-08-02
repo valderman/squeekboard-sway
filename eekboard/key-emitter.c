@@ -48,26 +48,6 @@ int send_virtual_keyboard_key(
     return 0;
 }
 
-static void
-send_fake_modifiers_events (SeatEmitter         *emitter,
-                            EekModifierType      modifiers,
-                            uint32_t             timestamp)
-{
-    (void)timestamp;
-
-    uint32_t proto_modifiers = 0;
-    if (modifiers & EEK_SHIFT_MASK) {
-        proto_modifiers |= 1<<MOD_IDX_SHIFT;
-    }
-    if (modifiers & EEK_CONTROL_MASK) {
-        proto_modifiers |= 1<<MOD_IDX_CTRL;
-    }
-    if (modifiers & EEK_MOD1_MASK) {
-        proto_modifiers |= 1<<MOD_IDX_ALT;
-    }
-    zwp_virtual_keyboard_v1_modifiers(emitter->virtual_keyboard, proto_modifiers, 0, 0, emitter->group);
-}
-
 /* Finds the first key code for each modifier and saves it in modifier_keycodes */
 static void
 update_modifier_info (SeatEmitter *client)

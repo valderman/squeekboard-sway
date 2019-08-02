@@ -29,17 +29,9 @@
 
 G_BEGIN_DECLS
 
-#define EEK_TYPE_TEXT (eek_text_get_type())
-G_DECLARE_DERIVABLE_TYPE(EekText, eek_text, EEK, TEXT, EekSymbol)
-
-struct _EekTextClass {
-    /*< private >*/
-    EekSymbolClass parent_class;
-};
-
 GType        eek_text_get_type (void) G_GNUC_CONST;
-EekText     *eek_text_new      (const gchar *text);
-const gchar *eek_text_get_text (EekText     *text);
+EekSymbol   *eek_text_new      (const gchar *text);
+const gchar *eek_text_get_text (EekSymbol   *text);
 
 G_END_DECLS
 

@@ -48,11 +48,6 @@
 #define EEK_KEYSYM_Hyper_L 0xffed
 #define EEK_KEYSYM_Hyper_R 0xffee
 
-typedef struct _EekKeysymPrivate
-{
-    guint xkeysym;
-} EekKeysymPrivate;
-
 struct _EekKeysymEntry {
     guint xkeysym;
     const gchar *name;
@@ -64,54 +59,6 @@ typedef struct _EekKeysymEntry EekKeysymEntry;
 #include "eek-unicode-keysym-entries.h"
 #include "eek-xkeysym-keysym-entries.h"
 
-static void eek_serializable_iface_init (EekSerializableIface *iface);
-
-G_DEFINE_TYPE_EXTENDED (EekKeysym, eek_keysym, EEK_TYPE_SYMBOL,
-			0, /* GTypeFlags */
-			G_ADD_PRIVATE (EekKeysym)
-                        G_IMPLEMENT_INTERFACE (EEK_TYPE_SERIALIZABLE,
-                                               eek_serializable_iface_init))
-
-static EekSerializableIface *eek_keysym_parent_serializable_iface;
-
-static void
-eek_keysym_real_serialize (EekSerializable *self,
-                           GVariantBuilder *builder)
-{
-    EekKeysymPrivate *priv = eek_keysym_get_instance_private (
-		    EEK_KEYSYM(self));
-
-    eek_keysym_parent_serializable_iface->serialize (self, builder);
-
-    g_variant_builder_add (builder, "u", priv->xkeysym);
-}
-
-static gsize
-eek_keysym_real_deserialize (EekSerializable *self,
-                             GVariant        *variant,
-                             gsize            index)
-{
-    EekKeysymPrivate *priv = eek_keysym_get_instance_private (
-		    EEK_KEYSYM(self));
-
-    index = eek_keysym_parent_serializable_iface->deserialize (self,
-                                                               variant,
-                                                               index);
-
-    g_variant_get_child (variant, index++, "u", &priv->xkeysym);
-
-    return index;
-}
-
-static void
-eek_serializable_iface_init (EekSerializableIface *iface)
-{
-    eek_keysym_parent_serializable_iface =
-        g_type_interface_peek_parent (iface);
-
-    iface->serialize = eek_keysym_real_serialize;
-    iface->deserialize = eek_keysym_real_deserialize;
-}
 
 static gchar *
 unichar_to_utf8 (gunichar uc)
@@ -196,18 +143,6 @@ get_modifier_mask (guint xkeysym)
     return 0;
 }
 
-static void
-eek_keysym_class_init (EekKeysymClass *klass)
-{
-    /* void */
-}
-
-static void
-eek_keysym_init (EekKeysym *self)
-{
-    /* void */
-}
-
 /**
  * eek_keysym_new_with_modifier:
  * @xkeysym: an X keysym value
@@ -216,12 +151,9 @@ eek_keysym_init (EekKeysym *self)
  * Create an #EekKeysym with given X keysym value @xkeysym and
  * modifier @modifier_mask.
  */
-EekKeysym *
-eek_keysym_new_with_modifier (guint           xkeysym,
-                              EekModifierType modifier_mask)
+EekSymbol *eek_keysym_new_with_modifier(guint           xkeysym,
+                                        EekModifierType modifier_mask)
 {
-    EekKeysym *keysym;
-    EekKeysymPrivate *priv;
     EekKeysymEntry *special_entry, *xkeysym_entry, *unicode_entry,
         *unichar_entry;
     gchar *name, *label;
@@ -267,11 +199,10 @@ eek_keysym_new_with_modifier (guint           xkeysym,
     else
         label = g_strdup (name);
 
-    keysym = g_object_new (EEK_TYPE_KEYSYM,
-                           "name", name,
-                           "label", label,
-                           "modifier-mask", modifier_mask,
-                           NULL);
+    EekSymbol *keysym = eek_symbol_new(name);
+    eek_symbol_set_label(keysym, label);
+    eek_symbol_set_modifier_mask(keysym, modifier_mask);
+
     g_free (name);
     g_free (label);
 
@@ -280,8 +211,7 @@ eek_keysym_new_with_modifier (guint           xkeysym,
         g_slice_free (EekKeysymEntry, unichar_entry);
     }
 
-    priv = eek_keysym_get_instance_private (keysym);
-    priv->xkeysym = xkeysym;
+    keysym->xkeysym = xkeysym;
 
     return keysym;
 }
@@ -292,7 +222,7 @@ eek_keysym_new_with_modifier (guint           xkeysym,
  *
  * Create an #EekKeysym with given X keysym value @xkeysym.
  */
-EekKeysym *
+EekSymbol*
 eek_keysym_new (guint xkeysym)
 {
     return eek_keysym_new_with_modifier (xkeysym, get_modifier_mask (xkeysym));
@@ -304,21 +234,16 @@ eek_keysym_new (guint xkeysym)
  *
  * Create an #EekKeysym with an X keysym value looked up by @name.
  */
-EekKeysym *
+EekSymbol*
 eek_keysym_new_from_name (const gchar *name)
 {
-    gint i;
-
-    for (i = 0; i < G_N_ELEMENTS(xkeysym_keysym_entries); i++)
+    for (uint i = 0; i < G_N_ELEMENTS(xkeysym_keysym_entries); i++)
         if (g_strcmp0 (xkeysym_keysym_entries[i].name, name) == 0)
             return eek_keysym_new (xkeysym_keysym_entries[i].xkeysym);
 
-    // g_warning ("can't find keysym entry for %s", name);
-    return g_object_new (EEK_TYPE_KEYSYM,
-                         "name", name,
-                         "label", name,
-                         "modifier-mask", 0,
-                         NULL);
+    EekSymbol *ret = eek_symbol_new(name);
+    eek_symbol_set_label(ret, name);
+    return ret;
 }
 
 /**
@@ -328,11 +253,10 @@ eek_keysym_new_from_name (const gchar *name)
  * Get an X keysym value associated with @keysym
  */
 guint
-eek_keysym_get_xkeysym (EekKeysym *keysym)
+eek_keysym_get_xkeysym (EekSymbol *keysym)
 {
-    EekKeysymPrivate *priv;
-
-    g_assert (EEK_IS_KEYSYM(keysym));
-    priv = eek_keysym_get_instance_private (keysym);
-    return priv->xkeysym;
+    if (keysym->xkeysym == 0) {
+        g_warning("Symbol %s was expected to have a valid keysym", keysym->name);
+    }
+    return keysym->xkeysym;
 }

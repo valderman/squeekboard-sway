@@ -61,7 +61,7 @@ typedef struct _EekRow EekRow;
 typedef struct _EekSectionPrivate
 {
     gint angle;
-    GSList *rows;
+    EekRow row;
     EekModifierType modifiers;
 } EekSectionPrivate;
 
@@ -70,9 +70,7 @@ G_DEFINE_TYPE_WITH_PRIVATE (EekSection, eek_section, EEK_TYPE_CONTAINER)
 static gint
 eek_section_real_get_n_rows (EekSection *self)
 {
-    EekSectionPrivate *priv = eek_section_get_instance_private (self);
-
-    return g_slist_length (priv->rows);
+return 1;
 }
 
 static void
@@ -80,13 +78,14 @@ eek_section_real_add_row (EekSection    *self,
                           gint           num_columns,
                           EekOrientation orientation)
 {
-    EekSectionPrivate *priv = eek_section_get_instance_private (self);
-    EekRow *row;
-
+    EekSectionPrivate *priv = (EekSectionPrivate*)eek_section_get_instance_private (self);
+    priv->row.num_columns = num_columns;
+    priv->row.orientation = orientation;
+/*
     row = g_slice_new (EekRow);
     row->num_columns = num_columns;
     row->orientation = orientation;
-    priv->rows = g_slist_append (priv->rows, row);
+    priv->rows = g_slist_append (priv->rows, row);*/
 }
 
 static void
@@ -95,15 +94,14 @@ eek_section_real_get_row (EekSection     *self,
                           gint           *num_columns,
                           EekOrientation *orientation)
 {
-    EekSectionPrivate *priv = eek_section_get_instance_private (self);
-    EekRow *row;
-
-    row = g_slist_nth_data (priv->rows, index);
-    g_return_if_fail (row);
-    if (num_columns)
+    EekSectionPrivate *priv = (EekSectionPrivate*)eek_section_get_instance_private (self);
+    EekRow *row = &priv->row;
+    if (num_columns) {
         *num_columns = row->num_columns;
-    if (orientation)
+    }
+    if (orientation) {
         *orientation = row->orientation;
+    }
 }
 
 static void
@@ -123,29 +121,17 @@ on_unlocked (EekKey     *key,
 static EekKey *
 eek_section_real_create_key (EekSection *self,
                              const gchar *name,
-                             gint        keycode,
-                             gint        column_index,
-                             gint        row_index)
+                             gint        keycode)
 {
-    EekKey *key;
-    gint num_rows;
-    EekRow *row;
+    EekSectionPrivate *priv = (EekSectionPrivate*)eek_section_get_instance_private (self);
 
-    num_rows = eek_section_get_n_rows (self);
-    g_return_val_if_fail (0 <= row_index && row_index < num_rows, NULL);
+    EekRow *row = &priv->row;
+    row->num_columns++;
 
-    EekSectionPrivate *priv = eek_section_get_instance_private (self);
-
-    row = g_slist_nth_data (priv->rows, row_index);
-    if (row->num_columns < column_index + 1)
-        row->num_columns = column_index + 1;
-
-    key = g_object_new (EEK_TYPE_KEY,
-                        "name", name,
-                        "keycode", keycode,
-                        "column", column_index,
-                        "row", row_index,
-                        NULL);
+    EekKey *key = (EekKey*)g_object_new (EEK_TYPE_KEY,
+                                         "name", name,
+                                         "keycode", keycode,
+                                         NULL);
     g_return_val_if_fail (key, NULL);
 
     EEK_CONTAINER_GET_CLASS(self)->add_child (EEK_CONTAINER(self),
@@ -225,12 +211,7 @@ static void
 eek_section_finalize (GObject *object)
 {
     EekSection        *self = EEK_SECTION (object);
-    EekSectionPrivate *priv = eek_section_get_instance_private (self);
-    GSList *head;
-
-    for (head = priv->rows; head; head = g_slist_next (head))
-        g_slice_free (EekRow, head->data);
-    g_slist_free (priv->rows);
+    EekSectionPrivate *priv = (EekSectionPrivate*)eek_section_get_instance_private (self);
 
     G_OBJECT_CLASS (eek_section_parent_class)->finalize (object);
 }
@@ -475,16 +456,12 @@ eek_section_get_row (EekSection     *section,
 EekKey *
 eek_section_create_key (EekSection *section,
                         const gchar *name,
-                        gint        keycode,
-                        gint        column,
-                        gint        row)
+                        gint        keycode)
 {
     g_return_val_if_fail (EEK_IS_SECTION(section), NULL);
     return EEK_SECTION_GET_CLASS(section)->create_key (section,
                                                        name,
-                                                       keycode,
-                                                       column,
-                                                       row);
+                                                       keycode);
 }
 
 const double keyspacing = 4.0;

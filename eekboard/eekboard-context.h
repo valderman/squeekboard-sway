@@ -47,11 +47,6 @@ struct _EekboardContextClass {
     void (*disabled)      (EekboardContext *self);
     void (*destroyed)     (EekboardContext *self);
 
-    void (*key_activated) (EekboardContext *self,
-                           guint            keycode,
-                           EekSymbol       *symbol,
-                           guint            modifiers);
-
     /*< private >*/
     /* padding */
     gpointer pdummy[24];

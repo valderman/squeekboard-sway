@@ -37,20 +37,11 @@ G_BEGIN_DECLS
  */
 #define EEK_INVALID_KEYSYM (0)
 
-#define EEK_TYPE_KEYSYM (eek_keysym_get_type())
-G_DECLARE_DERIVABLE_TYPE (EekKeysym, eek_keysym, EEK, KEYSYM, EekSymbol)
+EekSymbol *eek_keysym_new               (guint           xkeysym);
+guint      eek_keysym_get_xkeysym       (EekSymbol      *keysym);
 
-struct _EekKeysymClass {
-    /*< private >*/
-    EekSymbolClass parent_class;
-};
-
-GType      eek_keysym_get_type          (void) G_GNUC_CONST;
-EekKeysym *eek_keysym_new               (guint           xkeysym);
-guint      eek_keysym_get_xkeysym       (EekKeysym      *keysym);
-
-EekKeysym *eek_keysym_new_from_name     (const gchar    *name);
-EekKeysym *eek_keysym_new_with_modifier (guint           xkeysym,
+EekSymbol *eek_keysym_new_from_name     (const gchar    *name);
+EekSymbol *eek_keysym_new_with_modifier (guint           xkeysym,
                                          EekModifierType modifier_mask);
 
 G_END_DECLS
