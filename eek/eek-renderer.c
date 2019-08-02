@@ -452,6 +452,21 @@ render_key (EekRenderer *self,
     g_object_unref (layout);
 }
 
+/**
+ * eek_renderer_apply_transformation_for_key:
+ * @self: The renderer used to render the key
+ * @cr: The Cairo rendering context used for rendering
+ * @key: The key to be transformed
+ * @scale: The factor used to scale the key bounds before rendering
+ * @rotate: Whether to rotate the key by the angle defined for the key's
+ *   in its section definition
+ *
+ *  Applies a transformation, consisting of scaling and rotation, to the
+ *  current rendering context using the bounds for the given key. The scale
+ *  factor is separate to the normal scale factor for the keyboard as a whole
+ *  and is applied cumulatively. It is typically used to render larger than
+ *  normal keys for popups.
+*/
 void
 eek_renderer_apply_transformation_for_key (EekRenderer *self,
                                            cairo_t     *cr,
@@ -581,6 +596,17 @@ eek_renderer_real_render_key_outline (EekRenderer *self,
     cairo_restore (cr);
 }
 
+/*
+ * eek_renderer_real_render_key:
+ * @self: The renderer used to render the key
+ * @cr: The Cairo rendering context used for rendering
+ * @key: The key to be transformed
+ * @scale: The factor used to scale the key bounds before rendering
+ * @rotate: Whether to rotate the key by the angle defined for the key's
+ *   in its section definition
+ *
+ *   Renders a key separately from the normal keyboard rendering.
+*/
 static void
 eek_renderer_real_render_key (EekRenderer *self,
                               cairo_t     *cr,
@@ -589,9 +615,17 @@ eek_renderer_real_render_key (EekRenderer *self,
                               gboolean     rotate)
 {
     EekRendererPrivate *priv = eek_renderer_get_instance_private (self);
+    EekBounds bounds;
+
+    eek_renderer_get_key_bounds (self, key, &bounds, rotate);
 
     cairo_save (cr);
+    /* Because this function is called separately from the keyboard rendering
+       function, the transformation for the context needs to be set up */
     cairo_translate (cr, priv->origin_x, priv->origin_y);
+    cairo_scale (cr, priv->scale, priv->scale);
+    cairo_translate (cr, bounds.x, bounds.y);
+
     eek_renderer_apply_transformation_for_key (self, cr, key, scale, rotate);
     render_key (self, cr, key, eek_key_is_pressed (key) || eek_key_is_locked (key));
     cairo_restore (cr);
@@ -851,12 +885,11 @@ eek_renderer_set_allocation_size (EekRenderer *renderer,
 
     scale = MIN(width / w, height / h);
 
-    if (scale != priv->scale) {
-        priv->scale = scale;
-        priv->origin_x = 0;
-        priv->origin_y = 0;
-        invalidate (renderer);
-    }
+    priv->scale = scale;
+    /* Set the rendering offset in widget coordinates to center the keyboard */
+    priv->origin_x = (width - (scale * w)) / 2;
+    priv->origin_y = (height - (scale * h)) / 2;
+    invalidate (renderer);
 }
 
 void
@@ -1223,6 +1256,15 @@ find_key_by_position_section_callback (EekElement *element,
     return data->key ? 0 : -1;
 }
 
+/**
+ * eek_renderer_find_key_by_position:
+ * @renderer: The renderer normally used to render the key
+ * @x: The horizontal widget coordinate of the position to test for a key
+ * @y: The vertical widget coordinate of the position to test for a key
+ *
+ * Return value: the key located at the position x, y in widget coordinates, or
+ *   NULL if no key can be found at that location
+ **/
 EekKey *
 eek_renderer_find_key_by_position (EekRenderer *renderer,
                                    gdouble      x,
@@ -1234,12 +1276,11 @@ eek_renderer_find_key_by_position (EekRenderer *renderer,
     g_return_val_if_fail (EEK_IS_RENDERER(renderer), NULL);
 
     EekRendererPrivate *priv = eek_renderer_get_instance_private (renderer);
-    x /= priv->scale;
-    y /= priv->scale;
-    x -= priv->origin_x;
-    y -= priv->origin_y;
-
     eek_element_get_bounds (EEK_ELEMENT(priv->keyboard), &bounds);
+
+    /* Transform from widget coordinates to keyboard coordinates */
+    x = (x - priv->origin_x)/priv->scale - bounds.x;
+    y = (y - priv->origin_y)/priv->scale - bounds.y;
 
     if (x < bounds.x ||
         y < bounds.y ||
