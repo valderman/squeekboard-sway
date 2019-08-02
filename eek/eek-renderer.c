@@ -1282,16 +1282,16 @@ eek_renderer_find_key_by_position (EekRenderer *renderer,
     x = (x - priv->origin_x)/priv->scale - bounds.x;
     y = (y - priv->origin_y)/priv->scale - bounds.y;
 
-    if (x < bounds.x ||
-        y < bounds.y ||
+    if (x < 0 ||
+        y < 0 ||
         x > bounds.width ||
         y > bounds.height)
         return NULL;
 
     data.point.x = x;
     data.point.y = y;
-    data.origin.x = bounds.x;
-    data.origin.y = bounds.y;
+    data.origin.x = 0;
+    data.origin.y = 0;
     data.key = NULL;
     data.renderer = renderer;
 
