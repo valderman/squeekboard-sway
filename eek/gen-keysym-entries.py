@@ -33,7 +33,7 @@ else:
 
 table = dict()
 for line in in_stream:
-    match = re.match(r'\s*(0x[0-9A-F]+)\s+(\S*)\s+(\S*)', line, re.I)
+    match = re.match(r'\s*(0x[0-9A-F]+)\s+"(.*)"\s+(\S*)', line, re.I)
     if match:
         table[int(match.group(1), 16)] = (match.group(2), match.group(3))
 
@@ -42,8 +42,8 @@ sys.stdout.write("static const EekKeysymEntry %s[] = {\n" %
 
 for index, (keysym, (l, c)) in enumerate([(keysym, table[keysym])
                                           for keysym in sorted(table.keys())]):
-    sys.stdout.write("    { 0x%X, %s, %s }" %
-                     (keysym, l, c))
+    sys.stdout.write("    { 0x%X, \"%s\" }" %
+                     (keysym, l))
     if index < len(table) - 1:
         sys.stdout.write(",")
     sys.stdout.write("\n")

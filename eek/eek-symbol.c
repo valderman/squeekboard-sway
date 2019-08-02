@@ -28,14 +28,12 @@
 #include "config.h"
 
 #include "eek-symbol.h"
-#include "eek-serializable.h"
 #include "eek-enumtypes.h"
 
 enum {
     PROP_0,
     PROP_NAME,
     PROP_LABEL,
-    PROP_CATEGORY,
     PROP_MODIFIER_MASK,
     PROP_ICON_NAME,
     PROP_TOOLTIP,
@@ -46,60 +44,16 @@ typedef struct _EekSymbolPrivate
 {
     gchar *name;
     gchar *label;
-    EekSymbolCategory category;
     EekModifierType modifier_mask;
     gchar *icon_name;
     gchar *tooltip;
 } EekSymbolPrivate;
 
-static void eek_serializable_iface_init (EekSerializableIface *iface);
-
 G_DEFINE_TYPE_EXTENDED (EekSymbol,
 			eek_symbol,
 			G_TYPE_OBJECT,
 			0, /* GTypeFlags */
-			G_ADD_PRIVATE (EekSymbol)
-                        G_IMPLEMENT_INTERFACE (EEK_TYPE_SERIALIZABLE,
-                                               eek_serializable_iface_init))
-
-static void
-eek_symbol_real_serialize (EekSerializable *self,
-                           GVariantBuilder *builder)
-{
-    EekSymbolPrivate *priv = eek_symbol_get_instance_private (EEK_SYMBOL (self));
-#define NOTNULL(s) ((s) != NULL ? (s) : "")
-    g_variant_builder_add (builder, "s", NOTNULL(priv->name));
-    g_variant_builder_add (builder, "s", NOTNULL(priv->label));
-    g_variant_builder_add (builder, "u", priv->category);
-    g_variant_builder_add (builder, "u", priv->modifier_mask);
-    g_variant_builder_add (builder, "s", NOTNULL(priv->icon_name));
-    g_variant_builder_add (builder, "s", NOTNULL(priv->tooltip));
-#undef NOTNULL
-}
-
-static gsize
-eek_symbol_real_deserialize (EekSerializable *self,
-                             GVariant        *variant,
-                             gsize            index)
-{
-    EekSymbolPrivate *priv = eek_symbol_get_instance_private (EEK_SYMBOL (self));
-
-    g_variant_get_child (variant, index++, "s", &priv->name);
-    g_variant_get_child (variant, index++, "s", &priv->label);
-    g_variant_get_child (variant, index++, "u", &priv->category);
-    g_variant_get_child (variant, index++, "u", &priv->modifier_mask);
-    g_variant_get_child (variant, index++, "s", &priv->icon_name);
-    g_variant_get_child (variant, index++, "s", &priv->tooltip);
-
-    return index;
-}
-
-static void
-eek_serializable_iface_init (EekSerializableIface *iface)
-{
-    iface->serialize = eek_symbol_real_serialize;
-    iface->deserialize = eek_symbol_real_deserialize;
-}
+            G_ADD_PRIVATE (EekSymbol))
 
 static void
 eek_symbol_set_property (GObject      *object,
@@ -113,9 +67,6 @@ eek_symbol_set_property (GObject      *object,
         break;
     case PROP_LABEL:
         eek_symbol_set_label (EEK_SYMBOL(object), g_value_get_string (value));
-        break;
-    case PROP_CATEGORY:
-        eek_symbol_set_category (EEK_SYMBOL(object), g_value_get_enum (value));
         break;
     case PROP_MODIFIER_MASK:
         eek_symbol_set_modifier_mask (EEK_SYMBOL(object),
@@ -147,9 +98,6 @@ eek_symbol_get_property (GObject    *object,
         break;
     case PROP_LABEL:
         g_value_set_string (value, eek_symbol_get_label (EEK_SYMBOL(object)));
-        break;
-    case PROP_CATEGORY:
-        g_value_set_enum (value, eek_symbol_get_category (EEK_SYMBOL(object)));
         break;
     case PROP_MODIFIER_MASK:
         g_value_set_flags (value,
@@ -206,14 +154,6 @@ eek_symbol_class_init (EekSymbolClass *klass)
                                  G_PARAM_CONSTRUCT | G_PARAM_READWRITE);
     g_object_class_install_property (gobject_class, PROP_LABEL, pspec);
 
-    pspec = g_param_spec_enum ("category",
-                               "Category",
-                               "Category of the symbol",
-                               EEK_TYPE_SYMBOL_CATEGORY,
-                               EEK_SYMBOL_CATEGORY_UNKNOWN,
-                               G_PARAM_CONSTRUCT | G_PARAM_READWRITE);
-    g_object_class_install_property (gobject_class, PROP_CATEGORY, pspec);
-
     pspec = g_param_spec_flags ("modifier-mask",
                                 "Modifier mask",
                                 "Modifier mask of the symbol",
@@ -239,11 +179,7 @@ eek_symbol_class_init (EekSymbolClass *klass)
 
 static void
 eek_symbol_init (EekSymbol *self)
-{
-    EekSymbolPrivate *priv = eek_symbol_get_instance_private (self);
-
-    priv->category = EEK_SYMBOL_CATEGORY_UNKNOWN;
-}
+{}
 
 /**
  * eek_symbol_new:
@@ -329,40 +265,6 @@ eek_symbol_get_label (EekSymbol *symbol)
     if (priv->label == NULL || *priv->label == '\0')
         return NULL;
     return priv->label;
-}
-
-/**
- * eek_symbol_set_category:
- * @symbol: an #EekSymbol
- * @category: an #EekSymbolCategory
- *
- * Set symbol category of @symbol to @category.
- */
-void
-eek_symbol_set_category (EekSymbol        *symbol,
-                         EekSymbolCategory category)
-{
-    g_return_if_fail (EEK_IS_SYMBOL(symbol));
-
-    EekSymbolPrivate *priv = eek_symbol_get_instance_private (symbol);
-
-    priv->category = category;
-}
-
-/**
- * eek_symbol_get_category:
- * @symbol: an #EekSymbol
- *
- * Get symbol category of @symbol.
- */
-EekSymbolCategory
-eek_symbol_get_category (EekSymbol *symbol)
-{
-    g_return_val_if_fail (EEK_IS_SYMBOL(symbol), EEK_SYMBOL_CATEGORY_UNKNOWN);
-
-    EekSymbolPrivate *priv = eek_symbol_get_instance_private (symbol);
-
-    return priv->category;
 }
 
 /**
@@ -486,37 +388,3 @@ eek_symbol_get_tooltip (EekSymbol *symbol)
     return priv->tooltip;
 }
 
-static const struct {
-    EekSymbolCategory category;
-    gchar *name;
-} category_names[] = {
-    { EEK_SYMBOL_CATEGORY_LETTER, "letter" },
-    { EEK_SYMBOL_CATEGORY_FUNCTION, "function" },
-    { EEK_SYMBOL_CATEGORY_KEYNAME, "keyname" },
-    { EEK_SYMBOL_CATEGORY_USER0, "user0" },
-    { EEK_SYMBOL_CATEGORY_USER1, "user1" },
-    { EEK_SYMBOL_CATEGORY_USER2, "user2" },
-    { EEK_SYMBOL_CATEGORY_USER3, "user3" },
-    { EEK_SYMBOL_CATEGORY_USER4, "user4" },
-    { EEK_SYMBOL_CATEGORY_UNKNOWN, NULL }
-};
-
-const gchar *
-eek_symbol_category_get_name (EekSymbolCategory category)
-{
-    gint i;
-    for (i = 0; i < G_N_ELEMENTS(category_names); i++)
-        if (category_names[i].category == category)
-            return category_names[i].name;
-    return NULL;
-}
-
-EekSymbolCategory
-eek_symbol_category_from_name (const gchar *name)
-{
-    gint i;
-    for (i = 0; i < G_N_ELEMENTS(category_names); i++)
-        if (g_strcmp0 (category_names[i].name, name) == 0)
-            return category_names[i].category;
-    return EEK_SYMBOL_CATEGORY_UNKNOWN;
-}

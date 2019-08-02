@@ -16,7 +16,7 @@ add_project_arguments(
     '-Werror=implicit-function-declaration',
     '-Werror=implicit-fallthrough=3',
     '-Werror=maybe-uninitialized',
-#    '-Werror=missing-field-initializers', // fix eek-unicode-keysym-entries first
+    '-Werror=missing-field-initializers',
   ],
   language: 'c'
 )

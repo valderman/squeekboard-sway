@@ -165,7 +165,6 @@ eek_text_new (const gchar *text)
 {
     return g_object_new (EEK_TYPE_TEXT,
                          "label", text,
-                         "category", EEK_SYMBOL_CATEGORY_FUNCTION,
                          "text", text,
                          NULL);
 }
