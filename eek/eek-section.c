@@ -141,76 +141,8 @@ eek_section_real_create_key (EekSection *self,
 }
 
 static void
-set_level_from_modifiers (EekSection *self)
-{
-    EekSectionPrivate *priv = eek_section_get_instance_private (self);
-    EekKeyboard *keyboard;
-    EekModifierType num_lock_mask;
-    gint level = -1;
-
-    keyboard = EEK_KEYBOARD(eek_element_get_parent (EEK_ELEMENT(self)));
-    num_lock_mask = eek_keyboard_get_num_lock_mask (keyboard);
-    if (priv->modifiers & num_lock_mask)
-        level = 1;
-    eek_element_set_level (EEK_ELEMENT(self), level);
-}
-
-static void
-eek_section_real_key_pressed (EekSection *self, EekKey *key)
-{
-    EekSectionPrivate *priv = eek_section_get_instance_private (self);
-    EekSymbol *symbol;
-    EekKeyboard *keyboard;
-    EekModifierBehavior behavior;
-    EekModifierType modifier;
-
-    symbol = eek_key_get_symbol_with_fallback (key, 0, 0);
-    if (!symbol)
-        return;
-
-    keyboard = EEK_KEYBOARD(eek_element_get_parent (EEK_ELEMENT(self)));
-    behavior = eek_keyboard_get_modifier_behavior (keyboard);
-    modifier = eek_symbol_get_modifier_mask (symbol);
-    if (behavior == EEK_MODIFIER_BEHAVIOR_NONE) {
-        priv->modifiers |= modifier;
-        set_level_from_modifiers (self);
-    }
-}
-
-static void
-eek_section_real_key_released (EekSection *self, EekKey *key)
-{
-    EekSectionPrivate *priv = eek_section_get_instance_private (self);
-    EekSymbol *symbol;
-    EekKeyboard *keyboard;
-    EekModifierBehavior behavior;
-    EekModifierType modifier;
-
-    symbol = eek_key_get_symbol_with_fallback (key, 0, 0);
-    if (!symbol)
-        return;
-
-    keyboard = EEK_KEYBOARD(eek_element_get_parent (EEK_ELEMENT(self)));
-    behavior = eek_keyboard_get_modifier_behavior (keyboard);
-    modifier = eek_symbol_get_modifier_mask (symbol);
-    switch (behavior) {
-    case EEK_MODIFIER_BEHAVIOR_NONE:
-        priv->modifiers &= ~modifier;
-        break;
-    case EEK_MODIFIER_BEHAVIOR_LOCK:
-        priv->modifiers ^= modifier;
-        break;
-    case EEK_MODIFIER_BEHAVIOR_LATCH:
-        priv->modifiers = (priv->modifiers ^ modifier) & modifier;
-        break;
-    }
-    set_level_from_modifiers (self);
-}
-
-static void
 eek_section_finalize (GObject *object)
 {
-    EekSection        *self = EEK_SECTION (object);
     G_OBJECT_CLASS (eek_section_parent_class)->finalize (object);
 }
 
@@ -276,9 +208,6 @@ eek_section_class_init (EekSectionClass *klass)
     klass->create_key = eek_section_real_create_key;
 
     /* signals */
-    klass->key_pressed = eek_section_real_key_pressed;
-    klass->key_released = eek_section_real_key_released;
-
     container_class->child_added = eek_section_real_child_added;
     container_class->child_removed = eek_section_real_child_removed;
 

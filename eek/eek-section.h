@@ -66,10 +66,6 @@ struct _EekSectionClass
                                      gint            keycode);
 
     /* signals */
-    void    (* key_pressed)         (EekSection     *self,
-                                     EekKey         *key);
-    void    (* key_released)        (EekSection     *self,
-                                     EekKey         *key);
     void    (* key_locked)          (EekSection     *self,
                                      EekKey         *key);
     void    (* key_unlocked)        (EekSection     *self,
