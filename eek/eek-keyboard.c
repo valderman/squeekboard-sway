@@ -30,14 +30,15 @@
 #include "config.h"
 #include <glib/gprintf.h>
 
-#include "eek-keyboard.h"
 #include "eek-marshalers.h"
 #include "eek-section.h"
 #include "eek-key.h"
-#include "eek-symbol.h"
 #include "eek-enumtypes.h"
 #include "eekboard/key-emitter.h"
 #include "keymap.h"
+#include "src/symbol.h"
+
+#include "eek-keyboard.h"
 
 enum {
     PROP_0,

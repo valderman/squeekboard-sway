@@ -21,9 +21,10 @@
 #ifndef EEK_RENDERER_H
 #define EEK_RENDERER_H 1
 
+#include <gtk/gtk.h>
 #include <pango/pangocairo.h>
+
 #include "eek-keyboard.h"
-#include "eek-keysym.h"
 #include "eek-types.h"
 
 G_BEGIN_DECLS

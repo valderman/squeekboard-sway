@@ -32,9 +32,9 @@
 #include <string.h>
 
 #include "eek-keyboard.h"
-#include "eek-section.h"
 #include "eek-key.h"
-#include "eek-symbol.h"
+
+#include "eek-section.h"
 
 enum {
     PROP_0,

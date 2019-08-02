@@ -32,12 +32,13 @@
 #include <math.h>
 #include <string.h>
 
-#include "eek-gtk-keyboard.h"
 #include "eek-renderer.h"
 #include "eek-keyboard.h"
 #include "eek-section.h"
 #include "eek-key.h"
-#include "eek-symbol.h"
+#include "src/symbol.h"
+
+#include "eek-gtk-keyboard.h"
 
 enum {
     PROP_0,
@@ -313,8 +314,8 @@ eek_gtk_keyboard_real_query_tooltip (GtkWidget  *widget,
                                              (gdouble)x,
                                              (gdouble)y);
     if (key) {
-        EekSymbol *symbol = eek_key_get_symbol_at_index(key, 0, priv->keyboard->level);
-        const gchar *text = eek_symbol_get_tooltip (symbol);
+        //struct squeek_symbol *symbol = eek_key_get_symbol_at_index(key, 0, priv->keyboard->level);
+        const gchar *text = NULL; // FIXME
         if (text) {
             gtk_tooltip_set_text (tooltip, text);
             return TRUE;

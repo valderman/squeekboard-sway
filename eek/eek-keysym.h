@@ -25,26 +25,8 @@
 #ifndef EEK_KEYSYM_H
 #define EEK_KEYSYM_H 1
 
-#include <X11/XKBlib.h>
-#include "eek-symbol.h"
-
-G_BEGIN_DECLS
-
-/**
- * EEK_INVALID_KEYSYM:
- *
- * Pseudo keysym used for error reporting.
- */
-#define EEK_INVALID_KEYSYM (0)
-
-EekSymbol *eek_keysym_new               (guint           xkeysym);
-guint      eek_keysym_get_xkeysym       (EekSymbol      *keysym);
+#include "glib.h"
 
 guint32    eek_keysym_from_name         (const gchar    *name);
-EekSymbol *eek_keysym_new_from_name     (const gchar    *name);
-EekSymbol *eek_keysym_new_with_modifier (guint           xkeysym,
-                                         EekModifierType modifier_mask);
-
-G_END_DECLS
 
 #endif  /* EEK_KEYSYM_H */

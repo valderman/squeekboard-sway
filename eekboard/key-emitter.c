@@ -22,6 +22,7 @@
 #include "eekboard/key-emitter.h"
 
 #include <gdk/gdk.h>
+#include <X11/XKBlib.h>
 
 #include "eekboard/eekboard-context-service.h"
 

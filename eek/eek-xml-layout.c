@@ -27,15 +27,14 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "eek-xml-layout.h"
 #include "eek-keyboard.h"
 #include "eek-section.h"
 #include "eek-key.h"
-#include "eek-keysym.h"
-#include "eek-text.h"
 #include "src/symbol.h"
 
 #include "squeekboard-resources.h"
+
+#include "eek-xml-layout.h"
 
 enum {
     PROP_0,

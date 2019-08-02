@@ -23,10 +23,11 @@
 #include <math.h>
 #include <string.h>
 #include <gdk-pixbuf/gdk-pixbuf.h>
-#include <gtk/gtk.h>
 
 #include "eek-key.h"
 #include "eek-section.h"
+#include "src/symbol.h"
+
 #include "eek-renderer.h"
 
 enum {
