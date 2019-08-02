@@ -26,7 +26,7 @@
       <key name="AC10" />
   </section>
   <section angle="0">
-      <key name="LFSH" oref="altline" />
+      <key name="LFSH" />
       <key name="AB01" />
       <key name="AB02" />
       <key name="AB03" />
@@ -34,15 +34,21 @@
       <key name="AB05" />
       <key name="AB06" />
       <key name="AB07" />
-      <key name="BKSP" oref="altline" />
+      <key name="BKSP" />
   </section>
   <section angle="0">
-      <key keycode="0" name="ABC123" oref="altline" />
-      <key name="I149" oref="altline" />
-      <key name="SPCE" oref="spaceline" />
+      <key keycode="0" name="ABC123" />
+      <key name="I149" />
+      <key name="SPCE" />
       <key name="AB08" />
-      <key name="RTRN" oref="outline7" />
+      <key name="RTRN" />
   </section>
+  <button name="LFSH" oref="altline" />
+  <button name="BKSP" oref="altline" />
+  <button name="I149" oref="altline" />
+  <button name="ABC123" oref="altline" />
+  <button name="SPCE" oref="spaceline" />
+  <button name="RTRN" oref="outline7" />
   <outline id="default" corner-radius="1.000000">
     <point x="0.000000" y="0.000000"/>
     <point x="37.46341" y="0.000000"/>

@@ -244,8 +244,9 @@ struct _GeometryParseData {
     gchar *name;
     EekOutline outline;
     gchar *oref;
-    gint keycode;
+    guint keycode;
 
+    GHashTable *name_key_hash; // char* -> EekKey*
     GHashTable *key_oref_hash;
     GHashTable *oref_outline_hash;
 };
@@ -267,6 +268,12 @@ geometry_parse_data_new (EekKeyboard *keyboard)
                                g_str_equal,
                                g_free,
                                (GDestroyNotify)eek_outline_free);
+
+    data->name_key_hash =
+        g_hash_table_new_full (g_str_hash,
+                               g_str_equal,
+                               g_free,
+                               NULL);
     data->keycode = 8;
     return data;
 }
@@ -282,6 +289,7 @@ geometry_parse_data_free (GeometryParseData *data)
 
 static const gchar *geometry_valid_path_list[] = {
     "geometry",
+    "button/geometry",
     "bounds/geometry",
     "section/geometry",
     "outline/geometry",
@@ -375,20 +383,6 @@ geometry_start_element_callback (GMarkupParseContext *pcontext,
         goto out;
     }
 
-    if (g_strcmp0 (element_name, "row") == 0) {
-        attribute = get_attribute (attribute_names, attribute_values,
-                                   "orientation");
-        if (attribute != NULL)
-            data->orientation = strtol (attribute, NULL, 10);
-
-        eek_section_add_row (data->section,
-                             data->num_columns,
-                             data->orientation);
-
-        data->num_rows++;
-        goto out;
-    }
-
     if (g_strcmp0 (element_name, "key") == 0) {
         guint keycode;
 
@@ -413,17 +407,39 @@ geometry_start_element_callback (GMarkupParseContext *pcontext,
         data->key = eek_section_create_key (data->section,
                                             name,
                                             keycode);
+        g_hash_table_insert (data->name_key_hash,
+                             g_strdup(name),
+                             data->key);
+        data->num_columns++;
 
+        g_hash_table_insert (data->key_oref_hash,
+                             data->key,
+                             g_strdup ("default"));
+
+        goto out;
+    }
+
+    if (g_strcmp0 (element_name, "button") == 0) {
+        attribute = get_attribute (attribute_names, attribute_values,
+                                   "name");
+        if (attribute == NULL) {
+            g_set_error (error,
+                         G_MARKUP_ERROR,
+                         G_MARKUP_ERROR_MISSING_ATTRIBUTE,
+                         "no \"name\" attribute for \"button\"");
+            return;
+        }
+        gchar *name = g_strdup (attribute);
+
+        EekKey *key = g_hash_table_lookup(data->name_key_hash, name);
         attribute = get_attribute (attribute_names, attribute_values,
                                    "oref");
         if (attribute == NULL) {
             attribute = g_strdup("default");
         }
         g_hash_table_insert (data->key_oref_hash,
-                             data->key,
+                             key,
                              g_strdup (attribute));
-
-        data->num_columns++;
 
         goto out;
     }

@@ -99,10 +99,7 @@ void    eek_section_get_row              (EekSection     *section,
 
 EekKey *eek_section_create_key           (EekSection     *section,
                                           const gchar    *name,
-                                          gint            keycode);
-
-EekKey *eek_section_find_key_by_keycode  (EekSection     *section,
-                                          guint           keycode);
+                                          guint keycode);
 
 void eek_section_place_keys              (EekSection     *section, EekKeyboard *keyboard);
 

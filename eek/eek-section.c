@@ -454,7 +454,7 @@ eek_section_get_row (EekSection     *section,
 EekKey *
 eek_section_create_key (EekSection *section,
                         const gchar *name,
-                        gint        keycode)
+                        guint        keycode)
 {
     g_return_val_if_fail (EEK_IS_SECTION(section), NULL);
     return EEK_SECTION_GET_CLASS(section)->create_key (section,
