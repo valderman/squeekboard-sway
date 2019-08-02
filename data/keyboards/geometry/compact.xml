@@ -1,48 +1,10 @@
 <?xml version="1.0"?>
 <geometry version="0.90">
   <bounds x="10" y="10" width="410.0000" height="229"/>
-  <section angle="0">
-      <key name="AD01" />
-      <key name="AD02" />
-      <key name="AD03" />
-      <key name="AD04" />
-      <key name="AD05" />
-      <key name="AD06" />
-      <key name="AD07" />
-      <key name="AD08" />
-      <key name="AD09" />
-      <key name="AD10" />
-  </section>
-  <section angle="0">
-      <key name="AC01" />
-      <key name="AC02" />
-      <key name="AC03" />
-      <key name="AC04" />
-      <key name="AC05" />
-      <key name="AC06" />
-      <key name="AC07" />
-      <key name="AC08" />
-      <key name="AC09" />
-      <key name="AC10" />
-  </section>
-  <section angle="0">
-      <key name="LFSH" />
-      <key name="AB01" />
-      <key name="AB02" />
-      <key name="AB03" />
-      <key name="AB04" />
-      <key name="AB05" />
-      <key name="AB06" />
-      <key name="AB07" />
-      <key name="BKSP" />
-  </section>
-  <section angle="0">
-      <key name="ABC123" />
-      <key name="I149" />
-      <key name="SPCE" />
-      <key name="AB08" />
-      <key name="RTRN" />
-  </section>
+  <section angle="0">AD01 AD02 AD03 AD04 AD05 AD06 AD07 AD08 AD09 AD10</section>
+  <section angle="0">AC01 AC02 AC03 AC04 AC05 AC06 AC07 AC08 AC09 AC10</section>
+  <section angle="0"> LFSH   AB01 AB02 AB03 AB04 AB05 AB06 AB07  BKSP </section>
+  <section angle="0"> ABC123 I149         SPCE        AB08    RTRN    </section>
   <button name="LFSH" oref="altline" />
   <button name="BKSP" oref="altline" />
   <button name="I149" oref="altline" />

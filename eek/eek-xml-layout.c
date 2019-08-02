@@ -246,6 +246,8 @@ struct _GeometryParseData {
     gchar *oref;
     guint keycode;
 
+    GString *text;
+
     GHashTable *name_key_hash; // char* -> EekKey*
     GHashTable *key_oref_hash;
     GHashTable *oref_outline_hash;
@@ -274,6 +276,8 @@ geometry_parse_data_new (EekKeyboard *keyboard)
                                g_str_equal,
                                g_free,
                                NULL);
+
+    data->text = g_string_sized_new (BUFSIZE);
     data->keycode = 8;
     return data;
 }
@@ -284,6 +288,7 @@ geometry_parse_data_free (GeometryParseData *data)
     g_object_unref (data->keyboard);
     g_hash_table_destroy (data->key_oref_hash);
     g_hash_table_destroy (data->oref_outline_hash);
+    g_string_free (data->text, TRUE);
     g_slice_free (GeometryParseData, data);
 }
 
@@ -293,7 +298,6 @@ static const gchar *geometry_valid_path_list[] = {
     "bounds/geometry",
     "section/geometry",
     "outline/geometry",
-    "key/section/geometry",
     "point/outline/geometry",
 };
 
@@ -380,34 +384,6 @@ geometry_start_element_callback (GMarkupParseContext *pcontext,
             angle = strtol (attribute, NULL, 10);
             eek_section_set_angle (data->section, angle);
         }
-        goto out;
-    }
-
-    if (g_strcmp0 (element_name, "key") == 0) {
-        attribute = get_attribute (attribute_names, attribute_values,
-                                   "name");
-        if (attribute == NULL) {
-            g_set_error (error,
-                         G_MARKUP_ERROR,
-                         G_MARKUP_ERROR_MISSING_ATTRIBUTE,
-                         "no \"name\" attribute for \"key\"");
-            return;
-        }
-        gchar *name = g_strdup (attribute);
-
-        guint keycode = data->keycode++;
-
-        data->key = eek_section_create_key (data->section,
-                                            name,
-                                            keycode);
-        g_hash_table_insert (data->name_key_hash,
-                             g_strdup(name),
-                             data->key);
-        data->num_columns++;
-
-        g_hash_table_insert (data->key_oref_hash,
-                             data->key,
-                             g_strdup ("default"));
 
         goto out;
     }
@@ -497,6 +473,7 @@ geometry_start_element_callback (GMarkupParseContext *pcontext,
  out:
     data->element_stack = g_slist_prepend (data->element_stack,
                                            g_strdup (element_name));
+    data->text->len = 0;
 }
 
 static void
@@ -512,7 +489,50 @@ geometry_end_element_callback (GMarkupParseContext *pcontext,
     data->element_stack = g_slist_next (data->element_stack);
     g_slist_free1 (head);
 
+    const gchar *text = g_strndup (data->text->str, data->text->len);
+
     if (g_strcmp0 (element_name, "section") == 0) {
+        // Split text on spaces and process each part
+        unsigned head = 0;
+        while (head < strlen(text)) {
+            // Skip to the first non-space character
+            for (; head < strlen(text); head++) {
+                if (text[head] != ' ') {
+                    break;
+                }
+            }
+            unsigned start = head;
+
+            // Skip to the first space character
+            for (; head < strlen(text); head++) {
+                if (text[head] == ' ') {
+                    break;
+                }
+            }
+            unsigned end = head;
+
+            /// Reached the end
+            if (start == end) {
+                break;
+            }
+
+            gchar *name = g_strndup (&text[start], end - start);
+
+            guint keycode = data->keycode++;
+
+            data->key = eek_section_create_key (data->section,
+                                                name,
+                                                keycode);
+            g_hash_table_insert (data->name_key_hash,
+                                 g_strdup(name),
+                                 data->key);
+            data->num_columns++;
+
+            g_hash_table_insert (data->key_oref_hash,
+                                 data->key,
+                                 g_strdup ("default"));
+        }
+
         data->section = NULL;
         data->num_rows = 0;
         return;
@@ -557,10 +577,21 @@ geometry_end_element_callback (GMarkupParseContext *pcontext,
     }
 }
 
+static void
+geometry_text_callback (GMarkupParseContext *pcontext,
+                       const gchar         *text,
+                       gsize                text_len,
+                       gpointer             user_data,
+                       GError             **error)
+{
+    GeometryParseData *data = user_data;
+    g_string_append_len (data->text, text, text_len);
+}
+
 static const GMarkupParser geometry_parser = {
     geometry_start_element_callback,
     geometry_end_element_callback,
-    0,
+    geometry_text_callback,
     0,
     0
 };
