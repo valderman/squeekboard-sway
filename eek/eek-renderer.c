@@ -86,10 +86,6 @@ static void render_key                         (EekRenderer *self,
                                                 cairo_t     *cr,
                                                 EekKey      *key, guint level,
                                                 gboolean     active);
-static void on_symbol_index_changed            (EekKeyboard *keyboard,
-                                                gint         group,
-                                                gint         level,
-                                                gpointer     user_data);
 
 struct _CreateKeyboardSurfaceCallbackData {
     cairo_t *cr;
@@ -713,16 +709,6 @@ invalidate (EekRenderer *renderer)
         cairo_surface_destroy (priv->keyboard_surface);
         priv->keyboard_surface = NULL;
     }
-}
-
-static void
-on_symbol_index_changed (EekKeyboard *keyboard,
-                         gint         group,
-                         gint         level,
-                         gpointer     user_data)
-{
-    EekRenderer *renderer = user_data;
-    invalidate (renderer);
 }
 
 EekRenderer *

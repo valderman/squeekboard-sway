@@ -763,7 +763,7 @@ eek_keyboard_get_keymap(EekKeyboard *keyboard)
         // FIXME: free
         const char *key_str = squeek_key_to_keymap_entry(
             (char*)key_name,
-            eek_key_get_symbol_matrix(key)
+            eek_key_get_state(key)
         );
         current = symbols;
         symbols = g_strconcat(current, key_str, NULL);

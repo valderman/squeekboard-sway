@@ -30,6 +30,7 @@
 #include "eek-keyboard.h"
 #include "eek-section.h"
 #include "eek-key.h"
+#include "src/keyboard.h"
 #include "src/symbol.h"
 
 #include "squeekboard-resources.h"
@@ -748,8 +749,8 @@ symbols_end_element_callback (GMarkupParseContext *pcontext,
         g_strcmp0 (element_name, "keysym") == 0 ||
         g_strcmp0 (element_name, "text") == 0) {
 
-        squeek_symbols_add(
-            eek_key_get_symbol_matrix(data->key),
+        squeek_key_add_symbol(
+            eek_key_get_state(data->key),
             element_name,
             text,
             data->keyval,

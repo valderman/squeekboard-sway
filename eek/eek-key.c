@@ -31,6 +31,7 @@
 
 #include "eek-section.h"
 #include "eek-keyboard.h"
+#include "src/keyboard.h"
 #include "src/symbol.h"
 
 #include "eek-key.h"
@@ -53,9 +54,8 @@ static guint signals[LAST_SIGNAL] = { 0, };
 typedef struct _EekKeyPrivate
 {
     guint keycode;
-    struct squeek_symbols *symbols;
     gulong oref; // UI outline reference
-    gboolean is_pressed;
+    struct squeek_key *state;
     gboolean is_locked;
 } EekKeyPrivate;
 
@@ -89,7 +89,7 @@ eek_key_finalize (GObject *object)
     EekKey        *self = EEK_KEY (object);
     EekKeyPrivate *priv = eek_key_get_instance_private (self);
 
-    squeek_symbols_free (priv->symbols);
+    squeek_key_free (priv->state);
 
     G_OBJECT_CLASS (eek_key_parent_class)->finalize (object);
 }
@@ -211,7 +211,7 @@ static void
 eek_key_init (EekKey *self)
 {
     EekKeyPrivate *priv = eek_key_get_instance_private (self);
-    priv->symbols = squeek_symbols_new ();
+    priv->state = squeek_key_new (0);
 }
 
 /**
@@ -254,23 +254,6 @@ eek_key_get_keycode (EekKey *key)
 }
 
 /**
- * eek_key_get_symbol_matrix:
- * @key: an #EekKey
- *
- * Get the symbol matrix of @key.
- * Returns: (transfer none): #EekSymbolMatrix or %NULL
- */
-struct squeek_symbols *
-eek_key_get_symbol_matrix (EekKey *key)
-{
-    g_return_val_if_fail (EEK_IS_KEY(key), NULL);
-
-    EekKeyPrivate *priv = eek_key_get_instance_private (key);
-
-    return priv->symbols;
-}
-
-/**
  * eek_key_get_symbol_at_index:
  * @key: an #EekKey
  * @group: group index of the symbol matrix
@@ -286,8 +269,8 @@ eek_key_get_symbol_at_index (EekKey *key,
                              gint    group,
                              guint    level)
 {
-    struct squeek_symbols *symbols = eek_key_get_symbol_matrix(key);
-    return squeek_symbols_get(symbols, level);
+    EekKeyPrivate *priv = eek_key_get_instance_private (key);
+    return squeek_key_get_symbol(priv->state, level);
 }
 
 /**
@@ -341,7 +324,7 @@ eek_key_is_pressed (EekKey *key)
 
     EekKeyPrivate *priv = eek_key_get_instance_private (key);
 
-    return priv->is_pressed;
+    return (bool)squeek_key_is_pressed(priv->state);
 }
 
 /**
@@ -366,5 +349,10 @@ void eek_key_set_pressed(EekKey *key, gboolean value)
 
     EekKeyPrivate *priv = eek_key_get_instance_private (key);
 
-    priv->is_pressed = value;
+    squeek_key_set_pressed(priv->state, value);
+}
+
+struct squeek_key *eek_key_get_state(EekKey *key) {
+    EekKeyPrivate *priv = eek_key_get_instance_private (key);
+    return priv->state;
 }
