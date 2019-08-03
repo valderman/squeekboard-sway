@@ -15,5 +15,8 @@ void squeek_key_add_symbol(struct squeek_key* key,
                            const char *tooltip);
 uint32_t squeek_key_is_pressed(struct squeek_key *key);
 void squeek_key_set_pressed(struct squeek_key *key, uint32_t pressed);
+uint32_t squeek_key_get_keycode(struct squeek_key *key);
+void squeek_key_set_keycode(struct squeek_key *key, uint32_t keycode);
+
 struct squeek_symbol *squeek_key_get_symbol(struct squeek_key* key, uint32_t level);
 #endif

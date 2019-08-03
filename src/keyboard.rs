@@ -41,7 +41,7 @@ pub mod c {
     
     #[no_mangle]
     pub extern "C"
-    fn squeek_key_is_pressed(key: *const KeyState) -> u32{
+    fn squeek_key_is_pressed(key: *const KeyState) -> u32 {
         let key = unsafe { &*key };
         return key.pressed as u32;
     }
@@ -51,6 +51,20 @@ pub mod c {
     fn squeek_key_set_pressed(key: *mut KeyState, pressed: u32) {
         let key = unsafe { &mut *key };
         key.pressed = pressed != 0;
+    }
+    
+    #[no_mangle]
+    pub extern "C"
+    fn squeek_key_get_keycode(key: *const KeyState) -> u32 {
+        let key = unsafe { &*key };
+        return key.keycode as u32;
+    }
+    
+    #[no_mangle]
+    pub extern "C"
+    fn squeek_key_set_keycode(key: *mut KeyState, code: u32) {
+        let key = unsafe { &mut *key };
+        key.keycode = code;
     }
     
     // TODO: this will receive data from the filesystem,

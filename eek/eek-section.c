@@ -130,8 +130,8 @@ eek_section_real_create_key (EekSection *self,
 
     EekKey *key = (EekKey*)g_object_new (EEK_TYPE_KEY,
                                          "name", name,
-                                         "keycode", keycode,
                                          NULL);
+    eek_key_set_keycode(key, keycode);
     g_return_val_if_fail (key, NULL);
 
     EEK_CONTAINER_GET_CLASS(self)->add_child (EEK_CONTAINER(self),

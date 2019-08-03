@@ -38,7 +38,6 @@
 
 enum {
     PROP_0,
-    PROP_KEYCODE,
     PROP_OREF,
     PROP_LAST
 };
@@ -53,7 +52,6 @@ static guint signals[LAST_SIGNAL] = { 0, };
 
 typedef struct _EekKeyPrivate
 {
-    guint keycode;
     gulong oref; // UI outline reference
     struct squeek_key *state;
     gboolean is_locked;
@@ -101,9 +99,6 @@ eek_key_set_property (GObject      *object,
                       GParamSpec   *pspec)
 {
     switch (prop_id) {
-    case PROP_KEYCODE:
-        eek_key_set_keycode (EEK_KEY(object), g_value_get_uint (value));
-        break;
     case PROP_OREF:
         eek_key_set_oref (EEK_KEY(object), g_value_get_uint (value));
         break;
@@ -120,9 +115,6 @@ eek_key_get_property (GObject    *object,
                       GParamSpec *pspec)
 {
     switch (prop_id) {
-    case PROP_KEYCODE:
-        g_value_set_uint (value, eek_key_get_keycode (EEK_KEY(object)));
-        break;
     case PROP_OREF:
         g_value_set_uint (value, eek_key_get_oref (EEK_KEY(object)));
         break;
@@ -145,18 +137,6 @@ eek_key_class_init (EekKeyClass *klass)
     /* signals */
     klass->locked = eek_key_real_locked;
     klass->unlocked = eek_key_real_unlocked;
-
-    /**
-     * EekKey:keycode:
-     *
-     * The keycode of #EekKey.
-     */
-    pspec = g_param_spec_uint ("keycode",
-                               "Keycode",
-                               "Keycode of the key",
-                               0, G_MAXUINT, 0,
-                               G_PARAM_READWRITE);
-    g_object_class_install_property (gobject_class, PROP_KEYCODE, pspec);
 
     /**
      * EekKey:oref:
@@ -233,7 +213,7 @@ eek_key_set_keycode (EekKey *key,
 
     EekKeyPrivate *priv = eek_key_get_instance_private (key);
 
-    priv->keycode = keycode;
+    squeek_key_set_keycode(priv->state, keycode);
 }
 
 /**
@@ -250,7 +230,7 @@ eek_key_get_keycode (EekKey *key)
 
     EekKeyPrivate *priv = eek_key_get_instance_private (key);
 
-    return priv->keycode;
+    return squeek_key_get_keycode(priv->state);
 }
 
 /**
