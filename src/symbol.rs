@@ -68,18 +68,22 @@ pub mod c {
         Shift = 1,
     }
     
-    // The following defined in Rust. TODO: wrap naked pointers to Rust data inside RefCells to prevent multiple writers
+    // The following defined in Rust.
+    
+    // TODO: wrap naked pointers to Rust data inside RefCells to prevent multiple writers
+    // Symbols are owned by Rust and will move towards no C manipulation, so it may make sense not to wrap them
     
     // TODO: this will receive data from the filesystem,
     // so it should handle garbled strings in the future
     #[no_mangle]
     pub extern "C"
-    fn squeek_symbol_new(
+    fn squeek_symbols_add(
+        v: *mut Vec<Symbol>,
         element: *const c_char,
         text_raw: *const c_char, keyval: u32,
         label: *const c_char, icon: *const c_char,
         tooltip: *const c_char,
-    ) -> *mut Symbol {
+    ) {
         let element = as_cstr(&element)
             .expect("Missing element name");
 
@@ -123,40 +127,41 @@ pub mod c {
                 eprintln!("Tooltip unreadable: {}", e);
                 None
             });
-
-        Box::<Symbol>::into_raw(Box::new(
-            match element.to_bytes() {
-                b"symbol" => Symbol {
-                    action: Action::Submit {
-                        text: text,
-                        keys: Vec::new(),
+        
+        let symbol = match element.to_bytes() {
+            b"symbol" => Symbol {
+                action: Action::Submit {
+                    text: text,
+                    keys: Vec::new(),
+                },
+                label: label,
+                tooltip: tooltip,
+            },
+            b"keysym" => {
+                let keysym = XKeySym(
+                    if keyval == 0 {
+                        unsafe { eek_keysym_from_name(text_raw) }
+                    } else {
+                        keyval
+                    }
+                );
+                Symbol {
+                    action: match KeySym::from_u32(keysym.0) {
+                        KeySym::Shift => Action::SetLevel(1),
+                        _ => Action::Submit {
+                            text: text,
+                            keys: vec![keysym],
+                        }
                     },
                     label: label,
                     tooltip: tooltip,
-                },
-                b"keysym" => {
-                    let keysym = XKeySym(
-                        if keyval == 0 {
-                            unsafe { eek_keysym_from_name(text_raw) }
-                        } else {
-                            keyval
-                        }
-                    );
-                    Symbol {
-                        action: match KeySym::from_u32(keysym.0) {
-                            KeySym::Shift => Action::SetLevel(1),
-                            _ => Action::Submit {
-                                text: text,
-                                keys: vec![keysym],
-                            }
-                        },
-                        label: label,
-                        tooltip: tooltip,
-                    }
-                },
-                _ => panic!("unsupported element type {:?}", element),
-            }
-        ))
+                }
+            },
+            _ => panic!("unsupported element type {:?}", element),
+        };
+        
+        let v = unsafe { &mut *v };
+        v.push(symbol);
     }
     
     #[no_mangle]
@@ -212,30 +217,23 @@ pub mod c {
     
     #[no_mangle]
     pub extern "C"
-    fn squeek_symbols_new() -> *const Vec<*const Symbol> {
+    fn squeek_symbols_new() -> *const Vec<Symbol> {
         Box::into_raw(Box::new(Vec::new()))
     }
     
     #[no_mangle]
     pub extern "C"
-    fn squeek_symbols_append(v: *mut Vec<*const Symbol>, symbol: *const Symbol) {
-        let v = unsafe { &mut *v };
-        v.push(symbol);
-    }
-    
-    #[no_mangle]
-    pub extern "C"
-    fn squeek_symbols_get(v: *mut Vec<*const Symbol>, index: u32) -> *const Symbol {
+    fn squeek_symbols_get(v: *mut Vec<Symbol>, index: u32) -> *const Symbol {
         let v = unsafe { &mut *v };
         let index = index as usize;
-        v[
+        &v[
             if index < v.len() { index } else { 0 }
-        ]
+        ] as *const Symbol
     }
     
     #[no_mangle]
     pub extern "C"
-    fn squeek_symbols_free(symbols: *mut Vec<*const Symbol>) {
+    fn squeek_symbols_free(symbols: *mut Vec<Symbol>) {
         unsafe { Box::from_raw(symbols) }; // Will just get dropped, together with the contents
     }
     
@@ -243,7 +241,7 @@ pub mod c {
     pub extern "C"
     fn squeek_key_to_keymap_entry(
         key_name: *const c_char,
-        symbols: *const Vec<*const Symbol>,
+        symbols: *const Vec<Symbol>,
     ) -> *const c_char {
         let key_name = as_cstr(&key_name)
             .expect("Missing key name")
@@ -252,7 +250,6 @@ pub mod c {
         let symbols = unsafe { &*symbols };
         let symbol_names = symbols.iter()
             .map(|symbol| {
-                let symbol: &Symbol = unsafe { &**symbol };
                 match &symbol.action {
                     Action::Submit { text: Some(text), .. } => {
                         Some(

@@ -748,7 +748,8 @@ symbols_end_element_callback (GMarkupParseContext *pcontext,
         g_strcmp0 (element_name, "keysym") == 0 ||
         g_strcmp0 (element_name, "text") == 0) {
 
-        struct squeek_symbol *symbol = squeek_symbol_new(
+        squeek_symbols_add(
+            eek_key_get_symbol_matrix(data->key),
             element_name,
             text,
             data->keyval,
@@ -757,7 +758,6 @@ symbols_end_element_callback (GMarkupParseContext *pcontext,
             data->tooltip
         );
 
-        squeek_symbols_append(eek_key_get_symbol_matrix(data->key), symbol);
         data->keyval = 0;
         g_free(data->label);
         data->label = NULL;
