@@ -21,6 +21,4 @@ const char *squeek_symbol_get_icon_name(struct squeek_symbol* symbol);
 uint32_t squeek_symbol_get_modifier_mask(struct squeek_symbol* symbol);
 
 void squeek_symbol_print(struct squeek_symbol* symbol);
-
-const char* squeek_key_to_keymap_entry(const char *key_name, struct squeek_symbols *symbols);
 #endif

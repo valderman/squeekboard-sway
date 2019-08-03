@@ -85,7 +85,7 @@ update_modifier_info (SeatEmitter *client)
 
 static void
 send_fake_key (SeatEmitter *emitter,
-               EekKeyboard *keyboard,
+               LevelKeyboard *keyboard,
                guint    keycode,
                guint    keyboard_modifiers,
                gboolean pressed,
@@ -105,7 +105,7 @@ send_fake_key (SeatEmitter *emitter,
 
 void
 emit_key_activated (EekboardContextService *manager,
-                    EekKeyboard     *keyboard,
+                    LevelKeyboard     *keyboard,
                     guint            keycode,
                     EekSymbol       *symbol,
                     EekModifierType  modifiers,

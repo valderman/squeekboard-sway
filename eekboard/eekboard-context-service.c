@@ -71,7 +71,7 @@ struct _EekboardContextServicePrivate {
     gboolean visible;
     gboolean fullscreen;
 
-    EekKeyboard *keyboard; // currently used keyboard
+    LevelKeyboard *keyboard; // currently used keyboard
     GHashTable *keyboard_hash; // a table of available keyboards, per layout
 
     // TODO: make use of repeating buttons
@@ -86,11 +86,10 @@ struct _EekboardContextServicePrivate {
 
 G_DEFINE_TYPE_WITH_PRIVATE (EekboardContextService, eekboard_context_service, G_TYPE_OBJECT);
 
-static EekKeyboard *
+static LevelKeyboard *
 eekboard_context_service_real_create_keyboard (EekboardContextService *self,
                                                const gchar            *keyboard_type)
 {
-    EekKeyboard *keyboard;
     EekLayout *layout;
     GError *error;
 
@@ -135,7 +134,7 @@ eekboard_context_service_real_create_keyboard (EekboardContextService *self,
             }
         }
     }
-    keyboard = eek_keyboard_new (self, layout, CSW, CSH);
+    LevelKeyboard *keyboard = eek_xml_layout_real_create_keyboard(layout, self);
     if (!keyboard) {
         g_error("Failed to create a keyboard");
     }
@@ -319,21 +318,18 @@ settings_update_layout(EekboardContextService *context)
 
     // generic part follows
     static guint keyboard_id = 0;
-    EekKeyboard *keyboard = g_hash_table_lookup(context->priv->keyboard_hash,
+    LevelKeyboard *keyboard = g_hash_table_lookup(context->priv->keyboard_hash,
                                                 GUINT_TO_POINTER(keyboard_id));
     // create a keyboard
     if (!keyboard) {
-        EekboardContextServiceClass *klass = EEKBOARD_CONTEXT_SERVICE_GET_CLASS(context);
-        keyboard = klass->create_keyboard (context, keyboard_layout);
-        eek_keyboard_set_modifier_behavior (keyboard,
+        keyboard = eekboard_context_service_real_create_keyboard(context, keyboard_layout);
+        eek_keyboard_set_modifier_behavior (level_keyboard_current(keyboard),
                                             EEK_MODIFIER_BEHAVIOR_LATCH);
 
         g_hash_table_insert (context->priv->keyboard_hash,
                              GUINT_TO_POINTER(keyboard_id),
                              keyboard);
-        g_object_set_data (G_OBJECT(keyboard),
-                           "keyboard-id",
-                           GUINT_TO_POINTER(keyboard_id));
+        keyboard->id = keyboard_id;
         keyboard_id++;
     }
     // set as current
@@ -374,7 +370,6 @@ eekboard_context_service_class_init (EekboardContextServiceClass *klass)
     GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
     GParamSpec *pspec;
 
-    klass->create_keyboard = eekboard_context_service_real_create_keyboard;
     klass->show_keyboard = eekboard_context_service_real_show_keyboard;
     klass->hide_keyboard = eekboard_context_service_real_hide_keyboard;
 
@@ -578,7 +573,7 @@ eekboard_context_service_destroy (EekboardContextService *context)
  * Get keyboard currently active in @context.
  * Returns: (transfer none): an #EekKeyboard
  */
-EekKeyboard *
+LevelKeyboard *
 eekboard_context_service_get_keyboard (EekboardContextService *context)
 {
     return context->priv->keyboard;
@@ -598,7 +593,7 @@ eekboard_context_service_get_fullscreen (EekboardContextService *context)
 }
 
 void eekboard_context_service_set_keymap(EekboardContextService *context,
-                                         const EekKeyboard *keyboard)
+                                         const LevelKeyboard *keyboard)
 {
     zwp_virtual_keyboard_v1_keymap(context->virtual_keyboard,
         WL_KEYBOARD_KEYMAP_FORMAT_XKB_V1,

@@ -62,5 +62,8 @@ GList              *eek_xml_list_keyboards     (void);
 EekXmlKeyboardDesc *eek_xml_keyboard_desc_copy (EekXmlKeyboardDesc *desc);
 void                eek_xml_keyboard_desc_free (EekXmlKeyboardDesc *desc);
 
+LevelKeyboard *
+eek_xml_layout_real_create_keyboard (EekLayout *self,
+                                     EekboardContextService *manager);
 G_END_DECLS
 #endif  /* EEK_XML_LAYOUT_H */

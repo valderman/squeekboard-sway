@@ -59,13 +59,7 @@ struct _EekKeyboard
     EekContainer parent;
 
     EekKeyboardPrivate *priv;
-    struct xkb_keymap *keymap;
-    int keymap_fd; // keymap formatted as XKB string
-    size_t keymap_len; // length of the data inside keymap_fd
     double scale;
-    guint level;
-
-    EekboardContextService *manager; // unowned reference
 };
 
 /**
@@ -123,9 +117,24 @@ struct _EekModifierKey {
 };
 typedef struct _EekModifierKey EekModifierKey;
 
+/// Keyboard state holder
+struct _LevelKeyboard {
+    guint id;
+    EekKeyboard *view;
+    guint level;
+    struct xkb_keymap *keymap;
+    int keymap_fd; // keymap formatted as XKB string
+    size_t keymap_len; // length of the data inside keymap_fd
+    GArray *outline_array;
 
-EekKeyboard        *eek_keyboard_new (EekboardContextService *manager,
-                                      EekLayout          *layout,
+    /* Map key names to key objects: */
+    GHashTable *names;
+
+    EekboardContextService *manager; // unowned reference
+};
+typedef struct _LevelKeyboard LevelKeyboard;
+
+LevelKeyboard *eek_keyboard_new(EekLayout          *layout,
                                       gdouble             initial_width,
                                       gdouble             initial_height);
 GType               eek_keyboard_get_type
@@ -154,19 +163,12 @@ EekSection         *eek_keyboard_create_section
                                      (EekKeyboard        *keyboard);
 
 EekKey             *eek_keyboard_find_key_by_name
-                                     (EekKeyboard        *keyboard,
+                                     (LevelKeyboard *keyboard,
                                       const gchar        *name);
 
-guint               eek_keyboard_add_outline
-                                     (EekKeyboard        *keyboard,
-                                      EekOutline         *outline);
-
-EekOutline         *eek_keyboard_get_outline
-                                     (EekKeyboard        *keyboard,
+EekOutline         *level_keyboard_get_outline
+                                     (LevelKeyboard        *keyboard,
                                       guint               oref);
-gsize               eek_keyboard_get_n_outlines
-                                     (EekKeyboard        *keyboard);
-
 void                eek_keyboard_set_num_lock_mask
                                      (EekKeyboard        *keyboard,
                                       EekModifierType     num_lock_mask);
@@ -189,12 +191,16 @@ EekModifierKey     *eek_modifier_key_copy
 void                eek_modifier_key_free
                                      (EekModifierKey      *modkey);
 
-void eek_keyboard_press_key(EekKeyboard *keyboard, EekKey *key, guint32 timestamp);
-void eek_keyboard_release_key(EekKeyboard *keyboard, EekKey *key, guint32 timestamp);
+void eek_keyboard_press_key(LevelKeyboard *keyboard, EekKey *key, guint32 timestamp);
+void eek_keyboard_release_key(LevelKeyboard *keyboard, EekKey *key, guint32 timestamp);
 
 gchar *             eek_keyboard_get_keymap
-                                     (EekKeyboard        *keyboard);
+                                     (LevelKeyboard *keyboard);
 
+EekKeyboard *level_keyboard_current(LevelKeyboard *keyboard);
+LevelKeyboard *level_keyboard_new(EekboardContextService *manager, EekKeyboard *view, GHashTable *name_key_hash);
+void level_keyboard_deinit(LevelKeyboard *self);
+void level_keyboard_free(LevelKeyboard *self);
 /* Create an #EekSection instance and append it to @keyboard.  This
 * function is rarely called by application but called by #EekLayout
 * implementation.

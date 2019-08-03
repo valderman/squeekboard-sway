@@ -36,6 +36,7 @@
 #include "eek-enumtypes.h"
 #include "eekboard/key-emitter.h"
 #include "keymap.h"
+#include "src/keyboard.h"
 #include "src/symbol.h"
 
 #include "eek-keyboard.h"
@@ -72,10 +73,6 @@ struct _EekKeyboardPrivate
     unsigned int old_level;
     GList *pressed_keys;
     GList *locked_keys;
-    GArray *outline_array;
-
-    /* Map key names to key objects: */
-    GHashTable *names;
 
     /* modifiers dynamically assigned at run time */
     EekModifierType num_lock_mask;
@@ -116,27 +113,6 @@ on_key_unlocked (EekSection  *section,
     g_signal_emit (keyboard, signals[KEY_UNLOCKED], 0, key);
 }
 
-static void
-section_child_added_cb (EekContainer *container,
-                        EekElement   *element,
-                        EekKeyboard  *keyboard)
-{
-    const gchar *name = eek_element_get_name(element);
-    g_hash_table_insert (keyboard->priv->names,
-                         (gpointer)name,
-                         element);
-}
-
-static void
-section_child_removed_cb (EekContainer *container,
-                          EekElement   *element,
-                          EekKeyboard  *keyboard)
-{
-    const gchar *name = eek_element_get_name(element);
-    g_hash_table_remove (keyboard->priv->names,
-                         name);
-}
-
 EekSection *
 eek_keyboard_real_create_section (EekKeyboard *self)
 {
@@ -144,12 +120,6 @@ eek_keyboard_real_create_section (EekKeyboard *self)
 
     section = g_object_new (EEK_TYPE_SECTION, NULL);
     g_return_val_if_fail (section, NULL);
-
-    g_signal_connect (G_OBJECT(section), "child-added",
-                      G_CALLBACK(section_child_added_cb), self);
-
-    g_signal_connect (G_OBJECT(section), "child-removed",
-                      G_CALLBACK(section_child_removed_cb), self);
 
     EEK_CONTAINER_GET_CLASS(self)->add_child (EEK_CONTAINER(self),
                                               EEK_ELEMENT(section));
@@ -191,14 +161,14 @@ eek_keyboard_get_property (GObject    *object,
 }
 
 static void
-set_level_from_modifiers (EekKeyboard *self, EekKey *key)
+set_level_from_modifiers (LevelKeyboard *keyboard, EekKeyboard *self, EekKey *key)
 {
     EekKeyboardPrivate *priv = EEK_KEYBOARD_GET_PRIVATE(self);
 
     /* The levels are: 0 Letters, 1 Upper case letters, 2 Numbers, 3 Symbols */
 
     /* Use the numbers/letters bit from the old level */
-    gint level = priv->old_level & 2;
+    guint level = priv->old_level & 2;
 
     /* Handle non-emitting keys */
     if (key) {
@@ -243,9 +213,9 @@ set_level_from_modifiers (EekKeyboard *self, EekKey *key)
         priv->modifier_behavior = EEK_MODIFIER_BEHAVIOR_LATCH;
 
     priv->old_level = level;
-    self->level = level;
+    keyboard->level = level;
 
-    eek_layout_update_layout(self);
+    eek_layout_update_layout(keyboard);
 }
 
 static void
@@ -287,8 +257,8 @@ set_modifiers_with_key (EekKeyboard    *self,
     priv->modifiers = modifiers;
 }
 
-void eek_keyboard_press_key(EekKeyboard *keyboard, EekKey *key, guint32 timestamp) {
-    EekKeyboardPrivate *priv = EEK_KEYBOARD_GET_PRIVATE(keyboard);
+void eek_keyboard_press_key(LevelKeyboard *keyboard, EekKey *key, guint32 timestamp) {
+    EekKeyboardPrivate *priv = EEK_KEYBOARD_GET_PRIVATE(level_keyboard_current(keyboard));
 
     eek_key_set_pressed(key, TRUE);
     priv->pressed_keys = g_list_prepend (priv->pressed_keys, key);
@@ -301,22 +271,22 @@ void eek_keyboard_press_key(EekKeyboard *keyboard, EekKey *key, guint32 timestam
 
     EekModifierType modifier = squeek_symbol_get_modifier_mask (symbol);
     if (priv->modifier_behavior == EEK_MODIFIER_BEHAVIOR_NONE) {
-        set_modifiers_with_key (keyboard, key, priv->modifiers | modifier);
-        set_level_from_modifiers (keyboard, key);
+        set_modifiers_with_key (level_keyboard_current(keyboard), key, priv->modifiers | modifier);
+        set_level_from_modifiers (keyboard, level_keyboard_current(keyboard), key);
     }
 
     // "Borrowed" from eek-context-service; doesn't influence the state but forwards the event
 
     guint keycode = eek_key_get_keycode (key);
-    EekModifierType modifiers = eek_keyboard_get_modifiers (keyboard);
+    EekModifierType modifiers = eek_keyboard_get_modifiers (level_keyboard_current(keyboard));
 
     emit_key_activated(keyboard->manager, keyboard, keycode, symbol, modifiers, TRUE, timestamp);
 }
 
-void eek_keyboard_release_key( EekKeyboard *keyboard,
+void eek_keyboard_release_key(LevelKeyboard *keyboard,
                                EekKey      *key,
                                guint32      timestamp) {
-    EekKeyboardPrivate *priv = EEK_KEYBOARD_GET_PRIVATE(keyboard);
+    EekKeyboardPrivate *priv = EEK_KEYBOARD_GET_PRIVATE(level_keyboard_current(keyboard));
 
     for (GList *head = priv->pressed_keys; head; head = g_list_next (head)) {
         if (head->data == key) {
@@ -334,25 +304,25 @@ void eek_keyboard_release_key( EekKeyboard *keyboard,
     EekModifierType modifier = squeek_symbol_get_modifier_mask (symbol);
     switch (priv->modifier_behavior) {
     case EEK_MODIFIER_BEHAVIOR_NONE:
-        set_modifiers_with_key (keyboard, key, priv->modifiers & ~modifier);
+        set_modifiers_with_key (level_keyboard_current(keyboard), key, priv->modifiers & ~modifier);
         break;
     case EEK_MODIFIER_BEHAVIOR_LOCK:
         priv->modifiers ^= modifier;
         break;
     case EEK_MODIFIER_BEHAVIOR_LATCH:
         if (modifier)
-            set_modifiers_with_key (keyboard, key, priv->modifiers ^ modifier);
+            set_modifiers_with_key (level_keyboard_current(keyboard), key, priv->modifiers ^ modifier);
         else
-            set_modifiers_with_key (keyboard, key,
+            set_modifiers_with_key (level_keyboard_current(keyboard), key,
                                     (priv->modifiers ^ modifier) & modifier);
         break;
     }
-    set_level_from_modifiers (keyboard, key);
+    set_level_from_modifiers (keyboard, level_keyboard_current(keyboard), key);
 
     // "Borrowed" from eek-context-service; doesn't influence the state but forwards the event
 
     guint keycode = eek_key_get_keycode (key);
-    guint modifiers = eek_keyboard_get_modifiers (keyboard);
+    guint modifiers = eek_keyboard_get_modifiers (level_keyboard_current(keyboard));
 
     emit_key_activated(keyboard->manager, keyboard, keycode, symbol, modifiers, FALSE, timestamp);
 }
@@ -367,24 +337,32 @@ static void
 eek_keyboard_finalize (GObject *object)
 {
     EekKeyboardPrivate *priv = EEK_KEYBOARD_GET_PRIVATE(object);
-    guint i;
 
     g_list_free (priv->pressed_keys);
     g_list_free_full (priv->locked_keys,
                       (GDestroyNotify) eek_modifier_key_free);
 
-    g_hash_table_destroy (priv->names);
+    G_OBJECT_CLASS (eek_keyboard_parent_class)->finalize (object);
+}
 
-    for (i = 0; i < priv->outline_array->len; i++) {
-        EekOutline *outline = &g_array_index (priv->outline_array,
+void level_keyboard_deinit(LevelKeyboard *self) {
+    g_hash_table_destroy (self->names);
+    for (guint i = 0; i < self->outline_array->len; i++) {
+        EekOutline *outline = &g_array_index (self->outline_array,
                                               EekOutline,
                                               i);
         g_slice_free1 (sizeof (EekPoint) * outline->num_points,
                        outline->points);
     }
-    g_array_free (priv->outline_array, TRUE);
-        
-    G_OBJECT_CLASS (eek_keyboard_parent_class)->finalize (object);
+    g_array_free (self->outline_array, TRUE);
+    for (guint i = 0; i < 4; i++) {
+        // free self->view[i];
+    }
+}
+
+void level_keyboard_free(LevelKeyboard *self) {
+    level_keyboard_deinit(self);
+    g_free(self);
 }
 
 static void
@@ -482,10 +460,20 @@ eek_keyboard_init (EekKeyboard *self)
 {
     self->priv = EEK_KEYBOARD_GET_PRIVATE(self);
     self->priv->modifier_behavior = EEK_MODIFIER_BEHAVIOR_NONE;
-    self->priv->outline_array = g_array_new (FALSE, TRUE, sizeof (EekOutline));
-    self->priv->names = g_hash_table_new (g_str_hash, g_str_equal);
-    self->level = 0;
     self->scale = 1.0;
+}
+
+void level_keyboard_init(LevelKeyboard *self) {
+    self->outline_array = g_array_new (FALSE, TRUE, sizeof (EekOutline));
+}
+
+LevelKeyboard *level_keyboard_new(EekboardContextService *manager, EekKeyboard *view, GHashTable *name_key_hash) {
+    LevelKeyboard *keyboard = g_new0(LevelKeyboard, 1);
+    level_keyboard_init(keyboard);
+    keyboard->view = view;
+    keyboard->manager = manager;
+    keyboard->names = name_key_hash;
+    return keyboard;
 }
 
 /**
@@ -497,12 +485,10 @@ eek_keyboard_init (EekKeyboard *self)
  * Return value: (transfer none): #EekKey whose name is @name
  */
 EekKey *
-eek_keyboard_find_key_by_name (EekKeyboard *keyboard,
+eek_keyboard_find_key_by_name (LevelKeyboard *keyboard,
                                const gchar *name)
 {
-    g_return_val_if_fail (EEK_IS_KEYBOARD(keyboard), NULL);
-    return g_hash_table_lookup (keyboard->priv->names,
-                                name);
+    return g_hash_table_lookup (keyboard->names, name);
 }
 
 /**
@@ -554,15 +540,6 @@ eek_keyboard_get_modifier_behavior (EekKeyboard *keyboard)
     return keyboard->priv->modifier_behavior;
 }
 
-void
-eek_keyboard_set_modifiers (EekKeyboard    *keyboard,
-                            EekModifierType modifiers)
-{
-    g_return_if_fail (EEK_IS_KEYBOARD(keyboard));
-    keyboard->priv->modifiers = modifiers;
-    set_level_from_modifiers (keyboard, NULL);
-}
-
 /**
  * eek_keyboard_get_modifiers:
  * @keyboard: an #EekKeyboard
@@ -578,30 +555,6 @@ eek_keyboard_get_modifiers (EekKeyboard *keyboard)
 }
 
 /**
- * eek_keyboard_add_outline:
- * @keyboard: an #EekKeyboard
- * @outline: an #EekOutline
- *
- * Register an outline of @keyboard.
- * Returns: an unsigned integer ID of the registered outline, for
- * later reference
- */
-guint
-eek_keyboard_add_outline (EekKeyboard *keyboard,
-                          EekOutline  *outline)
-{
-    EekOutline *_outline;
-
-    g_return_val_if_fail (EEK_IS_KEYBOARD(keyboard), 0);
-
-    _outline = eek_outline_copy (outline);
-    g_array_append_val (keyboard->priv->outline_array, *_outline);
-    /* don't use eek_outline_free here, so as to keep _outline->points */
-    g_slice_free (EekOutline, _outline);
-    return keyboard->priv->outline_array->len - 1;
-}
-
-/**
  * eek_keyboard_get_outline:
  * @keyboard: an #EekKeyboard
  * @oref: ID of the outline
@@ -610,29 +563,13 @@ eek_keyboard_add_outline (EekKeyboard *keyboard,
  * Returns: an #EekOutline, which should not be released
  */
 EekOutline *
-eek_keyboard_get_outline (EekKeyboard *keyboard,
+level_keyboard_get_outline (LevelKeyboard *keyboard,
                           guint        oref)
 {
-    g_return_val_if_fail (EEK_IS_KEYBOARD(keyboard), NULL);
-
-    if (oref > keyboard->priv->outline_array->len)
+    if (oref > keyboard->outline_array->len)
         return NULL;
 
-    return &g_array_index (keyboard->priv->outline_array, EekOutline, oref);
-}
-
-/**
- * eek_keyboard_get_n_outlines:
- * @keyboard: an #EekKeyboard
- *
- * Get the number of outlines defined in @keyboard.
- * Returns: integer
- */
-gsize
-eek_keyboard_get_n_outlines (EekKeyboard *keyboard)
-{
-    g_return_val_if_fail (EEK_IS_KEYBOARD(keyboard), 0);
-    return keyboard->priv->outline_array->len;
+    return &g_array_index (keyboard->outline_array, EekOutline, oref);
 }
 
 /**
@@ -731,7 +668,7 @@ eek_keyboard_get_locked_keys (EekKeyboard *keyboard)
  * Returns: a string containing the XKB keymap.
  */
 gchar *
-eek_keyboard_get_keymap(EekKeyboard *keyboard)
+eek_keyboard_get_keymap(LevelKeyboard *keyboard)
 {
     /* Start the keycodes and symbols sections with their respective headers. */
     gchar *keycodes = g_strdup(keymap_keycodes_header);
@@ -740,13 +677,13 @@ eek_keyboard_get_keymap(EekKeyboard *keyboard)
     /* Iterate over the keys in the name-to-key hash table. */
     GHashTableIter iter;
     gpointer key_name, key_ptr;
-    g_hash_table_iter_init(&iter, keyboard->priv->names);
+    g_hash_table_iter_init(&iter, keyboard->names);
 
     while (g_hash_table_iter_next(&iter, &key_name, &key_ptr)) {
 
         gchar *current, *line;
         EekKey *key = EEK_KEY(key_ptr);
-        int keycode = eek_key_get_keycode(key);
+        guint keycode = eek_key_get_keycode(key);
 
         /* Don't include invalid keycodes in the keymap. */
         if (keycode == EEK_INVALID_KEYCODE)
@@ -779,4 +716,10 @@ eek_keyboard_get_keymap(EekKeyboard *keyboard)
     g_free(keycodes);
     g_free(symbols);
     return keymap;
+}
+
+EekKeyboard *level_keyboard_current(LevelKeyboard *keyboard)
+{
+    return keyboard->view;
+    //return keyboard->views[keyboard->level];
 }

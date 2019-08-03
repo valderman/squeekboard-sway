@@ -55,7 +55,7 @@ enum {
 typedef struct _EekGtkKeyboardPrivate
 {
     EekRenderer *renderer;
-    EekKeyboard *keyboard;
+    LevelKeyboard *keyboard;
     GtkCssProvider *css_provider;
     GtkStyleContext *scontext;
 
@@ -117,14 +117,14 @@ eek_gtk_keyboard_real_draw (GtkWidget *self,
     uint level = priv->keyboard->level;
 
     /* redraw pressed key */
-    list = eek_keyboard_get_pressed_keys (priv->keyboard);
+    list = eek_keyboard_get_pressed_keys (level_keyboard_current(priv->keyboard));
     for (head = list; head; head = g_list_next (head)) {
         render_pressed_key (self, head->data, level);
     }
     g_list_free (list);
 
     /* redraw locked key */
-    list = eek_keyboard_get_locked_keys (priv->keyboard);
+    list = eek_keyboard_get_locked_keys (level_keyboard_current(priv->keyboard));
     for (head = list; head; head = g_list_next (head)) {
         render_locked_key (self, ((EekModifierKey *)head->data)->key, level);
     }
@@ -168,7 +168,7 @@ static void drag(EekGtkKeyboard *self,
     EekKey *key = eek_renderer_find_key_by_position (priv->renderer, x, y);
     GList *list, *head;
 
-    list = eek_keyboard_get_pressed_keys (priv->keyboard);
+    list = eek_keyboard_get_pressed_keys (level_keyboard_current(priv->keyboard));
 
     if (key) {
         gboolean found = FALSE;
@@ -200,7 +200,7 @@ static void drag(EekGtkKeyboard *self,
 static void release(EekGtkKeyboard *self, guint32 time) {
     EekGtkKeyboardPrivate *priv = eek_gtk_keyboard_get_instance_private (self);
 
-    GList *list = eek_keyboard_get_pressed_keys (priv->keyboard);
+    GList *list = eek_keyboard_get_pressed_keys (level_keyboard_current(priv->keyboard));
     for (GList *head = list; head; head = g_list_next (head)) {
         EekKey *key = EEK_KEY(head->data);
         eek_keyboard_release_key(priv->keyboard, key, time);
@@ -287,7 +287,7 @@ eek_gtk_keyboard_real_unmap (GtkWidget *self)
            elements, so that the default handler of
            EekKeyboard::key-released signal can remove elements from its
            internal copy */
-        list = eek_keyboard_get_pressed_keys (priv->keyboard);
+        list = eek_keyboard_get_pressed_keys (level_keyboard_current(priv->keyboard));
         for (head = list; head; head = g_list_next (head)) {
             g_log("squeek", G_LOG_LEVEL_DEBUG, "emit EekKey released");
             g_signal_emit_by_name (head->data, "released");
@@ -326,18 +326,14 @@ eek_gtk_keyboard_real_query_tooltip (GtkWidget  *widget,
 
 static void
 eek_gtk_keyboard_set_keyboard (EekGtkKeyboard *self,
-                               EekKeyboard    *keyboard)
+                               LevelKeyboard    *keyboard)
 {
     EekGtkKeyboardPrivate *priv = eek_gtk_keyboard_get_instance_private (self);
 
     if (priv->keyboard == keyboard)
         return;
 
-    if (priv->keyboard) {
-        g_object_unref (priv->keyboard);
-    }
-
-    priv->keyboard = g_object_ref (keyboard);
+    priv->keyboard = keyboard;
 }
 
 static void
@@ -346,7 +342,7 @@ eek_gtk_keyboard_set_property (GObject      *object,
                                const GValue *value,
                                GParamSpec   *pspec)
 {
-    EekKeyboard *keyboard;
+    LevelKeyboard *keyboard;
 
     switch (prop_id) {
     case PROP_KEYBOARD:
@@ -373,14 +369,13 @@ eek_gtk_keyboard_dispose (GObject *object)
     if (priv->keyboard) {
         GList *list, *head;
 
-        list = eek_keyboard_get_pressed_keys (priv->keyboard);
+        list = eek_keyboard_get_pressed_keys (level_keyboard_current(priv->keyboard));
         for (head = list; head; head = g_list_next (head)) {
             g_log("squeek", G_LOG_LEVEL_DEBUG, "emit EekKey pressed");
-            g_signal_emit_by_name (head->data, "released", priv->keyboard);
+            g_signal_emit_by_name (head->data, "released", level_keyboard_current(priv->keyboard));
         }
         g_list_free (list);
 
-        g_object_unref (priv->keyboard);
         priv->keyboard = NULL;
     }
 
@@ -448,32 +443,12 @@ eek_gtk_keyboard_init (EekGtkKeyboard *self)
  * Returns: a #GtkWidget
  */
 GtkWidget *
-eek_gtk_keyboard_new (EekKeyboard *keyboard)
+eek_gtk_keyboard_new (LevelKeyboard *keyboard)
 {
-    return g_object_new (EEK_TYPE_GTK_KEYBOARD, "keyboard", keyboard, NULL);
-}
-
-static void
-magnify_bounds (GtkWidget *self,
-                EekBounds *bounds,
-                EekBounds *large_bounds,
-                gdouble    scale)
-{
-    GtkAllocation allocation;
-    gdouble x, y;
-
-    g_assert (scale >= 1.0);
-
-    gtk_widget_get_allocation (self, &allocation);
-
-    large_bounds->width = bounds->width * scale;
-    large_bounds->height = bounds->height * scale;
-
-    x = bounds->x - (large_bounds->width - bounds->width) / 2;
-    y = bounds->y - large_bounds->height;
-
-    large_bounds->x = CLAMP(x, 0, allocation.width - large_bounds->width);
-    large_bounds->y = CLAMP(y, 0, allocation.height - large_bounds->height);
+    EekGtkKeyboard *ret = EEK_GTK_KEYBOARD(g_object_new (EEK_TYPE_GTK_KEYBOARD, NULL));
+    EekGtkKeyboardPrivate *priv = (EekGtkKeyboardPrivate*)eek_gtk_keyboard_get_instance_private (ret);
+    priv->keyboard = keyboard;
+    return GTK_WIDGET(ret);
 }
 
 static void

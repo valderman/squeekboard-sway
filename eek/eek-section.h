@@ -28,6 +28,7 @@
 #include <glib-object.h>
 #include "eek-container.h"
 #include "eek-types.h"
+#include "eek-keyboard.h"
 
 G_BEGIN_DECLS
 
@@ -97,7 +98,7 @@ EekKey *eek_section_create_key           (EekSection     *section,
                                           const gchar    *name,
                                           guint keycode);
 
-void eek_section_place_keys              (EekSection     *section, EekKeyboard *keyboard);
+void eek_section_place_keys              (EekSection     *section, LevelKeyboard *keyboard);
 
 G_END_DECLS
 #endif  /* EEK_SECTION_H */

@@ -404,9 +404,9 @@ keysizer(EekElement *element, gpointer user_data)
 {
     EekKey *key = EEK_KEY(element);
 
-    EekKeyboard *keyboard = EEK_KEYBOARD(user_data);
+    LevelKeyboard *keyboard = user_data;
     uint oref = eek_key_get_oref (key);
-    EekOutline *outline = eek_keyboard_get_outline (keyboard, oref);
+    EekOutline *outline = level_keyboard_get_outline (keyboard, oref);
     if (outline && outline->num_points > 0) {
         double minx = outline->points[0].x;
         double maxx = minx;
@@ -464,7 +464,7 @@ keyplacer(EekElement *element, gpointer user_data)
 }
 
 void
-eek_section_place_keys(EekSection *section, EekKeyboard *keyboard)
+eek_section_place_keys(EekSection *section, LevelKeyboard *keyboard)
 {
     eek_container_foreach_child(EEK_CONTAINER(section), keysizer, keyboard);
 

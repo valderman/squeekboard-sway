@@ -30,7 +30,7 @@ static void
 test_output_parse (void)
 {
     EekLayout *layout;
-    EekKeyboard *keyboard;
+    LevelKeyboard *keyboard;
     GError *error;
 
     error = NULL;
@@ -39,9 +39,9 @@ test_output_parse (void)
 
     /* We don't need the context service to parse an XML file, so we can pass
        NULL when creating a keyboard. */
-    keyboard = eek_keyboard_new (NULL, layout, 640, 480);
+    keyboard = eek_xml_layout_real_create_keyboard(layout, NULL);
     g_object_unref (layout);
-    g_object_unref (keyboard);
+    level_keyboard_free(keyboard);
 }
 
 int

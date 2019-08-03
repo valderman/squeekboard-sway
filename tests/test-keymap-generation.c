@@ -32,14 +32,14 @@ static void
 test_check_xkb (void)
 {
     EekLayout *layout;
-    EekKeyboard *keyboard;
+    LevelKeyboard *keyboard;
     GError *error;
 
     error = NULL;
     layout = eek_xml_layout_new ("us", &error);
     g_assert_no_error (error);
 
-    keyboard = eek_keyboard_new (NULL, layout, 640, 480);
+    keyboard = eek_xml_layout_real_create_keyboard(layout, NULL);
     gchar *keymap_str = eek_keyboard_get_keymap(keyboard);
 
     struct xkb_context *context = xkb_context_new(XKB_CONTEXT_NO_FLAGS);
@@ -58,7 +58,7 @@ test_check_xkb (void)
     }
 
     g_object_unref (layout);
-    g_object_unref (keyboard);
+    level_keyboard_free(keyboard);
 }
 
 int

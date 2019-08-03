@@ -68,16 +68,16 @@ static GList        *parse_prerequisites
                                      (const gchar         *path,
                                       GError             **error);
 static gboolean      parse_geometry  (const gchar         *path,
-                                      EekKeyboard         *keyboard,
+                                      EekKeyboard         *keyboard, GArray *outline_array, GHashTable *name_key_hash,
                                       GError             **error);
 static gboolean      parse_symbols_with_prerequisites
                                      (const gchar         *keyboards_dir,
                                       const gchar         *name,
-                                      EekKeyboard         *keyboard,
+                                      LevelKeyboard *keyboard,
                                       GList             **loaded,
                                       GError             **error);
 static gboolean      parse_symbols   (const gchar         *path,
-                                      EekKeyboard         *keyboard,
+                                      LevelKeyboard *keyboard,
                                       GError             **error);
 
 static gboolean      validate        (const gchar        **valid_path_list,
@@ -255,7 +255,7 @@ struct _GeometryParseData {
 typedef struct _GeometryParseData GeometryParseData;
 
 static GeometryParseData *
-geometry_parse_data_new (EekKeyboard *keyboard)
+geometry_parse_data_new (EekKeyboard *keyboard, GHashTable *name_key_hash)
 {
     GeometryParseData *data = g_slice_new0 (GeometryParseData);
 
@@ -271,12 +271,7 @@ geometry_parse_data_new (EekKeyboard *keyboard)
                                g_free,
                                (GDestroyNotify)eek_outline_free);
 
-    data->name_key_hash =
-        g_hash_table_new_full (g_str_hash,
-                               g_str_equal,
-                               g_free,
-                               NULL);
-
+    data->name_key_hash = name_key_hash;
     data->text = g_string_sized_new (BUFSIZE);
     data->keycode = 8;
     return data;
@@ -600,7 +595,8 @@ struct _SymbolsParseData {
     GSList *element_stack;
     GString *text;
 
-    EekKeyboard *keyboard;
+    LevelKeyboard *keyboard;
+    EekKeyboard *view;
     EekKey *key;
     gchar *label;
     gchar *icon;
@@ -611,11 +607,11 @@ struct _SymbolsParseData {
 typedef struct _SymbolsParseData SymbolsParseData;
 
 static SymbolsParseData *
-symbols_parse_data_new (EekKeyboard *keyboard)
+symbols_parse_data_new (LevelKeyboard *keyboard)
 {
     SymbolsParseData *data = g_slice_new0 (SymbolsParseData);
 
-    data->keyboard = g_object_ref (keyboard);
+    data->keyboard = keyboard;
     data->text = g_string_sized_new (BUFSIZE);
     return data;
 }
@@ -623,7 +619,6 @@ symbols_parse_data_new (EekKeyboard *keyboard)
 static void
 symbols_parse_data_free (SymbolsParseData *data)
 {
-    g_object_unref (data->keyboard);
     g_string_free (data->text, TRUE);
     g_slice_free (SymbolsParseData, data);
 }
@@ -881,11 +876,9 @@ static const GMarkupParser prerequisites_parser = {
     0
 };
 
-static EekKeyboard *
-eek_xml_layout_real_create_keyboard (EekboardContextService *manager,
-                                     EekLayout *self,
-                                     gdouble    initial_width,
-                                     gdouble    initial_height)
+LevelKeyboard *
+eek_xml_layout_real_create_keyboard (EekLayout *self,
+                                     EekboardContextService *manager)
 {
     EekXmlLayout *layout = EEK_XML_LAYOUT (self);
     EekXmlLayoutPrivate *priv = eek_xml_layout_get_instance_private (layout);
@@ -893,25 +886,38 @@ eek_xml_layout_real_create_keyboard (EekboardContextService *manager,
 
     /* Create an empty keyboard to which geometry and symbols
        information are applied. */
-    EekKeyboard *keyboard = g_object_new (EEK_TYPE_KEYBOARD, NULL);
-    keyboard->manager = manager;
+    EekKeyboard *view = g_object_new (EEK_TYPE_KEYBOARD, NULL);
 
     /* Read geometry information. */
     gchar *filename = g_strdup_printf ("%s.xml", priv->desc->geometry);
     gchar *path = g_build_filename (priv->keyboards_dir, "geometry", filename, NULL);
     g_free (filename);
 
+    GArray *outline_array = g_array_new (FALSE, TRUE, sizeof (EekOutline));
+
+    GHashTable *name_key_hash =
+            g_hash_table_new_full (g_str_hash,
+                                   g_str_equal,
+                                   g_free,
+                                   NULL);
+; // char* -> EekKey*
     GError *error = NULL;
-    retval = parse_geometry (path, keyboard, &error);
+    retval = parse_geometry (path, view, outline_array, name_key_hash, &error);
     g_free (path);
     if (!retval) {
-        g_object_unref (keyboard);
+        g_object_unref (view);
         g_warning ("can't parse geometry file %s: %s",
                    priv->desc->geometry,
                    error->message);
         g_error_free (error);
         return NULL;
     }
+
+
+    LevelKeyboard *keyboard = level_keyboard_new(manager, view, name_key_hash);
+
+    keyboard->outline_array = outline_array;
+    // FIXME: are symbols shared betwen views?
 
     /* Read symbols information. */
     GList *loaded = NULL;
@@ -922,7 +928,7 @@ eek_xml_layout_real_create_keyboard (EekboardContextService *manager,
                                                &error);
     g_list_free_full (loaded, g_free);
     if (!retval) {
-        g_object_unref (keyboard);
+        g_object_unref (view);
         g_warning ("can't parse symbols file %s: %s",
                    priv->desc->symbols,
                    error->message);
@@ -930,11 +936,11 @@ eek_xml_layout_real_create_keyboard (EekboardContextService *manager,
         return NULL;
     }
 
-    eek_layout_place_sections(keyboard);
+    eek_layout_place_sections(keyboard, view);
 
     /* Use pre-defined modifier mask here. */
-    eek_keyboard_set_num_lock_mask (keyboard, EEK_MOD2_MASK);
-    eek_keyboard_set_alt_gr_mask (keyboard, EEK_BUTTON1_MASK);
+    eek_keyboard_set_num_lock_mask (view, EEK_MOD2_MASK);
+    eek_keyboard_set_alt_gr_mask (view, EEK_BUTTON1_MASK);
 
     return keyboard;
 }
@@ -997,11 +1003,8 @@ eek_xml_layout_finalize (GObject *object)
 static void
 eek_xml_layout_class_init (EekXmlLayoutClass *klass)
 {
-    EekLayoutClass *layout_class = EEK_LAYOUT_CLASS (klass);
     GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
     GParamSpec *pspec;
-
-    layout_class->create_keyboard = eek_xml_layout_real_create_keyboard;
 
     gobject_class->set_property = eek_xml_layout_set_property;
     gobject_class->get_property = eek_xml_layout_get_property;
@@ -1122,8 +1125,30 @@ eek_xml_keyboard_desc_free (EekXmlKeyboardDesc *desc)
     g_slice_free (EekXmlKeyboardDesc, desc);
 }
 
+/**
+ * eek_keyboard_add_outline:
+ * @keyboard: an #EekKeyboard
+ * @outline: an #EekOutline
+ *
+ * Register an outline of @keyboard.
+ * Returns: an unsigned integer ID of the registered outline, for
+ * later reference
+ */
+static guint
+add_outline (GArray *outline_array,
+                          EekOutline  *outline)
+{
+    EekOutline *_outline;
+
+    _outline = eek_outline_copy (outline);
+    g_array_append_val (outline_array, *_outline);
+    /* don't use eek_outline_free here, so as to keep _outline->points */
+    g_slice_free (EekOutline, _outline);
+    return outline_array->len - 1;
+}
+
 static gboolean
-parse_geometry (const gchar *path, EekKeyboard *keyboard, GError **error)
+parse_geometry (const gchar *path, EekKeyboard *keyboard, GArray *outline_array, GHashTable *name_key_hash, GError **error)
 {
     GeometryParseData *data;
     GMarkupParseContext *pcontext;
@@ -1143,7 +1168,7 @@ parse_geometry (const gchar *path, EekKeyboard *keyboard, GError **error)
     if (input == NULL)
         return FALSE;
 
-    data = geometry_parse_data_new (keyboard);
+    data = geometry_parse_data_new (keyboard, name_key_hash);
     pcontext = g_markup_parse_context_new (&geometry_parser,
                                            0,
                                            data,
@@ -1164,7 +1189,7 @@ parse_geometry (const gchar *path, EekKeyboard *keyboard, GError **error)
         EekOutline *outline = v;
         gulong oref;
 
-        oref = eek_keyboard_add_outline (data->keyboard, outline);
+        oref = add_outline (outline_array, outline);
         g_hash_table_insert (oref_hash, k, GUINT_TO_POINTER(oref));
     }
 
@@ -1183,7 +1208,7 @@ parse_geometry (const gchar *path, EekKeyboard *keyboard, GError **error)
 static gboolean
 parse_symbols_with_prerequisites (const gchar *keyboards_dir,
                                   const gchar *name,
-                                  EekKeyboard *keyboard,
+                                  LevelKeyboard *keyboard,
                                   GList     **loaded,
                                   GError     **error)
 {
@@ -1233,7 +1258,7 @@ parse_symbols_with_prerequisites (const gchar *keyboards_dir,
 }
 
 static gboolean
-parse_symbols (const gchar *path, EekKeyboard *keyboard, GError **error)
+parse_symbols (const gchar *path, LevelKeyboard *keyboard, GError **error)
 {
     SymbolsParseData *data;
     GMarkupParseContext *pcontext;
