@@ -172,16 +172,17 @@ static void drag(EekGtkKeyboard *self,
                  gdouble x, gdouble y, guint32 time) {
     EekGtkKeyboardPrivate *priv = eek_gtk_keyboard_get_instance_private (self);
     EekKey *key = eek_renderer_find_key_by_position (priv->renderer, x, y);
+    GList *list, *head;
+
+    list = eek_keyboard_get_pressed_keys (priv->keyboard);
 
     if (key) {
-        GList *list, *head;
         gboolean found = FALSE;
 
-        list = eek_keyboard_get_pressed_keys (priv->keyboard);
         for (head = list; head; head = g_list_next (head)) {
-            if (head->data == key)
+            if (head->data == key) {
                 found = TRUE;
-            else {
+            } else {
                 eek_keyboard_release_key(priv->keyboard, EEK_KEY(head->data), time);
                 on_key_released(key, self);
             }
@@ -192,6 +193,12 @@ static void drag(EekGtkKeyboard *self,
             eek_keyboard_press_key(priv->keyboard, key, time);
             on_key_pressed(key, self);
         }
+    } else {
+        for (head = list; head; head = g_list_next (head)) {
+            eek_keyboard_release_key(priv->keyboard, EEK_KEY(head->data), time);
+            on_key_released(key, self);
+        }
+        g_list_free (list);
     }
 }
 
