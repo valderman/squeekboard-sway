@@ -55,7 +55,8 @@ typedef struct _EekGtkKeyboardPrivate
 {
     EekRenderer *renderer;
     EekKeyboard *keyboard;
-    EekTheme *theme;
+    GtkCssProvider *css_provider;
+    GtkStyleContext *scontext;
 
     GdkEventSequence *sequence; // unowned reference
 } EekGtkKeyboardPrivate;
@@ -109,12 +110,9 @@ eek_gtk_keyboard_real_draw (GtkWidget *self,
     gtk_widget_get_allocation (self, &allocation);
 
     if (!priv->renderer) {
-        PangoContext *pcontext;
+        PangoContext *pcontext = gtk_widget_get_pango_context (self);
 
-        pcontext = gtk_widget_get_pango_context (self);
-        priv->renderer = eek_renderer_new (priv->keyboard, pcontext);
-        if (priv->theme)
-            eek_renderer_set_theme (priv->renderer, priv->theme);
+        priv->renderer = eek_renderer_new (priv->keyboard, pcontext, priv->scontext);
 
         eek_renderer_set_allocation_size (priv->renderer,
                                           allocation.width,
@@ -393,11 +391,6 @@ eek_gtk_keyboard_dispose (GObject *object)
         priv->keyboard = NULL;
     }
 
-    if (priv->theme) {
-        g_object_unref (priv->theme);
-        priv->theme = NULL;
-    }
-
     G_OBJECT_CLASS (eek_gtk_keyboard_parent_class)->dispose (object);
 }
 
@@ -438,7 +431,20 @@ eek_gtk_keyboard_class_init (EekGtkKeyboardClass *klass)
 static void
 eek_gtk_keyboard_init (EekGtkKeyboard *self)
 {
-    /* void */
+    EekGtkKeyboardPrivate *priv = eek_gtk_keyboard_get_instance_private (self);
+
+    /* Create a default CSS provider and load a style sheet */
+    priv->css_provider = gtk_css_provider_new ();
+    gtk_css_provider_load_from_resource (priv->css_provider,
+        "/sm/puri/squeekboard/style.css");
+
+    /* Apply the style to the widget */
+    priv->scontext = gtk_widget_get_style_context (GTK_WIDGET(self));
+    gtk_style_context_add_class (priv->scontext, "keyboard");
+    gtk_style_context_add_provider (priv->scontext,
+        GTK_STYLE_PROVIDER(priv->css_provider),
+        GTK_STYLE_PROVIDER_PRIORITY_USER);
+    gtk_style_context_set_state (priv->scontext, GTK_STATE_FLAG_NORMAL);
 }
 
 /**
@@ -621,15 +627,4 @@ on_symbol_index_changed (EekKeyboard *keyboard,
     GtkWidget *widget = user_data;
 
     gtk_widget_queue_draw (widget);
-}
-
-void
-eek_gtk_keyboard_set_theme (EekGtkKeyboard *keyboard,
-                            EekTheme       *theme)
-{
-    g_return_if_fail (EEK_IS_GTK_KEYBOARD(keyboard));
-    g_return_if_fail (EEK_IS_THEME(theme));
-
-    EekGtkKeyboardPrivate *priv = eek_gtk_keyboard_get_instance_private (keyboard);
-    priv->theme = g_object_ref (theme);
 }

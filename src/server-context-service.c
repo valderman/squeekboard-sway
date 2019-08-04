@@ -229,23 +229,15 @@ static void
 make_widget (ServerContextService *context)
 {
     EekKeyboard *keyboard;
-    EekTheme *theme;
 
     if (context->widget) {
         gtk_widget_destroy(context->widget);
         context->widget = NULL;
     }
 
-    theme = eek_theme_new ("resource:///sm/puri/squeekboard/style.css",
-                           NULL,
-                           NULL);
-
     keyboard = eekboard_context_service_get_keyboard (EEKBOARD_CONTEXT_SERVICE(context));
 
     context->widget = eek_gtk_keyboard_new (keyboard);
-
-    eek_gtk_keyboard_set_theme (EEK_GTK_KEYBOARD(context->widget), theme);
-    g_clear_object (&theme);
 
     gtk_widget_set_has_tooltip (context->widget, TRUE);
     gtk_container_add (GTK_CONTAINER(context->window), context->widget);
