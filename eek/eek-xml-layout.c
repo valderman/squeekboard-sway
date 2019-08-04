@@ -68,7 +68,7 @@ static GList        *parse_prerequisites
                                      (const gchar         *path,
                                       GError             **error);
 static gboolean      parse_geometry  (const gchar         *path,
-                                      EekKeyboard         *keyboard, GArray *outline_array, GHashTable *name_key_hash,
+                                      EekKeyboard **views, GArray *outline_array, GHashTable *name_key_hash,
                                       GError             **error);
 static gboolean      parse_symbols_with_prerequisites
                                      (const gchar         *keyboards_dir,
@@ -233,7 +233,8 @@ struct _GeometryParseData {
     GSList *element_stack;
 
     EekBounds bounds;
-    EekKeyboard *keyboard;
+    EekKeyboard **views;
+    guint view_idx;
     EekSection *section;
     EekKey *key;
     gint num_columns;
@@ -255,11 +256,11 @@ struct _GeometryParseData {
 typedef struct _GeometryParseData GeometryParseData;
 
 static GeometryParseData *
-geometry_parse_data_new (EekKeyboard *keyboard, GHashTable *name_key_hash)
+geometry_parse_data_new (EekKeyboard **views, GHashTable *name_key_hash)
 {
     GeometryParseData *data = g_slice_new0 (GeometryParseData);
 
-    data->keyboard = g_object_ref (keyboard);
+    data->views = views;
     data->key_oref_hash =
         g_hash_table_new_full (g_direct_hash,
                                g_direct_equal,
@@ -280,7 +281,6 @@ geometry_parse_data_new (EekKeyboard *keyboard, GHashTable *name_key_hash)
 static void
 geometry_parse_data_free (GeometryParseData *data)
 {
-    g_object_unref (data->keyboard);
     g_hash_table_destroy (data->key_oref_hash);
     g_hash_table_destroy (data->oref_outline_hash);
     g_string_free (data->text, TRUE);
@@ -291,7 +291,8 @@ static const gchar *geometry_valid_path_list[] = {
     "geometry",
     "button/geometry",
     "bounds/geometry",
-    "section/geometry",
+    "view/geometry",
+    "section/view/geometry",
     "outline/geometry",
     "point/outline/geometry",
 };
@@ -360,14 +361,20 @@ geometry_start_element_callback (GMarkupParseContext *pcontext,
             return;
         }
         bounds.height = g_strtod (attribute, NULL);
-
-        if (g_strcmp0 (data->element_stack->data, "geometry") == 0)
-            eek_element_set_bounds (EEK_ELEMENT(data->keyboard), &bounds);
+        data->bounds = bounds;
         goto out;
     }
 
+    if (g_strcmp0 (element_name, "view") == 0) {
+        /* Create an empty keyboard to which geometry and symbols
+           information are applied. */
+        EekKeyboard *view = g_object_new (EEK_TYPE_KEYBOARD, NULL);
+        eek_element_set_bounds (EEK_ELEMENT(view), &data->bounds);
+        data->views[data->view_idx] = view;
+    }
+
     if (g_strcmp0 (element_name, "section") == 0) {
-        data->section = eek_keyboard_real_create_section (data->keyboard);
+        data->section = eek_keyboard_real_create_section (data->views[data->view_idx]);
         attribute = get_attribute (attribute_names, attribute_values,
                                    "id");
         if (attribute != NULL)
@@ -384,31 +391,37 @@ geometry_start_element_callback (GMarkupParseContext *pcontext,
     }
 
     if (g_strcmp0 (element_name, "button") == 0) {
-        attribute = get_attribute (attribute_names, attribute_values,
+        const gchar *base_name = get_attribute (attribute_names, attribute_values,
                                    "name");
-        if (attribute == NULL) {
+        if (base_name == NULL) {
             g_set_error (error,
                          G_MARKUP_ERROR,
                          G_MARKUP_ERROR_MISSING_ATTRIBUTE,
                          "no \"name\" attribute for \"button\"");
             return;
         }
-        gchar *name = g_strdup (attribute);
 
-        EekKey *key = g_hash_table_lookup(data->name_key_hash, name);
-        attribute = get_attribute (attribute_names, attribute_values,
+        const gchar *oref_name = get_attribute (attribute_names, attribute_values,
                                    "oref");
-        if (attribute == NULL) {
-            attribute = g_strdup("default");
+        if (oref_name == NULL) {
+            oref_name = "default";
         }
-        g_hash_table_insert (data->key_oref_hash,
-                             key,
-                             g_strdup (attribute));
-
-        attribute = get_attribute (attribute_names, attribute_values,
+        const gchar *keycode_name = get_attribute (attribute_names, attribute_values,
                                    "keycode");
-        if (attribute != NULL) {
-            eek_key_set_keycode(key, strtol (attribute, NULL, 10));
+
+        for (uint i = 0; i < 4; i++) {
+            gchar *name = g_strdup_printf("%s-%d", base_name, i);
+            EekKey *key = g_hash_table_lookup(data->name_key_hash, name);
+            if (!key) {
+                continue; // not all keys have to be defined in every view
+            }
+            g_hash_table_insert (data->key_oref_hash,
+                                 key,
+                                 g_strdup (oref_name));
+
+            if (keycode_name != NULL) {
+                eek_key_set_keycode(key, strtol (keycode_name, NULL, 10));
+            }
         }
 
         goto out;
@@ -486,6 +499,11 @@ geometry_end_element_callback (GMarkupParseContext *pcontext,
 
     const gchar *text = g_strndup (data->text->str, data->text->len);
 
+    if (g_strcmp0 (element_name, "view") == 0) {
+        data->view_idx++;
+        return;
+    }
+
     if (g_strcmp0 (element_name, "section") == 0) {
         // Split text on spaces and process each part
         unsigned head = 0;
@@ -511,8 +529,11 @@ geometry_end_element_callback (GMarkupParseContext *pcontext,
                 break;
             }
 
-            gchar *name = g_strndup (&text[start], end - start);
-
+            // Save button name together with its level,
+            // to account for buttons with the same name in multiple levels
+            gchar *base_name = g_strndup (&text[start], end - start);
+            gchar *name = g_strdup_printf("%s-%d", base_name, data->view_idx);
+            g_free(base_name);
             guint keycode = data->keycode++;
 
             data->key = eek_section_create_key (data->section,
@@ -530,17 +551,6 @@ geometry_end_element_callback (GMarkupParseContext *pcontext,
 
         data->section = NULL;
         data->num_rows = 0;
-        return;
-    }
-
-    if (g_strcmp0 (element_name, "key") == 0) {
-        data->key = NULL;
-        return;
-    }
-
-    if (g_strcmp0 (element_name, "row") == 0) {
-        data->num_columns = 0;
-        data->orientation = EEK_ORIENTATION_HORIZONTAL;
         return;
     }
 
@@ -580,7 +590,7 @@ geometry_text_callback (GMarkupParseContext *pcontext,
                        GError             **error)
 {
     GeometryParseData *data = user_data;
-    g_string_append_len (data->text, text, text_len);
+    g_string_append_len (data->text, text, (gssize)text_len);
 }
 
 static const GMarkupParser geometry_parser = {
@@ -597,7 +607,9 @@ struct _SymbolsParseData {
 
     LevelKeyboard *keyboard;
     EekKeyboard *view;
-    EekKey *key;
+    guint key_level;
+    const gchar *key_name;
+
     gchar *label;
     gchar *icon;
     gchar *tooltip;
@@ -651,9 +663,10 @@ symbols_start_element_callback (GMarkupParseContext *pcontext,
         return;
 
     if (g_strcmp0 (element_name, "key") == 0) {
-
+        data->key_level = 0;
         attribute = get_attribute (attribute_names, attribute_values,
                                    "name");
+
         if (attribute == NULL) {
             g_set_error (error,
                          G_MARKUP_ERROR,
@@ -661,15 +674,7 @@ symbols_start_element_callback (GMarkupParseContext *pcontext,
                          "no \"name\" attribute for \"key\"");
             return;
         }
-
-        data->key = eek_keyboard_find_key_by_name (data->keyboard,
-                                                   attribute);
-        if (data->key == NULL) {
-            g_set_error (error,
-                         G_MARKUP_ERROR,
-                         G_MARKUP_ERROR_INVALID_CONTENT,
-                         "no such key %s", attribute);
-        }
+        data->key_name = strdup(attribute);
         goto out;
     }
 
@@ -727,17 +732,23 @@ symbols_end_element_callback (GMarkupParseContext *pcontext,
 
     text = g_strndup (data->text->str, data->text->len);
 
-    if (g_strcmp0 (element_name, "key") == 0) {
-        data->key = NULL;
-        goto out;
-    }
-
     if (g_strcmp0 (element_name, "symbol") == 0 ||
         g_strcmp0 (element_name, "keysym") == 0 ||
         g_strcmp0 (element_name, "text") == 0) {
 
+        gchar *name = g_strdup_printf("%s-%d", data->key_name, data->key_level);
+        EekKey *key = eek_keyboard_find_key_by_name (data->keyboard,
+                                                   name);
+        if (key == NULL) {
+            g_set_error (error,
+                         G_MARKUP_ERROR,
+                         G_MARKUP_ERROR_INVALID_CONTENT,
+                         "no such key %s", name);
+            return;
+        }
+
         squeek_key_add_symbol(
-            eek_key_get_state(data->key),
+            eek_key_get_state(key),
             element_name,
             text,
             data->keyval,
@@ -753,6 +764,8 @@ symbols_end_element_callback (GMarkupParseContext *pcontext,
         data->icon = NULL;
         g_free(data->tooltip);
         data->tooltip = NULL;
+
+        data->key_level++;
         goto out;
     }
 
@@ -876,10 +889,6 @@ eek_xml_layout_real_create_keyboard (EekLayout *self,
     EekXmlLayoutPrivate *priv = eek_xml_layout_get_instance_private (layout);
     gboolean retval;
 
-    /* Create an empty keyboard to which geometry and symbols
-       information are applied. */
-    EekKeyboard *view = g_object_new (EEK_TYPE_KEYBOARD, NULL);
-
     /* Read geometry information. */
     gchar *filename = g_strdup_printf ("%s.xml", priv->desc->geometry);
     gchar *path = g_build_filename (priv->keyboards_dir, "geometry", filename, NULL);
@@ -887,17 +896,22 @@ eek_xml_layout_real_create_keyboard (EekLayout *self,
 
     GArray *outline_array = g_array_new (FALSE, TRUE, sizeof (EekOutline));
 
+    // char* -> EekKey*
     GHashTable *name_key_hash =
             g_hash_table_new_full (g_str_hash,
                                    g_str_equal,
                                    g_free,
                                    NULL);
-; // char* -> EekKey*
+    // One view for each level
+    EekKeyboard *views[4] = {0};
+
     GError *error = NULL;
-    retval = parse_geometry (path, view, outline_array, name_key_hash, &error);
+    retval = parse_geometry (path, views, outline_array, name_key_hash, &error);
     g_free (path);
     if (!retval) {
-        g_object_unref (view);
+        for (uint i = 0; i < 4; i++) {
+            g_object_unref (views[i]);
+        }
         g_warning ("can't parse geometry file %s: %s",
                    priv->desc->geometry,
                    error->message);
@@ -906,7 +920,7 @@ eek_xml_layout_real_create_keyboard (EekLayout *self,
     }
 
 
-    LevelKeyboard *keyboard = level_keyboard_new(manager, view, name_key_hash);
+    LevelKeyboard *keyboard = level_keyboard_new(manager, views, name_key_hash);
 
     keyboard->outline_array = outline_array;
     // FIXME: are symbols shared betwen views?
@@ -920,7 +934,13 @@ eek_xml_layout_real_create_keyboard (EekLayout *self,
                                                &error);
     g_list_free_full (loaded, g_free);
     if (!retval) {
-        g_object_unref (view);
+        for (uint i = 0; i < 4; i++) {
+            if (views[i]) {
+                g_object_unref(views[i]);
+                views[i] = NULL;
+            }
+        }
+        //g_object_unref (view);
         g_warning ("can't parse symbols file %s: %s",
                    priv->desc->symbols,
                    error->message);
@@ -928,7 +948,9 @@ eek_xml_layout_real_create_keyboard (EekLayout *self,
         return NULL;
     }
 
-    eek_layout_place_sections(keyboard, view);
+    for (uint i = 0; i < 4; i++) {
+        eek_layout_place_sections(keyboard, views[i]);
+    }
 
     return keyboard;
 }
@@ -1136,7 +1158,7 @@ add_outline (GArray *outline_array,
 }
 
 static gboolean
-parse_geometry (const gchar *path, EekKeyboard *keyboard, GArray *outline_array, GHashTable *name_key_hash, GError **error)
+parse_geometry (const gchar *path, EekKeyboard **views, GArray *outline_array, GHashTable *name_key_hash, GError **error)
 {
     GeometryParseData *data;
     GMarkupParseContext *pcontext;
@@ -1156,7 +1178,7 @@ parse_geometry (const gchar *path, EekKeyboard *keyboard, GArray *outline_array,
     if (input == NULL)
         return FALSE;
 
-    data = geometry_parse_data_new (keyboard, name_key_hash);
+    data = geometry_parse_data_new (views, name_key_hash);
     pcontext = g_markup_parse_context_new (&geometry_parser,
                                            0,
                                            data,

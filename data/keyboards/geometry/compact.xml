@@ -1,10 +1,30 @@
 <?xml version="1.0"?>
 <geometry version="0.90">
   <bounds x="10" y="10" width="410.0000" height="229"/>
-  <section angle="0">AD01 AD02 AD03 AD04 AD05 AD06 AD07 AD08 AD09 AD10</section>
-  <section angle="0">AC01 AC02 AC03 AC04 AC05 AC06 AC07 AC08 AC09 AC10</section>
-  <section angle="0"> LFSH   AB01 AB02 AB03 AB04 AB05 AB06 AB07  BKSP </section>
-  <section angle="0"> ABC123 I149         SPCE        AB08    RTRN    </section>
+  <view>
+    <section angle="0">AD01 AD02 AD03 AD04 AD05 AD06 AD07 AD08 AD09 AD10</section>
+    <section angle="0">AC01 AC02 AC03 AC04 AC05 AC06 AC07 AC08 AC09 AC10</section>
+    <section angle="0"> LFSH   AB01 AB02 AB03 AB04 AB05 AB06 AB07  BKSP </section>
+    <section angle="0"> ABC123 I149         SPCE        AB08    RTRN    </section>
+  </view>
+  <view>
+    <section angle="0">AD01 AD02 AD03 AD04 AD05 AD06 AD07 AD08 AD09 AD10</section>
+    <section angle="0">AC01 AC02 AC03 AC04 AC05 AC06 AC07 AC08 AC09 AC10</section>
+    <section angle="0"> LFSH   AB01 AB02 AB03 AB04 AB05 AB06 AB07  BKSP </section>
+    <section angle="0"> ABC123 I149         SPCE        AB08    RTRN    </section>
+  </view>
+  <view>
+    <section angle="0">AD01 AD02 AD03 AD04 AD05 AD06 AD07 AD08 AD09 AD10</section>
+    <section angle="0">AC01 AC02 AC03 AC04 AC05 AC06 AC07 AC08 AC09 AC10</section>
+    <section angle="0"> LFSH   AB01 AB02 AB03 AB04 AB05 AB06 AB07  BKSP </section>
+    <section angle="0"> ABC123 I149         SPCE        AB08    RTRN    </section>
+  </view>
+  <view>
+    <section angle="0">AD01 AD02 AD03 AD04 AD05 AD06 AD07 AD08 AD09 AD10</section>
+    <section angle="0">AC01 AC02 AC03 AC04 AC05 AC06 AC07 AC08 AC09 AC10</section>
+    <section angle="0"> LFSH   AB01 AB02 AB03 AB04 AB05 AB06 AB07  BKSP </section>
+    <section angle="0"> ABC123 I149         SPCE        AB08    RTRN    </section>
+  </view>
   <button name="LFSH" oref="altline" />
   <button name="BKSP" oref="altline" />
   <button name="I149" oref="altline" />

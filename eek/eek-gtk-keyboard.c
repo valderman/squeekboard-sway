@@ -96,8 +96,6 @@ eek_gtk_keyboard_real_draw (GtkWidget *self,
     EekGtkKeyboardPrivate *priv =
 	    eek_gtk_keyboard_get_instance_private (EEK_GTK_KEYBOARD (self));
     GtkAllocation allocation;
-    GList *list, *head;
-
     gtk_widget_get_allocation (self, &allocation);
 
     if (!priv->renderer) {
@@ -117,18 +115,16 @@ eek_gtk_keyboard_real_draw (GtkWidget *self,
     uint level = priv->keyboard->level;
 
     /* redraw pressed key */
-    list = eek_keyboard_get_pressed_keys (level_keyboard_current(priv->keyboard));
-    for (head = list; head; head = g_list_next (head)) {
+    const GList *list = priv->keyboard->pressed_keys;
+    for (const GList *head = list; head; head = g_list_next (head)) {
         render_pressed_key (self, head->data, level);
     }
-    g_list_free (list);
 
     /* redraw locked key */
-    list = eek_keyboard_get_locked_keys (level_keyboard_current(priv->keyboard));
-    for (head = list; head; head = g_list_next (head)) {
+    list = priv->keyboard->locked_keys;
+    for (const GList *head = list; head; head = g_list_next (head)) {
         render_locked_key (self, ((EekModifierKey *)head->data)->key, level);
     }
-    g_list_free (list);
 
     return FALSE;
 }
@@ -168,7 +164,7 @@ static void drag(EekGtkKeyboard *self,
     EekKey *key = eek_renderer_find_key_by_position (priv->renderer, x, y);
     GList *list, *head;
 
-    list = eek_keyboard_get_pressed_keys (level_keyboard_current(priv->keyboard));
+    list = g_list_copy(priv->keyboard->pressed_keys);
 
     if (key) {
         gboolean found = FALSE;
@@ -200,7 +196,7 @@ static void drag(EekGtkKeyboard *self,
 static void release(EekGtkKeyboard *self, guint32 time) {
     EekGtkKeyboardPrivate *priv = eek_gtk_keyboard_get_instance_private (self);
 
-    GList *list = eek_keyboard_get_pressed_keys (level_keyboard_current(priv->keyboard));
+    GList *list = g_list_copy(priv->keyboard->pressed_keys);
     for (GList *head = list; head; head = g_list_next (head)) {
         EekKey *key = EEK_KEY(head->data);
         eek_keyboard_release_key(priv->keyboard, key, time);
@@ -287,7 +283,7 @@ eek_gtk_keyboard_real_unmap (GtkWidget *self)
            elements, so that the default handler of
            EekKeyboard::key-released signal can remove elements from its
            internal copy */
-        list = eek_keyboard_get_pressed_keys (level_keyboard_current(priv->keyboard));
+        list = g_list_copy(priv->keyboard->pressed_keys);
         for (head = list; head; head = g_list_next (head)) {
             g_log("squeek", G_LOG_LEVEL_DEBUG, "emit EekKey released");
             g_signal_emit_by_name (head->data, "released");
@@ -369,7 +365,7 @@ eek_gtk_keyboard_dispose (GObject *object)
     if (priv->keyboard) {
         GList *list, *head;
 
-        list = eek_keyboard_get_pressed_keys (level_keyboard_current(priv->keyboard));
+        list = g_list_copy(priv->keyboard->pressed_keys);
         for (head = list; head; head = g_list_next (head)) {
             g_log("squeek", G_LOG_LEVEL_DEBUG, "emit EekKey pressed");
             g_signal_emit_by_name (head->data, "released", level_keyboard_current(priv->keyboard));

@@ -124,6 +124,9 @@
   </key>
   <key name="RTRN">
     <symbol keyval="65293" icon="key-enter">Return</symbol>
+    <symbol keyval="65293" icon="key-enter">Return</symbol>
+    <symbol keyval="65293" icon="key-enter">Return</symbol>
+    <symbol keyval="65293" icon="key-enter">Return</symbol>
   </key>
   <key name="LFSH">
     <keysym keyval="65505" icon="key-shift">Shift_L</keysym>
@@ -175,6 +178,9 @@
   </key>
   <key name="AB08">
     <symbol label=".">period</symbol>
+    <symbol label=".">period</symbol>
+    <symbol label=".">period</symbol>
+    <symbol label=".">period</symbol>
   </key>
   <key name="ABC123">
     <symbol label="123">show-numbers</symbol>
@@ -184,11 +190,20 @@
   </key>
   <key name="I149">
     <symbol label="&#9786;" icon="keyboard-mode-symbolic" tooltip="Setup">preferences</symbol>
+    <symbol label="&#9786;" icon="keyboard-mode-symbolic" tooltip="Setup">preferences</symbol>
+    <symbol label="&#9786;" icon="keyboard-mode-symbolic" tooltip="Setup">preferences</symbol>
+    <symbol label="&#9786;" icon="keyboard-mode-symbolic" tooltip="Setup">preferences</symbol>
   </key>
   <key name="SPCE">
     <symbol label=" ">space</symbol>
+    <symbol label=" ">space</symbol>
+    <symbol label=" ">space</symbol>
+    <symbol label=" ">space</symbol>
   </key>
   <key name="BKSP">
+    <symbol keyval="65288" icon="edit-clear-symbolic">BackSpace</symbol>
+    <symbol keyval="65288" icon="edit-clear-symbolic">BackSpace</symbol>
+    <symbol keyval="65288" icon="edit-clear-symbolic">BackSpace</symbol>
     <symbol keyval="65288" icon="edit-clear-symbolic">BackSpace</symbol>
   </key>
 </symbols>

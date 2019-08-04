@@ -323,8 +323,6 @@ settings_update_layout(EekboardContextService *context)
     // create a keyboard
     if (!keyboard) {
         keyboard = eekboard_context_service_real_create_keyboard(context, keyboard_layout);
-        eek_keyboard_set_modifier_behavior (level_keyboard_current(keyboard),
-                                            EEK_MODIFIER_BEHAVIOR_LATCH);
 
         g_hash_table_insert (context->priv->keyboard_hash,
                              GUINT_TO_POINTER(keyboard_id),

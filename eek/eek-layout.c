@@ -51,6 +51,7 @@ const double section_spacing = 7.0;
 struct place_data {
     double desired_width;
     double current_offset;
+    // Needed for outline (bounds) retrieval
     LevelKeyboard *keyboard;
 };
 

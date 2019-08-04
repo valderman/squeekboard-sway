@@ -1,10 +1,31 @@
 <?xml version="1.0"?>
 <geometry version="0.90">
   <bounds x="0" y="10.000000" width="426.0000" height="296.5853"/>
-  <section angle="0">AD01 AD02 AD03 AD04 AD05</section>
-  <section angle="0">AC01 AC02 AC03 AC04 AC05</section>
-  <section angle="0">AB01 AB02 AB03 AB04 AB05</section>
-  <section angle="0">BKSP AB06 SPCE RTRN</section>
+  <view>
+    <section angle="0">AD01 AD02 AD03 AD04 AD05</section>
+    <section angle="0">AC01 AC02 AC03 AC04 AC05</section>
+    <section angle="0">AB01 AB02 AB03 AB04 AB05</section>
+    <section angle="0">BKSP AB06 SPCE RTRN</section>
+  </view>
+  <view>
+    <section angle="0">AD01 AD02 AD03 AD04 AD05</section>
+    <section angle="0">AC01 AC02 AC03 AC04 AC05</section>
+    <section angle="0">AB01 AB02 AB03 AB04 AB05</section>
+    <section angle="0">BKSP AB06 SPCE RTRN</section>
+  </view>
+  <view>
+    <section angle="0">AD01 AD02 AD03 AD04 AD05</section>
+    <section angle="0">AC01 AC02 AC03 AC04 AC05</section>
+    <section angle="0">AB01 AB02 AB03 AB04 AB05</section>
+    <section angle="0">BKSP AB06 SPCE RTRN</section>
+  </view>
+  <view>
+    <section angle="0">AD01 AD02 AD03 AD04 AD05</section>
+    <section angle="0">AC01 AC02 AC03 AC04 AC05</section>
+    <section angle="0">AB01 AB02 AB03 AB04 AB05</section>
+    <section angle="0">BKSP AB06 SPCE RTRN</section>
+  </view>
+  
   <button name="BKSP" oref="altline" />
   <button name="SPCE" oref="spaceline" />
   <button name="RTRN" oref="outline7" />

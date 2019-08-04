@@ -302,7 +302,7 @@ eek_key_is_pressed (EekKey *key)
 {
     g_return_val_if_fail (EEK_IS_KEY(key), FALSE);
 
-    EekKeyPrivate *priv = eek_key_get_instance_private (key);
+    EekKeyPrivate *priv = (EekKeyPrivate*)eek_key_get_instance_private (key);
 
     return (bool)squeek_key_is_pressed(priv->state);
 }
