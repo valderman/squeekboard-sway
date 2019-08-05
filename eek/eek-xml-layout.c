@@ -938,10 +938,6 @@ eek_xml_layout_real_create_keyboard (EekLayout *self,
 
     eek_layout_place_sections(keyboard, view);
 
-    /* Use pre-defined modifier mask here. */
-    eek_keyboard_set_num_lock_mask (view, EEK_MOD2_MASK);
-    eek_keyboard_set_alt_gr_mask (view, EEK_BUTTON1_MASK);
-
     return keyboard;
 }
 

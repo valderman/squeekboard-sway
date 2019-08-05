@@ -73,10 +73,6 @@ struct _EekKeyboardPrivate
     unsigned int old_level;
     GList *pressed_keys;
     GList *locked_keys;
-
-    /* modifiers dynamically assigned at run time */
-    EekModifierType num_lock_mask;
-    EekModifierType alt_gr_mask;
 };
 
 G_DEFINE_TYPE_WITH_PRIVATE (EekKeyboard, eek_keyboard, EEK_TYPE_CONTAINER);
@@ -570,64 +566,6 @@ level_keyboard_get_outline (LevelKeyboard *keyboard,
         return NULL;
 
     return &g_array_index (keyboard->outline_array, EekOutline, oref);
-}
-
-/**
- * eek_keyboard_set_num_lock_mask:
- * @keyboard: an #EekKeyboard
- * @num_lock_mask: an #EekModifierType
- *
- * Set modifier mask used as Num_Lock.
- */
-void
-eek_keyboard_set_num_lock_mask (EekKeyboard    *keyboard,
-                                EekModifierType num_lock_mask)
-{
-    g_return_if_fail (EEK_IS_KEYBOARD(keyboard));
-    keyboard->priv->num_lock_mask = num_lock_mask;
-}
-
-/**
- * eek_keyboard_get_num_lock_mask:
- * @keyboard: an #EekKeyboard
- *
- * Get modifier mask used as Num_Lock.
- * Returns: an #EekModifierType
- */
-EekModifierType
-eek_keyboard_get_num_lock_mask (EekKeyboard *keyboard)
-{
-    g_return_val_if_fail (EEK_IS_KEYBOARD(keyboard), 0);
-    return keyboard->priv->num_lock_mask;
-}
-
-/**
- * eek_keyboard_set_alt_gr_mask:
- * @keyboard: an #EekKeyboard
- * @alt_gr_mask: an #EekModifierType
- *
- * Set modifier mask used as Alt_Gr.
- */
-void
-eek_keyboard_set_alt_gr_mask (EekKeyboard    *keyboard,
-                              EekModifierType alt_gr_mask)
-{
-    g_return_if_fail (EEK_IS_KEYBOARD(keyboard));
-    keyboard->priv->alt_gr_mask = alt_gr_mask;
-}
-
-/**
- * eek_keyboard_get_alt_gr_mask:
- * @keyboard: an #EekKeyboard
- *
- * Get modifier mask used as Alt_Gr.
- * Returns: an #EekModifierType
- */
-EekModifierType
-eek_keyboard_get_alt_gr_mask (EekKeyboard *keyboard)
-{
-    g_return_val_if_fail (EEK_IS_KEYBOARD(keyboard), 0);
-    return keyboard->priv->alt_gr_mask;
 }
 
 /**
