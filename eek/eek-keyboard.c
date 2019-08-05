@@ -41,7 +41,6 @@
 
 enum {
     PROP_0,
-    PROP_LAYOUT,
     PROP_MODIFIER_BEHAVIOR,
     PROP_LAST
 };
@@ -67,7 +66,6 @@ static guint signals[LAST_SIGNAL] = { 0, };
 
 struct _EekKeyboardPrivate
 {
-    EekLayout *layout;
     EekModifierBehavior modifier_behavior;
     EekModifierType modifiers;
     unsigned int old_level;
@@ -172,14 +170,7 @@ eek_keyboard_set_property (GObject      *object,
                            const GValue *value,
                            GParamSpec   *pspec)
 {
-    EekKeyboardPrivate *priv = EEK_KEYBOARD_GET_PRIVATE(object);
-
     switch (prop_id) {
-    case PROP_LAYOUT:
-        priv->layout = g_value_get_object (value);
-        if (priv->layout)
-            g_object_ref (priv->layout);
-        break;
     case PROP_MODIFIER_BEHAVIOR:
         eek_keyboard_set_modifier_behavior (EEK_KEYBOARD(object),
                                             g_value_get_enum (value));
@@ -196,12 +187,7 @@ eek_keyboard_get_property (GObject    *object,
                            GValue     *value,
                            GParamSpec *pspec)
 {
-    EekKeyboardPrivate *priv = EEK_KEYBOARD_GET_PRIVATE(object);
-
     switch (prop_id) {
-    case PROP_LAYOUT:
-        g_value_set_object (value, priv->layout);
-        break;
     case PROP_MODIFIER_BEHAVIOR:
         g_value_set_enum (value,
                           eek_keyboard_get_modifier_behavior (EEK_KEYBOARD(object)));
@@ -384,13 +370,6 @@ void eek_keyboard_release_key( EekKeyboard *keyboard,
 static void
 eek_keyboard_dispose (GObject *object)
 {
-    EekKeyboardPrivate *priv = EEK_KEYBOARD_GET_PRIVATE(object);
-
-    if (priv->layout) {
-        g_object_unref (priv->layout);
-        priv->layout = NULL;
-    }
-
     G_OBJECT_CLASS (eek_keyboard_parent_class)->dispose (object);
 }
 
@@ -455,20 +434,6 @@ eek_keyboard_class_init (EekKeyboardClass *klass)
     gobject_class->set_property = eek_keyboard_set_property;
     gobject_class->dispose = eek_keyboard_dispose;
     gobject_class->finalize = eek_keyboard_finalize;
-
-    /**
-     * EekKeyboard:layout:
-     *
-     * The layout used to create this #EekKeyboard.
-     */
-    pspec = g_param_spec_object ("layout",
-                                 "Layout",
-                                 "Layout used to create the keyboard",
-                                 EEK_TYPE_LAYOUT,
-                                 G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE);
-    g_object_class_install_property (gobject_class,
-                                     PROP_LAYOUT,
-                                     pspec);
 
     /**
      * EekKeyboard:modifier-behavior:
@@ -567,20 +532,6 @@ eek_keyboard_find_key_by_name (EekKeyboard *keyboard,
     g_return_val_if_fail (EEK_IS_KEYBOARD(keyboard), NULL);
     return g_hash_table_lookup (keyboard->priv->names,
                                 name);
-}
-
-/**
- * eek_keyboard_get_layout:
- * @keyboard: an #EekKeyboard
- *
- * Get the layout used to create @keyboard.
- * Returns: an #EekLayout
- */
-EekLayout *
-eek_keyboard_get_layout (EekKeyboard *keyboard)
-{
-    g_return_val_if_fail (EEK_IS_KEYBOARD(keyboard), NULL);
-    return keyboard->priv->layout;
 }
 
 /**
