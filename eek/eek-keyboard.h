@@ -131,8 +131,6 @@ EekKeyboard        *eek_keyboard_new (EekboardContextService *manager,
                                       gdouble             initial_height);
 GType               eek_keyboard_get_type
                                      (void) G_GNUC_CONST;
-EekLayout          *eek_keyboard_get_layout
-                                     (EekKeyboard        *keyboard);
 void                eek_keyboard_get_size
                                      (EekKeyboard        *keyboard,
                                       gdouble            *width,

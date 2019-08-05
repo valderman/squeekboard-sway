@@ -892,7 +892,7 @@ eek_xml_layout_real_create_keyboard (EekboardContextService *manager,
 
     /* Create an empty keyboard to which geometry and symbols
        information are applied. */
-    EekKeyboard *keyboard = g_object_new (EEK_TYPE_KEYBOARD, "layout", layout, NULL);
+    EekKeyboard *keyboard = g_object_new (EEK_TYPE_KEYBOARD, NULL);
     keyboard->manager = manager;
 
     /* Read geometry information. */
