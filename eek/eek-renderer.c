@@ -291,8 +291,8 @@ render_key (EekRenderer *self,
 
             cairo_save (cr);
             cairo_translate (cr,
-                             (bounds.width - width / scale) / 2,
-                             (bounds.height - height / scale) / 2);
+                             (bounds.width - (double)width / scale) / 2,
+                             (bounds.height - (double)height / scale) / 2);
             cairo_rectangle (cr, 0, 0, width, height);
             cairo_clip (cr);
             /* Draw the shape of the icon using the foreground color */
@@ -316,8 +316,8 @@ render_key (EekRenderer *self,
     cairo_save (cr);
     cairo_move_to
         (cr,
-         (bounds.width - extents.width / PANGO_SCALE) / 2,
-         (bounds.height - extents.height / PANGO_SCALE) / 2);
+         (bounds.width - (double)extents.width / PANGO_SCALE) / 2,
+         (bounds.height - (double)extents.height / PANGO_SCALE) / 2);
 
     cairo_set_source_rgba (cr,
                            foreground.red,
@@ -766,8 +766,8 @@ eek_renderer_set_allocation_size (EekRenderer *renderer,
 
     priv->scale = scale;
     /* Set the rendering offset in widget coordinates to center the keyboard */
-    priv->origin_x = (width - (scale * w)) / 2;
-    priv->origin_y = (height - (scale * h)) / 2;
+    priv->origin_x = (gint)floor((width - (scale * w)) / 2);
+    priv->origin_y = (gint)floor((height - (scale * h)) / 2);
     invalidate (renderer);
 }
 
@@ -1007,6 +1007,7 @@ typedef struct _FindKeyByPositionCallbackData FindKeyByPositionCallbackData;
 static gboolean
 sign (EekPoint *p1, EekPoint *p2, EekPoint *p3)
 {
+    // FIXME: what is this actually checking?
     return (p1->x - p3->x) * (p2->y - p3->y) -
         (p2->x - p3->x) * (p1->y - p3->y);
 }
