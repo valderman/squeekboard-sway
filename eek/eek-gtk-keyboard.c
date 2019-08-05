@@ -67,16 +67,6 @@ static void       on_key_pressed          (EekKey      *key,
                                            EekGtkKeyboard *self);
 static void       on_key_released         (EekKey      *key,
                                            EekGtkKeyboard *self);
-static void       on_key_locked          (EekKeyboard *keyboard,
-                                           EekKey      *key,
-                                           gpointer     user_data);
-static void       on_key_unlocked         (EekKeyboard *keyboard,
-                                           EekKey      *key,
-                                           gpointer     user_data);
-static void       on_symbol_index_changed (EekKeyboard *keyboard,
-                                           gint         group,
-                                           gint         level,
-                                           gpointer     user_data);
 static void       render_pressed_key      (GtkWidget   *widget,
                                            EekKey      *key);
 static void       render_locked_key       (GtkWidget   *widget,
@@ -339,18 +329,10 @@ eek_gtk_keyboard_set_keyboard (EekGtkKeyboard *self,
         return;
 
     if (priv->keyboard) {
-        g_signal_handlers_disconnect_by_data(priv->keyboard, self);
         g_object_unref (priv->keyboard);
     }
 
     priv->keyboard = g_object_ref (keyboard);
-
-    g_signal_connect (priv->keyboard, "key-locked",
-                      G_CALLBACK(on_key_locked), self);
-    g_signal_connect (priv->keyboard, "key-unlocked",
-                      G_CALLBACK(on_key_unlocked), self);
-    g_signal_connect (priv->keyboard, "symbol-index-changed",
-                      G_CALLBACK(on_symbol_index_changed), self);
 }
 
 static void
@@ -386,7 +368,6 @@ eek_gtk_keyboard_dispose (GObject *object)
     if (priv->keyboard) {
         GList *list, *head;
 
-        g_signal_handlers_disconnect_by_data(priv->keyboard, self);
         list = eek_keyboard_get_pressed_keys (priv->keyboard);
         for (head = list; head; head = g_list_next (head)) {
             g_log("squeek", G_LOG_LEVEL_DEBUG, "emit EekKey pressed");
@@ -591,47 +572,4 @@ on_key_released (EekKey      *key,
                             CA_PROP_APPLICATION_ID, "org.fedorahosted.Eekboard",
                             NULL);
 #endif
-}
-
-static void
-on_key_locked (EekKeyboard *keyboard,
-               EekKey      *key,
-               gpointer     user_data)
-{
-    GtkWidget *widget = user_data;
-    EekGtkKeyboardPrivate *priv = eek_gtk_keyboard_get_instance_private (user_data);
-
-    /* renderer may have not been set yet if the widget is a popup */
-    if (!priv->renderer)
-        return;
-
-    render_locked_key (widget, key);
-    gtk_widget_queue_draw (widget);
-}
-
-static void
-on_key_unlocked (EekKeyboard *keyboard,
-                 EekKey      *key,
-                 gpointer     user_data)
-{
-    GtkWidget *widget = user_data;
-    EekGtkKeyboardPrivate *priv = eek_gtk_keyboard_get_instance_private (user_data);
-
-    /* renderer may have not been set yet if the widget is a popup */
-    if (!priv->renderer)
-        return;
-
-    render_released_key (widget, key);
-    gtk_widget_queue_draw (GTK_WIDGET(widget));
-}
-
-static void
-on_symbol_index_changed (EekKeyboard *keyboard,
-                         gint         group,
-                         gint         level,
-                         gpointer     user_data)
-{
-    GtkWidget *widget = user_data;
-
-    gtk_widget_queue_draw (widget);
 }
