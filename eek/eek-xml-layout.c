@@ -602,7 +602,6 @@ struct _SymbolsParseData {
     gchar *icon;
     gchar *tooltip;
     guint keyval;
-    gint groups;
 };
 typedef struct _SymbolsParseData SymbolsParseData;
 
@@ -671,13 +670,6 @@ symbols_start_element_callback (GMarkupParseContext *pcontext,
                          G_MARKUP_ERROR_INVALID_CONTENT,
                          "no such key %s", attribute);
         }
-
-        attribute = get_attribute (attribute_names, attribute_values,
-                                   "groups");
-        if (attribute != NULL)
-            data->groups = strtol (attribute, NULL, 10);
-        else
-            data->groups = 1;
         goto out;
     }
 
