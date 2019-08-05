@@ -192,10 +192,6 @@ render_key_outline (EekRenderer *renderer,
     EekOutline *outline;
     EekBounds bounds;
     guint oref;
-    EekColor foreground, background, gradient_start, gradient_end, border_color;
-    EekGradientType gradient_type;
-    gint border_width;
-    gint border_radius;
 
     oref = eek_key_get_oref (key);
     outline = eek_keyboard_get_outline (priv->keyboard, oref);
@@ -989,7 +985,6 @@ eek_renderer_get_foreground_color (EekRenderer *renderer,
     g_return_if_fail (EEK_IS_RENDERER(renderer));
     g_return_if_fail (color);
 
-    EekRendererPrivate *priv = eek_renderer_get_instance_private (renderer);
     GtkStateFlags flags = GTK_STATE_FLAG_NORMAL;
     GdkRGBA gcolor;
 
