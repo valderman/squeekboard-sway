@@ -107,7 +107,6 @@ void
 emit_key_activated (EekboardContextService *manager,
                     LevelKeyboard     *keyboard,
                     guint            keycode,
-                    EekSymbol       *symbol,
                     EekModifierType  modifiers,
                     gboolean pressed,
                     uint32_t timestamp)
