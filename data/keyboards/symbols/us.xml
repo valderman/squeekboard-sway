@@ -1,5 +1,6 @@
 <?xml version='1.0' encoding='ASCII' standalone='yes'?>
 <symbols version="0.90">
+  <symbol label="*">asterisk</symbol>
   <key name="AD01">
     <symbol label="q">q</symbol>
     <symbol label="Q">Q</symbol>
@@ -58,7 +59,7 @@
     <symbol label="p">p</symbol>
     <symbol label="P">P</symbol>
     <symbol label="0">0</symbol>
-    <symbol label="&#9651;">U25B3</symbol>
+    <symbol label="&#961;">Greek_tau</symbol>
   </key>
   <key name="AC01">
     <symbol label="a">a</symbol>
@@ -183,10 +184,8 @@
     <symbol label=".">period</symbol>
   </key>
   <key name="ABC123">
-    <symbol label="123">show-numbers</symbol>
-    <symbol label="123">show-numbers</symbol>
-    <symbol label="ABC">show-letters</symbol>
-    <symbol label="ABC">show-letters</symbol>
+    <symbol label="123">show_numbers</symbol>
+    <symbol label="ABC">show_letters</symbol>
   </key>
   <key name="I149">
     <symbol label="&#9786;" icon="keyboard-mode-symbolic" tooltip="Setup">preferences</symbol>

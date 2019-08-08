@@ -144,15 +144,18 @@ eek_keyboard_get_property (GObject    *object,
 }
 
 /// Updates the state of locked keys based on the key that was activated
-static void
+/// FIXME: make independent of what the key are named,
+/// and instead refer to the contained symbols
+static guint
 set_key_states (LevelKeyboard    *keyboard,
-                        EekKey         *key)
+                        EekKey         *key,
+                guint new_level)
 {
     // Keys locking rules hardcoded for the time being...
     const gchar *name = eek_element_get_name(EEK_ELEMENT(key));
-    // Lock the shift whenever it's pressed
+    // Lock the shift whenever it's pressed on the baselevel
     // TODO: need to lock shift on the destination level
-    if (g_strcmp0(name, "LFSH-0") == 0) {
+    if (g_strcmp0(name, "Shift_L") == 0 && keyboard->level == 0) {
         EekModifierKey *modifier_key = g_slice_new (EekModifierKey);
         modifier_key->modifiers = 0;
         modifier_key->key = g_object_ref (key);
@@ -172,10 +175,12 @@ set_key_states (LevelKeyboard    *keyboard,
             g_list_free1 (head);
             head = next;
         }
-        keyboard->level = 0;
+        return 0;
     }
+    return new_level;
 }
 
+// FIXME: unhardcode, parse some user information as to which key triggers which view (level)
 static void
 set_level_from_press (LevelKeyboard *keyboard, EekKey *key)
 {
@@ -184,31 +189,21 @@ set_level_from_press (LevelKeyboard *keyboard, EekKey *key)
     /* Handle non-emitting keys */
     if (key) {
         const gchar *name = eek_element_get_name(EEK_ELEMENT(key));
-        if (g_strcmp0(name, "ABC123-0") == 0 || g_strcmp0(name, "ABC123-1") == 0) {
+        if (g_strcmp0(name, "show_numbers") == 0) {
             level = 2;
-        } else if (g_strcmp0(name, "ABC123-2") == 0 || g_strcmp0(name, "ABC123-3") == 0) {
+        } else if (g_strcmp0(name, "show_letters") == 0) {
             level = 0;
-        } else if (g_strcmp0(name, "LFSH-0") == 0) {
-            level = 1;
-        } else if (g_strcmp0(name, "LFSH-1") == 0) {
-            level = 0;
-        } else if (g_strcmp0(name, "LFSH-2") == 0) {
-            level = 3;
-        } else if (g_strcmp0(name, "LFSH-3") == 0) {
-            level = 2;
+        } else if (g_strcmp0(name, "Shift_L") == 0) {
+            level ^= 1;
         }
     }
 
-    set_key_states(keyboard, key);
-
-    keyboard->level = level;
+    keyboard->level = set_key_states(keyboard, key, level);
 
     eek_layout_update_layout(keyboard);
 }
 
 void eek_keyboard_press_key(LevelKeyboard *keyboard, EekKey *key, guint32 timestamp) {
-    EekKeyboardPrivate *priv = EEK_KEYBOARD_GET_PRIVATE(level_keyboard_current(keyboard));
-
     eek_key_set_pressed(key, TRUE);
     keyboard->pressed_keys = g_list_prepend (keyboard->pressed_keys, key);
 
@@ -218,8 +213,8 @@ void eek_keyboard_press_key(LevelKeyboard *keyboard, EekKey *key, guint32 timest
     if (!symbol)
         return;
 
-    set_key_states (keyboard, key);
-    set_level_from_press (keyboard, key);
+    // Only take action about setting level *after* the key has taken effect, i.e. on release
+    //set_level_from_press (keyboard, key);
 
     // "Borrowed" from eek-context-service; doesn't influence the state but forwards the event
 
@@ -231,8 +226,6 @@ void eek_keyboard_press_key(LevelKeyboard *keyboard, EekKey *key, guint32 timest
 void eek_keyboard_release_key(LevelKeyboard *keyboard,
                                EekKey      *key,
                                guint32      timestamp) {
-    EekKeyboardPrivate *priv = EEK_KEYBOARD_GET_PRIVATE(level_keyboard_current(keyboard));
-
     for (GList *head = keyboard->pressed_keys; head; head = g_list_next (head)) {
         if (head->data == key) {
             keyboard->pressed_keys = g_list_remove_link (keyboard->pressed_keys, head);
@@ -246,7 +239,6 @@ void eek_keyboard_release_key(LevelKeyboard *keyboard,
     if (!symbol)
         return;
 
-    set_key_states (keyboard, key);
     set_level_from_press (keyboard, key);
 
     // "Borrowed" from eek-context-service; doesn't influence the state but forwards the event
@@ -311,7 +303,6 @@ eek_keyboard_class_init (EekKeyboardClass *klass)
 {
     EekContainerClass *container_class = EEK_CONTAINER_CLASS (klass);
     GObjectClass      *gobject_class = G_OBJECT_CLASS (klass);
-    GParamSpec        *pspec;
 
     /* signals */
     container_class->child_added = eek_keyboard_real_child_added;

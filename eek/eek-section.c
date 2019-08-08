@@ -121,7 +121,8 @@ on_unlocked (EekKey     *key,
 static EekKey *
 eek_section_real_create_key (EekSection *self,
                              const gchar *name,
-                             gint        keycode)
+                             gint        keycode,
+                             guint oref)
 {
     EekSectionPrivate *priv = (EekSectionPrivate*)eek_section_get_instance_private (self);
 
@@ -131,12 +132,32 @@ eek_section_real_create_key (EekSection *self,
     EekKey *key = (EekKey*)g_object_new (EEK_TYPE_KEY,
                                          "name", name,
                                          NULL);
-    eek_key_set_keycode(key, keycode);
     g_return_val_if_fail (key, NULL);
+    eek_key_set_keycode(key, keycode);
+    eek_key_set_oref(key, oref);
 
     EEK_CONTAINER_GET_CLASS(self)->add_child (EEK_CONTAINER(self),
                                               EEK_ELEMENT(key));
 
+    return key;
+}
+
+EekKey *eek_section_create_button(EekSection *self,
+                                  const gchar *name,
+                                    struct squeek_key *state) {
+    EekSectionPrivate *priv = (EekSectionPrivate*)eek_section_get_instance_private (self);
+
+    EekRow *row = &priv->row;
+    row->num_columns++;
+
+    EekKey *key = (EekKey*)g_object_new (EEK_TYPE_KEY,
+                                         "name", name,
+                                         NULL);
+    g_return_val_if_fail (key, NULL);
+    eek_key_share_state(key, state);
+
+    EEK_CONTAINER_GET_CLASS(self)->add_child (EEK_CONTAINER(self),
+                                              EEK_ELEMENT(key));
     return key;
 }
 
@@ -383,12 +404,13 @@ eek_section_get_row (EekSection     *section,
 EekKey *
 eek_section_create_key (EekSection *section,
                         const gchar *name,
-                        guint        keycode)
+                        guint        keycode,
+                        guint oref)
 {
     g_return_val_if_fail (EEK_IS_SECTION(section), NULL);
-    return EEK_SECTION_GET_CLASS(section)->create_key (section,
+    return eek_section_real_create_key (section,
                                                        name,
-                                                       keycode);
+                                                       keycode, oref);
 }
 
 const double keyspacing = 4.0;

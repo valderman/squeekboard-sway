@@ -194,6 +194,10 @@ eek_key_init (EekKey *self)
     priv->state = squeek_key_new (0);
 }
 
+void eek_key_share_state(EekKey *self, struct squeek_key *state) {
+    EekKeyPrivate *priv = eek_key_get_instance_private (self);
+    priv->state = state;
+}
 /**
  * eek_key_set_keycode:
  * @key: an #EekKey

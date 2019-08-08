@@ -71,6 +71,6 @@ gboolean         eek_key_is_pressed          (EekKey          *key);
 gboolean         eek_key_is_locked           (EekKey          *key);
 void             eek_key_set_pressed         (EekKey          *key,
                                               gboolean         value);
-
+void eek_key_share_state(EekKey *self, struct squeek_key *state);
 G_END_DECLS
 #endif  /* EEK_KEY_H */

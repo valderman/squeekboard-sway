@@ -94,6 +94,14 @@ pub mod c {
                 }
             });
 
+        let key = unsafe { &mut *key };
+        
+        if key.symbols.len() > 0 {
+            eprintln!("Key {:?} already has a symbol defined", text);
+            return;
+        }
+
+
         let icon = into_cstring(icon)
             .unwrap_or_else(|e| {
                 eprintln!("Icon name unreadable: {}", e);
@@ -155,7 +163,6 @@ pub mod c {
             _ => panic!("unsupported element type {:?}", element),
         };
         
-        let key = unsafe { &mut *key };
         key.symbols.push(symbol);
     }
 
@@ -213,7 +220,7 @@ pub mod c {
                 };
                 format!("[ {} ], [ {} ]", first, second)
             },
-            _ => panic!("Unsupported number of symbols"),
+            _ => panic!("Unsupported number of symbols: {}", symbol_names.len()),
         };
 
         CString::new(format!("        key <{}> {{ {} }};\n", key_name, inner))

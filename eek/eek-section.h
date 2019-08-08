@@ -29,6 +29,7 @@
 #include "eek-container.h"
 #include "eek-types.h"
 #include "eek-keyboard.h"
+#include "src/keyboard.h"
 
 G_BEGIN_DECLS
 
@@ -96,8 +97,10 @@ void    eek_section_get_row              (EekSection     *section,
 
 EekKey *eek_section_create_key           (EekSection     *section,
                                           const gchar    *name,
-                                          guint keycode);
-
+                                          guint keycode, guint oref);
+EekKey *eek_section_create_button(EekSection *self,
+                                  const gchar *name,
+                                    struct squeek_key *state);
 void eek_section_place_keys              (EekSection     *section, LevelKeyboard *keyboard);
 
 G_END_DECLS
