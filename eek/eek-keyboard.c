@@ -193,6 +193,8 @@ set_level_from_press (LevelKeyboard *keyboard, EekKey *key)
             level = 2;
         } else if (g_strcmp0(name, "show_letters") == 0) {
             level = 0;
+        } else if (g_strcmp0(name, "show_symbols") == 0) {
+            level = 3;
         } else if (g_strcmp0(name, "Shift_L") == 0) {
             level ^= 1;
         }

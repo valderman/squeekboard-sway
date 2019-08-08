@@ -1,6 +1,7 @@
 <?xml version='1.0' encoding='ASCII' standalone='yes'?>
 <symbols version="0.90">
   <symbol label="*">asterisk</symbol>
+  <symbol label="+/=">show_symbols</symbol>
   <key name="AD01">
     <symbol label="q">q</symbol>
     <symbol label="Q">Q</symbol>

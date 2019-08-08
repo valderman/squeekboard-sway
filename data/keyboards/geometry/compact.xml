@@ -74,6 +74,7 @@
   <button name="preferences" oref="altline" />
   <button name="show_numbers" oref="altline" keycode="0" />
   <button name="show_letters" oref="altline" keycode="0" />
+  <button name="show_symbols" oref="altline" keycode="0" />
   <button name="space" oref="spaceline" />
   <button name="return" oref="outline7" />
 
@@ -90,15 +91,15 @@
     <section angle="0"> show_numbers preferences         space        period    Return    </section>
   </view>
   <view>
-    <section angle="0">1 2 3 4 5 5 6 7 8 9 0</section>
+    <section angle="0">1 2 3 4 5 6 7 8 9 0</section>
     <section angle="0">at numbersign dollar percent ampersand minus underscore plus parenleft parenright</section>
-    <section angle="0"> Shift_L   comma quotedbl quoteright colon semicolon exclam question  BackSpace </section>
+    <section angle="0"> show_symbols   comma quotedbl quoteright colon semicolon exclam question  BackSpace </section>
     <section angle="0"> show_letters preferences         space        period    Return    </section>
   </view>
   <view>
     <section angle="0">asciitilde quoteleft bar U00B7 squareroot Greek_pi Greek_tau division multiply paragraph</section>
     <section angle="0">copyright U00AE U00A3 EuroSign U00A5 asciicircum degree asterisk braceleft braceright</section>
-    <section angle="0"> Shift_L   backslash slash less greater equal bracketleft bracketright  BackSpace </section>
+    <section angle="0"> show_numbers   backslash slash less greater equal bracketleft bracketright  BackSpace </section>
     <section angle="0"> show_letters preferences         space        period    Return    </section>
   </view>
 </geometry>
