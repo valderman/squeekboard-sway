@@ -186,7 +186,7 @@ static void drag(EekGtkKeyboard *self,
     } else {
         for (head = list; head; head = g_list_next (head)) {
             eek_keyboard_release_key(priv->keyboard, EEK_KEY(head->data), time);
-            on_key_released(key, self);
+            on_key_released(EEK_KEY(head->data), self);
         }
         g_list_free (list);
     }
