@@ -43,7 +43,7 @@ struct _EekLayoutClass
     GObjectClass parent_class;
 
     /*< public >*/
-    EekKeyboard* (* create_keyboard) (EekboardContextService *manager,
+    LevelKeyboard* (* create_keyboard) (EekboardContextService *manager,
                                       EekLayout *self,
                                       gdouble    initial_width,
                                       gdouble    initial_height);
@@ -55,9 +55,14 @@ struct _EekLayoutClass
 
 GType        eek_layout_get_type  (void) G_GNUC_CONST;
 
-void         eek_layout_place_sections(EekKeyboard *keyboard);
+void         eek_layout_place_sections(LevelKeyboard *keyboard, EekKeyboard *level);
 
-void         eek_layout_update_layout(EekKeyboard *keyboard);
+void         eek_layout_update_layout(LevelKeyboard *keyboard);
 
+
+LevelKeyboard *
+level_keyboard_from_layout (EekLayout *layout,
+                  gdouble    initial_width,
+                  gdouble    initial_height);
 G_END_DECLS
 #endif  /* EEK_LAYOUT_H */

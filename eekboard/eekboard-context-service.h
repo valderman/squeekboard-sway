@@ -97,13 +97,12 @@ void          eekboard_context_service_show_keyboard
 void          eekboard_context_service_hide_keyboard
                                               (EekboardContextService *context);
 void          eekboard_context_service_destroy (EekboardContextService *context);
-EekKeyboard  *eekboard_context_service_get_keyboard
-                                              (EekboardContextService *context);
+LevelKeyboard *eekboard_context_service_get_keyboard(EekboardContextService *context);
 gboolean      eekboard_context_service_get_fullscreen
                                               (EekboardContextService *context);
 
 void eekboard_context_service_set_keymap(EekboardContextService *context,
-                                         const EekKeyboard *keyboard);
+                                         const LevelKeyboard *keyboard);
 
 void eekboard_context_service_set_hint_purpose(EekboardContextService *context,
                                                uint32_t hint,

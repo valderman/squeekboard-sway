@@ -83,9 +83,7 @@ on_notify_keyboard (GObject              *object,
                     GParamSpec           *spec,
                     ServerContextService *context)
 {
-    const EekKeyboard *keyboard;
-
-    keyboard = eekboard_context_service_get_keyboard (EEKBOARD_CONTEXT_SERVICE(context));
+    const LevelKeyboard *keyboard = eekboard_context_service_get_keyboard (EEKBOARD_CONTEXT_SERVICE(context));
 
     if (!keyboard)
         g_error("Programmer error: keyboard layout was unset!");
@@ -141,13 +139,13 @@ set_geometry (ServerContextService *context)
     GdkWindow   *root     = gdk_screen_get_root_window (screen);
     GdkDisplay  *display  = gdk_display_get_default ();
     GdkMonitor  *monitor  = gdk_display_get_monitor_at_window (display, root);
-    EekKeyboard *keyboard = eekboard_context_service_get_keyboard (EEKBOARD_CONTEXT_SERVICE(context));
+    LevelKeyboard *keyboard = eekboard_context_service_get_keyboard (EEKBOARD_CONTEXT_SERVICE(context));
 
     GdkRectangle rect;
     EekBounds bounds;
 
     gdk_monitor_get_geometry (monitor, &rect);
-    eek_element_get_bounds (EEK_ELEMENT(keyboard), &bounds);
+    eek_element_get_bounds (EEK_ELEMENT(level_keyboard_current(keyboard)), &bounds);
 
     if (eekboard_context_service_get_fullscreen (EEKBOARD_CONTEXT_SERVICE(context))) {
         gint width  = rect.width;
@@ -228,14 +226,12 @@ destroy_window (ServerContextService *context)
 static void
 make_widget (ServerContextService *context)
 {
-    EekKeyboard *keyboard;
-
     if (context->widget) {
         gtk_widget_destroy(context->widget);
         context->widget = NULL;
     }
 
-    keyboard = eekboard_context_service_get_keyboard (EEKBOARD_CONTEXT_SERVICE(context));
+    LevelKeyboard *keyboard = eekboard_context_service_get_keyboard (EEKBOARD_CONTEXT_SERVICE(context));
 
     context->widget = eek_gtk_keyboard_new (keyboard);
 

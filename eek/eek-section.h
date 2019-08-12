@@ -28,6 +28,8 @@
 #include <glib-object.h>
 #include "eek-container.h"
 #include "eek-types.h"
+#include "eek-keyboard.h"
+#include "src/keyboard.h"
 
 G_BEGIN_DECLS
 
@@ -66,10 +68,6 @@ struct _EekSectionClass
                                      gint            keycode);
 
     /* signals */
-    void    (* key_pressed)         (EekSection     *self,
-                                     EekKey         *key);
-    void    (* key_released)        (EekSection     *self,
-                                     EekKey         *key);
     void    (* key_locked)          (EekSection     *self,
                                      EekKey         *key);
     void    (* key_unlocked)        (EekSection     *self,
@@ -99,12 +97,11 @@ void    eek_section_get_row              (EekSection     *section,
 
 EekKey *eek_section_create_key           (EekSection     *section,
                                           const gchar    *name,
-                                          gint            keycode);
-
-EekKey *eek_section_find_key_by_keycode  (EekSection     *section,
-                                          guint           keycode);
-
-void eek_section_place_keys              (EekSection     *section, EekKeyboard *keyboard);
+                                          guint keycode, guint oref);
+EekKey *eek_section_create_button(EekSection *self,
+                                  const gchar *name,
+                                    struct squeek_key *state);
+void eek_section_place_keys              (EekSection     *section, LevelKeyboard *keyboard);
 
 G_END_DECLS
 #endif  /* EEK_SECTION_H */

@@ -150,6 +150,7 @@ typedef struct _EekOutline EekOutline;
 typedef struct _EekColor EekColor;
 
 typedef struct _EekboardContextService EekboardContextService;
+typedef struct _LevelKeyboard LevelKeyboard;
 
 /**
  * EekPoint:

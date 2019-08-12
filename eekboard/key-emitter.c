@@ -22,6 +22,7 @@
 #include "eekboard/key-emitter.h"
 
 #include <gdk/gdk.h>
+#include <X11/XKBlib.h>
 
 #include "eekboard/eekboard-context-service.h"
 
@@ -84,14 +85,14 @@ update_modifier_info (SeatEmitter *client)
 
 static void
 send_fake_key (SeatEmitter *emitter,
-               EekKeyboard *keyboard,
+               LevelKeyboard *keyboard,
                guint    keycode,
                guint    keyboard_modifiers,
                gboolean pressed,
                uint32_t timestamp)
 {
     uint32_t proto_modifiers = 0;
-    guint level = eek_element_get_level(EEK_ELEMENT(keyboard));
+    guint level = keyboard->level;
     uint32_t group = (level / 2);
 
     if (keyboard_modifiers & EEK_SHIFT_MASK)
@@ -104,7 +105,7 @@ send_fake_key (SeatEmitter *emitter,
 
 void
 emit_key_activated (EekboardContextService *manager,
-                    EekKeyboard     *keyboard,
+                    LevelKeyboard     *keyboard,
                     guint            keycode,
                     EekSymbol       *symbol,
                     EekModifierType  modifiers,

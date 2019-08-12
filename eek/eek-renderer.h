@@ -21,9 +21,10 @@
 #ifndef EEK_RENDERER_H
 #define EEK_RENDERER_H 1
 
+#include <gtk/gtk.h>
 #include <pango/pangocairo.h>
+
 #include "eek-keyboard.h"
-#include "eek-keysym.h"
 #include "eek-types.h"
 
 G_BEGIN_DECLS
@@ -44,6 +45,7 @@ struct _EekRendererClass
     void             (* render_key)         (EekRenderer *self,
                                              cairo_t     *cr,
                                              EekKey      *key,
+                                             guint        level,
                                              gdouble      scale,
                                              gboolean     rotate);
 
@@ -61,7 +63,7 @@ struct _EekRendererClass
 };
 
 GType            eek_renderer_get_type         (void) G_GNUC_CONST;
-EekRenderer     *eek_renderer_new              (EekKeyboard     *keyboard,
+EekRenderer     *eek_renderer_new              (LevelKeyboard     *keyboard,
                                                 PangoContext    *pcontext,
                                                 GtkStyleContext *scontext);
 void             eek_renderer_set_allocation_size
@@ -95,7 +97,7 @@ void             eek_renderer_render_key_outline
 
 void             eek_renderer_render_key       (EekRenderer     *renderer,
                                                 cairo_t         *cr,
-                                                EekKey          *key,
+                                                EekKey          *key, guint level,
                                                 gdouble          scale,
                                                 gboolean         rotate);
 

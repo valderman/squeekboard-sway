@@ -23,15 +23,15 @@
 #include <math.h>
 #include <string.h>
 #include <gdk-pixbuf/gdk-pixbuf.h>
-#include <gtk/gtk.h>
 
 #include "eek-key.h"
 #include "eek-section.h"
+#include "src/symbol.h"
+
 #include "eek-renderer.h"
 
 enum {
     PROP_0,
-    PROP_KEYBOARD,
     PROP_PCONTEXT,
     PROP_STYLE_CONTEXT,
     PROP_LAST
@@ -39,7 +39,7 @@ enum {
 
 typedef struct _EekRendererPrivate
 {
-    EekKeyboard *keyboard;
+    LevelKeyboard *keyboard;
     PangoContext *pcontext;
     GtkCssProvider *css_provider;
     GtkStyleContext *scontext;
@@ -62,7 +62,6 @@ typedef struct _EekRendererPrivate
     GHashTable *active_outline_surface_cache;
     GHashTable *icons;
     cairo_surface_t *keyboard_surface;
-    gulong symbol_index_changed_handler;
 
 } EekRendererPrivate;
 
@@ -79,21 +78,18 @@ extern void _eek_rounded_polygon               (cairo_t     *cr,
 
 static void eek_renderer_real_render_key_label (EekRenderer *self,
                                                 PangoLayout *layout,
-                                                EekKey      *key);
+                                                EekKey      *key, guint level);
 
 static void invalidate                         (EekRenderer *renderer);
 static void render_key                         (EekRenderer *self,
                                                 cairo_t     *cr,
-                                                EekKey      *key,
+                                                EekKey      *key, guint level,
                                                 gboolean     active);
-static void on_symbol_index_changed            (EekKeyboard *keyboard,
-                                                gint         group,
-                                                gint         level,
-                                                gpointer     user_data);
 
 struct _CreateKeyboardSurfaceCallbackData {
     cairo_t *cr;
     EekRenderer *renderer;
+    uint level;
 };
 typedef struct _CreateKeyboardSurfaceCallbackData CreateKeyboardSurfaceCallbackData;
 
@@ -114,7 +110,7 @@ create_keyboard_surface_key_callback (EekElement *element,
                      bounds.width + 100,
                      bounds.height + 100);
     cairo_clip (data->cr);
-    render_key (data->renderer, data->cr, EEK_KEY(element), FALSE);
+    render_key (data->renderer, data->cr, EEK_KEY(element), data->level, FALSE);
 
     cairo_restore (data->cr);
 }
@@ -152,7 +148,7 @@ render_keyboard_surface (EekRenderer *renderer)
 
     eek_renderer_get_foreground_color (renderer, priv->scontext, &foreground);
 
-    eek_element_get_bounds (EEK_ELEMENT(priv->keyboard), &bounds);
+    eek_element_get_bounds (EEK_ELEMENT(level_keyboard_current(priv->keyboard)), &bounds);
 
     data.cr = cairo_create (priv->keyboard_surface);
     data.renderer = renderer;
@@ -177,8 +173,9 @@ render_keyboard_surface (EekRenderer *renderer)
                            foreground.blue,
                            foreground.alpha);
 
+    data.level = priv->keyboard->level;
     /* draw sections */
-    eek_container_foreach_child (EEK_CONTAINER(priv->keyboard),
+    eek_container_foreach_child (EEK_CONTAINER(level_keyboard_current(priv->keyboard)),
                                  create_keyboard_surface_section_callback,
                                  &data);
     cairo_restore (data.cr);
@@ -198,7 +195,7 @@ render_key_outline (EekRenderer *renderer,
     guint oref;
 
     oref = eek_key_get_oref (key);
-    outline = eek_keyboard_get_outline (priv->keyboard, oref);
+    outline = level_keyboard_get_outline (priv->keyboard, oref);
     if (outline == NULL)
         return;
 
@@ -218,6 +215,7 @@ static void
 render_key (EekRenderer *self,
             cairo_t     *cr,
             EekKey      *key,
+            guint        level,
             gboolean     active)
 {
     EekRendererPrivate *priv = eek_renderer_get_instance_private (self);
@@ -225,17 +223,14 @@ render_key (EekRenderer *self,
     cairo_surface_t *outline_surface;
     EekBounds bounds;
     guint oref;
-    EekSymbol *symbol;
+    struct squeek_symbol *symbol;
     GHashTable *outline_surface_cache;
     PangoLayout *layout;
     PangoRectangle extents = { 0, };
     EekColor foreground;
 
-    if (!eek_key_has_label(key))
-        return;
-
     oref = eek_key_get_oref (key);
-    outline = eek_keyboard_get_outline (priv->keyboard, oref);
+    outline = level_keyboard_get_outline (priv->keyboard, oref);
     if (outline == NULL)
         return;
 
@@ -280,15 +275,15 @@ render_key (EekRenderer *self,
 
     eek_renderer_get_foreground_color (self, priv->key_context, &foreground);
     /* render icon (if any) */
-    symbol = eek_key_get_symbol_with_fallback (key, 0, 0);
+    symbol = eek_key_get_symbol_at_index (key, 0, level);
     if (!symbol)
         return;
 
-    if (eek_symbol_get_icon_name (symbol)) {
+    if (squeek_symbol_get_icon_name (symbol)) {
         gint scale = priv->scale_factor;
         cairo_surface_t *icon_surface =
             eek_renderer_get_icon_surface (self,
-                                           eek_symbol_get_icon_name (symbol),
+                                           squeek_symbol_get_icon_name (symbol),
                                            16 / priv->scale,
                                            scale);
         if (icon_surface) {
@@ -316,7 +311,7 @@ render_key (EekRenderer *self,
 
     /* render label */
     layout = pango_cairo_create_layout (cr);
-    eek_renderer_real_render_key_label (self, layout, key);
+    eek_renderer_real_render_key_label (self, layout, key, level);
     pango_layout_get_extents (layout, NULL, &extents);
 
     cairo_save (cr);
@@ -383,21 +378,22 @@ eek_renderer_apply_transformation_for_key (EekRenderer *self,
 static void
 eek_renderer_real_render_key_label (EekRenderer *self,
                                     PangoLayout *layout,
-                                    EekKey      *key)
+                                    EekKey      *key,
+                                    guint        level)
 {
     EekRendererPrivate *priv = eek_renderer_get_instance_private (self);
-    EekSymbol *symbol;
+    struct squeek_symbol *symbol;
     const gchar *label;
     EekBounds bounds;
     PangoFontDescription *font;
     PangoLayoutLine *line;
     gdouble scale;
 
-    symbol = eek_key_get_symbol_with_fallback (key, 0, 0);
+    symbol = eek_key_get_symbol_at_index(key, 0, level);
     if (!symbol)
         return;
 
-    label = eek_symbol_get_label (symbol);
+    label = squeek_symbol_get_label (symbol);
     if (!label)
         return;
 
@@ -464,6 +460,7 @@ static void
 eek_renderer_real_render_key (EekRenderer *self,
                               cairo_t     *cr,
                               EekKey      *key,
+                              guint        level,
                               gdouble      scale,
                               gboolean     rotate)
 {
@@ -480,7 +477,7 @@ eek_renderer_real_render_key (EekRenderer *self,
     cairo_translate (cr, bounds.x, bounds.y);
 
     eek_renderer_apply_transformation_for_key (self, cr, key, scale, rotate);
-    render_key (self, cr, key, eek_key_is_pressed (key) || eek_key_is_locked (key));
+    render_key (self, cr, key, level, eek_key_is_pressed (key) || eek_key_is_locked (key));
     cairo_restore (cr);
 }
 
@@ -526,15 +523,6 @@ eek_renderer_set_property (GObject      *object,
 		    EEK_RENDERER(object));
 
     switch (prop_id) {
-    case PROP_KEYBOARD:
-        priv->keyboard = g_value_get_object (value);
-        g_object_ref (priv->keyboard);
-
-        priv->symbol_index_changed_handler =
-            g_signal_connect (priv->keyboard, "symbol-index-changed",
-                              G_CALLBACK(on_symbol_index_changed),
-                              object);
-        break;
     case PROP_PCONTEXT:
         priv->pcontext = g_value_get_object (value);
         g_object_ref (priv->pcontext);
@@ -555,13 +543,7 @@ eek_renderer_get_property (GObject    *object,
                            GValue     *value,
                            GParamSpec *pspec)
 {
-    EekRendererPrivate *priv = eek_renderer_get_instance_private (
-		    EEK_RENDERER(object));
-
     switch (prop_id) {
-    case PROP_KEYBOARD:
-        g_value_set_object (value, priv->keyboard);
-        break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
         break;
@@ -575,11 +557,6 @@ eek_renderer_dispose (GObject *object)
     EekRendererPrivate *priv = eek_renderer_get_instance_private (self);
 
     if (priv->keyboard) {
-        if (g_signal_handler_is_connected (priv->keyboard,
-                                           priv->symbol_index_changed_handler))
-            g_signal_handler_disconnect (priv->keyboard,
-                                         priv->symbol_index_changed_handler);
-        g_object_unref (priv->keyboard);
         priv->keyboard = NULL;
     }
     if (priv->pcontext) {
@@ -622,15 +599,6 @@ eek_renderer_class_init (EekRendererClass *klass)
     gobject_class->get_property = eek_renderer_get_property;
     gobject_class->dispose = eek_renderer_dispose;
     gobject_class->finalize = eek_renderer_finalize;
-
-    pspec = g_param_spec_object ("keyboard",
-                                 "Keyboard",
-                                 "Keyboard",
-                                 EEK_TYPE_KEYBOARD,
-                                 G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE);
-    g_object_class_install_property (gobject_class,
-                                     PROP_KEYBOARD,
-                                     pspec);
 
     pspec = g_param_spec_object ("pango-context",
                                  "Pango Context",
@@ -677,7 +645,6 @@ eek_renderer_init (EekRenderer *self)
                                NULL,
                                (GDestroyNotify)cairo_surface_destroy);
     priv->keyboard_surface = NULL;
-    priv->symbol_index_changed_handler = 0;
 
     GtkIconTheme *theme = gtk_icon_theme_get_default ();
 
@@ -723,26 +690,18 @@ invalidate (EekRenderer *renderer)
     }
 }
 
-static void
-on_symbol_index_changed (EekKeyboard *keyboard,
-                         gint         group,
-                         gint         level,
-                         gpointer     user_data)
-{
-    EekRenderer *renderer = user_data;
-    invalidate (renderer);
-}
-
 EekRenderer *
-eek_renderer_new (EekKeyboard  *keyboard,
+eek_renderer_new (LevelKeyboard  *keyboard,
                   PangoContext *pcontext,
                   GtkStyleContext *scontext)
 {
-    return g_object_new (EEK_TYPE_RENDERER,
-                         "keyboard", keyboard,
+    EekRenderer *renderer = g_object_new (EEK_TYPE_RENDERER,
                          "pango-context", pcontext,
                          "style-context", scontext,
                          NULL);
+    EekRendererPrivate *priv = eek_renderer_get_instance_private (renderer);
+    priv->keyboard = keyboard;
+    return renderer;
 }
 
 void
@@ -763,7 +722,7 @@ eek_renderer_set_allocation_size (EekRenderer *renderer,
 
     /* Calculate a scale factor to use when rendering the keyboard into the
        available space. */
-    eek_element_get_bounds (EEK_ELEMENT(priv->keyboard), &bounds);
+    eek_element_get_bounds (EEK_ELEMENT(level_keyboard_current(priv->keyboard)), &bounds);
 
     gdouble w = (bounds.x * 2) + bounds.width;
     gdouble h = (bounds.y * 2) + bounds.height;
@@ -788,7 +747,7 @@ eek_renderer_get_size (EekRenderer *renderer,
 
     EekRendererPrivate *priv = eek_renderer_get_instance_private (renderer);
 
-    eek_element_get_bounds (EEK_ELEMENT(priv->keyboard), &bounds);
+    eek_element_get_bounds (EEK_ELEMENT(level_keyboard_current(priv->keyboard)), &bounds);
     if (width)
         *width = bounds.width;
     if (height)
@@ -816,7 +775,7 @@ eek_renderer_get_key_bounds (EekRenderer *renderer,
 
     eek_element_get_bounds (EEK_ELEMENT(key), bounds);
     eek_element_get_bounds (section, &section_bounds);
-    eek_element_get_bounds (EEK_ELEMENT(priv->keyboard),
+    eek_element_get_bounds (EEK_ELEMENT(level_keyboard_current(priv->keyboard)),
                             &keyboard_bounds);
 
     if (!rotate) {
@@ -940,6 +899,7 @@ void
 eek_renderer_render_key (EekRenderer *renderer,
                          cairo_t     *cr,
                          EekKey      *key,
+                         guint        level,
                          gdouble      scale,
                          gboolean     rotate)
 {
@@ -948,7 +908,7 @@ eek_renderer_render_key (EekRenderer *renderer,
     g_return_if_fail (scale >= 0.0);
 
     EEK_RENDERER_GET_CLASS(renderer)->
-        render_key (renderer, cr, key, scale, rotate);
+        render_key (renderer, cr, key, level, scale, rotate);
 }
 
 void
@@ -1106,7 +1066,7 @@ eek_renderer_find_key_by_position (EekRenderer *renderer,
     g_return_val_if_fail (EEK_IS_RENDERER(renderer), NULL);
 
     EekRendererPrivate *priv = eek_renderer_get_instance_private (renderer);
-    eek_element_get_bounds (EEK_ELEMENT(priv->keyboard), &bounds);
+    eek_element_get_bounds (EEK_ELEMENT(level_keyboard_current(priv->keyboard)), &bounds);
 
     /* Transform from widget coordinates to keyboard coordinates */
     x = (x - priv->origin_x)/priv->scale - bounds.x;
@@ -1125,7 +1085,7 @@ eek_renderer_find_key_by_position (EekRenderer *renderer,
     data.key = NULL;
     data.renderer = renderer;
 
-    eek_container_find (EEK_CONTAINER(priv->keyboard),
+    eek_container_find (EEK_CONTAINER(level_keyboard_current(priv->keyboard)),
                         find_key_by_position_section_callback,
                         &data);
     return data.key;

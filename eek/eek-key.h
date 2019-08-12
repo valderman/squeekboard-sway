@@ -26,7 +26,6 @@
 #define EEK_KEY_H 1
 
 #include "eek-element.h"
-#include "eek-symbol-matrix.h"
 
 G_BEGIN_DECLS
 
@@ -59,19 +58,10 @@ GType            eek_key_get_type            (void) G_GNUC_CONST;
 void             eek_key_set_keycode         (EekKey          *key,
                                               guint            keycode);
 guint            eek_key_get_keycode         (EekKey          *key);
-void             eek_key_set_symbol_matrix   (EekKey          *key,
-                                              EekSymbolMatrix *matrix);
-EekSymbolMatrix *eek_key_get_symbol_matrix   (EekKey          *key);
-EekSymbol       *eek_key_get_symbol          (EekKey          *key);
-EekSymbol       *eek_key_get_symbol_with_fallback
-                                             (EekKey          *key,
-                                              gint             fallback_group,
-                                              gint             fallback_level);
-EekSymbol       *eek_key_get_symbol_at_index (EekKey          *key,
+struct squeek_key *eek_key_get_state(EekKey *key);
+struct squeek_symbol *eek_key_get_symbol_at_index (EekKey          *key,
                                               gint             group,
-                                              gint             level,
-                                              gint             fallback_group,
-                                              gint             fallback_level);
+                                              guint level);
 
 void             eek_key_set_oref            (EekKey          *key,
                                               guint            oref);
@@ -81,8 +71,6 @@ gboolean         eek_key_is_pressed          (EekKey          *key);
 gboolean         eek_key_is_locked           (EekKey          *key);
 void             eek_key_set_pressed         (EekKey          *key,
                                               gboolean         value);
-
-gboolean         eek_key_has_label           (EekKey          *key);
-
+void eek_key_share_state(EekKey *self, struct squeek_key *state);
 G_END_DECLS
 #endif  /* EEK_KEY_H */

@@ -32,9 +32,9 @@
 #include <string.h>
 
 #include "eek-keyboard.h"
-#include "eek-section.h"
 #include "eek-key.h"
-#include "eek-symbol.h"
+
+#include "eek-section.h"
 
 enum {
     PROP_0,
@@ -121,7 +121,8 @@ on_unlocked (EekKey     *key,
 static EekKey *
 eek_section_real_create_key (EekSection *self,
                              const gchar *name,
-                             gint        keycode)
+                             gint        keycode,
+                             guint oref)
 {
     EekSectionPrivate *priv = (EekSectionPrivate*)eek_section_get_instance_private (self);
 
@@ -130,9 +131,10 @@ eek_section_real_create_key (EekSection *self,
 
     EekKey *key = (EekKey*)g_object_new (EEK_TYPE_KEY,
                                          "name", name,
-                                         "keycode", keycode,
                                          NULL);
     g_return_val_if_fail (key, NULL);
+    eek_key_set_keycode(key, keycode);
+    eek_key_set_oref(key, oref);
 
     EEK_CONTAINER_GET_CLASS(self)->add_child (EEK_CONTAINER(self),
                                               EEK_ELEMENT(key));
@@ -140,79 +142,28 @@ eek_section_real_create_key (EekSection *self,
     return key;
 }
 
-static void
-set_level_from_modifiers (EekSection *self)
-{
-    EekSectionPrivate *priv = eek_section_get_instance_private (self);
-    EekKeyboard *keyboard;
-    EekModifierType num_lock_mask;
-    gint level = -1;
+EekKey *eek_section_create_button(EekSection *self,
+                                  const gchar *name,
+                                    struct squeek_key *state) {
+    EekSectionPrivate *priv = (EekSectionPrivate*)eek_section_get_instance_private (self);
 
-    keyboard = EEK_KEYBOARD(eek_element_get_parent (EEK_ELEMENT(self)));
-    num_lock_mask = eek_keyboard_get_num_lock_mask (keyboard);
-    if (priv->modifiers & num_lock_mask)
-        level = 1;
-    eek_element_set_level (EEK_ELEMENT(self), level);
-}
+    EekRow *row = &priv->row;
+    row->num_columns++;
 
-static void
-eek_section_real_key_pressed (EekSection *self, EekKey *key)
-{
-    EekSectionPrivate *priv = eek_section_get_instance_private (self);
-    EekSymbol *symbol;
-    EekKeyboard *keyboard;
-    EekModifierBehavior behavior;
-    EekModifierType modifier;
+    EekKey *key = (EekKey*)g_object_new (EEK_TYPE_KEY,
+                                         "name", name,
+                                         NULL);
+    g_return_val_if_fail (key, NULL);
+    eek_key_share_state(key, state);
 
-    symbol = eek_key_get_symbol_with_fallback (key, 0, 0);
-    if (!symbol)
-        return;
-
-    keyboard = EEK_KEYBOARD(eek_element_get_parent (EEK_ELEMENT(self)));
-    behavior = eek_keyboard_get_modifier_behavior (keyboard);
-    modifier = eek_symbol_get_modifier_mask (symbol);
-    if (behavior == EEK_MODIFIER_BEHAVIOR_NONE) {
-        priv->modifiers |= modifier;
-        set_level_from_modifiers (self);
-    }
-}
-
-static void
-eek_section_real_key_released (EekSection *self, EekKey *key)
-{
-    EekSectionPrivate *priv = eek_section_get_instance_private (self);
-    EekSymbol *symbol;
-    EekKeyboard *keyboard;
-    EekModifierBehavior behavior;
-    EekModifierType modifier;
-
-    symbol = eek_key_get_symbol_with_fallback (key, 0, 0);
-    if (!symbol)
-        return;
-
-    keyboard = EEK_KEYBOARD(eek_element_get_parent (EEK_ELEMENT(self)));
-    behavior = eek_keyboard_get_modifier_behavior (keyboard);
-    modifier = eek_symbol_get_modifier_mask (symbol);
-    switch (behavior) {
-    case EEK_MODIFIER_BEHAVIOR_NONE:
-        priv->modifiers &= ~modifier;
-        break;
-    case EEK_MODIFIER_BEHAVIOR_LOCK:
-        priv->modifiers ^= modifier;
-        break;
-    case EEK_MODIFIER_BEHAVIOR_LATCH:
-        priv->modifiers = (priv->modifiers ^ modifier) & modifier;
-        break;
-    }
-    set_level_from_modifiers (self);
+    EEK_CONTAINER_GET_CLASS(self)->add_child (EEK_CONTAINER(self),
+                                              EEK_ELEMENT(key));
+    return key;
 }
 
 static void
 eek_section_finalize (GObject *object)
 {
-    EekSection        *self = EEK_SECTION (object);
-    EekSectionPrivate *priv = (EekSectionPrivate*)eek_section_get_instance_private (self);
-
     G_OBJECT_CLASS (eek_section_parent_class)->finalize (object);
 }
 
@@ -278,9 +229,6 @@ eek_section_class_init (EekSectionClass *klass)
     klass->create_key = eek_section_real_create_key;
 
     /* signals */
-    klass->key_pressed = eek_section_real_key_pressed;
-    klass->key_released = eek_section_real_key_released;
-
     container_class->child_added = eek_section_real_child_added;
     container_class->child_removed = eek_section_real_child_removed;
 
@@ -456,12 +404,13 @@ eek_section_get_row (EekSection     *section,
 EekKey *
 eek_section_create_key (EekSection *section,
                         const gchar *name,
-                        gint        keycode)
+                        guint        keycode,
+                        guint oref)
 {
     g_return_val_if_fail (EEK_IS_SECTION(section), NULL);
-    return EEK_SECTION_GET_CLASS(section)->create_key (section,
+    return eek_section_real_create_key (section,
                                                        name,
-                                                       keycode);
+                                                       keycode, oref);
 }
 
 const double keyspacing = 4.0;
@@ -477,9 +426,9 @@ keysizer(EekElement *element, gpointer user_data)
 {
     EekKey *key = EEK_KEY(element);
 
-    EekKeyboard *keyboard = EEK_KEYBOARD(user_data);
+    LevelKeyboard *keyboard = user_data;
     uint oref = eek_key_get_oref (key);
-    EekOutline *outline = eek_keyboard_get_outline (keyboard, oref);
+    EekOutline *outline = level_keyboard_get_outline (keyboard, oref);
     if (outline && outline->num_points > 0) {
         double minx = outline->points[0].x;
         double maxx = minx;
@@ -512,11 +461,6 @@ keycounter (EekElement *element, gpointer user_data)
 {
     EekKey *key = EEK_KEY(element);
 
-    /* Skip keys without labels for the current level. This causes those
-       keys to be hidden in the visible layout. */
-    if (!eek_key_has_label(key))
-        return;
-
     struct keys_info *data = user_data;
     data->count++;
     EekBounds key_bounds = {0};
@@ -532,10 +476,6 @@ keyplacer(EekElement *element, gpointer user_data)
 {
     EekKey *key = EEK_KEY(element);
 
-    /* Skip keys without labels for the current level. */
-    if (!eek_key_has_label(key))
-        return;
-
     double *current_offset = user_data;
     EekBounds key_bounds = {0};
     eek_element_get_bounds(element, &key_bounds);
@@ -546,7 +486,7 @@ keyplacer(EekElement *element, gpointer user_data)
 }
 
 void
-eek_section_place_keys(EekSection *section, EekKeyboard *keyboard)
+eek_section_place_keys(EekSection *section, LevelKeyboard *keyboard)
 {
     eek_container_foreach_child(EEK_CONTAINER(section), keysizer, keyboard);
 

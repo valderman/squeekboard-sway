@@ -1,7 +1,6 @@
 gnome = import('gnome')
 
 enum_headers = [
-  'eek-symbol.h',
   'eek-types.h',
 ]
 

@@ -30,40 +30,13 @@
 #include "eek-symbol.h"
 #include "eek-enumtypes.h"
 
-void
-eek_symbol_destroy (EekSymbol *priv)
-{
-    g_free (priv->name);
-    g_free (priv->label);
-    g_free (priv->icon_name);
-    g_free (priv->tooltip);
-    g_free(priv->text);
-    g_free(priv);
-}
-
 EekSymbol *
 eek_symbol_new (const gchar *name)
 {
     EekSymbol *self = g_new0(EekSymbol, 1);
-    eek_symbol_set_name(self, name);
+    self->name = g_strdup (name);
     self->category = EEK_SYMBOL_CATEGORY_UNKNOWN;
     return self;
-}
-
-void
-eek_symbol_set_name (EekSymbol   *symbol,
-                     const gchar *name)
-{
-    g_free (symbol->name);
-    symbol->name = g_strdup (name);
-}
-
-const gchar *
-eek_symbol_get_name (EekSymbol *symbol)
-{
-    if (symbol->name == NULL || *symbol->name == '\0')
-        return NULL;
-    return symbol->name;
 }
 
 /**
@@ -79,20 +52,6 @@ eek_symbol_set_label (EekSymbol   *symbol,
 {
     g_free (symbol->label);
     symbol->label = g_strdup (label);
-}
-
-/**
- * eek_symbol_get_label:
- * @symbol: an #EekSymbol
- *
- * Get the label text of @symbol.
- */
-const gchar *
-eek_symbol_get_label (EekSymbol *symbol)
-{
-    if (symbol->label == NULL || *symbol->label == '\0')
-        return NULL;
-    return symbol->label;
 }
 
 /**
@@ -118,13 +77,8 @@ eek_symbol_set_modifier_mask (EekSymbol      *symbol,
 EekModifierType
 eek_symbol_get_modifier_mask (EekSymbol *symbol)
 {
+    return 0;
     return symbol->modifier_mask;
-}
-
-gboolean
-eek_symbol_is_modifier (EekSymbol *symbol)
-{
-    return eek_symbol_get_modifier_mask (symbol) != 0;
 }
 
 void
@@ -138,9 +92,7 @@ eek_symbol_set_icon_name (EekSymbol   *symbol,
 const gchar *
 eek_symbol_get_icon_name (EekSymbol *symbol)
 {
-    if (symbol->icon_name == NULL || *symbol->icon_name == '\0')
-        return NULL;
-    return symbol->icon_name;
+    return NULL;
 }
 
 void
@@ -154,6 +106,7 @@ eek_symbol_set_tooltip (EekSymbol   *symbol,
 const gchar *
 eek_symbol_get_tooltip (EekSymbol *symbol)
 {
+    return NULL;
     if (symbol->tooltip == NULL || *symbol->tooltip == '\0')
         return NULL;
     return symbol->tooltip;
