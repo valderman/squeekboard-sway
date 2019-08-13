@@ -222,7 +222,7 @@ void eek_keyboard_press_key(LevelKeyboard *keyboard, EekKey *key, guint32 timest
 
     guint keycode = eek_key_get_keycode (key);
 
-    emit_key_activated(keyboard->manager, keyboard, keycode, 0, TRUE, timestamp);
+    emit_key_activated(keyboard->manager, keyboard, keycode, TRUE, timestamp);
 }
 
 void eek_keyboard_release_key(LevelKeyboard *keyboard,
@@ -247,7 +247,7 @@ void eek_keyboard_release_key(LevelKeyboard *keyboard,
 
     guint keycode = eek_key_get_keycode (key);
 
-    emit_key_activated(keyboard->manager, keyboard, keycode, 0, FALSE, timestamp);
+    emit_key_activated(keyboard->manager, keyboard, keycode, FALSE, timestamp);
 }
 
 static void
