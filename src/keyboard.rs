@@ -27,6 +27,7 @@ pub mod c {
         Box::into_raw(Box::new(
             KeyState {
                 pressed: false,
+                locked: false,
                 keycode: keycode,
                 symbols: Vec::new(),
             }
@@ -51,6 +52,20 @@ pub mod c {
     fn squeek_key_set_pressed(key: *mut KeyState, pressed: u32) {
         let key = unsafe { &mut *key };
         key.pressed = pressed != 0;
+    }
+    
+    #[no_mangle]
+    pub extern "C"
+    fn squeek_key_is_locked(key: *const KeyState) -> u32 {
+        let key = unsafe { &*key };
+        return key.locked as u32;
+    }
+    
+    #[no_mangle]
+    pub extern "C"
+    fn squeek_key_set_locked(key: *mut KeyState, locked: u32) {
+        let key = unsafe { &mut *key };
+        key.locked = locked != 0;
     }
     
     #[no_mangle]
@@ -232,6 +247,7 @@ pub mod c {
 #[derive(Debug)]
 pub struct KeyState {
     pressed: bool,
+    locked: bool,
     keycode: u32,
     symbols: Vec<symbol::Symbol>,
 }

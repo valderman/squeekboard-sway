@@ -46,7 +46,6 @@ typedef struct _EekKeyPrivate
 {
     gulong oref; // UI outline reference
     struct squeek_key *state;
-    gboolean is_locked;
 } EekKeyPrivate;
 
 G_DEFINE_TYPE_WITH_PRIVATE (EekKey, eek_key, EEK_TYPE_ELEMENT)
@@ -55,7 +54,7 @@ void
 eek_key_set_locked (EekKey *self, gboolean value)
 {
     EekKeyPrivate *priv = eek_key_get_instance_private (self);
-    priv->is_locked = value;
+    squeek_key_set_pressed(priv->state, value);
 }
 
 static void
@@ -261,7 +260,7 @@ eek_key_is_locked (EekKey *key)
 
     EekKeyPrivate *priv = eek_key_get_instance_private (key);
 
-    return priv->is_locked;
+    return (bool)squeek_key_is_locked(priv->state);
 }
 
 void eek_key_set_pressed(EekKey *key, gboolean value)

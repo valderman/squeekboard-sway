@@ -59,8 +59,6 @@ enum {
     VIEW_SYMBOLS
 };
 
-static guint signals[LAST_SIGNAL] = { 0, };
-
 #define EEK_KEYBOARD_GET_PRIVATE(obj)                                  \
     (G_TYPE_INSTANCE_GET_PRIVATE ((obj), EEK_TYPE_KEYBOARD, EekKeyboardPrivate))
 
