@@ -41,7 +41,6 @@ enum mod_indices {
 void
 emit_key_activated (EekboardContextService *manager, LevelKeyboard *keyboard,
                     guint            keycode,
-                    EekSymbol       *symbol,
                     guint            modifiers,
                     gboolean pressed, uint32_t timestamp);
 #endif // KEYEMITTER_H
