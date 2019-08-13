@@ -53,8 +53,8 @@ typedef struct _EekXmlLayoutPrivate
 } EekXmlLayoutPrivate;
 
 G_DEFINE_TYPE_EXTENDED (EekXmlLayout, eek_xml_layout, EEK_TYPE_LAYOUT,
-			0, /* GTypeFlags */
-			G_ADD_PRIVATE(EekXmlLayout)
+            0, /* GTypeFlags */
+            G_ADD_PRIVATE(EekXmlLayout)
                         G_IMPLEMENT_INTERFACE (G_TYPE_INITABLE,
                                                initable_iface_init))
 
@@ -674,11 +674,6 @@ static const gchar *symbols_valid_path_list[] = {
     "symbols",
     "symbol/symbols",
     "include/symbols",
-    "key/symbols",
-    "text/key/symbols",
-    "keysym/key/symbols",
-    "symbol/key/symbols",
-    "invalid/key/symbols",
 };
 
 static void
@@ -699,22 +694,7 @@ symbols_start_element_callback (GMarkupParseContext *pcontext,
                    error))
         return;
 
-    if (g_strcmp0 (element_name, "keysym") == 0) {
-        attribute = get_attribute (attribute_names, attribute_values,
-                                   "keyval");
-        if (attribute == NULL) {
-            g_set_error (error,
-                         G_MARKUP_ERROR,
-                         G_MARKUP_ERROR_MISSING_ATTRIBUTE,
-                         "no \"keyval\" attribute for \"keysym\"");
-            return;
-        }
-        data->keyval = strtoul (attribute, NULL, 0);
-    }
-
-    if (g_strcmp0 (element_name, "symbol") == 0 ||
-        g_strcmp0 (element_name, "keysym") == 0 ||
-        g_strcmp0 (element_name, "text") == 0) {
+    if (g_strcmp0 (element_name, "symbol") == 0) {
         attribute = get_attribute (attribute_names, attribute_values,
                                    "label");
         if (attribute != NULL)
@@ -753,9 +733,7 @@ symbols_end_element_callback (GMarkupParseContext *pcontext,
     // TODO: this could all be moved to text handler
     text = g_strndup (data->text->str, data->text->len);
 
-    if (g_strcmp0 (element_name, "symbol") == 0 ||
-        g_strcmp0 (element_name, "keysym") == 0 ||
-        g_strcmp0 (element_name, "text") == 0) {
+    if (g_strcmp0 (element_name, "symbol") == 0) {
 
         gchar *name = text;
         EekKey *key = eek_keyboard_find_key_by_name (data->keyboard,
@@ -1013,7 +991,7 @@ static void
 eek_xml_layout_finalize (GObject *object)
 {
     EekXmlLayoutPrivate *priv = eek_xml_layout_get_instance_private (
-		    EEK_XML_LAYOUT (object));
+            EEK_XML_LAYOUT (object));
 
     g_free (priv->id);
 
@@ -1036,10 +1014,10 @@ eek_xml_layout_class_init (EekXmlLayoutClass *klass)
     gobject_class->finalize = eek_xml_layout_finalize;
 
     pspec = g_param_spec_string ("id",
-				 "ID",
-				 "ID",
-				 NULL,
-				 G_PARAM_CONSTRUCT_ONLY |
+                 "ID",
+                 "ID",
+                 NULL,
+                 G_PARAM_CONSTRUCT_ONLY |
                                  G_PARAM_READWRITE);
     g_object_class_install_property (gobject_class, PROP_ID, pspec);
 }
