@@ -32,7 +32,6 @@
 
 #include "eek-element.h"
 #include "eek-container.h"
-#include "eek-marshalers.h"
 
 enum {
     PROP_0,

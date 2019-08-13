@@ -30,7 +30,6 @@
 #include "config.h"
 #include <glib/gprintf.h>
 
-#include "eek-marshalers.h"
 #include "eek-section.h"
 #include "eek-key.h"
 #include "eek-enumtypes.h"

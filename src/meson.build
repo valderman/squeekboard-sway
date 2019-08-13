@@ -33,7 +33,6 @@ sources = [
   dbus_src,
   enums,
   keysym_entries,
-  marshalers,
   '../eekboard/key-emitter.c',
   '../eekboard/eekboard-context-service.c',
   '../eekboard/eekboard-context.c',
