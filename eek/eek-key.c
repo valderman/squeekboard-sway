@@ -42,14 +42,6 @@ enum {
     PROP_LAST
 };
 
-enum {
-    LOCKED,
-    UNLOCKED,
-    LAST_SIGNAL
-};
-
-static guint signals[LAST_SIGNAL] = { 0, };
-
 typedef struct _EekKeyPrivate
 {
     gulong oref; // UI outline reference
@@ -59,26 +51,11 @@ typedef struct _EekKeyPrivate
 
 G_DEFINE_TYPE_WITH_PRIVATE (EekKey, eek_key, EEK_TYPE_ELEMENT)
 
-static void
-eek_key_real_locked (EekKey *self)
+void
+eek_key_set_locked (EekKey *self, gboolean value)
 {
     EekKeyPrivate *priv = eek_key_get_instance_private (self);
-
-    priv->is_locked = TRUE;
-#if DEBUG
-    g_debug ("locked %X", eek_key_get_keycode (self));
-#endif
-}
-
-static void
-eek_key_real_unlocked (EekKey *self)
-{
-    EekKeyPrivate *priv = eek_key_get_instance_private (self);
-
-    priv->is_locked = FALSE;
-#if DEBUG
-    g_debug ("unlocked %X", eek_key_get_keycode (self));
-#endif
+    priv->is_locked = value;
 }
 
 static void
@@ -134,10 +111,6 @@ eek_key_class_init (EekKeyClass *klass)
     gobject_class->get_property = eek_key_get_property;
     gobject_class->finalize     = eek_key_finalize;
 
-    /* signals */
-    klass->locked = eek_key_real_locked;
-    klass->unlocked = eek_key_real_unlocked;
-
     /**
      * EekKey:oref:
      *
@@ -149,42 +122,6 @@ eek_key_class_init (EekKeyClass *klass)
                                 0, G_MAXULONG, 0,
                                 G_PARAM_READWRITE);
     g_object_class_install_property (gobject_class, PROP_OREF, pspec);
-
-    /**
-     * EekKey::locked:
-     * @key: an #EekKey
-     *
-     * The ::locked signal is emitted each time @key is shifted to
-     * the locked state.  The class handler runs before signal
-     * handlers to allow signal handlers to read the status of @key
-     * with eek_key_is_locked().
-     */
-    signals[LOCKED] =
-        g_signal_new (I_("locked"),
-                      G_TYPE_FROM_CLASS(gobject_class),
-                      G_SIGNAL_RUN_FIRST,
-                      G_STRUCT_OFFSET(EekKeyClass, locked),
-                      NULL,
-                      NULL,
-                      g_cclosure_marshal_VOID__VOID,
-                      G_TYPE_NONE, 0);
-
-    /**
-     * EekKey::unlocked:
-     * @key: an #EekKey
-     *
-     * The ::unlocked signal is emitted each time @key is shifted to
-     * the unlocked state.
-     */
-   signals[UNLOCKED] =
-        g_signal_new (I_("unlocked"),
-                      G_TYPE_FROM_CLASS(gobject_class),
-                      G_SIGNAL_RUN_LAST,
-                      G_STRUCT_OFFSET(EekKeyClass, unlocked),
-                      NULL,
-                      NULL,
-                      g_cclosure_marshal_VOID__VOID,
-                      G_TYPE_NONE, 0);
 }
 
 static void

@@ -46,11 +46,6 @@ struct _EekKeyClass
 {
     /*< private >*/
     EekElementClass parent_class;
-
-    /*< public >*/
-    /* signals */
-    void (* locked)    (EekKey *key);
-    void (* unlocked)  (EekKey *key);
 };
 
 GType            eek_key_get_type            (void) G_GNUC_CONST;
@@ -71,6 +66,8 @@ gboolean         eek_key_is_pressed          (EekKey          *key);
 gboolean         eek_key_is_locked           (EekKey          *key);
 void             eek_key_set_pressed         (EekKey          *key,
                                               gboolean         value);
+void
+eek_key_set_locked (EekKey *self, gboolean value);
 void eek_key_share_state(EekKey *self, struct squeek_key *state);
 G_END_DECLS
 #endif  /* EEK_KEY_H */

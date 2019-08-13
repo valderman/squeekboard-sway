@@ -87,22 +87,6 @@ eek_modifier_key_free (EekModifierKey *modkey)
     g_slice_free (EekModifierKey, modkey);
 }
 
-static void
-on_key_locked (EekSection  *section,
-                EekKey      *key,
-                EekKeyboard *keyboard)
-{
-    g_signal_emit (keyboard, signals[KEY_LOCKED], 0, key);
-}
-
-static void
-on_key_unlocked (EekSection  *section,
-                 EekKey      *key,
-                 EekKeyboard *keyboard)
-{
-    g_signal_emit (keyboard, signals[KEY_UNLOCKED], 0, key);
-}
-
 EekSection *
 eek_keyboard_real_create_section (EekKeyboard *self)
 {
@@ -160,7 +144,7 @@ set_key_states (LevelKeyboard    *keyboard,
         modifier_key->key = g_object_ref (key);
         keyboard->locked_keys =
             g_list_prepend (keyboard->locked_keys, modifier_key);
-        g_signal_emit_by_name (modifier_key->key, "locked");
+        eek_key_set_locked(modifier_key->key, true);
     }
 
     if (keyboard->level == 1) {
@@ -170,7 +154,7 @@ set_key_states (LevelKeyboard    *keyboard,
             GList *next = g_list_next (head);
             keyboard->locked_keys =
                 g_list_remove_link (keyboard->locked_keys, head);
-            g_signal_emit_by_name (modifier_key->key, "unlocked");
+            eek_key_set_locked(modifier_key->key, false);
             g_list_free1 (head);
             head = next;
         }
@@ -285,18 +269,16 @@ static void
 eek_keyboard_real_child_added (EekContainer *self,
                                EekElement   *element)
 {
-    g_signal_connect (element, "key-locked",
-                      G_CALLBACK(on_key_locked), self);
-    g_signal_connect (element, "key-unlocked",
-                      G_CALLBACK(on_key_unlocked), self);
+    (void)self;
+    (void)element;
 }
 
 static void
 eek_keyboard_real_child_removed (EekContainer *self,
                                  EekElement   *element)
 {
-    g_signal_handlers_disconnect_by_func (element, on_key_locked, self);
-    g_signal_handlers_disconnect_by_func (element, on_key_unlocked, self);
+    (void)self;
+    (void)element;
 }
 
 static void
@@ -313,46 +295,6 @@ eek_keyboard_class_init (EekKeyboardClass *klass)
     gobject_class->set_property = eek_keyboard_set_property;
     gobject_class->dispose = eek_keyboard_dispose;
     gobject_class->finalize = eek_keyboard_finalize;
-
-    /**
-     * EekKeyboard::key-locked:
-     * @keyboard: an #EekKeyboard
-     * @key: an #EekKey
-     *
-     * The ::key-locked signal is emitted each time a key in @keyboard
-     * is shifted to the locked state.
-     */
-    signals[KEY_LOCKED] =
-        g_signal_new (I_("key-locked"),
-                      G_TYPE_FROM_CLASS(gobject_class),
-                      G_SIGNAL_RUN_LAST,
-                      G_STRUCT_OFFSET(EekKeyboardClass, key_locked),
-                      NULL,
-                      NULL,
-                      g_cclosure_marshal_VOID__OBJECT,
-                      G_TYPE_NONE,
-                      1,
-                      EEK_TYPE_KEY);
-
-    /**
-     * EekKeyboard::key-unlocked:
-     * @keyboard: an #EekKeyboard
-     * @key: an #EekKey
-     *
-     * The ::key-unlocked signal is emitted each time a key in @keyboard
-     * is shifted to the unlocked state.
-     */
-    signals[KEY_UNLOCKED] =
-        g_signal_new (I_("key-unlocked"),
-                      G_TYPE_FROM_CLASS(gobject_class),
-                      G_SIGNAL_RUN_LAST,
-                      G_STRUCT_OFFSET(EekKeyboardClass, key_unlocked),
-                      NULL,
-                      NULL,
-                      g_cclosure_marshal_VOID__OBJECT,
-                      G_TYPE_NONE,
-                      1,
-                      EEK_TYPE_KEY);
 }
 
 static void

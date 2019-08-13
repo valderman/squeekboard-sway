@@ -42,14 +42,6 @@ enum {
     PROP_LAST
 };
 
-enum {
-    KEY_LOCKED,
-    KEY_UNLOCKED,
-    LAST_SIGNAL
-};
-
-static guint signals[LAST_SIGNAL] = { 0, };
-
 struct _EekRow
 {
     gint num_columns;
@@ -102,20 +94,6 @@ eek_section_real_get_row (EekSection     *self,
     if (orientation) {
         *orientation = row->orientation;
     }
-}
-
-static void
-on_locked (EekKey     *key,
-           EekSection *section)
-{
-    g_signal_emit (section, signals[KEY_LOCKED], 0, key);
-}
-
-static void
-on_unlocked (EekKey     *key,
-             EekSection *section)
-{
-    g_signal_emit (section, signals[KEY_UNLOCKED], 0, key);
 }
 
 static EekKey *
@@ -204,16 +182,16 @@ static void
 eek_section_real_child_added (EekContainer *self,
                               EekElement   *element)
 {
-    g_signal_connect (element, "locked", G_CALLBACK(on_locked), self);
-    g_signal_connect (element, "unlocked", G_CALLBACK(on_unlocked), self);
+    (void)self;
+    (void)element;
 }
 
 static void
 eek_section_real_child_removed (EekContainer *self,
                                 EekElement   *element)
 {
-    g_signal_handlers_disconnect_by_func (element, on_locked, self);
-    g_signal_handlers_disconnect_by_func (element, on_unlocked, self);
+    (void)self;
+    (void)element;
 }
 
 static void
@@ -249,46 +227,6 @@ eek_section_class_init (EekSectionClass *klass)
     g_object_class_install_property (gobject_class,
                                      PROP_ANGLE,
                                      pspec);
-
-    /**
-     * EekSection::key-locked:
-     * @section: an #EekSection
-     * @key: an #EekKey
-     *
-     * The ::key-locked signal is emitted each time a key in @section
-     * is shifted to the locked state.
-     */
-    signals[KEY_LOCKED] =
-        g_signal_new (I_("key-locked"),
-                      G_TYPE_FROM_CLASS(gobject_class),
-                      G_SIGNAL_RUN_LAST,
-                      G_STRUCT_OFFSET(EekSectionClass, key_locked),
-                      NULL,
-                      NULL,
-                      g_cclosure_marshal_VOID__OBJECT,
-                      G_TYPE_NONE,
-                      1,
-                      EEK_TYPE_KEY);
-
-    /**
-     * EekSection::key-unlocked:
-     * @section: an #EekSection
-     * @key: an #EekKey
-     *
-     * The ::key-unlocked signal is emitted each time a key in @section
-     * is shifted to the unlocked state.
-     */
-    signals[KEY_UNLOCKED] =
-        g_signal_new (I_("key-unlocked"),
-                      G_TYPE_FROM_CLASS(gobject_class),
-                      G_SIGNAL_RUN_LAST,
-                      G_STRUCT_OFFSET(EekSectionClass, key_unlocked),
-                      NULL,
-                      NULL,
-                      g_cclosure_marshal_VOID__OBJECT,
-                      G_TYPE_NONE,
-                      1,
-                      EEK_TYPE_KEY);
 }
 
 static void
