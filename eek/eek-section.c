@@ -80,22 +80,6 @@ eek_section_real_add_row (EekSection    *self,
     priv->rows = g_slist_append (priv->rows, row);*/
 }
 
-static void
-eek_section_real_get_row (EekSection     *self,
-                          gint            index,
-                          gint           *num_columns,
-                          EekOrientation *orientation)
-{
-    EekSectionPrivate *priv = (EekSectionPrivate*)eek_section_get_instance_private (self);
-    EekRow *row = &priv->row;
-    if (num_columns) {
-        *num_columns = row->num_columns;
-    }
-    if (orientation) {
-        *orientation = row->orientation;
-    }
-}
-
 static EekKey *
 eek_section_real_create_key (EekSection *self,
                              const gchar *name,
@@ -203,7 +187,6 @@ eek_section_class_init (EekSectionClass *klass)
 
     klass->get_n_rows = eek_section_real_get_n_rows;
     klass->add_row = eek_section_real_add_row;
-    klass->get_row = eek_section_real_get_row;
     klass->create_key = eek_section_real_create_key;
 
     /* signals */
@@ -301,28 +284,6 @@ eek_section_add_row (EekSection    *section,
 {
     g_return_if_fail (EEK_IS_SECTION(section));
     EEK_SECTION_GET_CLASS(section)->add_row (section,
-                                             num_columns,
-                                             orientation);
-}
-
-/**
- * eek_section_get_row:
- * @section: an #EekSection
- * @index: the index of row
- * @num_columns: pointer where the number of column in the row will be stored
- * @orientation: pointer where #EekOrientation of the row will be stored
- *
- * Get the information about the @index-th row in @section.
- */
-void
-eek_section_get_row (EekSection     *section,
-                     gint            index,
-                     gint           *num_columns,
-                     EekOrientation *orientation)
-{
-    g_return_if_fail (EEK_IS_SECTION(section));
-    EEK_SECTION_GET_CLASS(section)->get_row (section,
-                                             index,
                                              num_columns,
                                              orientation);
 }

@@ -58,23 +58,11 @@ struct _EekSectionClass
     void    (* add_row)             (EekSection     *self,
                                      gint            num_columns,
                                      EekOrientation  orientation);
-    void    (* get_row)             (EekSection     *self,
-                                     gint            index,
-                                     gint           *num_columns,
-                                     EekOrientation *orientation);
 
     EekKey *(* create_key)          (EekSection     *self,
                                      const gchar    *name,
                                      gint            keycode,
                                      guint oref);
-
-    /* signals */
-    void    (* key_locked)          (EekSection     *self,
-                                     EekKey         *key);
-    void    (* key_unlocked)        (EekSection     *self,
-                                     EekKey         *key);
-    void    (* key_cancelled)       (EekSection     *self,
-                                     EekKey         *key);
 
     /*< private >*/
     /* padding */
@@ -91,11 +79,6 @@ gint    eek_section_get_n_rows           (EekSection     *section);
 void    eek_section_add_row              (EekSection     *section,
                                           gint            num_columns,
                                           EekOrientation  orientation);
-void    eek_section_get_row              (EekSection     *section,
-                                          gint            index,
-                                          gint           *num_columns,
-                                          EekOrientation *orientation);
-
 EekKey *eek_section_create_key           (EekSection     *section,
                                           const gchar    *name,
                                           guint keycode, guint oref);
