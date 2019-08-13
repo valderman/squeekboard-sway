@@ -55,8 +55,7 @@ void             eek_key_set_keycode         (EekKey          *key,
 guint            eek_key_get_keycode         (EekKey          *key);
 struct squeek_key *eek_key_get_state(EekKey *key);
 struct squeek_symbol *eek_key_get_symbol_at_index (EekKey          *key,
-                                              gint             group,
-                                              guint level);
+                                              gint             group);
 
 void             eek_key_set_oref            (EekKey          *key,
                                               guint            oref);

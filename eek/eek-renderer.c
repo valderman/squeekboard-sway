@@ -275,7 +275,7 @@ render_key (EekRenderer *self,
 
     eek_renderer_get_foreground_color (self, priv->key_context, &foreground);
     /* render icon (if any) */
-    symbol = eek_key_get_symbol_at_index (key, 0, level);
+    symbol = eek_key_get_symbol_at_index (key, 0);
     if (!symbol)
         return;
 
@@ -389,7 +389,7 @@ eek_renderer_real_render_key_label (EekRenderer *self,
     PangoLayoutLine *line;
     gdouble scale;
 
-    symbol = eek_key_get_symbol_at_index(key, 0, level);
+    symbol = eek_key_get_symbol_at_index(key, 0);
     if (!symbol)
         return;
 

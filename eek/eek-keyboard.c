@@ -191,7 +191,7 @@ void eek_keyboard_press_key(LevelKeyboard *keyboard, EekKey *key, guint32 timest
     keyboard->pressed_keys = g_list_prepend (keyboard->pressed_keys, key);
 
     struct squeek_symbol *symbol = eek_key_get_symbol_at_index(
-        key, 0, keyboard->level
+        key, 0
     );
     if (!symbol)
         return;
@@ -218,7 +218,7 @@ void eek_keyboard_release_key(LevelKeyboard *keyboard,
     }
 
     struct squeek_symbol *symbol = eek_key_get_symbol_at_index(
-        key, 0, keyboard->level);
+        key, 0);
     if (!symbol)
         return;
 

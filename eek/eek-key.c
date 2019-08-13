@@ -186,11 +186,10 @@ eek_key_get_keycode (EekKey *key)
  */
 struct squeek_symbol*
 eek_key_get_symbol_at_index (EekKey *key,
-                             gint    group,
-                             guint    level)
+                             gint    group)
 {
     EekKeyPrivate *priv = eek_key_get_instance_private (key);
-    return squeek_key_get_symbol(priv->state, level);
+    return squeek_key_get_symbol(priv->state);
 }
 
 /**

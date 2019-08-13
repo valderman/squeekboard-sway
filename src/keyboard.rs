@@ -9,6 +9,7 @@ pub mod c {
     
     use std::ffi::CString;
     use std::os::raw::c_char;
+    use std::ptr;
     
     // The following defined in C
     #[no_mangle]
@@ -29,7 +30,7 @@ pub mod c {
                 pressed: false,
                 locked: false,
                 keycode: keycode,
-                symbols: Vec::new(),
+                symbol: None,
             }
         ))
     }
@@ -111,7 +112,7 @@ pub mod c {
 
         let key = unsafe { &mut *key };
         
-        if key.symbols.len() > 0 {
+        if let Some(_) = key.symbol {
             eprintln!("Key {:?} already has a symbol defined", text);
             return;
         }
@@ -146,7 +147,7 @@ pub mod c {
                 None
             });
         
-        let symbol = match element.to_bytes() {
+        key.symbol = Some(match element.to_bytes() {
             b"symbol" => Symbol {
                 action: Action::Submit {
                     text: text,
@@ -155,42 +156,18 @@ pub mod c {
                 label: label,
                 tooltip: tooltip,
             },
-            b"keysym" => {
-                let keysym = XKeySym(
-                    if keyval == 0 {
-                        unsafe { eek_keysym_from_name(text_raw) }
-                    } else {
-                        keyval
-                    }
-                );
-                Symbol {
-                    action: match KeySym::from_u32(keysym.0) {
-                        KeySym::Shift => Action::SetLevel(1),
-                        _ => Action::Submit {
-                            text: text,
-                            keys: vec![keysym],
-                        }
-                    },
-                    label: label,
-                    tooltip: tooltip,
-                }
-            },
             _ => panic!("unsupported element type {:?}", element),
-        };
-        
-        key.symbols.push(symbol);
+        });
     }
 
     #[no_mangle]
     pub extern "C"
-    fn squeek_key_get_symbol(
-        key: *const KeyState, index: u32
-    ) -> *const symbol::Symbol {
+    fn squeek_key_get_symbol(key: *const KeyState) -> *const symbol::Symbol {
         let key = unsafe { &*key };
-        let index = index as usize;
-        &key.symbols[
-            if index < key.symbols.len() { index } else { 0 }
-        ] as *const symbol::Symbol
+        match key.symbol {
+            Some(ref symbol) => symbol as *const symbol::Symbol,
+            None => ptr::null(),
+        }
     }
 
     #[no_mangle]
@@ -205,37 +182,25 @@ pub mod c {
             .expect("Bad key name");
 
         let key = unsafe { &*key };
-        let symbol_names = key.symbols.iter()
-            .map(|symbol| {
-                match &symbol.action {
-                    symbol::Action::Submit { text: Some(text), .. } => {
-                        Some(
-                            text.clone()
-                                .into_string().expect("Bad symbol")
-                        )
-                    },
-                    _ => None
-                }
-            })
-            .collect::<Vec<_>>();
+        let symbol_name = match key.symbol {
+            Some(ref symbol) => match &symbol.action {
+                symbol::Action::Submit { text: Some(text), .. } => {
+                    Some(
+                        text.clone()
+                            .into_string().expect("Bad symbol")
+                    )
+                },
+                _ => None
+            },
+            None => {
+                eprintln!("Key {} has no symbol", key_name);
+                None
+            },
+        };
 
-        let inner = match symbol_names.len() {
-            1 => match &symbol_names[0] {
-                Some(name) => format!("[ {} ]", name),
-                _ => format!("[ ]"),
-            },
-            4 => {
-                let first = match (&symbol_names[0], &symbol_names[1]) {
-                    (Some(left), Some(right)) => format!("{}, {}", left, right),
-                    _ => format!(""),
-                };
-                let second = match (&symbol_names[2], &symbol_names[3]) {
-                    (Some(left), Some(right)) => format!("{}, {}", left, right),
-                    _ => format!(""),
-                };
-                format!("[ {} ], [ {} ]", first, second)
-            },
-            _ => panic!("Unsupported number of symbols: {}", symbol_names.len()),
+        let inner = match symbol_name {
+            Some(name) => format!("[ {} ]", name),
+            _ => format!("[ ]"),
         };
 
         CString::new(format!("        key <{}> {{ {} }};\n", key_name, inner))
@@ -249,5 +214,6 @@ pub struct KeyState {
     pressed: bool,
     locked: bool,
     keycode: u32,
-    symbols: Vec<symbol::Symbol>,
+    // TODO: remove the optionality of a symbol
+    symbol: Option<symbol::Symbol>,
 }
