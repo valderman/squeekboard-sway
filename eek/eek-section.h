@@ -65,7 +65,8 @@ struct _EekSectionClass
 
     EekKey *(* create_key)          (EekSection     *self,
                                      const gchar    *name,
-                                     gint            keycode);
+                                     gint            keycode,
+                                     guint oref);
 
     /* signals */
     void    (* key_locked)          (EekSection     *self,
