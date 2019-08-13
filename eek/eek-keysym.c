@@ -51,8 +51,6 @@ struct _EekKeysymEntry {
 
 typedef struct _EekKeysymEntry EekKeysymEntry;
 
-#include "eek-special-keysym-entries.h"
-#include "eek-unicode-keysym-entries.h"
 #include "eek-xkeysym-keysym-entries.h"
 
 guint32
