@@ -962,7 +962,9 @@ eek_xml_layout_real_create_keyboard (EekLayout *self,
     }
 
     for (uint i = 0; i < 4; i++) {
-        eek_layout_place_sections(keyboard, views[i]);
+        if (views[i]) {
+            eek_layout_place_sections(keyboard, views[i]);
+        }
     }
 
     return keyboard;
