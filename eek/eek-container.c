@@ -61,7 +61,6 @@ eek_container_real_add_child (EekContainer *self,
         priv->last->next = g_list_prepend (priv->last->next, child);
         priv->last = priv->last->next;
     }
-    eek_element_set_parent (child, EEK_ELEMENT(self));
     g_signal_emit (self, signals[CHILD_ADDED], 0, child);
 }
 
@@ -79,7 +78,6 @@ eek_container_real_remove_child (EekContainer *self,
     if (head == priv->last)
         priv->last = g_list_previous (priv->last);
     priv->head = g_list_remove_link (priv->head, head);
-    eek_element_set_parent (child, NULL);
     g_signal_emit (self, signals[CHILD_REMOVED], 0, child);
 }
 

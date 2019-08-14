@@ -360,8 +360,8 @@ eek_renderer_apply_transformation_for_key (EekRenderer *self,
     gint angle;
     gdouble s;
 
-    eek_renderer_get_key_bounds (self, key, &bounds, FALSE);
-    eek_renderer_get_key_bounds (self, key, &rotated_bounds, TRUE);
+    eek_renderer_get_key_bounds (self, view, key, &bounds, FALSE);
+    eek_renderer_get_key_bounds (self, view, key, &rotated_bounds, TRUE);
 
     section = eek_keyboard_get_section(view, key);
     angle = eek_section_get_angle (section);
@@ -469,7 +469,7 @@ eek_renderer_real_render_key (EekRenderer *self,
     EekRendererPrivate *priv = eek_renderer_get_instance_private (self);
     EekBounds bounds;
 
-    eek_renderer_get_key_bounds (self, key, &bounds, rotate);
+    eek_renderer_get_key_bounds (self, view, key, &bounds, rotate);
 
     cairo_save (cr);
     /* Because this function is called separately from the keyboard rendering
@@ -758,11 +758,12 @@ eek_renderer_get_size (EekRenderer *renderer,
 
 void
 eek_renderer_get_key_bounds (EekRenderer *renderer,
+                             EekKeyboard *view,
                              EekKey      *key,
                              EekBounds   *bounds,
                              gboolean     rotate)
 {
-    EekElement *section;
+    EekSection *section = eek_keyboard_get_section(view, key);
     EekBounds section_bounds, keyboard_bounds;
     gint angle = 0;
     EekPoint points[4], min, max;
@@ -773,10 +774,8 @@ eek_renderer_get_key_bounds (EekRenderer *renderer,
 
     EekRendererPrivate *priv = eek_renderer_get_instance_private (renderer);
 
-    section = eek_element_get_parent (EEK_ELEMENT(key));
-
     eek_element_get_bounds (EEK_ELEMENT(key), bounds);
-    eek_element_get_bounds (section, &section_bounds);
+    eek_element_get_bounds (EEK_ELEMENT(section), &section_bounds);
     eek_element_get_bounds (EEK_ELEMENT(level_keyboard_current(priv->keyboard)),
                             &keyboard_bounds);
 

@@ -74,7 +74,7 @@ void             eek_renderer_set_allocation_size
 void             eek_renderer_get_size         (EekRenderer     *renderer,
                                                 gdouble         *width,
                                                 gdouble         *height);
-void             eek_renderer_get_key_bounds   (EekRenderer     *renderer,
+void             eek_renderer_get_key_bounds   (EekRenderer     *renderer, EekKeyboard *view,
                                                 EekKey          *key,
                                                 EekBounds       *bounds,
                                                 gboolean         rotate);

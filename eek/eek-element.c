@@ -40,16 +40,10 @@ enum {
     PROP_LAST
 };
 
-enum {
-    SYMBOL_INDEX_CHANGED,
-    LAST_SIGNAL
-};
-
 typedef struct _EekElementPrivate
 {
     gchar *name;
     EekBounds bounds;
-    EekElement *parent;
 } EekElementPrivate;
 
 G_DEFINE_ABSTRACT_TYPE_WITH_PRIVATE (EekElement, eek_element, G_TYPE_OBJECT)
@@ -156,54 +150,6 @@ eek_element_init (EekElement *self)
 }
 
 /**
- * eek_element_set_parent:
- * @element: an #EekElement
- * @parent: (allow-none): an #EekElement or %NULL
- *
- * Set the parent of @element to @parent.
- */
-void
-eek_element_set_parent (EekElement *element,
-                        EekElement *parent)
-{
-    g_return_if_fail (EEK_IS_ELEMENT(element));
-    g_return_if_fail (parent == NULL || EEK_IS_ELEMENT(parent));
-
-    EekElementPrivate *priv = eek_element_get_instance_private (element);
-
-    if (priv->parent == parent)
-        return;
-
-    if (priv->parent != NULL) {
-        /* release self-reference acquired when setting parent */
-        g_object_unref (element);
-    }
-
-    if (parent != NULL) {
-        g_object_ref (element);
-    }
-
-    priv->parent = parent;
-}
-
-/**
- * eek_element_get_parent:
- * @element: an #EekElement
- *
- * Get the parent of @element.
- * Returns: an #EekElement if the parent is set
- */
-EekElement *
-eek_element_get_parent (EekElement *element)
-{
-    g_return_val_if_fail (EEK_IS_ELEMENT(element), NULL);
-
-    EekElementPrivate *priv = eek_element_get_instance_private (element);
-
-    return priv->parent;
-}
-
-/**
  * eek_element_set_name:
  * @element: an #EekElement
  * @name: name of @element
@@ -278,31 +224,6 @@ eek_element_get_bounds (EekElement  *element,
     EekElementPrivate *priv = eek_element_get_instance_private (element);
 
     memcpy (bounds, &priv->bounds, sizeof(EekBounds));
-}
-
-/**
- * eek_element_get_absolute_position:
- * @element: an #EekElement
- * @x: pointer where the X coordinate of @element will be stored
- * @y: pointer where the Y coordinate of @element will be stored
- *
- * Compute the absolute position of @element.
- */
-void
-eek_element_get_absolute_position (EekElement *element,
-                                   gdouble    *x,
-                                   gdouble    *y)
-{
-    EekBounds bounds;
-    gdouble ax = 0.0, ay = 0.0;
-
-    do {
-        eek_element_get_bounds (element, &bounds);
-        ax += bounds.x;
-        ay += bounds.y;
-    } while ((element = eek_element_get_parent (element)) != NULL);
-    *x = ax;
-    *y = ay;
 }
 
 /**

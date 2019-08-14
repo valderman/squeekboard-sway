@@ -40,9 +40,6 @@ struct _EekElementClass
 
 GType        eek_element_get_type              (void) G_GNUC_CONST;
 
-void         eek_element_set_parent            (EekElement  *element,
-                                                EekElement  *parent);
-EekElement  *eek_element_get_parent            (EekElement  *element);
 void         eek_element_set_name              (EekElement  *element,
                                                 const gchar *name);
 
