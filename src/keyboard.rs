@@ -28,9 +28,20 @@ pub mod c {
     /// Since C doesn't respect borrowing rules,
     /// RefCell will enforce them dynamically (only 1 writer/many readers)
     /// Rc is implied and will ensure timely dropping
+    #[repr(transparent)]
     pub struct CKeyState(*const RefCell<KeyState>);
+    
+    impl Clone for CKeyState {
+        fn clone(&self) -> Self {
+            CKeyState(self.0.clone())
+        }
+    }
+
     impl CKeyState {
-        fn unwrap(self) -> Rc<RefCell<KeyState>> {
+        pub fn wrap(state: Rc<RefCell<KeyState>>) -> CKeyState {
+            CKeyState(Rc::into_raw(state))
+        }
+        pub fn unwrap(self) -> Rc<RefCell<KeyState>> {
             unsafe { Rc::from_raw(self.0) }
         }
         fn to_owned(self) -> KeyState {
@@ -67,7 +78,7 @@ pub mod c {
                 symbol: None,
             }
         ));
-        CKeyState(Rc::into_raw(state))
+        CKeyState::wrap(state)
     }
     
     #[no_mangle]
@@ -195,8 +206,8 @@ pub mod c {
     fn squeek_key_get_symbol(key: CKeyState) -> *const symbol::Symbol {
         key.borrow_mut(|key| {
             match key.symbol {
-                /// This pointer stays after the function exits,
-                /// so it must reference borrowed data and not any copy
+                // This pointer stays after the function exits,
+                // so it must reference borrowed data and not any copy
                 Some(ref symbol) => symbol as *const symbol::Symbol,
                 None => ptr::null(),
             }
@@ -239,13 +250,51 @@ pub mod c {
             .expect("Couldn't convert string")
             .into_raw()
     }
+    
+        #[no_mangle]
+    pub extern "C"
+    fn squeek_key_get_action_name(
+        key_name: *const c_char,
+        key: CKeyState,
+    ) -> *const c_char {
+        let key_name = as_cstr(&key_name)
+            .expect("Missing key name")
+            .to_str()
+            .expect("Bad key name");
+
+        let symbol_name = match key.to_owned().symbol {
+            Some(ref symbol) => match &symbol.action {
+                symbol::Action::Submit { text: Some(text), .. } => {
+                    Some(
+                        text.clone()
+                            .into_string().expect("Bad symbol")
+                    )
+                },
+                _ => None
+            },
+            None => {
+                eprintln!("Key {} has no symbol", key_name);
+                None
+            },
+        };
+
+        let inner = match symbol_name {
+            Some(name) => format!("[ {} ]", name),
+            _ => format!("[ ]"),
+        };
+
+        CString::new(format!("        key <{}> {{ {} }};\n", key_name, inner))
+            .expect("Couldn't convert string")
+            .into_raw()
+    }
+
 }
 
 #[derive(Debug, Clone)]
 pub struct KeyState {
-    pressed: bool,
-    locked: bool,
-    keycode: u32,
+    pub pressed: bool,
+    pub locked: bool,
+    pub keycode: u32,
     // TODO: remove the optionality of a symbol
-    symbol: Option<symbol::Symbol>,
+    pub symbol: Option<symbol::Symbol>,
 }

@@ -29,7 +29,6 @@
 
 #include "eek-keyboard.h"
 #include "eek-section.h"
-#include "eek-key.h"
 #include "src/keyboard.h"
 #include "src/symbol.h"
 
@@ -68,7 +67,7 @@ static GList        *parse_prerequisites
                                      (const gchar         *path,
                                       GError             **error);
 static gboolean      parse_geometry  (const gchar         *path,
-                                      EekKeyboard **views, GArray *outline_array, GHashTable *name_key_hash,
+                                      EekKeyboard **views, GArray *outline_array, GHashTable *name_button_hash,
                                       GError             **error);
 static gboolean      parse_symbols_with_prerequisites
                                      (const gchar         *keyboards_dir,
@@ -236,7 +235,6 @@ struct _GeometryParseData {
     EekKeyboard **views;
     guint view_idx;
     EekSection *section;
-    EekKey *key;
     gint num_rows;
     EekOrientation orientation;
     gdouble corner_radius;
@@ -250,14 +248,14 @@ struct _GeometryParseData {
 
     GArray *outline_array;
 
-    GHashTable *name_key_hash; // char* -> EekKey*
+    GHashTable *name_button_hash; // char* -> struct squeek_button*
     GHashTable *keyname_oref_hash; // char* -> guint
     GHashTable *outlineid_oref_hash; // char* -> guint
 };
 typedef struct _GeometryParseData GeometryParseData;
 
 static GeometryParseData *
-geometry_parse_data_new (EekKeyboard **views, GHashTable *name_key_hash, GArray *outline_array)
+geometry_parse_data_new (EekKeyboard **views, GHashTable *name_button_hash, GArray *outline_array)
 {
     GeometryParseData *data = g_slice_new0 (GeometryParseData);
 
@@ -274,7 +272,7 @@ geometry_parse_data_new (EekKeyboard **views, GHashTable *name_key_hash, GArray 
                                g_free,
                                NULL);
 
-    data->name_key_hash = name_key_hash;
+    data->name_button_hash = name_button_hash;
     data->text = g_string_sized_new (BUFSIZE);
     data->keycode = 8;
     return data;
@@ -418,15 +416,16 @@ geometry_start_element_callback (GMarkupParseContext *pcontext,
                              g_strdup(name),
                              GUINT_TO_POINTER(oref));
 
-        EekKey *key = g_hash_table_lookup(data->name_key_hash, name);
+        struct squeek_button *button = g_hash_table_lookup(data->name_button_hash, name);
         // never gets used! this section gets executed before any buttons get defined
-        if (key) {
+        if (button) {
             if (keycode_name != NULL) {
                 // This sets the keycode for all buttons,
                 // since they share state
                 // TODO: get rid of this in the parser;
                 // this belongs after keymap is defined
-                eek_key_set_keycode(key, strtol (keycode_name, NULL, 10));
+                struct squeek_key *key = squeek_button_get_key(button);
+                squeek_key_set_keycode(key, strtol (keycode_name, NULL, 10));
             }
         }
 
@@ -559,31 +558,30 @@ geometry_end_element_callback (GMarkupParseContext *pcontext,
             }
 
             gchar *name = g_strndup (&text[start], end - start);
-            EekKey *key = g_hash_table_lookup(data->name_key_hash, name);
-            if (!key) {
+            struct squeek_button *button = g_hash_table_lookup(data->name_button_hash, name);
+            if (!button) {
                 // Save button name together with its level,
                 // to account for buttons with the same name in multiple levels
                 guint keycode = data->keycode++;
 
                 guint oref = GPOINTER_TO_UINT(g_hash_table_lookup(data->keyname_oref_hash, name));
                 // default value gives idx 0, which is guaranteed to be occupied
-                key = eek_section_create_key (data->section,
+                button = eek_section_create_button (data->section,
                                                     name,
                                                     keycode,
                                               oref);
-                g_hash_table_insert (data->name_key_hash,
+                g_hash_table_insert (data->name_button_hash,
                                      g_strdup(name),
-                                     key);
+                                     button);
             } else {
-                EekKey *new_key = eek_section_create_button(data->section, name, eek_key_get_state(key));
-                if (!new_key) {
+                struct squeek_button *new_button = eek_section_create_button_with_state(data->section, name, button);
+                if (!new_button) {
                     g_set_error (error,
                                  G_MARKUP_ERROR,
                                  G_MARKUP_ERROR_MISSING_ATTRIBUTE,
                                  "Couldn't create a shared button");
                     return;
                 }
-                eek_key_set_oref(new_key, eek_key_get_oref(key));
             }
         }
 
@@ -736,11 +734,11 @@ symbols_end_element_callback (GMarkupParseContext *pcontext,
     if (g_strcmp0 (element_name, "symbol") == 0) {
 
         gchar *name = text;
-        EekKey *key = eek_keyboard_find_key_by_name (data->keyboard,
+        struct squeek_button *button = eek_keyboard_find_button_by_name (data->keyboard,
                                                    name);
-        if (key) {
+        if (button) {
             squeek_key_add_symbol(
-                eek_key_get_state(key),
+                squeek_button_get_key(button),
                 element_name,
                 text,
                 data->keyval,
@@ -887,8 +885,8 @@ eek_xml_layout_real_create_keyboard (EekLayout *self,
 
     GArray *outline_array = g_array_new (FALSE, TRUE, sizeof (EekOutline));
 
-    // char* -> EekKey*
-    GHashTable *name_key_hash =
+    // char* -> struct squeek_button*
+    GHashTable *name_button_hash =
             g_hash_table_new_full (g_str_hash,
                                    g_str_equal,
                                    g_free,
@@ -897,7 +895,7 @@ eek_xml_layout_real_create_keyboard (EekLayout *self,
     EekKeyboard *views[4] = {0};
 
     GError *error = NULL;
-    retval = parse_geometry (path, views, outline_array, name_key_hash, &error);
+    retval = parse_geometry (path, views, outline_array, name_button_hash, &error);
     g_free (path);
     if (!retval) {
         for (uint i = 0; i < 4; i++) {
@@ -911,7 +909,7 @@ eek_xml_layout_real_create_keyboard (EekLayout *self,
     }
 
 
-    LevelKeyboard *keyboard = level_keyboard_new(manager, views, name_key_hash);
+    LevelKeyboard *keyboard = level_keyboard_new(manager, views, name_button_hash);
 
     keyboard->outline_array = outline_array;
     // FIXME: are symbols shared betwen views?
@@ -1129,7 +1127,7 @@ eek_xml_keyboard_desc_free (EekXmlKeyboardDesc *desc)
 }
 
 static gboolean
-parse_geometry (const gchar *path, EekKeyboard **views, GArray *outline_array, GHashTable *name_key_hash, GError **error)
+parse_geometry (const gchar *path, EekKeyboard **views, GArray *outline_array, GHashTable *name_button_hash, GError **error)
 {
     GeometryParseData *data;
     GMarkupParseContext *pcontext;
@@ -1146,7 +1144,7 @@ parse_geometry (const gchar *path, EekKeyboard **views, GArray *outline_array, G
     if (input == NULL)
         return FALSE;
 
-    data = geometry_parse_data_new (views, name_key_hash, outline_array);
+    data = geometry_parse_data_new (views, name_button_hash, outline_array);
     pcontext = g_markup_parse_context_new (&geometry_parser,
                                            0,
                                            data,
@@ -1357,7 +1355,7 @@ validate (const gchar **valid_path_list,
           GSList       *element_stack,
           GError      **error)
 {
-    gint i;
+    guint i;
     gchar *element_path;
     GSList *head, *p;
     GString *string;

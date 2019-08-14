@@ -30,6 +30,7 @@
 #include "eek-container.h"
 #include "eek-types.h"
 #include "eek-layout.h"
+#include "src/layout.h"
 
 G_BEGIN_DECLS
 
@@ -113,7 +114,7 @@ struct _EekKeyboardClass
 struct _EekModifierKey {
     /*< public >*/
     EekModifierType modifiers;
-    EekKey *key;
+    struct squeek_button *button;
 };
 typedef struct _EekModifierKey EekModifierKey;
 
@@ -126,10 +127,10 @@ struct _LevelKeyboard {
     size_t keymap_len; // length of the data inside keymap_fd
     GArray *outline_array;
 
-    GList *pressed_keys;
-    GList *locked_keys;
+    GList *pressed_buttons; // struct squeek_button*
+    GList *locked_buttons; // struct squeek_button*
 
-    /* Map key names to key objects: */
+    /* Map button names to button objects: */
     GHashTable *names;
 
     guint id; // as a key to layout choices
@@ -157,11 +158,18 @@ EekSection         *eek_keyboard_create_section
                                      (EekKeyboard        *keyboard);
 EekSection         *eek_keyboard_get_section
                                      (EekKeyboard *keyboard,
-                                      const EekKey *key);
-EekKey             *eek_keyboard_find_key_by_name
-                                     (LevelKeyboard *keyboard,
+                                      const struct squeek_button *button);
+struct squeek_button *eek_keyboard_find_button_by_name(LevelKeyboard *keyboard,
                                       const gchar        *name);
 
+/// Represents the path to the button within a view
+struct button_place {
+    EekSection *section;
+    struct squeek_button *button;
+};
+
+struct button_place eek_keyboard_get_button_by_state(EekKeyboard *keyboard,
+                                             const struct squeek_key *key);
 
 EekOutline         *level_keyboard_get_outline
                                      (LevelKeyboard        *keyboard,
@@ -171,14 +179,14 @@ EekModifierKey     *eek_modifier_key_copy
 void                eek_modifier_key_free
                                      (EekModifierKey      *modkey);
 
-void eek_keyboard_press_key(LevelKeyboard *keyboard, EekKey *key, guint32 timestamp);
-void eek_keyboard_release_key(LevelKeyboard *keyboard, EekKey *key, guint32 timestamp);
+void eek_keyboard_press_button(LevelKeyboard *keyboard, struct squeek_button *button, guint32 timestamp);
+void eek_keyboard_release_button(LevelKeyboard *keyboard, struct squeek_button *button, guint32 timestamp);
 
 gchar *             eek_keyboard_get_keymap
                                      (LevelKeyboard *keyboard);
 
 EekKeyboard *level_keyboard_current(LevelKeyboard *keyboard);
-LevelKeyboard *level_keyboard_new(EekboardContextService *manager, EekKeyboard *views[4], GHashTable *name_key_hash);
+LevelKeyboard *level_keyboard_new(EekboardContextService *manager, EekKeyboard *views[4], GHashTable *name_button_hash);
 void level_keyboard_deinit(LevelKeyboard *self);
 void level_keyboard_free(LevelKeyboard *self);
 /* Create an #EekSection instance and append it to @keyboard.  This

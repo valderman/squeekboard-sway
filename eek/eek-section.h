@@ -30,11 +30,12 @@
 #include "eek-types.h"
 #include "eek-keyboard.h"
 #include "src/keyboard.h"
+#include "src/layout.h"
 
 G_BEGIN_DECLS
 
 #define EEK_TYPE_SECTION (eek_section_get_type())
-G_DECLARE_DERIVABLE_TYPE(EekSection, eek_section, EEK, SECTION, EekContainer)
+G_DECLARE_DERIVABLE_TYPE(EekSection, eek_section, EEK, SECTION, EekElement)
 
 /**
  * EekSectionClass:
@@ -51,13 +52,7 @@ G_DECLARE_DERIVABLE_TYPE(EekSection, eek_section, EEK, SECTION, EekContainer)
 struct _EekSectionClass
 {
     /*< private >*/
-    EekContainerClass parent_class;
-
-    /*< public >*/
-    EekKey *(* create_key)          (EekSection     *self,
-                                     const gchar    *name,
-                                     gint            keycode,
-                                     guint oref);
+    EekElementClass parent_class;
 
     /*< private >*/
     /* padding */
@@ -70,13 +65,21 @@ void    eek_section_set_angle            (EekSection     *section,
                                           gint            angle);
 gint    eek_section_get_angle            (EekSection     *section);
 
-EekKey *eek_section_create_key           (EekSection     *section,
+struct squeek_button *eek_section_create_button (EekSection     *section,
                                           const gchar    *name,
                                           guint keycode, guint oref);
-EekKey *eek_section_create_button(EekSection *self,
+struct squeek_button *eek_section_create_button_with_state(EekSection *self,
                                   const gchar *name,
-                                    struct squeek_key *state);
+                                    struct squeek_button *source);
 void eek_section_place_keys              (EekSection     *section, LevelKeyboard *keyboard);
+void eek_section_foreach (EekSection *section,
+                     GFunc      func,
+                     gpointer   user_data);
 
+gboolean eek_section_find(EekSection *section,
+                     const struct squeek_button *button);
+
+struct squeek_button *eek_section_find_key(EekSection *section,
+                                           const struct squeek_key *key);
 G_END_DECLS
 #endif  /* EEK_SECTION_H */

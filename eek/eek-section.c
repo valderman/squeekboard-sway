@@ -32,7 +32,7 @@
 #include <string.h>
 
 #include "eek-keyboard.h"
-#include "eek-key.h"
+#include "layout.h"
 
 #include "eek-section.h"
 
@@ -46,41 +46,32 @@ typedef struct _EekSectionPrivate
 {
     gint angle;
     EekModifierType modifiers;
+    GPtrArray *buttons; // struct squeek_button*
 } EekSectionPrivate;
 
-G_DEFINE_TYPE_WITH_PRIVATE (EekSection, eek_section, EEK_TYPE_CONTAINER)
+G_DEFINE_TYPE_WITH_PRIVATE (EekSection, eek_section, EEK_TYPE_ELEMENT)
 
-static EekKey *
-eek_section_real_create_key (EekSection *self,
+struct squeek_button*
+eek_section_create_button (EekSection *self,
                              const gchar *name,
-                             gint        keycode,
+                             guint        keycode,
                              guint oref)
 {
-    EekKey *key = (EekKey*)g_object_new (EEK_TYPE_KEY,
-                                         "name", name,
-                                         NULL);
-    g_return_val_if_fail (key, NULL);
-    eek_key_set_keycode(key, keycode);
-    eek_key_set_oref(key, oref);
-
-    EEK_CONTAINER_GET_CLASS(self)->add_child (EEK_CONTAINER(self),
-                                              EEK_ELEMENT(key));
-
-    return key;
+    struct squeek_button *button = squeek_button_new(keycode, oref);
+    g_return_val_if_fail (button, NULL);
+    EekSectionPrivate *priv = eek_section_get_instance_private (self);
+    g_ptr_array_add(priv->buttons, button);
+    return button;
 }
 
-EekKey *eek_section_create_button(EekSection *self,
+struct squeek_button *eek_section_create_button_with_state(EekSection *self,
                                   const gchar *name,
-                                    struct squeek_key *state) {
-    EekKey *key = (EekKey*)g_object_new (EEK_TYPE_KEY,
-                                         "name", name,
-                                         NULL);
-    g_return_val_if_fail (key, NULL);
-    eek_key_share_state(key, state);
-
-    EEK_CONTAINER_GET_CLASS(self)->add_child (EEK_CONTAINER(self),
-                                              EEK_ELEMENT(key));
-    return key;
+                                    struct squeek_button *source) {
+    struct squeek_button *button = squeek_button_new_with_state(source);
+    g_return_val_if_fail (button, NULL);
+    EekSectionPrivate *priv = eek_section_get_instance_private (self);
+    g_ptr_array_add(priv->buttons, button);
+    return button;
 }
 
 static void
@@ -123,34 +114,12 @@ eek_section_get_property (GObject    *object,
 }
 
 static void
-eek_section_real_child_added (EekContainer *self,
-                              EekElement   *element)
-{
-    (void)self;
-    (void)element;
-}
-
-static void
-eek_section_real_child_removed (EekContainer *self,
-                                EekElement   *element)
-{
-    (void)self;
-    (void)element;
-}
-
-static void
 eek_section_class_init (EekSectionClass *klass)
 {
-    EekContainerClass *container_class = EEK_CONTAINER_CLASS (klass);
     GObjectClass      *gobject_class = G_OBJECT_CLASS (klass);
     GParamSpec        *pspec;
 
-    klass->create_key = eek_section_real_create_key;
-
     /* signals */
-    container_class->child_added = eek_section_real_child_added;
-    container_class->child_removed = eek_section_real_child_removed;
-
     gobject_class->set_property = eek_section_set_property;
     gobject_class->get_property = eek_section_get_property;
     gobject_class->finalize     = eek_section_finalize;
@@ -173,7 +142,8 @@ eek_section_class_init (EekSectionClass *klass)
 static void
 eek_section_init (EekSection *self)
 {
-    /* void */
+    EekSectionPrivate *priv = eek_section_get_instance_private (self);
+    priv->buttons = g_ptr_array_new();
 }
 
 /**
@@ -213,30 +183,6 @@ eek_section_get_angle (EekSection *section)
     return priv->angle;
 }
 
-/**
- * eek_section_create_key:
- * @section: an #EekSection
- * @name: a name
- * @keycode: a keycode
- * @column: the column index of the key
- * @row: the row index of the key
- *
- * Create an #EekKey instance and append it to @section.  This
- * function is rarely called by application but called by #EekLayout
- * implementation.
- */
-EekKey *
-eek_section_create_key (EekSection *section,
-                        const gchar *name,
-                        guint        keycode,
-                        guint oref)
-{
-    g_return_val_if_fail (EEK_IS_SECTION(section), NULL);
-    return eek_section_real_create_key (section,
-                                                       name,
-                                                       keycode, oref);
-}
-
 const double keyspacing = 4.0;
 
 struct keys_info {
@@ -245,13 +191,14 @@ struct keys_info {
     double biggest_height;
 };
 
+/// Set button size to match the outline. Reset position
 static void
-keysizer(EekElement *element, gpointer user_data)
+buttonsizer(gpointer item, gpointer user_data)
 {
-    EekKey *key = EEK_KEY(element);
+    struct squeek_button *button = item;
 
     LevelKeyboard *keyboard = user_data;
-    uint oref = eek_key_get_oref (key);
+    uint oref = squeek_button_get_oref(button);
     EekOutline *outline = level_keyboard_get_outline (keyboard, oref);
     if (outline && outline->num_points > 0) {
         double minx = outline->points[0].x;
@@ -272,21 +219,23 @@ keysizer(EekElement *element, gpointer user_data)
                 maxy = p.y;
             }
         }
-        EekBounds key_bounds = {0};
-        eek_element_get_bounds(element, &key_bounds);
-        key_bounds.height = maxy - miny;
-        key_bounds.width = maxx - minx;
-        eek_element_set_bounds(element, &key_bounds);
+        EekBounds key_bounds = {
+            .height = maxy - miny,
+            .width = maxx - minx,
+            .x = 0,
+            .y = 0,
+        };
+        squeek_button_set_bounds(button, key_bounds);
     }
 }
 
 static void
-keycounter (EekElement *element, gpointer user_data)
+buttoncounter (gpointer item, gpointer user_data)
 {
+    struct squeek_button *button = item;
     struct keys_info *data = user_data;
     data->count++;
-    EekBounds key_bounds = {0};
-    eek_element_get_bounds(element, &key_bounds);
+    EekBounds key_bounds = squeek_button_get_bounds(button);
     data->total_width += key_bounds.width;
     if (key_bounds.height > data->biggest_height) {
         data->biggest_height = key_bounds.height;
@@ -294,30 +243,63 @@ keycounter (EekElement *element, gpointer user_data)
 }
 
 static void
-keyplacer(EekElement *element, gpointer user_data)
+buttonplacer(gpointer item, gpointer user_data)
 {
+    struct squeek_button *button = item;
     double *current_offset = user_data;
-    EekBounds key_bounds = {0};
-    eek_element_get_bounds(element, &key_bounds);
+    EekBounds key_bounds = squeek_button_get_bounds(button);
     key_bounds.x = *current_offset;
     key_bounds.y = 0;
-    eek_element_set_bounds(element, &key_bounds);
+    squeek_button_set_bounds(button, key_bounds);
     *current_offset += key_bounds.width + keyspacing;
 }
 
 void
 eek_section_place_keys(EekSection *section, LevelKeyboard *keyboard)
 {
-    eek_container_foreach_child(EEK_CONTAINER(section), keysizer, keyboard);
+    EekSectionPrivate *priv = eek_section_get_instance_private (section);
+
+    g_ptr_array_foreach(priv->buttons, buttonsizer, keyboard);
 
     struct keys_info keyinfo = {0};
-    eek_container_foreach_child(EEK_CONTAINER(section), keycounter, &keyinfo);
+    g_ptr_array_foreach(priv->buttons, buttoncounter, &keyinfo);
+
     EekBounds section_bounds = {0};
     eek_element_get_bounds(EEK_ELEMENT(section), &section_bounds);
 
     double key_offset = (section_bounds.width - (keyinfo.total_width + (keyinfo.count - 1) * keyspacing)) / 2;
-    eek_container_foreach_child(EEK_CONTAINER(section), keyplacer, &key_offset);
+    g_ptr_array_foreach(priv->buttons, buttonplacer, &key_offset);
 
     section_bounds.height = keyinfo.biggest_height;
     eek_element_set_bounds(EEK_ELEMENT(section), &section_bounds);
+}
+
+void eek_section_foreach (EekSection *section,
+                     GFunc      func,
+                          gpointer   user_data) {
+    EekSectionPrivate *priv = eek_section_get_instance_private (section);
+    g_ptr_array_foreach(priv->buttons, func, user_data);
+}
+
+gboolean eek_section_find(EekSection *section,
+                          const struct squeek_button *button) {
+    EekSectionPrivate *priv = eek_section_get_instance_private (section);
+    return g_ptr_array_find(priv->buttons, button, NULL);
+}
+
+static gboolean button_has_key(gconstpointer buttonptr, gconstpointer keyptr) {
+    const struct squeek_button *button = buttonptr;
+    const struct squeek_key *key = keyptr;
+    return squeek_button_has_key((struct squeek_button*)button, key) != 0;
+}
+
+struct squeek_button *eek_section_find_key(EekSection *section,
+                                           const struct squeek_key *key) {
+    EekSectionPrivate *priv = eek_section_get_instance_private (section);
+    guint index;
+    gboolean ret = g_ptr_array_find_with_equal_func(priv->buttons, key, button_has_key, &index);
+    if (ret) {
+        return g_ptr_array_index(priv->buttons, index);
+    }
+    return NULL;// TODO: store keys in locked_keys, pressed_keys
 }

@@ -31,7 +31,6 @@
 #include <glib/gprintf.h>
 
 #include "eek-section.h"
-#include "eek-key.h"
 #include "eek-enumtypes.h"
 #include "eekboard/key-emitter.h"
 #include "keymap.h"
@@ -81,7 +80,6 @@ eek_modifier_key_copy (EekModifierKey *modkey)
 void
 eek_modifier_key_free (EekModifierKey *modkey)
 {
-    g_object_unref (modkey->key);
     g_slice_free (EekModifierKey, modkey);
 }
 
@@ -129,30 +127,30 @@ eek_keyboard_get_property (GObject    *object,
 /// and instead refer to the contained symbols
 static guint
 set_key_states (LevelKeyboard    *keyboard,
-                        EekKey         *key,
+                struct squeek_button *button,
                 guint new_level)
 {
+    struct squeek_key *key = squeek_button_get_key(button);
     // Keys locking rules hardcoded for the time being...
-    const gchar *name = eek_element_get_name(EEK_ELEMENT(key));
+    const gchar *name = squeek_symbol_get_name(squeek_key_get_symbol(key));
     // Lock the shift whenever it's pressed on the baselevel
     // TODO: need to lock shift on the destination level
     if (g_strcmp0(name, "Shift_L") == 0 && keyboard->level == 0) {
         EekModifierKey *modifier_key = g_slice_new (EekModifierKey);
         modifier_key->modifiers = 0;
-        modifier_key->key = g_object_ref (key);
-        keyboard->locked_keys =
-            g_list_prepend (keyboard->locked_keys, modifier_key);
-        eek_key_set_locked(modifier_key->key, true);
+        modifier_key->button = button;
+        keyboard->locked_buttons =
+            g_list_prepend (keyboard->locked_buttons, modifier_key);
+        squeek_key_set_locked(key, true);
     }
-
     if (keyboard->level == 1) {
         // Only shift is locked in this state, unlock on any key press
-        for (GList *head = keyboard->locked_keys; head; ) {
+        for (GList *head = keyboard->locked_buttons; head; ) {
             EekModifierKey *modifier_key = head->data;
             GList *next = g_list_next (head);
-            keyboard->locked_keys =
-                g_list_remove_link (keyboard->locked_keys, head);
-            eek_key_set_locked(modifier_key->key, false);
+            keyboard->locked_buttons =
+                g_list_remove_link (keyboard->locked_buttons, head);
+            squeek_key_set_locked(squeek_button_get_key(modifier_key->button), false);
             g_list_free1 (head);
             head = next;
         }
@@ -163,13 +161,13 @@ set_key_states (LevelKeyboard    *keyboard,
 
 // FIXME: unhardcode, parse some user information as to which key triggers which view (level)
 static void
-set_level_from_press (LevelKeyboard *keyboard, EekKey *key)
+set_level_from_press (LevelKeyboard *keyboard, struct squeek_button *button)
 {
     /* The levels are: 0 Letters, 1 Upper case letters, 2 Numbers, 3 Symbols */
     guint level = keyboard->level;
     /* Handle non-emitting keys */
-    if (key) {
-        const gchar *name = eek_element_get_name(EEK_ELEMENT(key));
+    if (button) {
+        const gchar *name = squeek_symbol_get_name(squeek_key_get_symbol(squeek_button_get_key(button)));
         if (g_strcmp0(name, "show_numbers") == 0) {
             level = 2;
         } else if (g_strcmp0(name, "show_letters") == 0) {
@@ -181,18 +179,17 @@ set_level_from_press (LevelKeyboard *keyboard, EekKey *key)
         }
     }
 
-    keyboard->level = set_key_states(keyboard, key, level);
+    keyboard->level = set_key_states(keyboard, button, level);
 
     eek_layout_update_layout(keyboard);
 }
 
-void eek_keyboard_press_key(LevelKeyboard *keyboard, EekKey *key, guint32 timestamp) {
-    eek_key_set_pressed(key, TRUE);
-    keyboard->pressed_keys = g_list_prepend (keyboard->pressed_keys, key);
+void eek_keyboard_press_button(LevelKeyboard *keyboard, struct squeek_button *button, guint32 timestamp) {
+    struct squeek_key *key = squeek_button_get_key(button);
+    squeek_key_set_pressed(key, TRUE);
+    keyboard->pressed_buttons = g_list_prepend (keyboard->pressed_buttons, button);
 
-    struct squeek_symbol *symbol = eek_key_get_symbol_at_index(
-        key, 0
-    );
+    struct squeek_symbol *symbol = squeek_key_get_symbol(key);
     if (!symbol)
         return;
 
@@ -201,32 +198,31 @@ void eek_keyboard_press_key(LevelKeyboard *keyboard, EekKey *key, guint32 timest
 
     // "Borrowed" from eek-context-service; doesn't influence the state but forwards the event
 
-    guint keycode = eek_key_get_keycode (key);
+    guint keycode = squeek_key_get_keycode (key);
 
     emit_key_activated(keyboard->manager, keyboard, keycode, TRUE, timestamp);
 }
 
-void eek_keyboard_release_key(LevelKeyboard *keyboard,
-                               EekKey      *key,
+void eek_keyboard_release_button(LevelKeyboard *keyboard,
+                              struct squeek_button *button,
                                guint32      timestamp) {
-    for (GList *head = keyboard->pressed_keys; head; head = g_list_next (head)) {
-        if (head->data == key) {
-            keyboard->pressed_keys = g_list_remove_link (keyboard->pressed_keys, head);
+    for (GList *head = keyboard->pressed_buttons; head; head = g_list_next (head)) {
+        if (head->data == button) {
+            keyboard->pressed_buttons = g_list_remove_link (keyboard->pressed_buttons, head);
             g_list_free1 (head);
             break;
         }
     }
 
-    struct squeek_symbol *symbol = eek_key_get_symbol_at_index(
-        key, 0);
+    struct squeek_symbol *symbol = squeek_button_get_symbol(button);
     if (!symbol)
         return;
 
-    set_level_from_press (keyboard, key);
+    set_level_from_press (keyboard, button);
 
     // "Borrowed" from eek-context-service; doesn't influence the state but forwards the event
 
-    guint keycode = eek_key_get_keycode (key);
+    guint keycode = squeek_key_get_keycode (squeek_button_get_key(button));
 
     emit_key_activated(keyboard->manager, keyboard, keycode, FALSE, timestamp);
 }
@@ -306,14 +302,14 @@ void level_keyboard_init(LevelKeyboard *self) {
     self->outline_array = g_array_new (FALSE, TRUE, sizeof (EekOutline));
 }
 
-LevelKeyboard *level_keyboard_new(EekboardContextService *manager, EekKeyboard *views[4], GHashTable *name_key_hash) {
+LevelKeyboard *level_keyboard_new(EekboardContextService *manager, EekKeyboard *views[4], GHashTable *name_button_hash) {
     LevelKeyboard *keyboard = g_new0(LevelKeyboard, 1);
     level_keyboard_init(keyboard);
     for (uint i = 0; i < 4; i++) {
         keyboard->views[i] = views[i];
     }
     keyboard->manager = manager;
-    keyboard->names = name_key_hash;
+    keyboard->names = name_button_hash;
     return keyboard;
 }
 
@@ -325,8 +321,8 @@ LevelKeyboard *level_keyboard_new(EekboardContextService *manager, EekKeyboard *
  * Find an #EekKey whose name is @name.
  * Return value: (transfer none): #EekKey whose name is @name
  */
-EekKey *
-eek_keyboard_find_key_by_name (LevelKeyboard *keyboard,
+struct squeek_button*
+eek_keyboard_find_button_by_name (LevelKeyboard *keyboard,
                                const gchar *name)
 {
     return g_hash_table_lookup (keyboard->names, name);
@@ -386,15 +382,16 @@ eek_keyboard_get_keymap(LevelKeyboard *keyboard)
 
     /* Iterate over the keys in the name-to-key hash table. */
     GHashTableIter iter;
-    gchar *key_name;
-    gpointer key_ptr;
+    gchar *button_name;
+    gpointer button_ptr;
     g_hash_table_iter_init(&iter, keyboard->names);
 
-    while (g_hash_table_iter_next(&iter, (gpointer)&key_name, &key_ptr)) {
+    while (g_hash_table_iter_next(&iter, (gpointer)&button_name, &button_ptr)) {
 
         gchar *current, *line;
-        EekKey *key = EEK_KEY(key_ptr);
-        guint keycode = eek_key_get_keycode(key);
+        struct squeek_button *button = button_ptr;
+        struct squeek_key *key = squeek_button_get_key(button);
+        guint keycode = squeek_key_get_keycode(key);
 
         /* Don't include invalid keycodes in the keymap. */
         if (keycode == EEK_INVALID_KEYCODE)
@@ -402,7 +399,7 @@ eek_keyboard_get_keymap(LevelKeyboard *keyboard)
 
         /* Append a key name-to-keycode definition to the keycodes section. */
         current = keycodes;
-        line = g_strdup_printf("        <%s> = %i;\n", (char *)key_name, keycode);
+        line = g_strdup_printf("        <%s> = %i;\n", (char *)button_name, keycode);
 
         keycodes = g_strconcat(current, line, NULL);
         g_free(line);
@@ -410,8 +407,8 @@ eek_keyboard_get_keymap(LevelKeyboard *keyboard)
 
         // FIXME: free
         const char *key_str = squeek_key_to_keymap_entry(
-            (char*)key_name,
-            eek_key_get_state(key)
+            (char*)button_name,
+            key
         );
         current = symbols;
         symbols = g_strconcat(current, key_str, NULL);
@@ -435,34 +432,57 @@ EekKeyboard *level_keyboard_current(LevelKeyboard *keyboard)
 }
 
 struct GetSectionData {
-    const EekKey *key;
+    const struct squeek_button *button;
     EekSection *section;
+    const struct squeek_key *needle;
 };
 
-gint check_right_key(EekElement *element, gpointer user_data) {
-    EekKey *key = EEK_KEY(element);
-    struct GetSectionData *data = user_data;
-    if (key == data->key) {
-        return TRUE;
-    } else {
-        return FALSE;
-    }
-}
-
-void find_key_in_section(EekElement *element, gpointer user_data) {
+void find_button_in_section(EekElement *element, gpointer user_data) {
     EekSection *section = EEK_SECTION(element);
     struct GetSectionData *data = user_data;
-    if (eek_container_find(EEK_CONTAINER(section), check_right_key, &data)) {
+    if (data->section) {
+        return;
+    }
+    if (eek_section_find(section, data->button)) {
         data->section = section;
     }
 }
 
 EekSection *eek_keyboard_get_section(EekKeyboard *keyboard,
-                                     const EekKey *key) {
+                                     const struct squeek_button *button) {
     struct GetSectionData data = {
-        .key = key,
+        .button = button,
         .section = NULL,
     };
-    eek_container_foreach_child(EEK_CONTAINER(keyboard), find_key_in_section, &data);
+    eek_container_foreach_child(EEK_CONTAINER(keyboard), find_button_in_section, &data);
     return data.section;
+}
+
+void find_key_in_section(EekElement *element, gpointer user_data) {
+    EekSection *section = EEK_SECTION(element);
+    struct GetSectionData *data = user_data;
+    if (data->button) {
+        return;
+    }
+    data->button = eek_section_find_key(section, data->needle);
+    if (data->button) {
+        data->section = section;
+    }
+}
+
+
+// TODO: return multiple
+struct button_place eek_keyboard_get_button_by_state(EekKeyboard *keyboard,
+                                             const struct squeek_key *key) {
+    struct GetSectionData data = {
+        .section = NULL,
+        .button = NULL,
+        .needle = key,
+    };
+    eek_container_foreach_child(EEK_CONTAINER(keyboard), find_key_in_section, &data);
+    struct button_place ret = {
+        .section = data.section,
+        .button = (struct squeek_button*)data.button,
+    };
+    return ret;
 }

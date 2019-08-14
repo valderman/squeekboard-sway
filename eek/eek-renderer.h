@@ -38,15 +38,13 @@ struct _EekRendererClass
 
     void             (* render_key_outline) (EekRenderer *self,
                                              cairo_t     *cr,
-                                             EekKeyboard *view,
-                                             EekKey      *key,
+                                             struct button_place *place,
                                              gdouble      scale,
                                              gboolean     rotate);
 
-    void             (* render_key)         (EekRenderer *self,
+    void             (* render_button)         (EekRenderer *self,
                                              cairo_t     *cr,
-                                             EekKeyboard *view,
-                                             EekKey      *key,
+                                             struct button_place *place,
                                              gdouble      scale,
                                              gboolean     rotate);
 
@@ -74,8 +72,8 @@ void             eek_renderer_set_allocation_size
 void             eek_renderer_get_size         (EekRenderer     *renderer,
                                                 gdouble         *width,
                                                 gdouble         *height);
-void             eek_renderer_get_key_bounds   (EekRenderer     *renderer, EekKeyboard *view,
-                                                EekKey          *key,
+void             eek_renderer_get_button_bounds   (EekRenderer     *renderer,
+                                                struct button_place *button,
                                                 EekBounds       *bounds,
                                                 gboolean         rotate);
 
@@ -91,15 +89,14 @@ void             eek_renderer_render_key_label (EekRenderer     *renderer,
 
 void             eek_renderer_render_key_outline
                                                (EekRenderer     *renderer,
-                                                cairo_t         *cr, EekKeyboard *view,
-                                                EekKey          *key,
+                                                cairo_t         *cr,
+                                                struct button_place *place,
                                                 gdouble          scale,
                                                 gboolean         rotate);
 
-void             eek_renderer_render_key       (EekRenderer     *renderer,
+void             eek_renderer_render_button       (EekRenderer     *renderer,
                                                 cairo_t         *cr,
-                                                EekKeyboard *view,
-                                                EekKey          *key,
+                                                struct button_place *place,
                                                 gdouble          scale,
                                                 gboolean         rotate);
 
@@ -123,14 +120,12 @@ void             eek_renderer_get_foreground_color
                                                 EekColor        *color);
 void             eek_renderer_set_border_width (EekRenderer     *renderer,
                                                 gdouble          border_width);
-EekKey          *eek_renderer_find_key_by_position
-                                               (EekRenderer     *renderer, EekKeyboard *view,
+struct squeek_button *eek_renderer_find_button_by_position(EekRenderer     *renderer, EekKeyboard *view,
                                                 gdouble          x,
                                                 gdouble          y);
-void             eek_renderer_apply_transformation_for_key
+void             eek_renderer_apply_transformation_for_button
                                                (EekRenderer     *renderer,
-                                                cairo_t         *cr, EekKeyboard *view,
-                                                EekKey          *key,
+                                                cairo_t         *cr, struct button_place *place,
                                                 gdouble          scale,
                                                 gboolean         rotate);
 

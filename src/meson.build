@@ -19,7 +19,6 @@ sources = [
   '../eek/eek-container.c',
   '../eek/eek-element.c',
   '../eek/eek-gtk-keyboard.c',
-  '../eek/eek-key.c',
   '../eek/eek-keyboard.c',
   '../eek/eek-keyboard-drawing.c',
   '../eek/eek-keysym.c',
