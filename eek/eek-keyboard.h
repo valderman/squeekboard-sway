@@ -155,10 +155,13 @@ void                eek_keyboard_set_size
 
 EekSection         *eek_keyboard_create_section
                                      (EekKeyboard        *keyboard);
-
+EekSection         *eek_keyboard_get_section
+                                     (EekKeyboard *keyboard,
+                                      const EekKey *key);
 EekKey             *eek_keyboard_find_key_by_name
                                      (LevelKeyboard *keyboard,
                                       const gchar        *name);
+
 
 EekOutline         *level_keyboard_get_outline
                                      (LevelKeyboard        *keyboard,

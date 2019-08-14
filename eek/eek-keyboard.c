@@ -433,3 +433,36 @@ EekKeyboard *level_keyboard_current(LevelKeyboard *keyboard)
 {
     return keyboard->views[keyboard->level];
 }
+
+struct GetSectionData {
+    const EekKey *key;
+    EekSection *section;
+};
+
+gint check_right_key(EekElement *element, gpointer user_data) {
+    EekKey *key = EEK_KEY(element);
+    struct GetSectionData *data = user_data;
+    if (key == data->key) {
+        return TRUE;
+    } else {
+        return FALSE;
+    }
+}
+
+void find_key_in_section(EekElement *element, gpointer user_data) {
+    EekSection *section = EEK_SECTION(element);
+    struct GetSectionData *data = user_data;
+    if (eek_container_find(EEK_CONTAINER(section), check_right_key, &data)) {
+        data->section = section;
+    }
+}
+
+EekSection *eek_keyboard_get_section(EekKeyboard *keyboard,
+                                     const EekKey *key) {
+    struct GetSectionData data = {
+        .key = key,
+        .section = NULL,
+    };
+    eek_container_foreach_child(EEK_CONTAINER(keyboard), find_key_in_section, &data);
+    return data.section;
+}

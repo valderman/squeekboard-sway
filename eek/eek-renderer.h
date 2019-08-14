@@ -38,14 +38,15 @@ struct _EekRendererClass
 
     void             (* render_key_outline) (EekRenderer *self,
                                              cairo_t     *cr,
+                                             EekKeyboard *view,
                                              EekKey      *key,
                                              gdouble      scale,
                                              gboolean     rotate);
 
     void             (* render_key)         (EekRenderer *self,
                                              cairo_t     *cr,
+                                             EekKeyboard *view,
                                              EekKey      *key,
-                                             guint        level,
                                              gdouble      scale,
                                              gboolean     rotate);
 
@@ -90,14 +91,15 @@ void             eek_renderer_render_key_label (EekRenderer     *renderer,
 
 void             eek_renderer_render_key_outline
                                                (EekRenderer     *renderer,
-                                                cairo_t         *cr,
+                                                cairo_t         *cr, EekKeyboard *view,
                                                 EekKey          *key,
                                                 gdouble          scale,
                                                 gboolean         rotate);
 
 void             eek_renderer_render_key       (EekRenderer     *renderer,
                                                 cairo_t         *cr,
-                                                EekKey          *key, guint level,
+                                                EekKeyboard *view,
+                                                EekKey          *key,
                                                 gdouble          scale,
                                                 gboolean         rotate);
 
@@ -122,12 +124,12 @@ void             eek_renderer_get_foreground_color
 void             eek_renderer_set_border_width (EekRenderer     *renderer,
                                                 gdouble          border_width);
 EekKey          *eek_renderer_find_key_by_position
-                                               (EekRenderer     *renderer,
+                                               (EekRenderer     *renderer, EekKeyboard *view,
                                                 gdouble          x,
                                                 gdouble          y);
 void             eek_renderer_apply_transformation_for_key
                                                (EekRenderer     *renderer,
-                                                cairo_t         *cr,
+                                                cairo_t         *cr, EekKeyboard *view,
                                                 EekKey          *key,
                                                 gdouble          scale,
                                                 gboolean         rotate);
