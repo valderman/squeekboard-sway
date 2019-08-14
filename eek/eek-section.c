@@ -42,43 +42,13 @@ enum {
     PROP_LAST
 };
 
-struct _EekRow
-{
-    gint num_columns;
-    EekOrientation orientation;
-};
-
-typedef struct _EekRow EekRow;
-
 typedef struct _EekSectionPrivate
 {
     gint angle;
-    EekRow row;
     EekModifierType modifiers;
 } EekSectionPrivate;
 
 G_DEFINE_TYPE_WITH_PRIVATE (EekSection, eek_section, EEK_TYPE_CONTAINER)
-
-static gint
-eek_section_real_get_n_rows (EekSection *self)
-{
-return 1;
-}
-
-static void
-eek_section_real_add_row (EekSection    *self,
-                          gint           num_columns,
-                          EekOrientation orientation)
-{
-    EekSectionPrivate *priv = (EekSectionPrivate*)eek_section_get_instance_private (self);
-    priv->row.num_columns = num_columns;
-    priv->row.orientation = orientation;
-/*
-    row = g_slice_new (EekRow);
-    row->num_columns = num_columns;
-    row->orientation = orientation;
-    priv->rows = g_slist_append (priv->rows, row);*/
-}
 
 static EekKey *
 eek_section_real_create_key (EekSection *self,
@@ -86,11 +56,6 @@ eek_section_real_create_key (EekSection *self,
                              gint        keycode,
                              guint oref)
 {
-    EekSectionPrivate *priv = (EekSectionPrivate*)eek_section_get_instance_private (self);
-
-    EekRow *row = &priv->row;
-    row->num_columns++;
-
     EekKey *key = (EekKey*)g_object_new (EEK_TYPE_KEY,
                                          "name", name,
                                          NULL);
@@ -107,11 +72,6 @@ eek_section_real_create_key (EekSection *self,
 EekKey *eek_section_create_button(EekSection *self,
                                   const gchar *name,
                                     struct squeek_key *state) {
-    EekSectionPrivate *priv = (EekSectionPrivate*)eek_section_get_instance_private (self);
-
-    EekRow *row = &priv->row;
-    row->num_columns++;
-
     EekKey *key = (EekKey*)g_object_new (EEK_TYPE_KEY,
                                          "name", name,
                                          NULL);
@@ -185,8 +145,6 @@ eek_section_class_init (EekSectionClass *klass)
     GObjectClass      *gobject_class = G_OBJECT_CLASS (klass);
     GParamSpec        *pspec;
 
-    klass->get_n_rows = eek_section_real_get_n_rows;
-    klass->add_row = eek_section_real_add_row;
     klass->create_key = eek_section_real_create_key;
 
     /* signals */
@@ -253,39 +211,6 @@ eek_section_get_angle (EekSection *section)
     EekSectionPrivate *priv = eek_section_get_instance_private (section);
 
     return priv->angle;
-}
-
-/**
- * eek_section_get_n_rows:
- * @section: an #EekSection
- *
- * Get the number of rows in @section.
- */
-gint
-eek_section_get_n_rows (EekSection *section)
-{
-    g_return_val_if_fail (EEK_IS_SECTION(section), -1);
-    return EEK_SECTION_GET_CLASS(section)->get_n_rows (section);
-}
-
-/**
- * eek_section_add_row:
- * @section: an #EekSection
- * @num_columns: the number of column in the row
- * @orientation: #EekOrientation of the row
- *
- * Add a row which has @num_columns columns and whose orientation is
- * @orientation to @section.
- */
-void
-eek_section_add_row (EekSection    *section,
-                     gint           num_columns,
-                     EekOrientation orientation)
-{
-    g_return_if_fail (EEK_IS_SECTION(section));
-    EEK_SECTION_GET_CLASS(section)->add_row (section,
-                                             num_columns,
-                                             orientation);
 }
 
 /**

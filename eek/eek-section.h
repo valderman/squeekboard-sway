@@ -54,11 +54,6 @@ struct _EekSectionClass
     EekContainerClass parent_class;
 
     /*< public >*/
-    gint    (* get_n_rows)          (EekSection     *self);
-    void    (* add_row)             (EekSection     *self,
-                                     gint            num_columns,
-                                     EekOrientation  orientation);
-
     EekKey *(* create_key)          (EekSection     *self,
                                      const gchar    *name,
                                      gint            keycode,
@@ -75,10 +70,6 @@ void    eek_section_set_angle            (EekSection     *section,
                                           gint            angle);
 gint    eek_section_get_angle            (EekSection     *section);
 
-gint    eek_section_get_n_rows           (EekSection     *section);
-void    eek_section_add_row              (EekSection     *section,
-                                          gint            num_columns,
-                                          EekOrientation  orientation);
 EekKey *eek_section_create_key           (EekSection     *section,
                                           const gchar    *name,
                                           guint keycode, guint oref);
