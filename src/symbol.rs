@@ -74,7 +74,7 @@ pub mod c {
 }
 
 /// Just defines some int->identifier mappings for convenience
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum KeySym {
     Unknown = 0,
     Shift = 0xffe1,
@@ -89,10 +89,10 @@ impl KeySym {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct XKeySym(pub u32);
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Label {
     /// Text used to display the symbol
     Text(CString),
@@ -104,14 +104,14 @@ pub enum Label {
 type Level = u8;
 
 /// Use to send modified keypresses
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Modifier {
     Control,
     Alt,
 }
 
 /// Action to perform on the keypress and, in reverse, on keyrelease
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Action {
     /// Switch to this level TODO: reverse?
     SetLevel(Level),
@@ -127,7 +127,7 @@ pub enum Action {
 }
 
 /// Contains a static description of a particular key's actions
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Symbol {
     /// The action that this key performs
     pub action: Action,
