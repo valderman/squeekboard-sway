@@ -26,7 +26,6 @@
 #include "eek-section.h"
 #include "eek-layout.h"
 #include "eek-keysym.h"
-#include "eek-serializable.h"
 
 void eek_init (void);
 

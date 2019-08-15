@@ -25,7 +25,6 @@ sources = [
   '../eek/eek-layout.c',
   '../eek/eek-renderer.c',
   '../eek/eek-section.c',
-  '../eek/eek-serializable.c',
   '../eek/eek-types.c',
   '../eek/eek-xml-layout.c',
   '../eek/layersurface.c',
