@@ -3,6 +3,7 @@ pub mod c {
     use std::os::raw::c_char;
     use std::str::Utf8Error;
     
+    #[allow(dead_code)]
     pub fn as_str(s: &*const c_char) -> Result<Option<&str>, Utf8Error> {
         if s.is_null() {
             Ok(None)

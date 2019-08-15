@@ -64,6 +64,8 @@ GType   eek_section_get_type             (void) G_GNUC_CONST;
 void    eek_section_set_angle            (EekSection     *section,
                                           gint            angle);
 gint    eek_section_get_angle            (EekSection     *section);
+struct squeek_row *
+eek_section_get_row (EekSection *section);
 
 struct squeek_button *eek_section_create_button (EekSection     *section,
                                           const gchar    *name,
@@ -73,13 +75,13 @@ struct squeek_button *eek_section_create_button_with_state(EekSection *self,
                                     struct squeek_button *source);
 void eek_section_place_keys              (EekSection     *section, LevelKeyboard *keyboard);
 void eek_section_foreach (EekSection *section,
-                     GFunc      func,
+                     ButtonCallback func,
                      gpointer   user_data);
 
 gboolean eek_section_find(EekSection *section,
-                     const struct squeek_button *button);
+                     struct squeek_button *button);
 
 struct squeek_button *eek_section_find_key(EekSection *section,
-                                           const struct squeek_key *key);
+                                           struct squeek_key *key);
 G_END_DECLS
 #endif  /* EEK_SECTION_H */

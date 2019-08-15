@@ -1,17 +1,17 @@
-/* 
+/*
  * Copyright (C) 2010-2011 Daiki Ueno <ueno@unixuser.org>
  * Copyright (C) 2010-2011 Red Hat, Inc.
- * 
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
  * as published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
@@ -432,9 +432,9 @@ EekKeyboard *level_keyboard_current(LevelKeyboard *keyboard)
 }
 
 struct GetSectionData {
-    const struct squeek_button *button;
+    struct squeek_button *button;
     EekSection *section;
-    const struct squeek_key *needle;
+    struct squeek_key *needle;
 };
 
 void find_button_in_section(EekElement *element, gpointer user_data) {
@@ -449,7 +449,7 @@ void find_button_in_section(EekElement *element, gpointer user_data) {
 }
 
 EekSection *eek_keyboard_get_section(EekKeyboard *keyboard,
-                                     const struct squeek_button *button) {
+                                     struct squeek_button *button) {
     struct GetSectionData data = {
         .button = button,
         .section = NULL,
@@ -473,7 +473,7 @@ void find_key_in_section(EekElement *element, gpointer user_data) {
 
 // TODO: return multiple
 struct button_place eek_keyboard_get_button_by_state(EekKeyboard *keyboard,
-                                             const struct squeek_key *key) {
+                                             struct squeek_key *key) {
     struct GetSectionData data = {
         .section = NULL,
         .button = NULL,
@@ -482,7 +482,7 @@ struct button_place eek_keyboard_get_button_by_state(EekKeyboard *keyboard,
     eek_container_foreach_child(EEK_CONTAINER(keyboard), find_key_in_section, &data);
     struct button_place ret = {
         .section = data.section,
-        .button = (struct squeek_button*)data.button,
+        .button = data.button,
     };
     return ret;
 }

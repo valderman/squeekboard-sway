@@ -158,7 +158,7 @@ EekSection         *eek_keyboard_create_section
                                      (EekKeyboard        *keyboard);
 EekSection         *eek_keyboard_get_section
                                      (EekKeyboard *keyboard,
-                                      const struct squeek_button *button);
+                                      struct squeek_button *button);
 struct squeek_button *eek_keyboard_find_button_by_name(LevelKeyboard *keyboard,
                                       const gchar        *name);
 
@@ -169,7 +169,7 @@ struct button_place {
 };
 
 struct button_place eek_keyboard_get_button_by_state(EekKeyboard *keyboard,
-                                             const struct squeek_key *key);
+                                             struct squeek_key *key);
 
 EekOutline         *level_keyboard_get_outline
                                      (LevelKeyboard        *keyboard,
@@ -195,6 +195,10 @@ void level_keyboard_free(LevelKeyboard *self);
 */
 EekSection *
 eek_keyboard_real_create_section (EekKeyboard *self);
+
+struct squeek_row *
+eek_keyboard_real_create_row (EekKeyboard *self);
+
 
 G_END_DECLS
 #endif  /* EEK_KEYBOARD_H */

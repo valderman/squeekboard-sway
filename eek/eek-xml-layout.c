@@ -235,6 +235,7 @@ struct _GeometryParseData {
     EekKeyboard **views;
     guint view_idx;
     EekSection *section;
+    struct squeek_row *row;
     gint num_rows;
     EekOrientation orientation;
     gdouble corner_radius;
@@ -375,6 +376,7 @@ geometry_start_element_callback (GMarkupParseContext *pcontext,
 
     if (g_strcmp0 (element_name, "section") == 0) {
         data->section = eek_keyboard_real_create_section (data->views[data->view_idx]);
+        data->row = eek_section_get_row(data->section);
         attribute = get_attribute (attribute_names, attribute_values,
                                    "id");
         if (attribute != NULL)
@@ -384,7 +386,7 @@ geometry_start_element_callback (GMarkupParseContext *pcontext,
         if (attribute != NULL) {
             gint angle;
             angle = strtol (attribute, NULL, 10);
-            eek_section_set_angle (data->section, angle);
+            squeek_row_set_angle (data->row, angle);
         }
 
         goto out;
@@ -566,15 +568,12 @@ geometry_end_element_callback (GMarkupParseContext *pcontext,
 
                 guint oref = GPOINTER_TO_UINT(g_hash_table_lookup(data->keyname_oref_hash, name));
                 // default value gives idx 0, which is guaranteed to be occupied
-                button = eek_section_create_button (data->section,
-                                                    name,
-                                                    keycode,
-                                              oref);
+                button = squeek_row_create_button (data->row, keycode, oref);
                 g_hash_table_insert (data->name_button_hash,
                                      g_strdup(name),
                                      button);
             } else {
-                struct squeek_button *new_button = eek_section_create_button_with_state(data->section, name, button);
+                struct squeek_button *new_button = squeek_row_create_button_with_state(data->row, button);
                 if (!new_button) {
                     g_set_error (error,
                                  G_MARKUP_ERROR,
@@ -586,6 +585,7 @@ geometry_end_element_callback (GMarkupParseContext *pcontext,
         }
 
         data->section = NULL;
+        data->row = NULL;
         data->num_rows = 0;
         return;
     }

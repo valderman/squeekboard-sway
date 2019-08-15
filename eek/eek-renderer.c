@@ -93,10 +93,9 @@ struct _CreateKeyboardSurfaceCallbackData {
 typedef struct _CreateKeyboardSurfaceCallbackData CreateKeyboardSurfaceCallbackData;
 
 static void
-create_keyboard_surface_button_callback (gpointer item,
+create_keyboard_surface_button_callback (struct squeek_button *button,
                                       gpointer    user_data)
 {
-    struct squeek_button *button = item;
     CreateKeyboardSurfaceCallbackData *data = user_data;
     EekBounds bounds = squeek_button_get_bounds(button);
 
@@ -978,10 +977,9 @@ sign (EekPoint *p1, EekPoint *p2, EekPoint *p3)
 }
 
 static void
-find_button_by_position_key_callback (gpointer item,
+find_button_by_position_key_callback (struct squeek_button *button,
                                    gpointer user_data)
 {
-    struct squeek_button *button = item;
     FindKeyByPositionCallbackData *data = user_data;
     if (data->button) {
         return;
