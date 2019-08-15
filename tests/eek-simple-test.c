@@ -25,13 +25,10 @@ static void
 test_create (void)
 {
     EekKeyboard *keyboard;
-    EekSection *section;
     struct squeek_button *button0, *button1;
 
     keyboard = g_object_new (EEK_TYPE_KEYBOARD, NULL);
-    section = eek_keyboard_real_create_section (keyboard);
-    g_assert (EEK_IS_SECTION(section));
-    struct squeek_row *row = eek_section_get_row(section);
+    struct squeek_row *row = eek_keyboard_real_create_row (keyboard);
     g_assert (row);
     button0 = squeek_row_create_button (row, 1, 0);
     g_assert (button0);

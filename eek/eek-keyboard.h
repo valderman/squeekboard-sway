@@ -57,10 +57,11 @@ typedef struct _EekKeyboardPrivate EekKeyboardPrivate;
 struct _EekKeyboard
 {
     /*< private >*/
-    EekContainer parent;
+    EekElement parent;
 
     EekKeyboardPrivate *priv;
     double scale;
+    GPtrArray *rows; // struct squeek_row*
 };
 
 /**
@@ -77,7 +78,7 @@ struct _EekKeyboard
 struct _EekKeyboardClass
 {
     /*< private >*/
-    EekContainerClass parent_class;
+    EekElementClass parent_class;
 
     /* obsolete members moved to EekElement */
     gpointer set_symbol_index;
@@ -156,15 +157,14 @@ void                eek_keyboard_set_size
 
 EekSection         *eek_keyboard_create_section
                                      (EekKeyboard        *keyboard);
-EekSection         *eek_keyboard_get_section
-                                     (EekKeyboard *keyboard,
+struct squeek_row *eek_keyboard_get_row(EekKeyboard *keyboard,
                                       struct squeek_button *button);
 struct squeek_button *eek_keyboard_find_button_by_name(LevelKeyboard *keyboard,
                                       const gchar        *name);
 
 /// Represents the path to the button within a view
 struct button_place {
-    EekSection *section;
+    struct squeek_row *row;
     struct squeek_button *button;
 };
 
@@ -185,16 +185,14 @@ void eek_keyboard_release_button(LevelKeyboard *keyboard, struct squeek_button *
 gchar *             eek_keyboard_get_keymap
                                      (LevelKeyboard *keyboard);
 
+void eek_keyboard_foreach (EekKeyboard *keyboard,
+                     GFunc      func,
+                          gpointer   user_data);
+
 EekKeyboard *level_keyboard_current(LevelKeyboard *keyboard);
 LevelKeyboard *level_keyboard_new(EekboardContextService *manager, EekKeyboard *views[4], GHashTable *name_button_hash);
 void level_keyboard_deinit(LevelKeyboard *self);
 void level_keyboard_free(LevelKeyboard *self);
-/* Create an #EekSection instance and append it to @keyboard.  This
-* function is rarely called by application but called by #EekLayout
-* implementation.
-*/
-EekSection *
-eek_keyboard_real_create_section (EekKeyboard *self);
 
 struct squeek_row *
 eek_keyboard_real_create_row (EekKeyboard *self);

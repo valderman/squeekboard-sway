@@ -66,7 +66,7 @@ struct _EekKeyboardPrivate
     char dummy;    // won't run otherwise
 };
 
-G_DEFINE_TYPE_WITH_PRIVATE (EekKeyboard, eek_keyboard, EEK_TYPE_CONTAINER);
+G_DEFINE_TYPE_WITH_PRIVATE (EekKeyboard, eek_keyboard, EEK_TYPE_ELEMENT);
 
 G_DEFINE_BOXED_TYPE(EekModifierKey, eek_modifier_key,
                     eek_modifier_key_copy, eek_modifier_key_free);
@@ -83,17 +83,12 @@ eek_modifier_key_free (EekModifierKey *modkey)
     g_slice_free (EekModifierKey, modkey);
 }
 
-EekSection *
-eek_keyboard_real_create_section (EekKeyboard *self)
+struct squeek_row *
+eek_keyboard_real_create_row (EekKeyboard *self)
 {
-    EekSection *section;
-
-    section = g_object_new (EEK_TYPE_SECTION, NULL);
-    g_return_val_if_fail (section, NULL);
-
-    EEK_CONTAINER_GET_CLASS(self)->add_child (EEK_CONTAINER(self),
-                                              EEK_ELEMENT(section));
-    return section;
+    struct squeek_row *row = squeek_row_new(0);
+    g_ptr_array_add(self->rows, row);
+    return row;
 }
 
 static void
@@ -278,13 +273,9 @@ eek_keyboard_real_child_removed (EekContainer *self,
 static void
 eek_keyboard_class_init (EekKeyboardClass *klass)
 {
-    EekContainerClass *container_class = EEK_CONTAINER_CLASS (klass);
     GObjectClass      *gobject_class = G_OBJECT_CLASS (klass);
 
     /* signals */
-    container_class->child_added = eek_keyboard_real_child_added;
-    container_class->child_removed = eek_keyboard_real_child_removed;
-
     gobject_class->get_property = eek_keyboard_get_property;
     gobject_class->set_property = eek_keyboard_set_property;
     gobject_class->dispose = eek_keyboard_dispose;
@@ -294,8 +285,14 @@ eek_keyboard_class_init (EekKeyboardClass *klass)
 static void
 eek_keyboard_init (EekKeyboard *self)
 {
-    self->priv = EEK_KEYBOARD_GET_PRIVATE(self);
     self->scale = 1.0;
+    self->rows = g_ptr_array_new();
+}
+
+void eek_keyboard_foreach (EekKeyboard *keyboard,
+                     GFunc      func,
+                          gpointer   user_data) {
+    g_ptr_array_foreach(keyboard->rows, func, user_data);
 }
 
 void level_keyboard_init(LevelKeyboard *self) {
@@ -431,42 +428,42 @@ EekKeyboard *level_keyboard_current(LevelKeyboard *keyboard)
     return keyboard->views[keyboard->level];
 }
 
-struct GetSectionData {
+struct GetRowData {
     struct squeek_button *button;
-    EekSection *section;
+    struct squeek_row *row;
     struct squeek_key *needle;
 };
 
-void find_button_in_section(EekElement *element, gpointer user_data) {
-    EekSection *section = EEK_SECTION(element);
-    struct GetSectionData *data = user_data;
-    if (data->section) {
+void find_button_in_row(gpointer item, gpointer user_data) {
+    struct squeek_row *row = item;
+    struct GetRowData *data = user_data;
+    if (data->row) {
         return;
     }
-    if (eek_section_find(section, data->button)) {
-        data->section = section;
+    if (squeek_row_contains(row, data->button)) {
+        data->row = row;
     }
 }
 
-EekSection *eek_keyboard_get_section(EekKeyboard *keyboard,
+struct squeek_row *eek_keyboard_get_row(EekKeyboard *keyboard,
                                      struct squeek_button *button) {
-    struct GetSectionData data = {
+    struct GetRowData data = {
         .button = button,
-        .section = NULL,
+        .row = NULL,
     };
-    eek_container_foreach_child(EEK_CONTAINER(keyboard), find_button_in_section, &data);
-    return data.section;
+    eek_keyboard_foreach(keyboard, find_button_in_row, &data);
+    return data.row;
 }
 
-void find_key_in_section(EekElement *element, gpointer user_data) {
-    EekSection *section = EEK_SECTION(element);
-    struct GetSectionData *data = user_data;
+void find_key_in_row(gpointer item, gpointer user_data) {
+    struct squeek_row *row = item;
+    struct GetRowData *data = user_data;
     if (data->button) {
         return;
     }
-    data->button = eek_section_find_key(section, data->needle);
+    data->button = squeek_row_find_key(row, data->needle);
     if (data->button) {
-        data->section = section;
+        data->row = row;
     }
 }
 
@@ -474,14 +471,14 @@ void find_key_in_section(EekElement *element, gpointer user_data) {
 // TODO: return multiple
 struct button_place eek_keyboard_get_button_by_state(EekKeyboard *keyboard,
                                              struct squeek_key *key) {
-    struct GetSectionData data = {
-        .section = NULL,
+    struct GetRowData data = {
+        .row = NULL,
         .button = NULL,
         .needle = key,
     };
-    eek_container_foreach_child(EEK_CONTAINER(keyboard), find_key_in_section, &data);
+    eek_keyboard_foreach(keyboard, find_key_in_row, &data);
     struct button_place ret = {
-        .section = data.section,
+        .row = data.row,
         .button = data.button,
     };
     return ret;

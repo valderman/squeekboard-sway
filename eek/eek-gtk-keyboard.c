@@ -528,9 +528,9 @@ on_button_pressed (struct squeek_button *button,
 
     struct button_place place = {
         .button = button,
-        .section = eek_keyboard_get_section(view, button),
+        .row = eek_keyboard_get_row(view, button),
     };
-    if (!place.section) {
+    if (!place.row) {
         return;
     }
     render_pressed_button (GTK_WIDGET(self), &place);

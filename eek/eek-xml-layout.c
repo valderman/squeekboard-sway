@@ -234,7 +234,6 @@ struct _GeometryParseData {
     EekBounds bounds;
     EekKeyboard **views;
     guint view_idx;
-    EekSection *section;
     struct squeek_row *row;
     gint num_rows;
     EekOrientation orientation;
@@ -375,12 +374,7 @@ geometry_start_element_callback (GMarkupParseContext *pcontext,
     }
 
     if (g_strcmp0 (element_name, "section") == 0) {
-        data->section = eek_keyboard_real_create_section (data->views[data->view_idx]);
-        data->row = eek_section_get_row(data->section);
-        attribute = get_attribute (attribute_names, attribute_values,
-                                   "id");
-        if (attribute != NULL)
-            eek_element_set_name (EEK_ELEMENT(data->section), attribute);
+        data->row = eek_keyboard_real_create_row(data->views[data->view_idx]);
         attribute = get_attribute (attribute_names, attribute_values,
                                    "angle");
         if (attribute != NULL) {
@@ -584,7 +578,6 @@ geometry_end_element_callback (GMarkupParseContext *pcontext,
             }
         }
 
-        data->section = NULL;
         data->row = NULL;
         data->num_rows = 0;
         return;
@@ -939,7 +932,7 @@ eek_xml_layout_real_create_keyboard (EekLayout *self,
 
     for (uint i = 0; i < 4; i++) {
         if (views[i]) {
-            eek_layout_place_sections(keyboard, views[i]);
+            eek_layout_place_rows(keyboard, views[i]);
         }
     }
 

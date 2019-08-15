@@ -46,7 +46,7 @@ eek_layout_init (EekLayout *self)
 {
 }
 
-const double section_spacing = 7.0;
+const double row_spacing = 7.0;
 
 struct place_data {
     double desired_width;
@@ -56,38 +56,39 @@ struct place_data {
 };
 
 static void
-section_placer(EekElement *element, gpointer user_data)
+row_placer(gpointer item, gpointer user_data)
 {
     struct place_data *data = (struct place_data*)user_data;
 
-    EekSection *section = EEK_SECTION(element);
-    EekBounds section_bounds = {
+    struct squeek_row *row = item;
+    EekBounds row_bounds = {
         .x = 0,
         .y = 0,
         .width = data->desired_width,
         .height = 0,
     };
-    eek_section_set_bounds(section, section_bounds);
+    squeek_row_set_bounds(row, row_bounds);
 
-    // Sections are rows now. Gather up all the keys and adjust their bounds.
-    eek_section_place_keys(EEK_SECTION(element), data->keyboard);
+    // Gather up all the keys in a row and adjust their bounds.
+    eek_row_place_buttons(row, data->keyboard);
 
-    section_bounds = eek_section_get_bounds(section);
-    section_bounds.y = data->current_offset;
-    eek_section_set_bounds(section, section_bounds);
-    data->current_offset += section_bounds.height + section_spacing;
+    row_bounds = squeek_row_get_bounds(row);
+    row_bounds.y = data->current_offset;
+    squeek_row_set_bounds(row, row_bounds);
+    data->current_offset += row_bounds.height + row_spacing;
 }
 
 static void
-section_counter(EekElement *element, gpointer user_data) {
+row_counter(gpointer item, gpointer user_data) {
 
     double *total_height = user_data;
-    EekBounds section_bounds = eek_section_get_bounds(EEK_SECTION(element));
-    *total_height += section_bounds.height + section_spacing;
+    struct squeek_row *row = item;
+    EekBounds row_bounds = squeek_row_get_bounds(row);
+    *total_height += row_bounds.height + row_spacing;
 }
 
 void
-eek_layout_place_sections(LevelKeyboard *keyboard, EekKeyboard *level)
+eek_layout_place_rows(LevelKeyboard *keyboard, EekKeyboard *level)
 {
     /* Order rows */
     // This needs to be done after outlines, because outlines define key sizes
@@ -103,10 +104,10 @@ eek_layout_place_sections(LevelKeyboard *keyboard, EekKeyboard *level)
         .current_offset = 0,
         .keyboard = keyboard,
     };
-    eek_container_foreach_child(EEK_CONTAINER(level), section_placer, &placer_data);
+    eek_keyboard_foreach(level, row_placer, &placer_data);
 
     double total_height = 0;
-    eek_container_foreach_child(EEK_CONTAINER(level), section_counter, &total_height);
+    eek_keyboard_foreach(level, row_counter, &total_height);
     keyboard_bounds.height = total_height;
     eek_element_set_bounds(EEK_ELEMENT(level), &keyboard_bounds);
 }
@@ -114,5 +115,5 @@ eek_layout_place_sections(LevelKeyboard *keyboard, EekKeyboard *level)
 void
 eek_layout_update_layout(LevelKeyboard *keyboard)
 {
-    eek_layout_place_sections(keyboard, level_keyboard_current(keyboard));
+    eek_layout_place_rows(keyboard, level_keyboard_current(keyboard));
 }

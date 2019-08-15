@@ -126,8 +126,7 @@ pub mod c {
         let row = unsafe { &mut *row };
         row.bounds = Some(bounds);
     }
-    
-    
+
     #[no_mangle]
     pub extern "C"
     fn squeek_row_contains(

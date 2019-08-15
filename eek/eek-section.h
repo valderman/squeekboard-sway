@@ -73,7 +73,8 @@ struct squeek_button *eek_section_create_button (EekSection     *section,
 struct squeek_button *eek_section_create_button_with_state(EekSection *self,
                                   const gchar *name,
                                     struct squeek_button *source);
-void eek_section_place_keys              (EekSection     *section, LevelKeyboard *keyboard);
+void
+eek_row_place_buttons(struct squeek_row *row, LevelKeyboard *keyboard);
 void eek_section_foreach (EekSection *section,
                      ButtonCallback func,
                      gpointer   user_data);

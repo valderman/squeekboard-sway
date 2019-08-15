@@ -55,7 +55,7 @@ struct _EekLayoutClass
 
 GType        eek_layout_get_type  (void) G_GNUC_CONST;
 
-void         eek_layout_place_sections(LevelKeyboard *keyboard, EekKeyboard *level);
+void         eek_layout_place_rows(LevelKeyboard *keyboard, EekKeyboard *level);
 
 void         eek_layout_update_layout(LevelKeyboard *keyboard);
 

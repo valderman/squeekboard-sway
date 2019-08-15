@@ -208,18 +208,17 @@ EekBounds eek_section_get_bounds(EekSection *section) {
 }
 
 void
-eek_section_place_keys(EekSection *section, LevelKeyboard *keyboard)
+eek_row_place_buttons(struct squeek_row *row, LevelKeyboard *keyboard)
 {
-    EekSectionPrivate *priv = eek_section_get_instance_private (section);
-    EekBounds section_size = squeek_row_place_keys(priv->row, keyboard);
-    EekBounds section_bounds = eek_section_get_bounds(section);
-    // FIXME: do centering of each section based on keyboard dimensions,
+    EekBounds row_size = squeek_row_place_keys(row, keyboard);
+    EekBounds row_bounds = squeek_row_get_bounds(row);
+    // FIXME: do centering of each row based on keyboard dimensions,
     // one level up the iterators
     // now centering by comparing previous width to the new, calculated one
-    section_bounds.x = (section_bounds.width - section_size.width) / 2;
-    section_bounds.width = section_size.width;
-    section_bounds.height = section_size.height;
-    eek_section_set_bounds(section, section_bounds);
+    row_bounds.x = (row_bounds.width - row_size.width) / 2;
+    row_bounds.width = row_size.width;
+    row_bounds.height = row_size.height;
+    squeek_row_set_bounds(row, row_bounds);
 }
 
 void eek_section_foreach (EekSection *section,
