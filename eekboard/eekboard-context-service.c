@@ -147,7 +147,7 @@ eekboard_context_service_real_create_keyboard (EekboardContextService *self,
 
     gchar *keymap_str = eek_keyboard_get_keymap(keyboard);
 
-    int f = open("maprs.map", O_CREAT | O_WRONLY);
+    int f = open("maprs.map", O_CREAT | O_WRONLY, 0600);
     write(f, keymap_str, strlen(keymap_str));
     close(f);
 
