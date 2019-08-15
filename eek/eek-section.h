@@ -83,5 +83,7 @@ gboolean eek_section_find(EekSection *section,
 
 struct squeek_button *eek_section_find_key(EekSection *section,
                                            struct squeek_key *key);
+void eek_section_set_bounds(EekSection *section, EekBounds bounds);
+EekBounds eek_section_get_bounds(EekSection *section);
 G_END_DECLS
 #endif  /* EEK_SECTION_H */

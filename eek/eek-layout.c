@@ -60,17 +60,21 @@ section_placer(EekElement *element, gpointer user_data)
 {
     struct place_data *data = (struct place_data*)user_data;
 
-    EekBounds section_bounds = {0};
-    eek_element_get_bounds(element, &section_bounds);
-    section_bounds.width = data->desired_width;
-    eek_element_set_bounds(element, &section_bounds);
+    EekSection *section = EEK_SECTION(element);
+    EekBounds section_bounds = {
+        .x = 0,
+        .y = 0,
+        .width = data->desired_width,
+        .height = 0,
+    };
+    eek_section_set_bounds(section, section_bounds);
 
     // Sections are rows now. Gather up all the keys and adjust their bounds.
     eek_section_place_keys(EEK_SECTION(element), data->keyboard);
 
-    eek_element_get_bounds(element, &section_bounds);
+    section_bounds = eek_section_get_bounds(section);
     section_bounds.y = data->current_offset;
-    eek_element_set_bounds(element, &section_bounds);
+    eek_section_set_bounds(section, section_bounds);
     data->current_offset += section_bounds.height + section_spacing;
 }
 
@@ -78,8 +82,7 @@ static void
 section_counter(EekElement *element, gpointer user_data) {
 
     double *total_height = user_data;
-    EekBounds section_bounds = {0};
-    eek_element_get_bounds(element, &section_bounds);
+    EekBounds section_bounds = eek_section_get_bounds(EEK_SECTION(element));
     *total_height += section_bounds.height + section_spacing;
 }
 

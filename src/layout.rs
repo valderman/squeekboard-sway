@@ -43,6 +43,7 @@ pub mod c {
         Box::into_raw(Box::new(::layout::Row {
             buttons: Vec::new(),
             angle: angle,
+            bounds: None,
         }))
     }
     
@@ -107,6 +108,25 @@ pub mod c {
         let row = unsafe { &*row };
         row.angle
     }
+    
+    #[no_mangle]
+    pub extern "C"
+    fn squeek_row_get_bounds(row: *const ::layout::Row) -> Bounds {
+        let row = unsafe { &*row };
+        match &row.bounds {
+            Some(bounds) => bounds.clone(),
+            None => panic!("Row doesn't have any bounds yet"),
+        }
+    }
+
+    /// Set bounds by consuming the value
+    #[no_mangle]
+    pub extern "C"
+    fn squeek_row_set_bounds(row: *mut ::layout::Row, bounds: Bounds) {
+        let row = unsafe { &mut *row };
+        row.bounds = Some(bounds);
+    }
+    
     
     #[no_mangle]
     pub extern "C"
@@ -242,8 +262,6 @@ pub mod c {
     mod procedures {
         use super::*;
         
-        use std::convert::TryFrom;
-
         #[repr(transparent)]
         pub struct LevelKeyboard(*const c_void);
 
@@ -376,4 +394,5 @@ pub struct Button {
 pub struct Row {
     buttons: Vec<Box<Button>>,
     angle: i32,
+    bounds: Option<c::Bounds>,
 }

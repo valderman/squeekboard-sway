@@ -164,14 +164,6 @@ eek_section_get_row (EekSection *section)
     return priv->row;
 }
 
-const double keyspacing = 4.0;
-
-struct keys_info {
-    uint count;
-    double total_width;
-    double biggest_height;
-};
-
 EekBounds eek_get_outline_size(LevelKeyboard *keyboard, uint32_t oref) {
     EekOutline *outline = level_keyboard_get_outline (keyboard, oref);
     if (outline && outline->num_points > 0) {
@@ -206,7 +198,13 @@ EekBounds eek_get_outline_size(LevelKeyboard *keyboard, uint32_t oref) {
 }
 
 void eek_section_set_bounds(EekSection *section, EekBounds bounds) {
-    eek_element_set_bounds(EEK_ELEMENT(section), &bounds);
+    EekSectionPrivate *priv = eek_section_get_instance_private (section);
+    squeek_row_set_bounds(priv->row, bounds);
+}
+
+EekBounds eek_section_get_bounds(EekSection *section) {
+    EekSectionPrivate *priv = eek_section_get_instance_private (section);
+    return squeek_row_get_bounds(priv->row);
 }
 
 void
@@ -214,15 +212,14 @@ eek_section_place_keys(EekSection *section, LevelKeyboard *keyboard)
 {
     EekSectionPrivate *priv = eek_section_get_instance_private (section);
     EekBounds section_size = squeek_row_place_keys(priv->row, keyboard);
-    EekBounds section_bounds = {0};
-    eek_element_get_bounds(EEK_ELEMENT(section), &section_bounds);
+    EekBounds section_bounds = eek_section_get_bounds(section);
     // FIXME: do centering of each section based on keyboard dimensions,
     // one level up the iterators
     // now centering by comparing previous width to the new, calculated one
     section_bounds.x = (section_bounds.width - section_size.width) / 2;
     section_bounds.width = section_size.width;
     section_bounds.height = section_size.height;
-    eek_element_set_bounds(EEK_ELEMENT(section), &section_bounds);
+    eek_section_set_bounds(section, section_bounds);
 }
 
 void eek_section_foreach (EekSection *section,

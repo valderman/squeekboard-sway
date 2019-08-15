@@ -122,19 +122,18 @@ create_keyboard_surface_section_callback (EekElement *element,
                                           gpointer    user_data)
 {
     CreateKeyboardSurfaceCallbackData *data = user_data;
-    EekBounds bounds;
+    EekSection *section = EEK_SECTION(element);
+    EekBounds bounds = eek_section_get_bounds(section);
     gint angle;
 
     cairo_save (data->cr);
-
-    eek_element_get_bounds (element, &bounds);
     cairo_translate (data->cr, bounds.x, bounds.y);
 
-    angle = eek_section_get_angle (EEK_SECTION(element));
+    angle = eek_section_get_angle (section);
     cairo_rotate (data->cr, angle * G_PI / 180);
 
-    data->section = EEK_SECTION(element);
-    eek_section_foreach(EEK_SECTION(element),
+    data->section = section;
+    eek_section_foreach(section,
                                  create_keyboard_surface_button_callback,
                                  data);
 
@@ -761,7 +760,7 @@ eek_renderer_get_button_bounds (EekRenderer *renderer,
                              EekBounds   *bounds,
                              gboolean     rotate)
 {
-    EekBounds section_bounds, keyboard_bounds;
+    EekBounds keyboard_bounds;
     gint angle = 0;
     EekPoint points[4], min, max;
 
@@ -772,7 +771,7 @@ eek_renderer_get_button_bounds (EekRenderer *renderer,
     EekRendererPrivate *priv = eek_renderer_get_instance_private (renderer);
 
     EekBounds button_bounds = squeek_button_get_bounds(place->button);
-    eek_element_get_bounds (EEK_ELEMENT(place->section), &section_bounds);
+    EekBounds section_bounds = eek_section_get_bounds (place->section);
     eek_element_get_bounds (EEK_ELEMENT(level_keyboard_current(priv->keyboard)),
                             &keyboard_bounds);
 
@@ -792,7 +791,7 @@ eek_renderer_get_button_bounds (EekRenderer *renderer,
     points[3].y = points[2].y;
 
     if (rotate)
-        angle = eek_section_get_angle (EEK_SECTION(place->section));
+        angle = eek_section_get_angle (place->section);
 
     min = points[2];
     max = points[0];
@@ -1028,14 +1027,13 @@ find_button_by_position_section_callback (EekElement *element,
 {
     EekSection *section = EEK_SECTION(element);
     FindKeyByPositionCallbackData *data = user_data;
-    EekBounds bounds;
+    EekBounds bounds = eek_section_get_bounds(section);
     EekPoint origin;
 
     origin = data->origin;
-    eek_element_get_bounds (element, &bounds);
     data->origin.x += bounds.x;
     data->origin.y += bounds.y;
-    data->angle = eek_section_get_angle (EEK_SECTION(element));
+    data->angle = eek_section_get_angle(section);
 
     eek_section_foreach(section, find_button_by_position_key_callback, data);
     data->origin = origin;
