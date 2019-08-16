@@ -40,7 +40,6 @@
 
 enum {
     PROP_0,
-    PROP_KEYBOARD,
     PROP_LAST
 };
 
@@ -329,30 +328,12 @@ eek_gtk_keyboard_real_query_tooltip (GtkWidget  *widget,
 }
 
 static void
-eek_gtk_keyboard_set_keyboard (EekGtkKeyboard *self,
-                               LevelKeyboard    *keyboard)
-{
-    EekGtkKeyboardPrivate *priv = eek_gtk_keyboard_get_instance_private (self);
-
-    if (priv->keyboard == keyboard)
-        return;
-
-    priv->keyboard = keyboard;
-}
-
-static void
 eek_gtk_keyboard_set_property (GObject      *object,
                                guint         prop_id,
                                const GValue *value,
                                GParamSpec   *pspec)
 {
-    LevelKeyboard *keyboard;
-
     switch (prop_id) {
-    case PROP_KEYBOARD:
-        keyboard = g_value_get_object (value);
-        eek_gtk_keyboard_set_keyboard (EEK_GTK_KEYBOARD(object), keyboard);
-        break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
         break;
@@ -391,7 +372,6 @@ eek_gtk_keyboard_class_init (EekGtkKeyboardClass *klass)
 {
     GtkWidgetClass *widget_class = GTK_WIDGET_CLASS (klass);
     GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
-    GParamSpec *pspec;
 
     widget_class->realize = eek_gtk_keyboard_real_realize;
     widget_class->unmap = eek_gtk_keyboard_real_unmap;
@@ -409,15 +389,6 @@ eek_gtk_keyboard_class_init (EekGtkKeyboardClass *klass)
 
     gobject_class->set_property = eek_gtk_keyboard_set_property;
     gobject_class->dispose = eek_gtk_keyboard_dispose;
-
-    pspec = g_param_spec_object ("keyboard",
-                                 "Keyboard",
-                                 "Keyboard",
-                                 EEK_TYPE_KEYBOARD,
-                                 G_PARAM_CONSTRUCT_ONLY | G_PARAM_WRITABLE);
-    g_object_class_install_property (gobject_class,
-                                     PROP_KEYBOARD,
-                                     pspec);
 }
 
 static void

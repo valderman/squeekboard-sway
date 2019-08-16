@@ -38,38 +38,6 @@
 
 #include "eek-keyboard.h"
 
-enum {
-    PROP_0,
-    PROP_LAST
-};
-
-enum {
-    KEY_RELEASED,
-    KEY_LOCKED,
-    KEY_UNLOCKED,
-    LAST_SIGNAL
-};
-
-enum {
-    VIEW_LETTERS_LOWER,
-    VIEW_LETTERS_UPPER,
-    VIEW_NUMBERS,
-    VIEW_SYMBOLS
-};
-
-#define EEK_KEYBOARD_GET_PRIVATE(obj)                                  \
-    (G_TYPE_INSTANCE_GET_PRIVATE ((obj), EEK_TYPE_KEYBOARD, EekKeyboardPrivate))
-
-struct _EekKeyboardPrivate
-{
-    char dummy;    // won't run otherwise
-};
-
-G_DEFINE_TYPE_WITH_PRIVATE (EekKeyboard, eek_keyboard, EEK_TYPE_ELEMENT);
-
-G_DEFINE_BOXED_TYPE(EekModifierKey, eek_modifier_key,
-                    eek_modifier_key_copy, eek_modifier_key_free);
-
 EekModifierKey *
 eek_modifier_key_copy (EekModifierKey *modkey)
 {
@@ -80,40 +48,6 @@ void
 eek_modifier_key_free (EekModifierKey *modkey)
 {
     g_slice_free (EekModifierKey, modkey);
-}
-
-struct squeek_row *
-eek_keyboard_real_create_row (EekKeyboard *self)
-{
-    struct squeek_row *row = squeek_row_new(0);
-    g_ptr_array_add(self->rows, row);
-    return row;
-}
-
-static void
-eek_keyboard_set_property (GObject      *object,
-                           guint         prop_id,
-                           const GValue *value,
-                           GParamSpec   *pspec)
-{
-    switch (prop_id) {
-    default:
-        G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-        break;
-    }
-}
-
-static void
-eek_keyboard_get_property (GObject    *object,
-                           guint       prop_id,
-                           GValue     *value,
-                           GParamSpec *pspec)
-{
-    switch (prop_id) {
-    default:
-        G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-        break;
-    }
 }
 
 /// Updates the state of locked keys based on the key that was activated
@@ -221,18 +155,6 @@ void eek_keyboard_release_button(LevelKeyboard *keyboard,
     emit_key_activated(keyboard->manager, keyboard, keycode, FALSE, timestamp);
 }
 
-static void
-eek_keyboard_dispose (GObject *object)
-{
-    G_OBJECT_CLASS (eek_keyboard_parent_class)->dispose (object);
-}
-
-static void
-eek_keyboard_finalize (GObject *object)
-{
-    G_OBJECT_CLASS (eek_keyboard_parent_class)->finalize (object);
-}
-
 void level_keyboard_deinit(LevelKeyboard *self) {
     g_hash_table_destroy (self->names);
     for (guint i = 0; i < self->outline_array->len; i++) {
@@ -251,30 +173,6 @@ void level_keyboard_deinit(LevelKeyboard *self) {
 void level_keyboard_free(LevelKeyboard *self) {
     level_keyboard_deinit(self);
     g_free(self);
-}
-
-static void
-eek_keyboard_class_init (EekKeyboardClass *klass)
-{
-    GObjectClass      *gobject_class = G_OBJECT_CLASS (klass);
-
-    /* signals */
-    gobject_class->get_property = eek_keyboard_get_property;
-    gobject_class->set_property = eek_keyboard_set_property;
-    gobject_class->dispose = eek_keyboard_dispose;
-    gobject_class->finalize = eek_keyboard_finalize;
-}
-
-static void
-eek_keyboard_init (EekKeyboard *self)
-{
-    self->rows = g_ptr_array_new();
-}
-
-void eek_keyboard_foreach (EekKeyboard *keyboard,
-                     GFunc      func,
-                          gpointer   user_data) {
-    g_ptr_array_foreach(keyboard->rows, func, user_data);
 }
 
 void level_keyboard_init(LevelKeyboard *self) {
@@ -305,26 +203,6 @@ eek_keyboard_find_button_by_name (LevelKeyboard *keyboard,
                                const gchar *name)
 {
     return g_hash_table_lookup (keyboard->names, name);
-}
-
-/**
- * eek_keyboard_get_size:
- * @keyboard: an #EekKeyboard
- * @width: width of @keyboard
- * @height: height of @keyboard
- *
- * Get the size of @keyboard.
- */
-void
-eek_keyboard_get_size (EekKeyboard *keyboard,
-                       gdouble     *width,
-                       gdouble     *height)
-{
-    EekBounds bounds;
-
-    eek_element_get_bounds (EEK_ELEMENT(keyboard), &bounds);
-    *width = bounds.width;
-    *height = bounds.height;
 }
 
 /**
