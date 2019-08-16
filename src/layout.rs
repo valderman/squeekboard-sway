@@ -263,9 +263,9 @@ pub mod c {
     #[no_mangle]
     pub extern "C"
     fn squeek_button_get_key(
-        button: *mut ::layout::Button
+        button: *const ::layout::Button
     ) -> ::keyboard::c::CKeyState {
-        let button = unsafe { &mut *button };
+        let button = unsafe { &*button };
         ::keyboard::c::CKeyState::wrap(button.state.clone())
     }
     

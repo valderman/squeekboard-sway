@@ -76,7 +76,7 @@ extern void _eek_rounded_polygon               (cairo_t     *cr,
 
 static void eek_renderer_real_render_button_label (EekRenderer *self,
                                                 PangoLayout *layout,
-                                                struct squeek_button *button);
+                                                const struct squeek_button *button);
 
 static void invalidate                         (EekRenderer *renderer);
 static void render_button                         (EekRenderer *self,
@@ -185,7 +185,7 @@ render_keyboard_surface (EekRenderer *renderer, struct squeek_view *view)
 static void
 render_button_outline (EekRenderer *renderer,
                     cairo_t     *cr,
-                    struct squeek_button *button,
+                    const struct squeek_button *button,
                     gboolean     active)
 {
     EekRendererPrivate *priv = eek_renderer_get_instance_private (renderer);
@@ -368,7 +368,7 @@ eek_renderer_apply_transformation_for_button (EekRenderer *self,
 static void
 eek_renderer_real_render_button_label (EekRenderer *self,
                                     PangoLayout *layout,
-                                    struct squeek_button *button)
+                                    const struct squeek_button *button)
 {
     EekRendererPrivate *priv = eek_renderer_get_instance_private (self);
 

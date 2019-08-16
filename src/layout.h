@@ -52,7 +52,7 @@ void squeek_button_set_bounds(struct squeek_button* button, EekBounds bounds);
 
 struct squeek_symbol *squeek_button_get_symbol (
     const struct squeek_button *button);
-struct squeek_key *squeek_button_get_key(struct squeek_button*);
+struct squeek_key *squeek_button_get_key(const struct squeek_button*);
 uint32_t *squeek_button_has_key(const struct squeek_button* button,
                                 const struct squeek_key *key);
 void squeek_button_print(const struct squeek_button* button);
