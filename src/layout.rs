@@ -368,40 +368,40 @@ pub struct Row {
 }
 
 impl Row {
-    fn place_buttons_with_sizes(&mut self, sizes: Vec<c::Bounds>) {
-        for (mut button, bounds) in &mut self.buttons.iter_mut().zip(sizes)  {
-            button.bounds = Some(bounds);
-        }
-        
-        // Place buttons
-        let max_height = self.buttons.iter().map(
-            |button| FloatOrd(
-                button.bounds.as_ref().unwrap().height
-            )
+    fn place_buttons_with_sizes(&mut self, outlines: Vec<c::Bounds>) {
+        let max_height = outlines.iter().map(
+            |bounds| FloatOrd(bounds.height)
         ).max()
             .unwrap_or(FloatOrd(0f64))
             .0;
 
-        self.buttons.iter_mut().fold(0f64, |acc, button| {
-            let mut bounds = button.bounds.as_mut().unwrap();
-            bounds.x = acc;
-            acc + bounds.width + BUTTON_SPACING
-        });
+        let mut acc = 0f64;
+        let x_offsets: Vec<f64> = outlines.iter().map(|outline| {
+            acc += outline.x; // account for offset outlines
+            let out = acc;
+            acc += outline.width + BUTTON_SPACING;
+            out
+        }).collect();
 
-        let total_width = match self.buttons.is_empty() {
-            true => 0f64,
-            false => {
-                let last_button = &self.buttons[self.buttons.len() - 1];
-                let bounds = last_button.bounds.as_ref().unwrap();
-                bounds.x + bounds.width
-            },
-        };
+        let total_width = acc;
+
+        for ((mut button, outline), offset)
+            in &mut self.buttons
+                .iter_mut()
+                .zip(outlines)
+                .zip(x_offsets) {
+            button.bounds = Some(c::Bounds {
+                x: offset,
+                ..outline
+            });
+        }
         
         let old_row_bounds = self.bounds.as_ref().unwrap().clone();
         self.bounds = Some(c::Bounds {
             // FIXME: do centering of each row based on keyboard dimensions,
             // one level up the iterators
-            // now centering by comparing previous width to the new, calculated one
+            // now centering by comparing previous width to the new,
+            // calculated one
             x: (old_row_bounds.width - total_width) / 2f64,
             width: total_width,
             height: max_height,
