@@ -309,6 +309,13 @@ pub mod c {
         
         #[repr(transparent)]
         pub struct LevelKeyboard(*const c_void);
+        
+        #[repr(C)]
+        #[derive(PartialEq, Debug)]
+        pub struct ButtonPlace {
+            row: *const Row,
+            button: *const Button,
+        }
 
         #[no_mangle]
         extern "C" {
@@ -352,25 +359,6 @@ pub mod c {
             row.place_buttons_with_sizes(sizes);
         }
 
-        /// Finds a button sharing this state
-        #[no_mangle]
-        pub extern "C"
-        fn squeek_row_find_key(
-            row: *mut ::layout::Row,
-            state: ::keyboard::c::CKeyState,
-        ) -> *mut Button {
-            let row = unsafe { &mut *row };
-            let needle = state.unwrap();
-            let found = row.buttons.iter_mut().find(
-                |button| Rc::ptr_eq(&button.state, &needle)
-            );
-            Rc::into_raw(needle); // Prevent dropping
-            match found {
-                Some(button) => button.as_mut() as *mut Button,
-                None => ptr::null_mut(),
-            }
-        }
-        
         #[no_mangle]
         pub extern "C"
         fn squeek_row_find_button_by_position(
@@ -423,6 +411,31 @@ pub mod c {
                 None => ptr::null_mut(),
             }
         }
+
+        #[no_mangle]
+        pub extern "C"
+        fn squeek_view_find_key(
+            view: *const View,
+            needle: ::keyboard::c::CKeyState,
+        ) -> ButtonPlace {
+            let view = unsafe { &*view };
+            let state = needle.unwrap();
+            
+            let paths = ::layout::procedures::find_key_paths(view, &state);
+
+            // Iterators used up, can turn the reference back into pointer
+            Rc::into_raw(state);
+
+            // Can only return 1 entry back to C
+            let (row, button) = match paths.get(0) {
+                Some((row, button)) => (
+                    row.as_ref() as *const Row,
+                    button.as_ref() as *const Button,
+                ),
+                None => ( ptr::null(), ptr::null() ),
+            };
+            ButtonPlace { row, button }
+        }
         
         #[cfg(test)]
         mod test {
@@ -440,6 +453,68 @@ pub mod c {
                 assert_eq!(squeek_row_contains(&row, shared_button), true);
                 let row = Row::new(0);
                 assert_eq!(squeek_row_contains(&row, button), false);
+            }
+
+            #[test]
+            fn view_has_button() {
+                let state = Rc::new(RefCell::new(::keyboard::KeyState {
+                    pressed: false,
+                    locked: false,
+                    keycode: 0,
+                    symbol: None,
+                }));
+                let state_clone = ::keyboard::c::CKeyState::wrap(state.clone());
+
+                let button = Box::new(Button {
+                    oref: OutlineRef(0),
+                    bounds: None,
+                    state: state,
+                });
+                let button_ptr = button.as_ref() as *const Button;
+                
+                let row = Box::new(Row {
+                    buttons: vec!(button),
+                    angle: 0,
+                    bounds: None
+                });
+                let row_ptr = row.as_ref() as *const Row;
+
+                let view = View {
+                    bounds: Bounds {
+                        x: 0f64, y: 0f64,
+                        width: 0f64, height: 0f64
+                    },
+                    rows: vec!(row),
+                };
+
+                assert_eq!(
+                    squeek_view_find_key(
+                        &view as *const View,
+                        state_clone.clone(),
+                    ),
+                    ButtonPlace {
+                        row: row_ptr,
+                        button: button_ptr,
+                    }
+                );
+
+                let view = View {
+                    bounds: Bounds {
+                        x: 0f64, y: 0f64,
+                        width: 0f64, height: 0f64
+                    },
+                    rows: Vec::new(),
+                };
+                assert_eq!(
+                    squeek_view_find_key(
+                        &view as *const View,
+                        state_clone.clone()
+                    ),
+                    ButtonPlace {
+                        row: ptr::null(),
+                        button: ptr::null(),
+                    }
+                );
             }
         }
     }
@@ -537,4 +612,27 @@ impl Row {
 pub struct View {
     bounds: c::Bounds,
     rows: Vec<Box<Row>>,
+}
+
+mod procedures {
+    use super::*;
+    
+    type Path<'v> = (&'v Box<Row>, &'v Box<Button>);
+
+    /// Finds all `(row, button)` paths that refer to the specified key `state`
+    pub fn find_key_paths<'v, 's>(
+        view: &'v View,
+        state: &'s Rc<RefCell<KeyState>>
+    ) -> Vec<Path<'v>> {
+        view.rows.iter().flat_map(|row| {
+            let row_paths: Vec<Path> = row.buttons.iter().filter_map(|button| {
+                if Rc::ptr_eq(&button.state, state) {
+                    Some((row, button))
+                } else {
+                    None
+                }
+            }).collect(); // collecting not to let row references outlive the function
+            row_paths.into_iter()
+        }).collect()
+    }
 }

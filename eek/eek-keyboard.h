@@ -70,9 +70,6 @@ struct button_place {
     const struct squeek_button *button;
 };
 
-struct button_place eek_keyboard_get_button_by_state(struct squeek_view *view,
-                                             struct squeek_key *key);
-
 EekOutline         *level_keyboard_get_outline
                                      (LevelKeyboard        *keyboard,
                                       guint               oref);

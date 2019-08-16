@@ -23,7 +23,7 @@ void squeek_row_set_bounds(struct squeek_row* row, EekBounds bounds);
 
 uint32_t squeek_row_contains(struct squeek_row*, struct squeek_button *button);
 
-struct squeek_button* squeek_row_find_key(struct squeek_row*, struct squeek_key *state);
+struct button_place squeek_view_find_key(struct squeek_view*, struct squeek_key *state);
 
 struct squeek_button *squeek_row_find_button_by_position(struct squeek_row *row, EekPoint point, EekPoint origin);
 

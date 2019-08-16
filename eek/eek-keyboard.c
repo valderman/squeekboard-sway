@@ -287,37 +287,3 @@ struct squeek_view *level_keyboard_current(LevelKeyboard *keyboard)
 {
     return keyboard->views[keyboard->level];
 }
-
-struct GetRowData {
-    struct squeek_button *button;
-    struct squeek_row *row;
-    struct squeek_key *needle;
-};
-
-void find_key_in_row(struct squeek_row *row, gpointer user_data) {
-    struct GetRowData *data = user_data;
-    if (data->button) {
-        return;
-    }
-    data->button = squeek_row_find_key(row, data->needle);
-    if (data->button) {
-        data->row = row;
-    }
-}
-
-
-// TODO: return multiple
-struct button_place eek_keyboard_get_button_by_state(struct squeek_view *view,
-                                             struct squeek_key *key) {
-    struct GetRowData data = {
-        .row = NULL,
-        .button = NULL,
-        .needle = key,
-    };
-    squeek_view_foreach(view, find_key_in_row, &data);
-    struct button_place ret = {
-        .row = data.row,
-        .button = data.button,
-    };
-    return ret;
-}

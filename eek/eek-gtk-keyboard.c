@@ -114,7 +114,7 @@ eek_gtk_keyboard_real_draw (GtkWidget *self,
     /* redraw pressed key */
     const GList *list = priv->keyboard->pressed_buttons;
     for (const GList *head = list; head; head = g_list_next (head)) {
-        struct button_place place = eek_keyboard_get_button_by_state(
+        struct button_place place = squeek_view_find_key(
             view, squeek_button_get_key(head->data)
         );
         render_pressed_button (self, &place);
@@ -123,7 +123,7 @@ eek_gtk_keyboard_real_draw (GtkWidget *self,
     /* redraw locked key */
     list = priv->keyboard->locked_buttons;
     for (const GList *head = list; head; head = g_list_next (head)) {
-        struct button_place place = eek_keyboard_get_button_by_state(
+        struct button_place place = squeek_view_find_key(
             view, squeek_button_get_key(
                 ((EekModifierKey *)head->data)->button
             )
