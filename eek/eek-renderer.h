@@ -103,7 +103,7 @@ void             eek_renderer_get_foreground_color
                                                 EekColor        *color);
 void             eek_renderer_set_border_width (EekRenderer     *renderer,
                                                 gdouble          border_width);
-struct squeek_button *eek_renderer_find_button_by_position(EekRenderer     *renderer, EekKeyboard *view,
+struct squeek_button *eek_renderer_find_button_by_position(EekRenderer     *renderer, struct squeek_view *view,
                                                 gdouble          x,
                                                 gdouble          y);
 void             eek_renderer_apply_transformation_for_button

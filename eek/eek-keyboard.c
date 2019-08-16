@@ -281,7 +281,7 @@ void level_keyboard_init(LevelKeyboard *self) {
     self->outline_array = g_array_new (FALSE, TRUE, sizeof (EekOutline));
 }
 
-LevelKeyboard *level_keyboard_new(EekboardContextService *manager, EekKeyboard *views[4], GHashTable *name_button_hash) {
+LevelKeyboard *level_keyboard_new(EekboardContextService *manager, struct squeek_view *views[4], GHashTable *name_button_hash) {
     LevelKeyboard *keyboard = g_new0(LevelKeyboard, 1);
     level_keyboard_init(keyboard);
     for (uint i = 0; i < 4; i++) {
@@ -405,7 +405,7 @@ eek_keyboard_get_keymap(LevelKeyboard *keyboard)
     return keymap;
 }
 
-EekKeyboard *level_keyboard_current(LevelKeyboard *keyboard)
+struct squeek_view *level_keyboard_current(LevelKeyboard *keyboard)
 {
     return keyboard->views[keyboard->level];
 }
@@ -416,8 +416,7 @@ struct GetRowData {
     struct squeek_key *needle;
 };
 
-void find_button_in_row(gpointer item, gpointer user_data) {
-    struct squeek_row *row = item;
+void find_button_in_row(struct squeek_row *row, gpointer user_data) {
     struct GetRowData *data = user_data;
     if (data->row) {
         return;
@@ -427,18 +426,17 @@ void find_button_in_row(gpointer item, gpointer user_data) {
     }
 }
 
-struct squeek_row *eek_keyboard_get_row(EekKeyboard *keyboard,
+struct squeek_row *eek_keyboard_get_row(struct squeek_view *view,
                                      struct squeek_button *button) {
     struct GetRowData data = {
         .button = button,
         .row = NULL,
     };
-    eek_keyboard_foreach(keyboard, find_button_in_row, &data);
+    squeek_view_foreach(view, find_button_in_row, &data);
     return data.row;
 }
 
-void find_key_in_row(gpointer item, gpointer user_data) {
-    struct squeek_row *row = item;
+void find_key_in_row(struct squeek_row *row, gpointer user_data) {
     struct GetRowData *data = user_data;
     if (data->button) {
         return;
@@ -451,14 +449,14 @@ void find_key_in_row(gpointer item, gpointer user_data) {
 
 
 // TODO: return multiple
-struct button_place eek_keyboard_get_button_by_state(EekKeyboard *keyboard,
+struct button_place eek_keyboard_get_button_by_state(struct squeek_view *view,
                                              struct squeek_key *key) {
     struct GetRowData data = {
         .row = NULL,
         .button = NULL,
         .needle = key,
     };
-    eek_keyboard_foreach(keyboard, find_key_in_row, &data);
+    squeek_view_foreach(view, find_key_in_row, &data);
     struct button_place ret = {
         .row = data.row,
         .button = data.button,

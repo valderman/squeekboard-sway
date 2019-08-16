@@ -42,17 +42,68 @@ pub mod c {
     }
     
     type ButtonCallback = unsafe extern "C" fn(button: *mut ::layout::Button, data: *mut UserData);
+    type RowCallback = unsafe extern "C" fn(row: *mut ::layout::Row, data: *mut UserData);
 
     // The following defined in Rust. TODO: wrap naked pointers to Rust data inside RefCells to prevent multiple writers
     
     #[no_mangle]
     pub extern "C"
-    fn squeek_row_new(angle: i32) -> *mut ::layout::Row {
-        Box::into_raw(Box::new(::layout::Row {
-            buttons: Vec::new(),
-            angle: angle,
-            bounds: None,
+    fn squeek_view_new(bounds: Bounds) -> *mut ::layout::View {
+        Box::into_raw(Box::new(::layout::View {
+            rows: Vec::new(),
+            bounds: bounds,
         }))
+    }
+
+    #[no_mangle]
+    pub extern "C"
+    fn squeek_view_get_bounds(view: *const ::layout::View) -> Bounds {
+        unsafe { &*view }.bounds.clone()
+    }
+    
+    #[no_mangle]
+    pub extern "C"
+    fn squeek_view_set_bounds(view: *mut ::layout::View, bounds: Bounds) {
+        unsafe { &mut *view }.bounds = bounds;
+    }
+    
+    /// Places a row into the view and returns a reference to it
+    #[no_mangle]
+    pub extern "C"
+    fn squeek_view_create_row(
+        view: *mut ::layout::View,
+        angle: i32,
+    ) -> *mut ::layout::Row {
+        let view = unsafe { &mut *view };
+
+        view.rows.push(Box::new(::layout::Row::new(angle)));
+        // Return the reference directly instead of a Box, it's not on the stack
+        // It will live as long as the Vec
+        let last_idx = view.rows.len() - 1;
+        // Caution: Box can't be returned directly,
+        // so returning a reference to its innards
+        view.rows[last_idx].as_mut() as *mut ::layout::Row
+    }
+    
+        #[no_mangle]
+    pub extern "C"
+    fn squeek_view_foreach(
+        view: *mut ::layout::View,
+        callback: RowCallback,
+        data: *mut UserData,
+    ) {
+        let view = unsafe { &mut *view };
+        for row in view.rows.iter_mut() {
+            let row = row.as_mut() as *mut ::layout::Row;
+            unsafe { callback(row, data) };
+        }
+    }
+
+    
+    #[no_mangle]
+    pub extern "C"
+    fn squeek_row_new(angle: i32) -> *mut ::layout::Row {
+        Box::into_raw(Box::new(::layout::Row::new(angle)))
     }
     
     /// Places a button into the row and returns a reference to it
@@ -416,6 +467,13 @@ pub struct Row {
 }
 
 impl Row {
+    fn new(angle: i32) -> Row {
+        Row {
+            buttons: Vec::new(),
+            angle: angle,
+            bounds: None,
+        }
+    }
     fn place_buttons_with_sizes(&mut self, outlines: Vec<c::Bounds>) {
         let max_height = outlines.iter().map(
             |bounds| FloatOrd(bounds.height)
@@ -456,4 +514,9 @@ impl Row {
             ..old_row_bounds
         });
     }
+}
+
+pub struct View {
+    bounds: c::Bounds,
+    rows: Vec<Box<Row>>,
 }

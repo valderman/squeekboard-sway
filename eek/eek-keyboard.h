@@ -57,6 +57,8 @@ struct _EekKeyboard
     GPtrArray *rows; // struct squeek_row*
 };
 
+typedef struct _EekKeyboard EekKeyboard;
+
 /**
  * EekKeyboardClass:
  * @create_section: virtual function for creating a section
@@ -103,7 +105,7 @@ typedef struct _EekModifierKey EekModifierKey;
 
 /// Keyboard state holder
 struct _LevelKeyboard {
-    EekKeyboard *views[4];
+    struct squeek_view *views[4];
     guint level;
     struct xkb_keymap *keymap;
     int keymap_fd; // keymap formatted as XKB string
@@ -133,7 +135,7 @@ void                eek_keyboard_set_size
                                       gdouble             width,
                                       gdouble             height);
 
-struct squeek_row *eek_keyboard_get_row(EekKeyboard *keyboard,
+struct squeek_row *eek_keyboard_get_row(struct squeek_view *view,
                                       struct squeek_button *button);
 struct squeek_button *eek_keyboard_find_button_by_name(LevelKeyboard *keyboard,
                                       const gchar        *name);
@@ -144,7 +146,7 @@ struct button_place {
     struct squeek_button *button;
 };
 
-struct button_place eek_keyboard_get_button_by_state(EekKeyboard *keyboard,
+struct button_place eek_keyboard_get_button_by_state(struct squeek_view *view,
                                              struct squeek_key *key);
 
 EekOutline         *level_keyboard_get_outline
@@ -165,8 +167,8 @@ void eek_keyboard_foreach (EekKeyboard *keyboard,
                      GFunc      func,
                           gpointer   user_data);
 
-EekKeyboard *level_keyboard_current(LevelKeyboard *keyboard);
-LevelKeyboard *level_keyboard_new(EekboardContextService *manager, EekKeyboard *views[4], GHashTable *name_button_hash);
+struct squeek_view *level_keyboard_current(LevelKeyboard *keyboard);
+LevelKeyboard *level_keyboard_new(EekboardContextService *manager, struct squeek_view *views[], GHashTable *name_button_hash);
 void level_keyboard_deinit(LevelKeyboard *self);
 void level_keyboard_free(LevelKeyboard *self);
 

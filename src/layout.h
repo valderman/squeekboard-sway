@@ -8,6 +8,7 @@
 
 struct squeek_button;
 struct squeek_row;
+struct squeek_view;
 
 struct squeek_row *squeek_row_new(int32_t angle);
 struct squeek_button *squeek_row_create_button (struct squeek_row *row,
@@ -55,6 +56,17 @@ struct squeek_key *squeek_button_get_key(struct squeek_button*);
 uint32_t *squeek_button_has_key(const struct squeek_button* button,
                                 const struct squeek_key *key);
 void squeek_button_print(const struct squeek_button* button);
+
+
+struct squeek_view *squeek_view_new(EekBounds bounds);
+struct squeek_row *squeek_view_create_row(struct squeek_view *, int32_t angle);
+EekBounds squeek_view_get_bounds(const struct squeek_view*);
+void squeek_view_set_bounds(const struct squeek_view*, EekBounds bounds);
+
+typedef void (*RowCallback) (struct squeek_row *row, gpointer user_data);
+void squeek_view_foreach(struct squeek_view*,
+                            RowCallback   callback,
+                            gpointer      user_data);
 
 
 void squeek_row_place_buttons(struct squeek_row *row, LevelKeyboard *keyboard);

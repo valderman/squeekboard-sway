@@ -56,11 +56,10 @@ struct place_data {
 };
 
 static void
-row_placer(gpointer item, gpointer user_data)
+row_placer(struct squeek_row *row, gpointer user_data)
 {
     struct place_data *data = (struct place_data*)user_data;
 
-    struct squeek_row *row = item;
     EekBounds row_bounds = {
         .x = 0,
         .y = 0,
@@ -79,16 +78,15 @@ row_placer(gpointer item, gpointer user_data)
 }
 
 static void
-row_counter(gpointer item, gpointer user_data) {
+row_counter(struct squeek_row *row, gpointer user_data) {
 
     double *total_height = user_data;
-    struct squeek_row *row = item;
     EekBounds row_bounds = squeek_row_get_bounds(row);
     *total_height += row_bounds.height + row_spacing;
 }
 
 void
-eek_layout_place_rows(LevelKeyboard *keyboard, EekKeyboard *level)
+eek_layout_place_rows(LevelKeyboard *keyboard, struct squeek_view *level)
 {
     /* Order rows */
     // This needs to be done after outlines, because outlines define key sizes
@@ -96,20 +94,19 @@ eek_layout_place_rows(LevelKeyboard *keyboard, EekKeyboard *level)
 
     // The keyboard width is given by the user via screen size. The height will be given dynamically.
     // TODO: calculate max line width beforehand for button centering. Leave keyboard centering to the renderer later
-    EekBounds keyboard_bounds = {0};
-    eek_element_get_bounds(EEK_ELEMENT(level), &keyboard_bounds);
+    EekBounds view_bounds = squeek_view_get_bounds(level);
 
     struct place_data placer_data = {
-        .desired_width = keyboard_bounds.width,
+        .desired_width = view_bounds.width,
         .current_offset = 0,
         .keyboard = keyboard,
     };
-    eek_keyboard_foreach(level, row_placer, &placer_data);
+    squeek_view_foreach(level, row_placer, &placer_data);
 
     double total_height = 0;
-    eek_keyboard_foreach(level, row_counter, &total_height);
-    keyboard_bounds.height = total_height;
-    eek_element_set_bounds(EEK_ELEMENT(level), &keyboard_bounds);
+    squeek_view_foreach(level, row_counter, &total_height);
+    view_bounds.height = total_height;
+    squeek_view_set_bounds(level, view_bounds);
 }
 
 void

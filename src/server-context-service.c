@@ -142,10 +142,9 @@ set_geometry (ServerContextService *context)
     LevelKeyboard *keyboard = eekboard_context_service_get_keyboard (EEKBOARD_CONTEXT_SERVICE(context));
 
     GdkRectangle rect;
-    EekBounds bounds;
 
     gdk_monitor_get_geometry (monitor, &rect);
-    eek_element_get_bounds (EEK_ELEMENT(level_keyboard_current(keyboard)), &bounds);
+    EekBounds bounds = squeek_view_get_bounds (level_keyboard_current(keyboard));
 
     if (eekboard_context_service_get_fullscreen (EEKBOARD_CONTEXT_SERVICE(context))) {
         gint width  = rect.width;

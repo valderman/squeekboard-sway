@@ -66,7 +66,7 @@ static GList        *parse_prerequisites
                                      (const gchar         *path,
                                       GError             **error);
 static gboolean      parse_geometry  (const gchar         *path,
-                                      EekKeyboard **views, GArray *outline_array, GHashTable *name_button_hash,
+                                      struct squeek_view **views, GArray *outline_array, GHashTable *name_button_hash,
                                       GError             **error);
 static gboolean      parse_symbols_with_prerequisites
                                      (const gchar         *keyboards_dir,
@@ -231,7 +231,7 @@ struct _GeometryParseData {
     GSList *element_stack;
 
     EekBounds bounds;
-    EekKeyboard **views;
+    struct squeek_view **views;
     guint view_idx;
     struct squeek_row *row;
     gint num_rows;
@@ -254,7 +254,7 @@ struct _GeometryParseData {
 typedef struct _GeometryParseData GeometryParseData;
 
 static GeometryParseData *
-geometry_parse_data_new (EekKeyboard **views, GHashTable *name_button_hash, GArray *outline_array)
+geometry_parse_data_new (struct squeek_view **views, GHashTable *name_button_hash, GArray *outline_array)
 {
     GeometryParseData *data = g_slice_new0 (GeometryParseData);
 
@@ -367,20 +367,18 @@ geometry_start_element_callback (GMarkupParseContext *pcontext,
     if (g_strcmp0 (element_name, "view") == 0) {
         /* Create an empty keyboard to which geometry and symbols
            information are applied. */
-        EekKeyboard *view = g_object_new (EEK_TYPE_KEYBOARD, NULL);
-        eek_element_set_bounds (EEK_ELEMENT(view), &data->bounds);
+        struct squeek_view *view = squeek_view_new(data->bounds);
         data->views[data->view_idx] = view;
     }
 
     if (g_strcmp0 (element_name, "section") == 0) {
-        data->row = eek_keyboard_real_create_row(data->views[data->view_idx]);
+        gint angle = 0;
         attribute = get_attribute (attribute_names, attribute_values,
                                    "angle");
         if (attribute != NULL) {
-            gint angle;
             angle = strtol (attribute, NULL, 10);
-            squeek_row_set_angle (data->row, angle);
         }
+        data->row = squeek_view_create_row(data->views[data->view_idx], angle);
 
         goto out;
     }
@@ -634,7 +632,7 @@ struct _SymbolsParseData {
     GString *text;
 
     LevelKeyboard *keyboard;
-    EekKeyboard *view;
+    struct squeek_view *view;
 
     gchar *label;
     gchar *icon;
@@ -884,7 +882,7 @@ eek_xml_layout_real_create_keyboard (EekLayout *self,
                                    g_free,
                                    NULL);
     // One view for each level
-    EekKeyboard *views[4] = {0};
+    struct squeek_view *views[4] = {0};
 
     GError *error = NULL;
     retval = parse_geometry (path, views, outline_array, name_button_hash, &error);
@@ -1119,7 +1117,7 @@ eek_xml_keyboard_desc_free (EekXmlKeyboardDesc *desc)
 }
 
 static gboolean
-parse_geometry (const gchar *path, EekKeyboard **views, GArray *outline_array, GHashTable *name_button_hash, GError **error)
+parse_geometry (const gchar *path, struct squeek_view **views, GArray *outline_array, GHashTable *name_button_hash, GError **error)
 {
     GeometryParseData *data;
     GMarkupParseContext *pcontext;

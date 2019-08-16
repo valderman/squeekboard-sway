@@ -24,11 +24,11 @@
 static void
 test_create (void)
 {
-    EekKeyboard *keyboard;
+    EekBounds bounds = {0};
+    struct squeek_view *view = squeek_view_new(bounds);
     struct squeek_button *button0, *button1;
 
-    keyboard = g_object_new (EEK_TYPE_KEYBOARD, NULL);
-    struct squeek_row *row = eek_keyboard_real_create_row (keyboard);
+    struct squeek_row *row = squeek_view_create_row (view, 0);
     g_assert (row);
     button0 = squeek_row_create_button (row, 1, 0);
     g_assert (button0);

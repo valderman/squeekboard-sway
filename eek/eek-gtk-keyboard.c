@@ -62,10 +62,10 @@ typedef struct _EekGtkKeyboardPrivate
 
 G_DEFINE_TYPE_WITH_PRIVATE (EekGtkKeyboard, eek_gtk_keyboard, GTK_TYPE_DRAWING_AREA)
 
-static void       on_button_pressed          (struct squeek_button *button, EekKeyboard *view,
+static void       on_button_pressed          (struct squeek_button *button, struct squeek_view *view,
                                            EekGtkKeyboard *self);
 static void       on_button_released         (struct squeek_button *button,
-                                           EekKeyboard *view,
+                                           struct squeek_view *view,
                                            EekGtkKeyboard *self);
 static void       render_pressed_button      (GtkWidget   *widget, struct button_place *place);
 static void       render_locked_button       (GtkWidget   *widget,
@@ -110,7 +110,7 @@ eek_gtk_keyboard_real_draw (GtkWidget *self,
 
     eek_renderer_render_keyboard (priv->renderer, cr);
 
-    EekKeyboard *view = priv->keyboard->views[priv->keyboard->level];
+    struct squeek_view *view = priv->keyboard->views[priv->keyboard->level];
 
     /* redraw pressed key */
     const GList *list = priv->keyboard->pressed_buttons;
@@ -155,7 +155,7 @@ static void depress(EekGtkKeyboard *self,
                     gdouble x, gdouble y, guint32 time)
 {
     EekGtkKeyboardPrivate *priv = eek_gtk_keyboard_get_instance_private (self);
-    EekKeyboard *view = level_keyboard_current(priv->keyboard);
+    struct squeek_view *view = level_keyboard_current(priv->keyboard);
     struct squeek_button *button = eek_renderer_find_button_by_position (priv->renderer, view, x, y);
 
     if (button) {
@@ -167,7 +167,7 @@ static void depress(EekGtkKeyboard *self,
 static void drag(EekGtkKeyboard *self,
                  gdouble x, gdouble y, guint32 time) {
     EekGtkKeyboardPrivate *priv = eek_gtk_keyboard_get_instance_private (self);
-    EekKeyboard *view = level_keyboard_current(priv->keyboard);
+    struct squeek_view *view = level_keyboard_current(priv->keyboard);
     struct squeek_button *button = eek_renderer_find_button_by_position (priv->renderer, view, x, y);
     GList *list, *head;
 
@@ -202,7 +202,7 @@ static void drag(EekGtkKeyboard *self,
 static void release(EekGtkKeyboard *self, guint32 time) {
     EekGtkKeyboardPrivate *priv = eek_gtk_keyboard_get_instance_private (self);
 
-    EekKeyboard *view = level_keyboard_current(priv->keyboard);
+    struct squeek_view *view = level_keyboard_current(priv->keyboard);
 
     GList *list = g_list_copy(priv->keyboard->pressed_buttons);
     for (GList *head = list; head; head = g_list_next (head)) {
@@ -311,7 +311,7 @@ eek_gtk_keyboard_real_query_tooltip (GtkWidget  *widget,
 {
     EekGtkKeyboard        *self = EEK_GTK_KEYBOARD (widget);
     EekGtkKeyboardPrivate *priv = eek_gtk_keyboard_get_instance_private (self);
-    EekKeyboard *view = level_keyboard_current(priv->keyboard);
+    struct squeek_view *view = level_keyboard_current(priv->keyboard);
 
     struct squeek_button *button = eek_renderer_find_button_by_position (priv->renderer,
                                                      view,
@@ -516,7 +516,7 @@ render_released_button (GtkWidget *widget,
 
 static void
 on_button_pressed (struct squeek_button *button,
-                EekKeyboard *view,
+                struct squeek_view *view,
                 EekGtkKeyboard *self)
 {
     EekGtkKeyboardPrivate *priv = eek_gtk_keyboard_get_instance_private (self);
@@ -546,7 +546,7 @@ on_button_pressed (struct squeek_button *button,
 
 static void
 on_button_released (struct squeek_button *button,
-                 EekKeyboard *view,
+                 struct squeek_view *view,
                  EekGtkKeyboard *self)
 {
     (void)view;
