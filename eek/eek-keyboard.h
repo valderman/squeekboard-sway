@@ -122,10 +122,6 @@ struct _LevelKeyboard {
 };
 typedef struct _LevelKeyboard LevelKeyboard;
 
-LevelKeyboard *eek_keyboard_new(EekboardContextService *manager,
-                                      EekLayout          *layout,
-                                      gdouble             initial_width,
-                                      gdouble             initial_height);
 GType               eek_keyboard_get_type
                                      (void) G_GNUC_CONST;
 void                eek_keyboard_get_size

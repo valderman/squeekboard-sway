@@ -51,16 +51,5 @@ void         eek_element_set_bounds            (EekElement  *element,
 void         eek_element_get_bounds            (EekElement  *element,
                                                 EekBounds   *bounds);
 
-void         eek_element_set_position          (EekElement  *element,
-                                                gdouble      x,
-                                                gdouble      y);
-void         eek_element_set_size              (EekElement  *element,
-                                                gdouble      width,
-                                                gdouble      height);
-
-void         eek_element_get_absolute_position (EekElement  *element,
-                                                gdouble     *x,
-                                                gdouble     *y);
-
 G_END_DECLS
 #endif  /* EEK_ELEMENT_H */
