@@ -16,7 +16,7 @@ struct squeek_button *squeek_row_create_button (struct squeek_row *row,
 struct squeek_button *squeek_row_create_button_with_state(struct squeek_row *row,
                                     struct squeek_button *source);
 void squeek_row_set_angle(struct squeek_row *row, int32_t angle);
-int32_t squeek_row_get_angle(struct squeek_row*);
+int32_t squeek_row_get_angle(const struct squeek_row*);
 
 EekBounds squeek_row_get_bounds(const struct squeek_row*);
 void squeek_row_set_bounds(struct squeek_row* row, EekBounds bounds);

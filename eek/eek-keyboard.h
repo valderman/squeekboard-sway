@@ -66,7 +66,7 @@ struct squeek_button *eek_keyboard_find_button_by_name(LevelKeyboard *keyboard,
 
 /// Represents the path to the button within a view
 struct button_place {
-    struct squeek_row *row;
+    const struct squeek_row *row;
     const struct squeek_button *button;
 };
 
