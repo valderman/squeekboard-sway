@@ -54,17 +54,3 @@ EekBounds eek_get_outline_size(LevelKeyboard *keyboard, uint32_t oref) {
     EekBounds bounds = {0, 0, 0, 0};
     return bounds;
 }
-
-void
-eek_row_place_buttons(struct squeek_row *row, LevelKeyboard *keyboard)
-{
-    EekBounds row_size = squeek_row_place_keys(row, keyboard);
-    EekBounds row_bounds = squeek_row_get_bounds(row);
-    // FIXME: do centering of each row based on keyboard dimensions,
-    // one level up the iterators
-    // now centering by comparing previous width to the new, calculated one
-    row_bounds.x = (row_bounds.width - row_size.width) / 2;
-    row_bounds.width = row_size.width;
-    row_bounds.height = row_size.height;
-    squeek_row_set_bounds(row, row_bounds);
-}

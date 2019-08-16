@@ -28,7 +28,6 @@
 #include <string.h>
 
 #include "eek-keyboard.h"
-#include "eek-section.h"
 #include "src/keyboard.h"
 #include "src/symbol.h"
 

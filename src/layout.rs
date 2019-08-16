@@ -274,30 +274,35 @@ pub mod c {
         
         const BUTTON_SPACING: f64 = 4.0;
         
+        fn squeek_buttons_get_outlines(
+            buttons: &Vec<Box<Button>>,
+            keyboard: *const LevelKeyboard,
+        ) -> Vec<Bounds> {
+            buttons.iter().map(|button| {
+                unsafe { eek_get_outline_size(keyboard, button.oref.0) }
+            }).collect()
+        }
+        
         /// Places each button in order, starting from 0 on the left,
         /// keeping the spacing.
         /// Sizes each button according to outline dimensions.
-        /// Returns the width and height of the resulting row.
+        /// Sets the row size correctly
         #[no_mangle]
         pub extern "C"
-        fn squeek_row_place_keys(
+        fn squeek_row_place_buttons(
             row: *mut ::layout::Row,
             keyboard: *const LevelKeyboard,
-        ) -> Bounds {
+        ) {
             let row = unsafe { &mut *row };
-
+            
             // Size buttons
-            for mut button in &mut row.buttons {
-                button.bounds = Some(
-                    unsafe { eek_get_outline_size(keyboard, button.oref.0) }
-                );
+            let sizes = squeek_buttons_get_outlines(&row.buttons, keyboard);
+            
+            for (mut button, bounds) in &mut row.buttons.iter_mut().zip(sizes)  {
+                button.bounds = Some(bounds);
             }
-
+            
             // Place buttons
-            let cumulative_width: f64 = row.buttons.iter().map(
-                |button| button.bounds.as_ref().unwrap().width
-            ).sum();
-
             let max_height = row.buttons.iter().map(
                 |button| FloatOrd(
                     button.bounds.as_ref().unwrap().height
@@ -311,8 +316,7 @@ pub mod c {
                 bounds.x = acc;
                 acc + bounds.width + BUTTON_SPACING
             });
-            
-            // Total size
+
             let total_width = match row.buttons.is_empty() {
                 true => 0f64,
                 false => {
@@ -321,13 +325,17 @@ pub mod c {
                     bounds.x + bounds.width
                 },
             };
-
-            Bounds {
-                x: 0f64,
-                y: 0f64,
+            
+            let old_row_bounds = row.bounds.as_ref().unwrap().clone();
+            row.bounds = Some(Bounds {
+                // FIXME: do centering of each row based on keyboard dimensions,
+                // one level up the iterators
+                // now centering by comparing previous width to the new, calculated one
+                x: (old_row_bounds.width - total_width) / 2f64,
                 width: total_width,
                 height: max_height,
-            }
+                ..old_row_bounds
+            });
         }
 
         /// Finds a button sharing this state

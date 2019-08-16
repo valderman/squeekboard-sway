@@ -34,7 +34,6 @@
 
 #include "eek-renderer.h"
 #include "eek-keyboard.h"
-#include "eek-section.h"
 #include "src/symbol.h"
 
 #include "eek-gtk-keyboard.h"

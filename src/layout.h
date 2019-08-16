@@ -55,5 +55,5 @@ uint32_t *squeek_button_has_key(const struct squeek_button* button,
 void squeek_button_print(const struct squeek_button* button);
 
 
-EekBounds squeek_row_place_keys(struct squeek_row *row, LevelKeyboard *keyboard);
+void squeek_row_place_buttons(struct squeek_row *row, LevelKeyboard *keyboard);
 #endif

@@ -24,7 +24,6 @@
 #include <string.h>
 #include <gdk-pixbuf/gdk-pixbuf.h>
 
-#include "eek-section.h"
 #include "src/symbol.h"
 
 #include "eek-renderer.h"

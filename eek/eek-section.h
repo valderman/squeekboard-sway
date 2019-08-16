@@ -31,6 +31,4 @@
 #include "eek-keyboard.h"
 #include "src/layout.h"
 
-void
-eek_row_place_buttons(struct squeek_row *row, LevelKeyboard *keyboard);
 #endif  /* EEK_SECTION_H */

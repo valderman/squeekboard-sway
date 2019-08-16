@@ -70,7 +70,7 @@ row_placer(gpointer item, gpointer user_data)
     squeek_row_set_bounds(row, row_bounds);
 
     // Gather up all the keys in a row and adjust their bounds.
-    eek_row_place_buttons(row, data->keyboard);
+    squeek_row_place_buttons(row, data->keyboard);
 
     row_bounds = squeek_row_get_bounds(row);
     row_bounds.y = data->current_offset;
