@@ -26,6 +26,14 @@ pub mod c {
     /// Defined in eek-types.h
     #[repr(C)]
     #[derive(Clone, Debug)]
+    pub struct Point {
+        pub x: f64,
+        pub y: f64,
+    }
+
+    /// Defined in eek-types.h
+    #[repr(C)]
+    #[derive(Clone, Debug)]
     pub struct Bounds {
         pub x: f64,
         pub y: f64,
@@ -257,7 +265,7 @@ pub mod c {
         println!("{:?}", button);
     }
     
-    /// More complex procedures and algoithms which span multiple modules
+    /// Entry points for more complex procedures and algoithms which span multiple modules
     mod procedures {
         use super::*;
         
@@ -270,6 +278,14 @@ pub mod c {
                 keyboard: *const LevelKeyboard,
                 outline: u32
             ) -> Bounds;
+
+            /// Checks if point falls within bounds,
+            /// which are relative to origin and rotated by angle (I think)
+            fn eek_are_bounds_inside (bounds: Bounds,
+                point: Point,
+                origin: Point,
+                angle: i32
+            ) -> u32;
         }
         
         fn squeek_buttons_get_outlines(
@@ -312,6 +328,36 @@ pub mod c {
             );
             Rc::into_raw(needle); // Prevent dropping
             match found {
+                Some(button) => button.as_mut() as *mut Button,
+                None => ptr::null_mut(),
+            }
+        }
+        
+        #[no_mangle]
+        pub extern "C"
+        fn squeek_row_find_button_by_position(
+            row: *mut Row, point: Point, origin: Point
+        ) -> *mut Button {
+            let row = unsafe { &mut *row };
+            let row_bounds = row.bounds
+                .as_ref().expect("Missing bounds on row");
+            let origin = Point {
+                x: origin.x + row_bounds.x,
+                y: origin.y + row_bounds.y,
+            };
+            let angle = row.angle;
+            let result = row.buttons.iter_mut().find(|button| {
+                let bounds = button.bounds
+                    .as_ref().expect("Missing bounds on button")
+                    .clone();
+                let point = point.clone();
+                let origin = origin.clone();
+                unsafe {
+                    eek_are_bounds_inside(bounds, point, origin, angle) == 1
+                }
+            });
+            
+            match result {
                 Some(button) => button.as_mut() as *mut Button,
                 None => ptr::null_mut(),
             }
@@ -361,8 +407,10 @@ pub struct Button {
 
 const BUTTON_SPACING: f64 = 4.0;
 
+/// The graphical representation of a row of buttons
 pub struct Row {
     buttons: Vec<Box<Button>>,
+    /// Angle is not really used anywhere...
     angle: i32,
     bounds: Option<c::Bounds>,
 }

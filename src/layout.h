@@ -24,6 +24,8 @@ uint32_t squeek_row_contains(struct squeek_row*, struct squeek_button *button);
 
 struct squeek_button* squeek_row_find_key(struct squeek_row*, struct squeek_key *state);
 
+struct squeek_button *squeek_row_find_button_by_position(struct squeek_row *row, EekPoint point, EekPoint origin);
+
 typedef void (*ButtonCallback) (struct squeek_button *button, gpointer user_data);
 void squeek_row_foreach(struct squeek_row*,
                             ButtonCallback   callback,

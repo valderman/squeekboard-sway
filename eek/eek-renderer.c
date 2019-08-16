@@ -924,7 +924,6 @@ struct _FindKeyByPositionCallbackData {
     EekPoint origin;
     gint angle;
     struct squeek_button *button;
-    EekRenderer *renderer;
 };
 typedef struct _FindKeyByPositionCallbackData FindKeyByPositionCallbackData;
 
@@ -936,18 +935,11 @@ sign (EekPoint *p1, EekPoint *p2, EekPoint *p3)
         (p2->x - p3->x) * (p1->y - p3->y);
 }
 
-static void
-find_button_by_position_key_callback (struct squeek_button *button,
-                                   gpointer user_data)
+uint32_t
+eek_are_bounds_inside (EekBounds bounds, EekPoint point, EekPoint origin, int32_t angle)
 {
-    FindKeyByPositionCallbackData *data = user_data;
-    if (data->button) {
-        return;
-    }
     EekPoint points[4];
     gboolean b1, b2, b3;
-
-    EekBounds bounds = squeek_button_get_bounds(button);
 
     points[0].x = bounds.x;
     points[0].y = bounds.y;
@@ -959,27 +951,27 @@ find_button_by_position_key_callback (struct squeek_button *button,
     points[3].y = points[2].y;
 
     for (uint i = 0; i < G_N_ELEMENTS(points); i++) {
-        eek_point_rotate (&points[i], data->angle);
-        points[i].x += data->origin.x;
-        points[i].y += data->origin.y;
+        eek_point_rotate (&points[i], angle);
+        points[i].x += origin.x;
+        points[i].y += origin.y;
     }
 
-    b1 = sign (&data->point, &points[0], &points[1]) < 0.0;
-    b2 = sign (&data->point, &points[1], &points[2]) < 0.0;
-    b3 = sign (&data->point, &points[2], &points[0]) < 0.0;
+    b1 = sign (&point, &points[0], &points[1]) < 0.0;
+    b2 = sign (&point, &points[1], &points[2]) < 0.0;
+    b3 = sign (&point, &points[2], &points[0]) < 0.0;
 
     if (b1 == b2 && b2 == b3) {
-        data->button = button;
-        return;
+        return 1;
     }
 
-    b1 = sign (&data->point, &points[2], &points[3]) < 0.0;
-    b2 = sign (&data->point, &points[3], &points[0]) < 0.0;
-    b3 = sign (&data->point, &points[0], &points[2]) < 0.0;
+    b1 = sign (&point, &points[2], &points[3]) < 0.0;
+    b2 = sign (&point, &points[3], &points[0]) < 0.0;
+    b3 = sign (&point, &points[0], &points[2]) < 0.0;
 
     if (b1 == b2 && b2 == b3) {
-        data->button = button;
+        return 1;
     }
+    return 0;
 }
 
 static void
@@ -991,16 +983,7 @@ find_button_by_position_row_callback (gpointer item,
     if (data->button) {
         return;
     }
-    EekBounds bounds = squeek_row_get_bounds(row);
-    EekPoint origin;
-
-    origin = data->origin;
-    data->origin.x += bounds.x;
-    data->origin.y += bounds.y;
-    data->angle = squeek_row_get_angle(row);
-
-    squeek_row_foreach(row, find_button_by_position_key_callback, data);
-    data->origin = origin;
+    data->button = squeek_row_find_button_by_position(row, data->point, data->origin);
 }
 
 /**
@@ -1041,7 +1024,6 @@ eek_renderer_find_button_by_position (EekRenderer *renderer,
     data.origin.x = 0;
     data.origin.y = 0;
     data.button = NULL;
-    data.renderer = renderer;
 
     eek_keyboard_foreach (view, find_button_by_position_row_callback,
                         &data);
