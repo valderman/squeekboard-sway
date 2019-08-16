@@ -46,12 +46,7 @@ typedef struct _EekKeyboardPrivate EekKeyboardPrivate;
 /**
  * EekKeyboard:
  *
- * Contains the state of the physical keyboard.
- *
- * Is also a graphical element...
- *
- * The #EekKeyboard structure contains only private data and should
- * only be accessed using the provided API.
+ * Contains the graphical representation of the rows of buttons.
  */
 struct _EekKeyboard
 {
