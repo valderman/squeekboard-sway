@@ -27,10 +27,10 @@ pub mod c {
     #[repr(C)]
     #[derive(Clone, Debug)]
     pub struct Bounds {
-        x: f64,
-        y: f64,
-        width: f64,
-        height: f64
+        pub x: f64,
+        pub y: f64,
+        pub width: f64,
+        pub height: f64
     }
     
     type ButtonCallback = unsafe extern "C" fn(button: *mut ::layout::Button, data: *mut UserData);
@@ -272,8 +272,6 @@ pub mod c {
             ) -> Bounds;
         }
         
-        const BUTTON_SPACING: f64 = 4.0;
-        
         fn squeek_buttons_get_outlines(
             buttons: &Vec<Box<Button>>,
             keyboard: *const LevelKeyboard,
@@ -295,47 +293,9 @@ pub mod c {
         ) {
             let row = unsafe { &mut *row };
             
-            // Size buttons
             let sizes = squeek_buttons_get_outlines(&row.buttons, keyboard);
             
-            for (mut button, bounds) in &mut row.buttons.iter_mut().zip(sizes)  {
-                button.bounds = Some(bounds);
-            }
-            
-            // Place buttons
-            let max_height = row.buttons.iter().map(
-                |button| FloatOrd(
-                    button.bounds.as_ref().unwrap().height
-                )
-            ).max()
-                .unwrap_or(FloatOrd(0f64))
-                .0;
-
-            row.buttons.iter_mut().fold(0f64, |acc, button| {
-                let mut bounds = button.bounds.as_mut().unwrap();
-                bounds.x = acc;
-                acc + bounds.width + BUTTON_SPACING
-            });
-
-            let total_width = match row.buttons.is_empty() {
-                true => 0f64,
-                false => {
-                    let last_button = &row.buttons[row.buttons.len() - 1];
-                    let bounds = last_button.bounds.as_ref().unwrap();
-                    bounds.x + bounds.width
-                },
-            };
-            
-            let old_row_bounds = row.bounds.as_ref().unwrap().clone();
-            row.bounds = Some(Bounds {
-                // FIXME: do centering of each row based on keyboard dimensions,
-                // one level up the iterators
-                // now centering by comparing previous width to the new, calculated one
-                x: (old_row_bounds.width - total_width) / 2f64,
-                width: total_width,
-                height: max_height,
-                ..old_row_bounds
-            });
+            row.place_buttons_with_sizes(sizes);
         }
 
         /// Finds a button sharing this state
@@ -398,8 +358,54 @@ pub struct Button {
     pub state: Rc<RefCell<KeyState>>,
 }
 
+
+const BUTTON_SPACING: f64 = 4.0;
+
 pub struct Row {
     buttons: Vec<Box<Button>>,
     angle: i32,
     bounds: Option<c::Bounds>,
+}
+
+impl Row {
+    fn place_buttons_with_sizes(&mut self, sizes: Vec<c::Bounds>) {
+        for (mut button, bounds) in &mut self.buttons.iter_mut().zip(sizes)  {
+            button.bounds = Some(bounds);
+        }
+        
+        // Place buttons
+        let max_height = self.buttons.iter().map(
+            |button| FloatOrd(
+                button.bounds.as_ref().unwrap().height
+            )
+        ).max()
+            .unwrap_or(FloatOrd(0f64))
+            .0;
+
+        self.buttons.iter_mut().fold(0f64, |acc, button| {
+            let mut bounds = button.bounds.as_mut().unwrap();
+            bounds.x = acc;
+            acc + bounds.width + BUTTON_SPACING
+        });
+
+        let total_width = match self.buttons.is_empty() {
+            true => 0f64,
+            false => {
+                let last_button = &self.buttons[self.buttons.len() - 1];
+                let bounds = last_button.bounds.as_ref().unwrap();
+                bounds.x + bounds.width
+            },
+        };
+        
+        let old_row_bounds = self.bounds.as_ref().unwrap().clone();
+        self.bounds = Some(c::Bounds {
+            // FIXME: do centering of each row based on keyboard dimensions,
+            // one level up the iterators
+            // now centering by comparing previous width to the new, calculated one
+            x: (old_row_bounds.width - total_width) / 2f64,
+            width: total_width,
+            height: max_height,
+            ..old_row_bounds
+        });
+    }
 }
