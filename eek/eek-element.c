@@ -31,7 +31,6 @@
 #include <string.h>
 
 #include "eek-element.h"
-#include "eek-container.h"
 
 enum {
     PROP_0,

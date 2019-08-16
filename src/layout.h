@@ -1,9 +1,9 @@
 #ifndef __LAYOUT_H
 #define __LAYOUT_H
 
-#include "inttypes.h"
-
-#include "eek/eek-container.h"
+#include <inttypes.h>
+#include <glib.h>
+#include "eek/eek-element.h"
 #include "src/keyboard.h"
 
 struct squeek_button;

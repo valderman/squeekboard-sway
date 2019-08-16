@@ -255,22 +255,6 @@ void level_keyboard_free(LevelKeyboard *self) {
 }
 
 static void
-eek_keyboard_real_child_added (EekContainer *self,
-                               EekElement   *element)
-{
-    (void)self;
-    (void)element;
-}
-
-static void
-eek_keyboard_real_child_removed (EekContainer *self,
-                                 EekElement   *element)
-{
-    (void)self;
-    (void)element;
-}
-
-static void
 eek_keyboard_class_init (EekKeyboardClass *klass)
 {
     GObjectClass      *gobject_class = G_OBJECT_CLASS (klass);

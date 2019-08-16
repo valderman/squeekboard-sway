@@ -27,7 +27,6 @@
 
 #include <glib-object.h>
 #include <xkbcommon/xkbcommon.h>
-#include "eek-container.h"
 #include "eek-types.h"
 #include "eek-layout.h"
 #include "src/layout.h"

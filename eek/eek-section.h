@@ -26,7 +26,7 @@
 #define EEK_SECTION_H 1
 
 #include <glib-object.h>
-#include "eek-container.h"
+#include "eek-element.h"
 #include "eek-types.h"
 #include "eek-keyboard.h"
 #include "src/keyboard.h"
