@@ -59,7 +59,6 @@ struct _EekKeyboard
     EekElement parent;
 
     EekKeyboardPrivate *priv;
-    double scale;
     GPtrArray *rows; // struct squeek_row*
 };
 

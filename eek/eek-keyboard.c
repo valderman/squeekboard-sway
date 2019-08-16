@@ -269,7 +269,6 @@ eek_keyboard_class_init (EekKeyboardClass *klass)
 static void
 eek_keyboard_init (EekKeyboard *self)
 {
-    self->scale = 1.0;
     self->rows = g_ptr_array_new();
 }
 
