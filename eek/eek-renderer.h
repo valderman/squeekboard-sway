@@ -83,10 +83,6 @@ void             eek_renderer_set_scale_factor (EekRenderer     *renderer,
 
 PangoLayout     *eek_renderer_create_pango_layout
                                                (EekRenderer     *renderer);
-void             eek_renderer_render_key_label (EekRenderer     *renderer,
-                                                PangoLayout     *layout,
-                                                EekKey          *key);
-
 void             eek_renderer_render_key_outline
                                                (EekRenderer     *renderer,
                                                 cairo_t         *cr,

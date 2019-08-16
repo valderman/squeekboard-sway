@@ -134,9 +134,6 @@ typedef enum
 #define EEK_INVALID_KEYCODE (0)
     
 typedef struct _EekElement EekElement;
-typedef struct _EekContainer EekContainer;
-typedef struct _EekKey EekKey;
-typedef struct _EekSection EekSection;
 typedef struct _EekKeyboard EekKeyboard;
 typedef struct _EekSymbol EekSymbol;
 typedef struct _EekText EekText;

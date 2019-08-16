@@ -75,7 +75,6 @@ struct _EekboardContextServicePrivate {
     GHashTable *keyboard_hash; // a table of available keyboards, per layout
 
     // TODO: make use of repeating buttons
-    EekKey *repeat_key;
     guint repeat_timeout_id;
     gboolean repeat_triggered;
 

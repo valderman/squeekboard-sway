@@ -18,151 +18,9 @@
  * 02110-1301 USA
  */
 
-/**
- * SECTION:eek-section
- * @short_description: Base class of a section
- * @see_also: #EekKey
- *
- * The #EekSectionClass class represents a section, which consists
- * of one or more keys of the #EekKeyClass class.
- */
-
 #include "config.h"
 
-#include <string.h>
-
-#include "eek-keyboard.h"
-#include "layout.h"
-
 #include "eek-section.h"
-
-enum {
-    PROP_0,
-    PROP_ANGLE,
-    PROP_LAST
-};
-
-typedef struct _EekSectionPrivate
-{
-    struct squeek_row *row;
-} EekSectionPrivate;
-
-G_DEFINE_TYPE_WITH_PRIVATE (EekSection, eek_section, EEK_TYPE_ELEMENT)
-
-static void
-eek_section_finalize (GObject *object)
-{
-    G_OBJECT_CLASS (eek_section_parent_class)->finalize (object);
-}
-
-static void
-eek_section_set_property (GObject      *object,
-                          guint         prop_id,
-                          const GValue *value,
-                          GParamSpec   *pspec)
-{
-    switch (prop_id) {
-    case PROP_ANGLE:
-        eek_section_set_angle (EEK_SECTION(object),
-                               g_value_get_int (value));
-        break;
-    default:
-        G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-        break;
-    }
-}
-
-static void
-eek_section_get_property (GObject    *object,
-                          guint       prop_id,
-                          GValue     *value,
-                          GParamSpec *pspec)
-{
-    switch (prop_id) {
-    case PROP_ANGLE:
-        g_value_set_int (value, eek_section_get_angle (EEK_SECTION(object)));
-        break;
-    default:
-        G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-        break;
-    }
-}
-
-static void
-eek_section_class_init (EekSectionClass *klass)
-{
-    GObjectClass      *gobject_class = G_OBJECT_CLASS (klass);
-    GParamSpec        *pspec;
-
-    /* signals */
-    gobject_class->set_property = eek_section_set_property;
-    gobject_class->get_property = eek_section_get_property;
-    gobject_class->finalize     = eek_section_finalize;
-
-    /**
-     * EekSection:angle:
-     *
-     * The rotation angle of #EekSection.
-     */
-    pspec = g_param_spec_int ("angle",
-                              "Angle",
-                              "Rotation angle of the section",
-                              -360, 360, 0,
-                              G_PARAM_READWRITE);
-    g_object_class_install_property (gobject_class,
-                                     PROP_ANGLE,
-                                     pspec);
-}
-
-static void
-eek_section_init (EekSection *self)
-{
-    EekSectionPrivate *priv = eek_section_get_instance_private (self);
-    priv->row = squeek_row_new(0);
-}
-
-/**
- * eek_section_set_angle:
- * @section: an #EekSection
- * @angle: rotation angle
- *
- * Set rotation angle of @section to @angle.
- */
-void
-eek_section_set_angle (EekSection  *section,
-                       gint         angle)
-{
-    g_return_if_fail (EEK_IS_SECTION(section));
-
-    EekSectionPrivate *priv = eek_section_get_instance_private (section);
-
-    squeek_row_set_angle(priv->row, angle);
-}
-
-/**
- * eek_section_get_angle:
- * @section: an #EekSection
- *
- * Get rotation angle of @section.
- */
-gint
-eek_section_get_angle (EekSection *section)
-{
-    g_return_val_if_fail (EEK_IS_SECTION(section), -1);
-
-    EekSectionPrivate *priv = eek_section_get_instance_private (section);
-
-    return squeek_row_get_angle(priv->row);
-}
-
-struct squeek_row *
-eek_section_get_row (EekSection *section)
-{
-    g_return_val_if_fail (EEK_IS_SECTION(section), NULL);
-
-    EekSectionPrivate *priv = eek_section_get_instance_private (section);
-    return priv->row;
-}
 
 EekBounds eek_get_outline_size(LevelKeyboard *keyboard, uint32_t oref) {
     EekOutline *outline = level_keyboard_get_outline (keyboard, oref);
@@ -197,16 +55,6 @@ EekBounds eek_get_outline_size(LevelKeyboard *keyboard, uint32_t oref) {
     return bounds;
 }
 
-void eek_section_set_bounds(EekSection *section, EekBounds bounds) {
-    EekSectionPrivate *priv = eek_section_get_instance_private (section);
-    squeek_row_set_bounds(priv->row, bounds);
-}
-
-EekBounds eek_section_get_bounds(EekSection *section) {
-    EekSectionPrivate *priv = eek_section_get_instance_private (section);
-    return squeek_row_get_bounds(priv->row);
-}
-
 void
 eek_row_place_buttons(struct squeek_row *row, LevelKeyboard *keyboard)
 {
@@ -219,23 +67,4 @@ eek_row_place_buttons(struct squeek_row *row, LevelKeyboard *keyboard)
     row_bounds.width = row_size.width;
     row_bounds.height = row_size.height;
     squeek_row_set_bounds(row, row_bounds);
-}
-
-void eek_section_foreach (EekSection *section,
-                          ButtonCallback func,
-                          gpointer   user_data) {
-    EekSectionPrivate *priv = eek_section_get_instance_private (section);
-    squeek_row_foreach(priv->row, func, user_data);
-}
-
-gboolean eek_section_find(EekSection *section,
-                          struct squeek_button *button) {
-    EekSectionPrivate *priv = eek_section_get_instance_private (section);
-    return squeek_row_contains(priv->row, button) != 0;
-}
-
-struct squeek_button *eek_section_find_key(EekSection *section,
-                                           struct squeek_key *key) {
-    EekSectionPrivate *priv = eek_section_get_instance_private (section);
-    return squeek_row_find_key(priv->row, key);
 }

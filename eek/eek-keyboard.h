@@ -83,20 +83,9 @@ struct _EekKeyboardClass
     gpointer set_symbol_index;
     gpointer get_symbol_index;
 
-    /*< public >*/
-    EekKey     *(* find_key_by_name)    (EekKeyboard *self,
-                                         const gchar *name);
-
     /*< private >*/
     /* obsolete members moved to EekElement */
     gpointer symbol_index_changed;
-
-    /*< public >*/
-    /* signals */
-    void        (* key_locked)          (EekKeyboard *self,
-                                         EekKey      *key);
-    void        (* key_unlocked)        (EekKeyboard *self,
-                                         EekKey      *key);
 
     /*< private >*/
     /* padding */
@@ -154,8 +143,6 @@ void                eek_keyboard_set_size
                                       gdouble             width,
                                       gdouble             height);
 
-EekSection         *eek_keyboard_create_section
-                                     (EekKeyboard        *keyboard);
 struct squeek_row *eek_keyboard_get_row(EekKeyboard *keyboard,
                                       struct squeek_button *button);
 struct squeek_button *eek_keyboard_find_button_by_name(LevelKeyboard *keyboard,
