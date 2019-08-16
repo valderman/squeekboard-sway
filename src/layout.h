@@ -68,6 +68,8 @@ void squeek_view_foreach(struct squeek_view*,
                             RowCallback   callback,
                             gpointer      user_data);
 
+struct squeek_row *squeek_view_get_row(struct squeek_view *view,
+                                       struct squeek_button *button);
 
 void squeek_row_place_buttons(struct squeek_row *row, LevelKeyboard *keyboard);
 #endif

@@ -498,7 +498,7 @@ on_button_pressed (struct squeek_button *button,
 
     struct button_place place = {
         .button = button,
-        .row = eek_keyboard_get_row(view, button),
+        .row = squeek_view_get_row(view, button),
     };
     if (!place.row) {
         return;

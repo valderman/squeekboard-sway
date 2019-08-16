@@ -185,19 +185,6 @@ pub mod c {
         let row = unsafe { &mut *row };
         row.bounds = Some(bounds);
     }
-
-    #[no_mangle]
-    pub extern "C"
-    fn squeek_row_contains(
-        row: *mut ::layout::Row,
-        needle: *const ::layout::Button,
-    ) -> u32 {
-        let row = unsafe { &mut *row };
-        row.buttons.iter().position(
-            // TODO: wrap Button properly in Rc; this comparison is unreliable
-            |button| button.as_ref() as *const ::layout::Button == needle
-        ).is_some() as u32
-    }
     
     #[no_mangle]
     pub extern "C"
@@ -413,12 +400,54 @@ pub mod c {
                 None => ptr::null_mut(),
             }
         }
+        
+        fn squeek_row_contains(row: &Row, needle: *const Button) -> bool {
+            row.buttons.iter().position(
+                // TODO: wrap Button properly in Rc; this comparison is unreliable
+                |button| button.as_ref() as *const ::layout::Button == needle
+            ).is_some()
+        }
+        
+        #[no_mangle]
+        pub extern "C"
+        fn squeek_view_get_row(
+            view: *mut View,
+            needle: *const ::layout::Button,
+        ) -> *mut Row {
+            let view = unsafe { &mut *view };
+            let result = view.rows.iter_mut().find(|row| {
+                squeek_row_contains(row, needle)
+            });
+            match result {
+                Some(row) => row.as_mut() as *mut Row,
+                None => ptr::null_mut(),
+            }
+        }
+        
+        #[cfg(test)]
+        mod test {
+            use super::*;
+
+            #[test]
+            fn row_has_button() {
+                let mut row = Row::new(0);
+                let button = squeek_row_create_button(&mut row as *mut Row, 0, 0);
+                assert_eq!(squeek_row_contains(&row, button), true);
+                let shared_button = squeek_row_create_button_with_state(
+                    &mut row as *mut Row,
+                    button
+                );
+                assert_eq!(squeek_row_contains(&row, shared_button), true);
+                let row = Row::new(0);
+                assert_eq!(squeek_row_contains(&row, button), false);
+            }
+        }
     }
     
     #[cfg(test)]
     mod test {
         use super::*;
-        
+
         #[test]
         fn button_has_key() {
             let button = squeek_button_new(0, 0);
@@ -430,17 +459,6 @@ pub mod c {
             assert_eq!(squeek_button_has_key(button, other_state), 0);
             let shared_button = squeek_button_new_with_state(button);
             assert_eq!(squeek_button_has_key(shared_button, state), 1);
-        }
-        
-        #[test]
-        fn row_has_button() {
-            let row = squeek_row_new(0);
-            let button = squeek_row_create_button(row, 0, 0);
-            assert_eq!(squeek_row_contains(row, button), 1);
-            let shared_button = squeek_row_create_button_with_state(row, button);
-            assert_eq!(squeek_row_contains(row, shared_button), 1);
-            let row = squeek_row_new(0);
-            assert_eq!(squeek_row_contains(row, button), 0);
         }
     }
 }

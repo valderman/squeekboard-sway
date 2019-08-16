@@ -61,8 +61,6 @@ struct _LevelKeyboard {
 };
 typedef struct _LevelKeyboard LevelKeyboard;
 
-struct squeek_row *eek_keyboard_get_row(struct squeek_view *view,
-                                      struct squeek_button *button);
 struct squeek_button *eek_keyboard_find_button_by_name(LevelKeyboard *keyboard,
                                       const gchar        *name);
 

@@ -294,26 +294,6 @@ struct GetRowData {
     struct squeek_key *needle;
 };
 
-void find_button_in_row(struct squeek_row *row, gpointer user_data) {
-    struct GetRowData *data = user_data;
-    if (data->row) {
-        return;
-    }
-    if (squeek_row_contains(row, data->button)) {
-        data->row = row;
-    }
-}
-
-struct squeek_row *eek_keyboard_get_row(struct squeek_view *view,
-                                     struct squeek_button *button) {
-    struct GetRowData data = {
-        .button = button,
-        .row = NULL,
-    };
-    squeek_view_foreach(view, find_button_in_row, &data);
-    return data.row;
-}
-
 void find_key_in_row(struct squeek_row *row, gpointer user_data) {
     struct GetRowData *data = user_data;
     if (data->button) {
