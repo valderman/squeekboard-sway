@@ -422,23 +422,6 @@ eek_renderer_real_render_button_label (EekRenderer *self,
                             PANGO_SCALE * bounds.width * scale);
 }
 
-static void
-eek_renderer_real_render_button_outline (EekRenderer *self,
-                                      cairo_t     *cr,
-                                      struct button_place *place,
-                                      gdouble      scale,
-                                      gboolean     rotate)
-{
-    cairo_save (cr);
-    eek_renderer_apply_transformation_for_button (self, cr, place, scale, rotate);
-    struct squeek_key *key = squeek_button_get_key(place->button);
-    render_button_outline (
-                self, cr, place->button,
-                squeek_key_is_pressed(key) || squeek_key_is_locked (key)
-    );
-    cairo_restore (cr);
-}
-
 /*
  * eek_renderer_real_render_key:
  * @self: The renderer used to render the key
@@ -588,7 +571,6 @@ eek_renderer_class_init (EekRendererClass *klass)
     GObjectClass      *gobject_class = G_OBJECT_CLASS (klass);
     GParamSpec        *pspec;
 
-    klass->render_key_outline = eek_renderer_real_render_button_outline;
     klass->render_button = eek_renderer_real_render_button;
     klass->render_keyboard = eek_renderer_real_render_keyboard;
 
@@ -837,24 +819,6 @@ eek_renderer_create_pango_layout (EekRenderer  *renderer)
     EekRendererPrivate *priv = eek_renderer_get_instance_private (renderer);
 
     return pango_layout_new (priv->pcontext);
-}
-
-void
-eek_renderer_render_key_outline (EekRenderer *renderer,
-                                 cairo_t     *cr,
-                                 struct button_place *place,
-                                 gdouble      scale,
-                                 gboolean     rotate)
-{
-    g_return_if_fail (EEK_IS_RENDERER(renderer));
-    g_return_if_fail (place);
-    g_return_if_fail (scale >= 0.0);
-
-    EEK_RENDERER_GET_CLASS(renderer)->render_key_outline (renderer,
-                                                          cr,
-                                                          place,
-                                                          scale,
-                                                          rotate);
 }
 
 cairo_surface_t *

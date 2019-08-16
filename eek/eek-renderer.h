@@ -36,12 +36,6 @@ struct _EekRendererClass
 {
     GObjectClass parent_class;
 
-    void             (* render_key_outline) (EekRenderer *self,
-                                             cairo_t     *cr,
-                                             struct button_place *place,
-                                             gdouble      scale,
-                                             gboolean     rotate);
-
     void             (* render_button)         (EekRenderer *self,
                                              cairo_t     *cr,
                                              struct button_place *place,
@@ -83,13 +77,6 @@ void             eek_renderer_set_scale_factor (EekRenderer     *renderer,
 
 PangoLayout     *eek_renderer_create_pango_layout
                                                (EekRenderer     *renderer);
-void             eek_renderer_render_key_outline
-                                               (EekRenderer     *renderer,
-                                                cairo_t         *cr,
-                                                struct button_place *place,
-                                                gdouble          scale,
-                                                gboolean         rotate);
-
 void             eek_renderer_render_button       (EekRenderer     *renderer,
                                                 cairo_t         *cr,
                                                 struct button_place *place,
