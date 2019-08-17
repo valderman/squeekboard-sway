@@ -17,6 +17,7 @@ add_project_arguments(
     '-Werror=implicit-fallthrough=3',
     '-Werror=maybe-uninitialized',
     '-Werror=missing-field-initializers',
+    '-Werror=incompatible-pointer-types',
   ],
   language: 'c'
 )
