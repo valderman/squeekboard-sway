@@ -929,7 +929,7 @@ eek_xml_layout_real_create_keyboard (EekLayout *self,
 
     for (uint i = 0; i < 4; i++) {
         if (views[i]) {
-            eek_layout_place_rows(keyboard, views[i]);
+            squeek_view_place_contents(views[i], keyboard);
         }
     }
 
