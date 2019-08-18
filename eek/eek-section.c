@@ -459,8 +459,6 @@ keysizer(EekElement *element, gpointer user_data)
 static void
 keycounter (EekElement *element, gpointer user_data)
 {
-    EekKey *key = EEK_KEY(element);
-
     struct keys_info *data = user_data;
     data->count++;
     EekBounds key_bounds = {0};
@@ -474,8 +472,6 @@ keycounter (EekElement *element, gpointer user_data)
 static void
 keyplacer(EekElement *element, gpointer user_data)
 {
-    EekKey *key = EEK_KEY(element);
-
     double *current_offset = user_data;
     EekBounds key_bounds = {0};
     eek_element_get_bounds(element, &key_bounds);
