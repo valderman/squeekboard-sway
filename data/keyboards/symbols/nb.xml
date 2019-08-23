@@ -1,5 +1,14 @@
-<?xml version='1.0' encoding='ASCII' standalone='yes'?>
+<?xml version='1.0' encoding='UTF-8' standalone='yes'?>
 <symbols version="0.90">
+  <symbol label="*">asterisk</symbol>
+  <symbol label="+/=">show_symbols</symbol>
+  <symbol label="&#964;">Greek_tau</symbol>
+  <symbol label="å">aring</symbol>
+  <symbol label="ø">oslash</symbol>
+  <symbol label="æ">ae</symbol>
+  <symbol label="Å">Aring</symbol>
+  <symbol label="Ø">Oslash</symbol>
+  <symbol label="Æ">AE</symbol>
   <key name="AD01">
     <symbol label="q">q</symbol>
     <symbol label="Q">Q</symbol>
@@ -189,10 +198,10 @@
     <symbol label=".">period</symbol>
   </key>
   <key name="ABC123">
-    <symbol label="123">show-numbers</symbol>
-    <symbol label="123">show-numbers</symbol>
-    <symbol label="ABC">show-letters</symbol>
-    <symbol label="ABC">show-letters</symbol>
+    <symbol label="123">show_numbers</symbol>
+    <symbol label="123">show_numbers</symbol>
+    <symbol label="ABC">show_letters</symbol>
+    <symbol label="ABC">show_letters</symbol>
   </key>
   <key name="I149">
     <symbol icon="keyboard-mode-symbolic" tooltip="Setup">preferences</symbol>
