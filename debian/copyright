@@ -1,6 +1,6 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
-Upstream-Name: evscript
-Source: https://source.puri.sm/david.boddie/evscript
+Upstream-Name: squeekboard
+Source: https://source.puri.sm/Librem5/squeekboard
 
 Files: *
 Copyright: 2010-2011 Daiki Ueno <ueno@unixuser.org>
