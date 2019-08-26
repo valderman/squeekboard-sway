@@ -249,7 +249,6 @@ handle_touch_event (GtkWidget     *widget,
                     GdkEventTouch *event)
 {
     EekGtkKeyboard        *self = EEK_GTK_KEYBOARD (widget);
-    EekGtkKeyboardPrivate *priv = eek_gtk_keyboard_get_instance_private (self);
 
     if (event->type == GDK_TOUCH_BEGIN) {
         depress(self, event->x, event->y, event->time);
