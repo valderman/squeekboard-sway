@@ -191,8 +191,8 @@ static void drag(EekGtkKeyboard *self,
         }
     } else {
         for (head = list; head; head = g_list_next (head)) {
-            eek_keyboard_release_button(priv->keyboard, button, time);
-            on_button_released(button, view, self);
+            eek_keyboard_release_button(priv->keyboard, head->data, time);
+            on_button_released(head->data, view, self);
         }
         g_list_free (list);
     }
