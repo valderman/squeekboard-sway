@@ -25,84 +25,10 @@
 #ifndef EEK_SECTION_H
 #define EEK_SECTION_H 1
 
+/* Contains row-related functions that couldn't be done in Rust easily. */
+
 #include <glib-object.h>
-#include "eek-container.h"
-#include "eek-types.h"
 #include "eek-keyboard.h"
-#include "src/keyboard.h"
+#include "src/layout.h"
 
-G_BEGIN_DECLS
-
-#define EEK_TYPE_SECTION (eek_section_get_type())
-G_DECLARE_DERIVABLE_TYPE(EekSection, eek_section, EEK, SECTION, EekContainer)
-
-/**
- * EekSectionClass:
- * @get_n_rows: virtual function for getting the number of rows in the section
- * @add_row: virtual function for adding a new row to the section
- * @get_row: virtual function for accessing a row in the section
- * @create_key: virtual function for creating key in the section
- * @key_pressed: class handler for #EekSection::key-pressed signal
- * @key_released: class handler for #EekSection::key-released signal
- * @key_locked: class handler for #EekSection::key-locked signal
- * @key_unlocked: class handler for #EekSection::key-unlocked signal
- * @key_cancelled: class handler for #EekSection::key-cancelled signal
- */
-struct _EekSectionClass
-{
-    /*< private >*/
-    EekContainerClass parent_class;
-
-    /*< public >*/
-    gint    (* get_n_rows)          (EekSection     *self);
-    void    (* add_row)             (EekSection     *self,
-                                     gint            num_columns,
-                                     EekOrientation  orientation);
-    void    (* get_row)             (EekSection     *self,
-                                     gint            index,
-                                     gint           *num_columns,
-                                     EekOrientation *orientation);
-
-    EekKey *(* create_key)          (EekSection     *self,
-                                     const gchar    *name,
-                                     gint            keycode,
-                                     guint oref);
-
-    /* signals */
-    void    (* key_locked)          (EekSection     *self,
-                                     EekKey         *key);
-    void    (* key_unlocked)        (EekSection     *self,
-                                     EekKey         *key);
-    void    (* key_cancelled)       (EekSection     *self,
-                                     EekKey         *key);
-
-    /*< private >*/
-    /* padding */
-    gpointer pdummy[19];
-};
-
-GType   eek_section_get_type             (void) G_GNUC_CONST;
-
-void    eek_section_set_angle            (EekSection     *section,
-                                          gint            angle);
-gint    eek_section_get_angle            (EekSection     *section);
-
-gint    eek_section_get_n_rows           (EekSection     *section);
-void    eek_section_add_row              (EekSection     *section,
-                                          gint            num_columns,
-                                          EekOrientation  orientation);
-void    eek_section_get_row              (EekSection     *section,
-                                          gint            index,
-                                          gint           *num_columns,
-                                          EekOrientation *orientation);
-
-EekKey *eek_section_create_key           (EekSection     *section,
-                                          const gchar    *name,
-                                          guint keycode, guint oref);
-EekKey *eek_section_create_button(EekSection *self,
-                                  const gchar *name,
-                                    struct squeek_key *state);
-void eek_section_place_keys              (EekSection     *section, LevelKeyboard *keyboard);
-
-G_END_DECLS
 #endif  /* EEK_SECTION_H */

@@ -23,11 +23,8 @@
 #define __EEK_H_INSIDE__ 1
 
 #include "eek-keyboard.h"
-#include "eek-section.h"
-#include "eek-key.h"
 #include "eek-layout.h"
 #include "eek-keysym.h"
-#include "eek-serializable.h"
 
 void eek_init (void);
 

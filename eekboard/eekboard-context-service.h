@@ -73,7 +73,7 @@ struct _EekboardContextServiceClass {
     GObjectClass parent_class;
 
     /*< public >*/
-    EekKeyboard *(*create_keyboard)    (EekboardContextService *self,
+    struct squeek_view *(*create_keyboard)    (EekboardContextService *self,
                                         const gchar            *keyboard_type);
     void         (*show_keyboard)      (EekboardContextService *self);
     void         (*hide_keyboard)      (EekboardContextService *self);

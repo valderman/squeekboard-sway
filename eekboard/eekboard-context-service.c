@@ -75,7 +75,6 @@ struct _EekboardContextServicePrivate {
     GHashTable *keyboard_hash; // a table of available keyboards, per layout
 
     // TODO: make use of repeating buttons
-    EekKey *repeat_key;
     guint repeat_timeout_id;
     gboolean repeat_triggered;
 
@@ -432,10 +431,9 @@ eekboard_context_service_class_init (EekboardContextServiceClass *klass)
      *
      * An #EekKeyboard currently active in this context.
      */
-    pspec = g_param_spec_object ("keyboard",
+    pspec = g_param_spec_pointer("keyboard",
                                  "Keyboard",
                                  "Keyboard",
-                                 EEK_TYPE_KEYBOARD,
                                  G_PARAM_READWRITE);
     g_object_class_install_property (gobject_class,
                                      PROP_KEYBOARD,

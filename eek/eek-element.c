@@ -31,26 +31,16 @@
 #include <string.h>
 
 #include "eek-element.h"
-#include "eek-container.h"
-#include "eek-marshalers.h"
 
 enum {
     PROP_0,
-    PROP_NAME,
     PROP_BOUNDS,
     PROP_LAST
 };
 
-enum {
-    SYMBOL_INDEX_CHANGED,
-    LAST_SIGNAL
-};
-
 typedef struct _EekElementPrivate
 {
-    gchar *name;
     EekBounds bounds;
-    EekElement *parent;
 } EekElementPrivate;
 
 G_DEFINE_ABSTRACT_TYPE_WITH_PRIVATE (EekElement, eek_element, G_TYPE_OBJECT)
@@ -58,10 +48,6 @@ G_DEFINE_ABSTRACT_TYPE_WITH_PRIVATE (EekElement, eek_element, G_TYPE_OBJECT)
 static void
 eek_element_finalize (GObject *object)
 {
-    EekElement        *self = EEK_ELEMENT (object);
-    EekElementPrivate *priv = eek_element_get_instance_private (self);
-
-    g_free (priv->name);
     G_OBJECT_CLASS (eek_element_parent_class)->finalize (object);
 }
 
@@ -74,10 +60,6 @@ eek_element_set_property (GObject      *object,
     EekElement *element = EEK_ELEMENT(object);
 
     switch (prop_id) {
-    case PROP_NAME:
-        eek_element_set_name (element,
-                              g_value_dup_string (value));
-        break;
     case PROP_BOUNDS:
         eek_element_set_bounds (element, g_value_get_boxed (value));
         break;
@@ -97,9 +79,6 @@ eek_element_get_property (GObject    *object,
     EekBounds bounds;
 
     switch (prop_id) {
-    case PROP_NAME:
-        g_value_set_string (value, eek_element_get_name (element));
-        break;
     case PROP_BOUNDS:
         eek_element_get_bounds (element, &bounds);
         g_value_set_boxed (value, &bounds);
@@ -122,20 +101,6 @@ eek_element_class_init (EekElementClass *klass)
     gobject_class->finalize     = eek_element_finalize;
 
     /**
-     * EekElement:name:
-     *
-     * The name of #EekElement.
-     */
-    pspec = g_param_spec_string ("name",
-                                 "Name",
-                                 "Name",
-                                 NULL,
-                                 G_PARAM_READWRITE);
-    g_object_class_install_property (gobject_class,
-                                     PROP_NAME,
-                                     pspec);
-
-    /**
      * EekElement:bounds:
      *
      * The bounding box of #EekElement.
@@ -154,90 +119,6 @@ static void
 eek_element_init (EekElement *self)
 {
     (void)self;
-}
-
-/**
- * eek_element_set_parent:
- * @element: an #EekElement
- * @parent: (allow-none): an #EekElement or %NULL
- *
- * Set the parent of @element to @parent.
- */
-void
-eek_element_set_parent (EekElement *element,
-                        EekElement *parent)
-{
-    g_return_if_fail (EEK_IS_ELEMENT(element));
-    g_return_if_fail (parent == NULL || EEK_IS_ELEMENT(parent));
-
-    EekElementPrivate *priv = eek_element_get_instance_private (element);
-
-    if (priv->parent == parent)
-        return;
-
-    if (priv->parent != NULL) {
-        /* release self-reference acquired when setting parent */
-        g_object_unref (element);
-    }
-
-    if (parent != NULL) {
-        g_object_ref (element);
-    }
-
-    priv->parent = parent;
-}
-
-/**
- * eek_element_get_parent:
- * @element: an #EekElement
- *
- * Get the parent of @element.
- * Returns: an #EekElement if the parent is set
- */
-EekElement *
-eek_element_get_parent (EekElement *element)
-{
-    g_return_val_if_fail (EEK_IS_ELEMENT(element), NULL);
-
-    EekElementPrivate *priv = eek_element_get_instance_private (element);
-
-    return priv->parent;
-}
-
-/**
- * eek_element_set_name:
- * @element: an #EekElement
- * @name: name of @element
- *
- * Set the name of @element to @name.
- */
-void
-eek_element_set_name (EekElement  *element,
-                      const gchar *name)
-{
-    g_return_if_fail (EEK_IS_ELEMENT(element));
-
-    EekElementPrivate *priv = eek_element_get_instance_private (element);
-
-    g_free (priv->name);
-    priv->name = g_strdup (name);
-}
-
-/**
- * eek_element_get_name:
- * @element: an #EekElement
- *
- * Get the name of @element.
- * Returns: the name of @element or NULL when the name is not set
- */
-const gchar *
-eek_element_get_name (EekElement  *element)
-{
-    g_return_val_if_fail (EEK_IS_ELEMENT(element), NULL);
-
-    EekElementPrivate *priv = eek_element_get_instance_private (element);
-
-    return priv->name;
 }
 
 /**
@@ -279,71 +160,4 @@ eek_element_get_bounds (EekElement  *element,
     EekElementPrivate *priv = eek_element_get_instance_private (element);
 
     memcpy (bounds, &priv->bounds, sizeof(EekBounds));
-}
-
-/**
- * eek_element_get_absolute_position:
- * @element: an #EekElement
- * @x: pointer where the X coordinate of @element will be stored
- * @y: pointer where the Y coordinate of @element will be stored
- *
- * Compute the absolute position of @element.
- */
-void
-eek_element_get_absolute_position (EekElement *element,
-                                   gdouble    *x,
-                                   gdouble    *y)
-{
-    EekBounds bounds;
-    gdouble ax = 0.0, ay = 0.0;
-
-    do {
-        eek_element_get_bounds (element, &bounds);
-        ax += bounds.x;
-        ay += bounds.y;
-    } while ((element = eek_element_get_parent (element)) != NULL);
-    *x = ax;
-    *y = ay;
-}
-
-/**
- * eek_element_set_position:
- * @element: an #EekElement
- * @x: X coordinate of top left corner
- * @y: Y coordinate of top left corner
- *
- * Set the relative position of @element.
- */
-void
-eek_element_set_position (EekElement *element,
-                          gdouble     x,
-                          gdouble     y)
-{
-    EekBounds bounds;
-
-    eek_element_get_bounds (element, &bounds);
-    bounds.x = x;
-    bounds.y = y;
-    eek_element_set_bounds (element, &bounds);
-}
-
-/**
- * eek_element_set_size:
- * @element: an #EekElement
- * @width: width of @element
- * @height: height of @element
- *
- * Set the size of @element.
- */
-void
-eek_element_set_size (EekElement  *element,
-                      gdouble      width,
-                      gdouble      height)
-{
-    EekBounds bounds;
-
-    eek_element_get_bounds (element, &bounds);
-    bounds.width = width;
-    bounds.height = height;
-    eek_element_set_bounds (element, &bounds);
 }

@@ -7,8 +7,16 @@ pub mod c {
     use super::*;
     use ::util::c::{ as_cstr, into_cstring };
     
+    use std::cell::RefCell;
     use std::ffi::CString;
     use std::os::raw::c_char;
+    use std::ptr;
+    use std::rc::Rc;
+
+    // traits
+    
+    use std::borrow::ToOwned;
+
     
     // The following defined in C
     #[no_mangle]
@@ -16,6 +24,44 @@ pub mod c {
         fn eek_keysym_from_name(name: *const c_char) -> u32;
     }
 
+    /// The wrapped structure for KeyState suitable for handling in C
+    /// Since C doesn't respect borrowing rules,
+    /// RefCell will enforce them dynamically (only 1 writer/many readers)
+    /// Rc is implied and will ensure timely dropping
+    #[repr(transparent)]
+    pub struct CKeyState(*const RefCell<KeyState>);
+    
+    impl Clone for CKeyState {
+        fn clone(&self) -> Self {
+            CKeyState(self.0.clone())
+        }
+    }
+
+    impl CKeyState {
+        pub fn wrap(state: Rc<RefCell<KeyState>>) -> CKeyState {
+            CKeyState(Rc::into_raw(state))
+        }
+        pub fn unwrap(self) -> Rc<RefCell<KeyState>> {
+            unsafe { Rc::from_raw(self.0) }
+        }
+        fn to_owned(self) -> KeyState {
+            let rc = self.unwrap();
+            let state = rc.borrow().to_owned();
+            Rc::into_raw(rc); // Prevent dropping
+            state
+        }
+        fn borrow_mut<F, T>(self, f: F) -> T where F: FnOnce(&mut KeyState) -> T {
+            let rc = self.unwrap();
+            let ret = {
+                let mut state = rc.borrow_mut();
+                f(&mut state)
+            };
+            Rc::into_raw(rc); // Prevent dropping
+            ret
+        }
+    }
+
+    // TODO: unwrapping
 
     // The following defined in Rust. TODO: wrap naked pointers to Rust data inside RefCells to prevent multiple writers
     
@@ -23,48 +69,59 @@ pub mod c {
     // so it should handle garbled strings in the future
     #[no_mangle]
     pub extern "C"
-    fn squeek_key_new(keycode: u32) -> *mut KeyState {
-        Box::into_raw(Box::new(
+    fn squeek_key_new(keycode: u32) -> CKeyState {
+        let state: Rc<RefCell<KeyState>> = Rc::new(RefCell::new(
             KeyState {
                 pressed: false,
+                locked: false,
                 keycode: keycode,
-                symbols: Vec::new(),
+                symbol: None,
             }
-        ))
+        ));
+        CKeyState::wrap(state)
     }
     
     #[no_mangle]
     pub extern "C"
-    fn squeek_key_free(key: *mut KeyState) {
-        unsafe { Box::from_raw(key) }; // gets dropped
+    fn squeek_key_free(key: CKeyState) {
+        key.unwrap(); // reference dropped
     }
     
     #[no_mangle]
     pub extern "C"
-    fn squeek_key_is_pressed(key: *const KeyState) -> u32 {
-        let key = unsafe { &*key };
-        return key.pressed as u32;
+    fn squeek_key_is_pressed(key: CKeyState) -> u32 {
+        //let key = unsafe { Rc::from_raw(key.0) };
+        return key.to_owned().pressed as u32;
     }
     
     #[no_mangle]
     pub extern "C"
-    fn squeek_key_set_pressed(key: *mut KeyState, pressed: u32) {
-        let key = unsafe { &mut *key };
-        key.pressed = pressed != 0;
+    fn squeek_key_set_pressed(key: CKeyState, pressed: u32) {
+        key.borrow_mut(|key| key.pressed = pressed != 0);
     }
     
     #[no_mangle]
     pub extern "C"
-    fn squeek_key_get_keycode(key: *const KeyState) -> u32 {
-        let key = unsafe { &*key };
-        return key.keycode as u32;
+    fn squeek_key_is_locked(key: CKeyState) -> u32 {
+        return key.to_owned().locked as u32;
     }
     
     #[no_mangle]
     pub extern "C"
-    fn squeek_key_set_keycode(key: *mut KeyState, code: u32) {
-        let key = unsafe { &mut *key };
-        key.keycode = code;
+    fn squeek_key_set_locked(key: CKeyState, locked: u32) {
+        key.borrow_mut(|key| key.locked = locked != 0);
+    }
+    
+    #[no_mangle]
+    pub extern "C"
+    fn squeek_key_get_keycode(key: CKeyState) -> u32 {
+        return key.to_owned().keycode as u32;
+    }
+    
+    #[no_mangle]
+    pub extern "C"
+    fn squeek_key_set_keycode(key: CKeyState, code: u32) {
+        key.borrow_mut(|key| key.keycode = code);
     }
     
     // TODO: this will receive data from the filesystem,
@@ -72,7 +129,7 @@ pub mod c {
     #[no_mangle]
     pub extern "C"
     fn squeek_key_add_symbol(
-        key: *mut KeyState,
+        key: CKeyState,
         element: *const c_char,
         text_raw: *const c_char, keyval: u32,
         label: *const c_char, icon: *const c_char,
@@ -93,14 +150,6 @@ pub mod c {
                     Some(text)
                 }
             });
-
-        let key = unsafe { &mut *key };
-        
-        if key.symbols.len() > 0 {
-            eprintln!("Key {:?} already has a symbol defined", text);
-            return;
-        }
-
 
         let icon = into_cstring(icon)
             .unwrap_or_else(|e| {
@@ -131,107 +180,121 @@ pub mod c {
                 None
             });
         
-        let symbol = match element.to_bytes() {
-            b"symbol" => Symbol {
-                action: Action::Submit {
-                    text: text,
-                    keys: Vec::new(),
-                },
-                label: label,
-                tooltip: tooltip,
-            },
-            b"keysym" => {
-                let keysym = XKeySym(
-                    if keyval == 0 {
-                        unsafe { eek_keysym_from_name(text_raw) }
-                    } else {
-                        keyval
-                    }
-                );
-                Symbol {
-                    action: match KeySym::from_u32(keysym.0) {
-                        KeySym::Shift => Action::SetLevel(1),
-                        _ => Action::Submit {
-                            text: text,
-                            keys: vec![keysym],
-                        }
+
+        key.borrow_mut(|key| {
+            if let Some(_) = key.symbol {
+                eprintln!("Key {:?} already has a symbol defined", text);
+                return;
+            }
+
+            key.symbol = Some(match element.to_bytes() {
+                b"symbol" => Symbol {
+                    action: Action::Submit {
+                        text: text,
+                        keys: Vec::new(),
                     },
                     label: label,
                     tooltip: tooltip,
-                }
-            },
-            _ => panic!("unsupported element type {:?}", element),
-        };
-        
-        key.symbols.push(symbol);
+                },
+                _ => panic!("unsupported element type {:?}", element),
+            });
+        });
     }
 
     #[no_mangle]
     pub extern "C"
-    fn squeek_key_get_symbol(
-        key: *const KeyState, index: u32
-    ) -> *const symbol::Symbol {
-        let key = unsafe { &*key };
-        let index = index as usize;
-        &key.symbols[
-            if index < key.symbols.len() { index } else { 0 }
-        ] as *const symbol::Symbol
+    fn squeek_key_get_symbol(key: CKeyState) -> *const symbol::Symbol {
+        key.borrow_mut(|key| {
+            match key.symbol {
+                // This pointer stays after the function exits,
+                // so it must reference borrowed data and not any copy
+                Some(ref symbol) => symbol as *const symbol::Symbol,
+                None => ptr::null(),
+            }
+        })
     }
 
     #[no_mangle]
     pub extern "C"
     fn squeek_key_to_keymap_entry(
         key_name: *const c_char,
-        key: *const KeyState,
+        key: CKeyState,
     ) -> *const c_char {
         let key_name = as_cstr(&key_name)
             .expect("Missing key name")
             .to_str()
             .expect("Bad key name");
 
-        let key = unsafe { &*key };
-        let symbol_names = key.symbols.iter()
-            .map(|symbol| {
-                match &symbol.action {
-                    symbol::Action::Submit { text: Some(text), .. } => {
-                        Some(
-                            text.clone()
-                                .into_string().expect("Bad symbol")
-                        )
-                    },
-                    _ => None
-                }
-            })
-            .collect::<Vec<_>>();
+        let symbol_name = match key.to_owned().symbol {
+            Some(ref symbol) => match &symbol.action {
+                symbol::Action::Submit { text: Some(text), .. } => {
+                    Some(
+                        text.clone()
+                            .into_string().expect("Bad symbol")
+                    )
+                },
+                _ => None
+            },
+            None => {
+                eprintln!("Key {} has no symbol", key_name);
+                None
+            },
+        };
 
-        let inner = match symbol_names.len() {
-            1 => match &symbol_names[0] {
-                Some(name) => format!("[ {} ]", name),
-                _ => format!("[ ]"),
-            },
-            4 => {
-                let first = match (&symbol_names[0], &symbol_names[1]) {
-                    (Some(left), Some(right)) => format!("{}, {}", left, right),
-                    _ => format!(""),
-                };
-                let second = match (&symbol_names[2], &symbol_names[3]) {
-                    (Some(left), Some(right)) => format!("{}, {}", left, right),
-                    _ => format!(""),
-                };
-                format!("[ {} ], [ {} ]", first, second)
-            },
-            _ => panic!("Unsupported number of symbols: {}", symbol_names.len()),
+        let inner = match symbol_name {
+            Some(name) => format!("[ {} ]", name),
+            _ => format!("[ ]"),
         };
 
         CString::new(format!("        key <{}> {{ {} }};\n", key_name, inner))
             .expect("Couldn't convert string")
             .into_raw()
     }
+    
+        #[no_mangle]
+    pub extern "C"
+    fn squeek_key_get_action_name(
+        key_name: *const c_char,
+        key: CKeyState,
+    ) -> *const c_char {
+        let key_name = as_cstr(&key_name)
+            .expect("Missing key name")
+            .to_str()
+            .expect("Bad key name");
+
+        let symbol_name = match key.to_owned().symbol {
+            Some(ref symbol) => match &symbol.action {
+                symbol::Action::Submit { text: Some(text), .. } => {
+                    Some(
+                        text.clone()
+                            .into_string().expect("Bad symbol")
+                    )
+                },
+                _ => None
+            },
+            None => {
+                eprintln!("Key {} has no symbol", key_name);
+                None
+            },
+        };
+
+        let inner = match symbol_name {
+            Some(name) => format!("[ {} ]", name),
+            _ => format!("[ ]"),
+        };
+
+        CString::new(format!("        key <{}> {{ {} }};\n", key_name, inner))
+            .expect("Couldn't convert string")
+            .into_raw()
+    }
+
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct KeyState {
-    pressed: bool,
-    keycode: u32,
-    symbols: Vec<symbol::Symbol>,
+    pub pressed: bool,
+    pub locked: bool,
+    pub keycode: u32,
+    // TODO: remove the optionality of a symbol
+    pub symbol: Option<symbol::Symbol>,
 }

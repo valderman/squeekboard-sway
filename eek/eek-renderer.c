@@ -24,8 +24,6 @@
 #include <string.h>
 #include <gdk-pixbuf/gdk-pixbuf.h>
 
-#include "eek-key.h"
-#include "eek-section.h"
 #include "src/symbol.h"
 
 #include "eek-renderer.h"
@@ -76,33 +74,32 @@ extern void _eek_rounded_polygon               (cairo_t     *cr,
                                                 EekPoint    *points,
                                                 guint         num_points);
 
-static void eek_renderer_real_render_key_label (EekRenderer *self,
+static void eek_renderer_real_render_button_label (EekRenderer *self,
                                                 PangoLayout *layout,
-                                                EekKey      *key, guint level);
+                                                const struct squeek_button *button);
 
 static void invalidate                         (EekRenderer *renderer);
-static void render_key                         (EekRenderer *self,
-                                                cairo_t     *cr,
-                                                EekKey      *key, guint level,
+static void render_button                         (EekRenderer *self,
+                                                cairo_t     *cr, struct button_place *place,
                                                 gboolean     active);
 
 struct _CreateKeyboardSurfaceCallbackData {
     cairo_t *cr;
     EekRenderer *renderer;
-    uint level;
+    struct squeek_view *view;
+    struct squeek_row *row;
 };
 typedef struct _CreateKeyboardSurfaceCallbackData CreateKeyboardSurfaceCallbackData;
 
 static void
-create_keyboard_surface_key_callback (EekElement *element,
+create_keyboard_surface_button_callback (struct squeek_button *button,
                                       gpointer    user_data)
 {
     CreateKeyboardSurfaceCallbackData *data = user_data;
-    EekBounds bounds;
+    EekBounds bounds = squeek_button_get_bounds(button);
 
     cairo_save (data->cr);
 
-    eek_element_get_bounds (element, &bounds);
     cairo_translate (data->cr, bounds.x, bounds.y);
     cairo_rectangle (data->cr,
                      0.0,
@@ -110,48 +107,51 @@ create_keyboard_surface_key_callback (EekElement *element,
                      bounds.width + 100,
                      bounds.height + 100);
     cairo_clip (data->cr);
-    render_key (data->renderer, data->cr, EEK_KEY(element), data->level, FALSE);
+    struct button_place place = {
+        .row = data->row,
+        .button = button,
+    };
+    render_button (data->renderer, data->cr, &place, FALSE);
 
     cairo_restore (data->cr);
 }
 
 static void
-create_keyboard_surface_section_callback (EekElement *element,
+create_keyboard_surface_row_callback (struct squeek_row *row,
                                           gpointer    user_data)
 {
     CreateKeyboardSurfaceCallbackData *data = user_data;
-    EekBounds bounds;
-    gint angle;
+
+    EekBounds bounds = squeek_row_get_bounds(row);
 
     cairo_save (data->cr);
-
-    eek_element_get_bounds (element, &bounds);
     cairo_translate (data->cr, bounds.x, bounds.y);
 
-    angle = eek_section_get_angle (EEK_SECTION(element));
+    gint angle = squeek_row_get_angle (row);
     cairo_rotate (data->cr, angle * G_PI / 180);
 
-    eek_container_foreach_child (EEK_CONTAINER(element),
-                                 create_keyboard_surface_key_callback,
+    data->row = row;
+    squeek_row_foreach(row, create_keyboard_surface_button_callback,
                                  data);
 
     cairo_restore (data->cr);
 }
 
-void
-render_keyboard_surface (EekRenderer *renderer)
+static void
+render_keyboard_surface (EekRenderer *renderer, struct squeek_view *view)
 {
     EekRendererPrivate *priv = eek_renderer_get_instance_private (renderer);
-    EekBounds bounds;
-    CreateKeyboardSurfaceCallbackData data;
     EekColor foreground;
 
     eek_renderer_get_foreground_color (renderer, priv->scontext, &foreground);
 
-    eek_element_get_bounds (EEK_ELEMENT(level_keyboard_current(priv->keyboard)), &bounds);
+    EekBounds bounds = squeek_view_get_bounds (level_keyboard_current(priv->keyboard));
 
-    data.cr = cairo_create (priv->keyboard_surface);
-    data.renderer = renderer;
+    CreateKeyboardSurfaceCallbackData data = {
+        .cr = cairo_create (priv->keyboard_surface),
+        .renderer = renderer,
+        .view = view,
+    };
 
     /* Paint the background covering the entire widget area */
     gtk_render_background (priv->scontext,
@@ -173,10 +173,9 @@ render_keyboard_surface (EekRenderer *renderer)
                            foreground.blue,
                            foreground.alpha);
 
-    data.level = priv->keyboard->level;
-    /* draw sections */
-    eek_container_foreach_child (EEK_CONTAINER(level_keyboard_current(priv->keyboard)),
-                                 create_keyboard_surface_section_callback,
+    /* draw rows */
+    squeek_view_foreach(level_keyboard_current(priv->keyboard),
+                                 create_keyboard_surface_row_callback,
                                  &data);
     cairo_restore (data.cr);
 
@@ -184,22 +183,20 @@ render_keyboard_surface (EekRenderer *renderer)
 }
 
 static void
-render_key_outline (EekRenderer *renderer,
+render_button_outline (EekRenderer *renderer,
                     cairo_t     *cr,
-                    EekKey      *key,
+                    const struct squeek_button *button,
                     gboolean     active)
 {
     EekRendererPrivate *priv = eek_renderer_get_instance_private (renderer);
     EekOutline *outline;
-    EekBounds bounds;
-    guint oref;
 
-    oref = eek_key_get_oref (key);
+    guint oref = squeek_button_get_oref(button);
     outline = level_keyboard_get_outline (priv->keyboard, oref);
     if (outline == NULL)
         return;
 
-    eek_element_get_bounds(EEK_ELEMENT(key), &bounds);
+    EekBounds bounds = squeek_button_get_bounds(button);
     gtk_style_context_set_state(priv->key_context,
         active ? GTK_STATE_FLAG_ACTIVE : GTK_STATE_FLAG_NORMAL);
 
@@ -212,30 +209,26 @@ render_key_outline (EekRenderer *renderer,
 }
 
 static void
-render_key (EekRenderer *self,
+render_button (EekRenderer *self,
             cairo_t     *cr,
-            EekKey      *key,
-            guint        level,
+            struct button_place *place,
             gboolean     active)
 {
     EekRendererPrivate *priv = eek_renderer_get_instance_private (self);
     EekOutline *outline;
     cairo_surface_t *outline_surface;
-    EekBounds bounds;
-    guint oref;
-    struct squeek_symbol *symbol;
     GHashTable *outline_surface_cache;
     PangoLayout *layout;
     PangoRectangle extents = { 0, };
     EekColor foreground;
 
-    oref = eek_key_get_oref (key);
+    guint oref = squeek_button_get_oref (place->button);
     outline = level_keyboard_get_outline (priv->keyboard, oref);
     if (outline == NULL)
         return;
 
     /* render outline */
-    eek_element_get_bounds (EEK_ELEMENT(key), &bounds);
+    EekBounds bounds = squeek_button_get_bounds(place->button);
 
     if (active)
         outline_surface_cache = priv->active_outline_surface_cache;
@@ -259,8 +252,8 @@ render_key (EekRenderer *self,
         cairo_paint (cr);
 
         cairo_save (cr);
-        eek_renderer_apply_transformation_for_key (self, cr, key, 1.0, FALSE);
-        render_key_outline (self, cr, key, active);
+        eek_renderer_apply_transformation_for_button (self, cr, place, 1.0, FALSE);
+        render_button_outline (self, cr, place->button, active);
         cairo_restore (cr);
 
         cairo_destroy (cr);
@@ -275,7 +268,7 @@ render_key (EekRenderer *self,
 
     eek_renderer_get_foreground_color (self, priv->key_context, &foreground);
     /* render icon (if any) */
-    symbol = eek_key_get_symbol_at_index (key, 0, level);
+    struct squeek_symbol *symbol = squeek_button_get_symbol(place->button);
     if (!symbol)
         return;
 
@@ -311,7 +304,7 @@ render_key (EekRenderer *self,
 
     /* render label */
     layout = pango_cairo_create_layout (cr);
-    eek_renderer_real_render_key_label (self, layout, key, level);
+    eek_renderer_real_render_button_label (self, layout, place->button);
     pango_layout_get_extents (layout, NULL, &extents);
 
     cairo_save (cr);
@@ -347,22 +340,19 @@ render_key (EekRenderer *self,
  *  normal keys for popups.
 */
 void
-eek_renderer_apply_transformation_for_key (EekRenderer *self,
+eek_renderer_apply_transformation_for_button (EekRenderer *self,
                                            cairo_t     *cr,
-                                           EekKey      *key,
+                                           struct button_place *place,
                                            gdouble      scale,
                                            gboolean     rotate)
 {
-    EekElement *section;
     EekBounds bounds, rotated_bounds;
-    gint angle;
     gdouble s;
 
-    eek_renderer_get_key_bounds (self, key, &bounds, FALSE);
-    eek_renderer_get_key_bounds (self, key, &rotated_bounds, TRUE);
+    eek_renderer_get_button_bounds (self, place, &bounds, FALSE);
+    eek_renderer_get_button_bounds (self, place, &rotated_bounds, TRUE);
 
-    section = eek_element_get_parent (EEK_ELEMENT(key));
-    angle = eek_section_get_angle (EEK_SECTION(section));
+    gint angle = squeek_row_get_angle (place->row);
 
     cairo_scale (cr, scale, scale);
     if (rotate) {
@@ -376,20 +366,18 @@ eek_renderer_apply_transformation_for_key (EekRenderer *self,
 }
 
 static void
-eek_renderer_real_render_key_label (EekRenderer *self,
+eek_renderer_real_render_button_label (EekRenderer *self,
                                     PangoLayout *layout,
-                                    EekKey      *key,
-                                    guint        level)
+                                    const struct squeek_button *button)
 {
     EekRendererPrivate *priv = eek_renderer_get_instance_private (self);
-    struct squeek_symbol *symbol;
+
     const gchar *label;
-    EekBounds bounds;
     PangoFontDescription *font;
     PangoLayoutLine *line;
     gdouble scale;
 
-    symbol = eek_key_get_symbol_at_index(key, 0, level);
+    struct squeek_symbol *symbol = squeek_button_get_symbol(button);
     if (!symbol)
         return;
 
@@ -414,7 +402,7 @@ eek_renderer_real_render_key_label (EekRenderer *self,
         pango_font_description_set_size (priv->font, (gint)round(size * 0.6));
     }
 
-    eek_element_get_bounds (EEK_ELEMENT(key), &bounds);
+    EekBounds bounds = squeek_button_get_bounds(button);
     scale = MIN((bounds.width - priv->border_width) / bounds.width,
                 (bounds.height - priv->border_width) / bounds.height);
 
@@ -432,19 +420,6 @@ eek_renderer_real_render_key_label (EekRenderer *self,
                             PANGO_SCALE * bounds.width * scale);
 }
 
-static void
-eek_renderer_real_render_key_outline (EekRenderer *self,
-                                      cairo_t     *cr,
-                                      EekKey      *key,
-                                      gdouble      scale,
-                                      gboolean     rotate)
-{
-    cairo_save (cr);
-    eek_renderer_apply_transformation_for_key (self, cr, key, scale, rotate);
-    render_key_outline (self, cr, key, eek_key_is_pressed (key) || eek_key_is_locked (key));
-    cairo_restore (cr);
-}
-
 /*
  * eek_renderer_real_render_key:
  * @self: The renderer used to render the key
@@ -457,17 +432,16 @@ eek_renderer_real_render_key_outline (EekRenderer *self,
  *   Renders a key separately from the normal keyboard rendering.
 */
 static void
-eek_renderer_real_render_key (EekRenderer *self,
+eek_renderer_real_render_button (EekRenderer *self,
                               cairo_t     *cr,
-                              EekKey      *key,
-                              guint        level,
+                              struct button_place *place,
                               gdouble      scale,
                               gboolean     rotate)
 {
     EekRendererPrivate *priv = eek_renderer_get_instance_private (self);
     EekBounds bounds;
 
-    eek_renderer_get_key_bounds (self, key, &bounds, rotate);
+    eek_renderer_get_button_bounds (self, place, &bounds, rotate);
 
     cairo_save (cr);
     /* Because this function is called separately from the keyboard rendering
@@ -476,8 +450,12 @@ eek_renderer_real_render_key (EekRenderer *self,
     cairo_scale (cr, priv->scale, priv->scale);
     cairo_translate (cr, bounds.x, bounds.y);
 
-    eek_renderer_apply_transformation_for_key (self, cr, key, scale, rotate);
-    render_key (self, cr, key, level, eek_key_is_pressed (key) || eek_key_is_locked (key));
+    eek_renderer_apply_transformation_for_button (self, cr, place, scale, rotate);
+    struct squeek_key *key = squeek_button_get_key(place->button);
+    render_button (
+                self, cr, place,
+                squeek_key_is_pressed(key) || squeek_key_is_locked (key)
+    );
     cairo_restore (cr);
 }
 
@@ -503,7 +481,7 @@ eek_renderer_real_render_keyboard (EekRenderer *self,
         cairo_get_target (cr), 0, 0,
         priv->allocation_width, priv->allocation_height);
 
-    render_keyboard_surface (self);
+    render_keyboard_surface (self, priv->keyboard->views[priv->keyboard->level]);
 
     cairo_set_source_surface (cr, priv->keyboard_surface, 0.0, 0.0);
     source = cairo_get_source (cr);
@@ -591,8 +569,7 @@ eek_renderer_class_init (EekRendererClass *klass)
     GObjectClass      *gobject_class = G_OBJECT_CLASS (klass);
     GParamSpec        *pspec;
 
-    klass->render_key_outline = eek_renderer_real_render_key_outline;
-    klass->render_key = eek_renderer_real_render_key;
+    klass->render_button = eek_renderer_real_render_button;
     klass->render_keyboard = eek_renderer_real_render_keyboard;
 
     gobject_class->set_property = eek_renderer_set_property;
@@ -709,7 +686,6 @@ eek_renderer_set_allocation_size (EekRenderer *renderer,
                                   gdouble      width,
                                   gdouble      height)
 {
-    EekBounds bounds;
     gdouble scale;
 
     g_return_if_fail (EEK_IS_RENDERER(renderer));
@@ -722,7 +698,7 @@ eek_renderer_set_allocation_size (EekRenderer *renderer,
 
     /* Calculate a scale factor to use when rendering the keyboard into the
        available space. */
-    eek_element_get_bounds (EEK_ELEMENT(level_keyboard_current(priv->keyboard)), &bounds);
+    EekBounds bounds = squeek_view_get_bounds (level_keyboard_current(priv->keyboard));
 
     gdouble w = (bounds.x * 2) + bounds.width;
     gdouble h = (bounds.y * 2) + bounds.height;
@@ -741,13 +717,11 @@ eek_renderer_get_size (EekRenderer *renderer,
                        gdouble     *width,
                        gdouble     *height)
 {
-    EekBounds bounds;
-
     g_return_if_fail (EEK_IS_RENDERER(renderer));
 
     EekRendererPrivate *priv = eek_renderer_get_instance_private (renderer);
 
-    eek_element_get_bounds (EEK_ELEMENT(level_keyboard_current(priv->keyboard)), &bounds);
+    EekBounds bounds = squeek_view_get_bounds (level_keyboard_current(priv->keyboard));
     if (width)
         *width = bounds.width;
     if (height)
@@ -755,45 +729,42 @@ eek_renderer_get_size (EekRenderer *renderer,
 }
 
 void
-eek_renderer_get_key_bounds (EekRenderer *renderer,
-                             EekKey      *key,
+eek_renderer_get_button_bounds (EekRenderer *renderer,
+                                struct button_place *place,
                              EekBounds   *bounds,
                              gboolean     rotate)
 {
-    EekElement *section;
-    EekBounds section_bounds, keyboard_bounds;
     gint angle = 0;
     EekPoint points[4], min, max;
 
     g_return_if_fail (EEK_IS_RENDERER(renderer));
-    g_return_if_fail (EEK_IS_KEY(key));
+    g_return_if_fail (place);
     g_return_if_fail (bounds != NULL);
 
     EekRendererPrivate *priv = eek_renderer_get_instance_private (renderer);
 
-    section = eek_element_get_parent (EEK_ELEMENT(key));
-
-    eek_element_get_bounds (EEK_ELEMENT(key), bounds);
-    eek_element_get_bounds (section, &section_bounds);
-    eek_element_get_bounds (EEK_ELEMENT(level_keyboard_current(priv->keyboard)),
-                            &keyboard_bounds);
+    EekBounds button_bounds = squeek_button_get_bounds(place->button);
+    EekBounds row_bounds = squeek_row_get_bounds (place->row);
+    EekBounds view_bounds = squeek_view_get_bounds (level_keyboard_current(priv->keyboard));
 
     if (!rotate) {
-        bounds->x += keyboard_bounds.x + section_bounds.x;
-        bounds->y += keyboard_bounds.y + section_bounds.y;
+        button_bounds.x += view_bounds.x + row_bounds.x;
+        button_bounds.y += view_bounds.y + row_bounds.y;
+        *bounds = button_bounds;
         return;
     }
-    points[0].x = bounds->x;
-    points[0].y = bounds->y;
-    points[1].x = points[0].x + bounds->width;
+    points[0].x = button_bounds.x;
+    points[0].y = button_bounds.y;
+    points[1].x = points[0].x + button_bounds.width;
     points[1].y = points[0].y;
     points[2].x = points[1].x;
-    points[2].y = points[1].y + bounds->height;
+    points[2].y = points[1].y + button_bounds.height;
     points[3].x = points[0].x;
     points[3].y = points[2].y;
 
-    if (rotate)
-        angle = eek_section_get_angle (EEK_SECTION(section));
+    if (rotate) {
+        angle = squeek_row_get_angle (place->row);
+    }
 
     min = points[2];
     max = points[0];
@@ -808,8 +779,8 @@ eek_renderer_get_key_bounds (EekRenderer *renderer,
         if (points[i].y > max.y)
             max.y = points[i].y;
     }
-    bounds->x = keyboard_bounds.x + section_bounds.x + min.x;
-    bounds->y = keyboard_bounds.y + section_bounds.y + min.y;
+    bounds->x = view_bounds.x + row_bounds.x + min.x;
+    bounds->y = view_bounds.y + row_bounds.y + min.y;
     bounds->width = (max.x - min.x);
     bounds->height = (max.y - min.y);
 }
@@ -841,24 +812,6 @@ eek_renderer_create_pango_layout (EekRenderer  *renderer)
     EekRendererPrivate *priv = eek_renderer_get_instance_private (renderer);
 
     return pango_layout_new (priv->pcontext);
-}
-
-void
-eek_renderer_render_key_outline (EekRenderer *renderer,
-                                 cairo_t     *cr,
-                                 EekKey      *key,
-                                 gdouble      scale,
-                                 gboolean     rotate)
-{
-    g_return_if_fail (EEK_IS_RENDERER(renderer));
-    g_return_if_fail (EEK_IS_KEY(key));
-    g_return_if_fail (scale >= 0.0);
-
-    EEK_RENDERER_GET_CLASS(renderer)->render_key_outline (renderer,
-                                                          cr,
-                                                          key,
-                                                          scale,
-                                                          rotate);
 }
 
 cairo_surface_t *
@@ -896,19 +849,18 @@ eek_renderer_get_icon_surface (EekRenderer *renderer,
 }
 
 void
-eek_renderer_render_key (EekRenderer *renderer,
+eek_renderer_render_button (EekRenderer *renderer,
                          cairo_t     *cr,
-                         EekKey      *key,
-                         guint        level,
+                         struct button_place *place,
                          gdouble      scale,
                          gboolean     rotate)
 {
     g_return_if_fail (EEK_IS_RENDERER(renderer));
-    g_return_if_fail (EEK_IS_KEY(key));
+    g_return_if_fail (place);
     g_return_if_fail (scale >= 0.0);
 
     EEK_RENDERER_GET_CLASS(renderer)->
-        render_key (renderer, cr, key, level, scale, rotate);
+        render_button (renderer, cr, place, scale, rotate);
 }
 
 void
@@ -965,8 +917,7 @@ struct _FindKeyByPositionCallbackData {
     EekPoint point;
     EekPoint origin;
     gint angle;
-    EekKey *key;
-    EekRenderer *renderer;
+    struct squeek_button *button;
 };
 typedef struct _FindKeyByPositionCallbackData FindKeyByPositionCallbackData;
 
@@ -978,16 +929,11 @@ sign (EekPoint *p1, EekPoint *p2, EekPoint *p3)
         (p2->x - p3->x) * (p1->y - p3->y);
 }
 
-static gint
-find_key_by_position_key_callback (EekElement *element,
-                                   gpointer user_data)
+uint32_t
+eek_are_bounds_inside (EekBounds bounds, EekPoint point, EekPoint origin, int32_t angle)
 {
-    FindKeyByPositionCallbackData *data = user_data;
-    EekBounds bounds;
     EekPoint points[4];
     gboolean b1, b2, b3;
-
-    eek_element_get_bounds (element, &bounds);
 
     points[0].x = bounds.x;
     points[0].y = bounds.y;
@@ -999,51 +945,38 @@ find_key_by_position_key_callback (EekElement *element,
     points[3].y = points[2].y;
 
     for (uint i = 0; i < G_N_ELEMENTS(points); i++) {
-        eek_point_rotate (&points[i], data->angle);
-        points[i].x += data->origin.x;
-        points[i].y += data->origin.y;
+        eek_point_rotate (&points[i], angle);
+        points[i].x += origin.x;
+        points[i].y += origin.y;
     }
 
-    b1 = sign (&data->point, &points[0], &points[1]) < 0.0;
-    b2 = sign (&data->point, &points[1], &points[2]) < 0.0;
-    b3 = sign (&data->point, &points[2], &points[0]) < 0.0;
+    b1 = sign (&point, &points[0], &points[1]) < 0.0;
+    b2 = sign (&point, &points[1], &points[2]) < 0.0;
+    b3 = sign (&point, &points[2], &points[0]) < 0.0;
 
     if (b1 == b2 && b2 == b3) {
-        data->key = EEK_KEY(element);
-        return 0;
+        return 1;
     }
 
-    b1 = sign (&data->point, &points[2], &points[3]) < 0.0;
-    b2 = sign (&data->point, &points[3], &points[0]) < 0.0;
-    b3 = sign (&data->point, &points[0], &points[2]) < 0.0;
+    b1 = sign (&point, &points[2], &points[3]) < 0.0;
+    b2 = sign (&point, &points[3], &points[0]) < 0.0;
+    b3 = sign (&point, &points[0], &points[2]) < 0.0;
 
     if (b1 == b2 && b2 == b3) {
-        data->key = EEK_KEY(element);
-        return 0;
+        return 1;
     }
-
-    return -1;
+    return 0;
 }
 
-static gint
-find_key_by_position_section_callback (EekElement *element,
+static void
+find_button_by_position_row_callback (struct squeek_row *row,
                                        gpointer user_data)
 {
     FindKeyByPositionCallbackData *data = user_data;
-    EekBounds bounds;
-    EekPoint origin;
-
-    origin = data->origin;
-    eek_element_get_bounds (element, &bounds);
-    data->origin.x += bounds.x;
-    data->origin.y += bounds.y;
-    data->angle = eek_section_get_angle (EEK_SECTION(element));
-
-    eek_container_find (EEK_CONTAINER(element),
-                        find_key_by_position_key_callback,
-                        data);
-    data->origin = origin;
-    return data->key ? 0 : -1;
+    if (data->button) {
+        return;
+    }
+    data->button = squeek_row_find_button_by_position(row, data->point, data->origin);
 }
 
 /**
@@ -1055,18 +988,18 @@ find_key_by_position_section_callback (EekElement *element,
  * Return value: the key located at the position x, y in widget coordinates, or
  *   NULL if no key can be found at that location
  **/
-EekKey *
-eek_renderer_find_key_by_position (EekRenderer *renderer,
+struct squeek_button *
+eek_renderer_find_button_by_position (EekRenderer *renderer,
+                                   struct squeek_view *view,
                                    gdouble      x,
                                    gdouble      y)
 {
-    EekBounds bounds;
     FindKeyByPositionCallbackData data;
 
     g_return_val_if_fail (EEK_IS_RENDERER(renderer), NULL);
 
     EekRendererPrivate *priv = eek_renderer_get_instance_private (renderer);
-    eek_element_get_bounds (EEK_ELEMENT(level_keyboard_current(priv->keyboard)), &bounds);
+    EekBounds bounds = squeek_view_get_bounds (view);
 
     /* Transform from widget coordinates to keyboard coordinates */
     x = (x - priv->origin_x)/priv->scale - bounds.x;
@@ -1082,11 +1015,9 @@ eek_renderer_find_key_by_position (EekRenderer *renderer,
     data.point.y = y;
     data.origin.x = 0;
     data.origin.y = 0;
-    data.key = NULL;
-    data.renderer = renderer;
+    data.button = NULL;
 
-    eek_container_find (EEK_CONTAINER(level_keyboard_current(priv->keyboard)),
-                        find_key_by_position_section_callback,
+    squeek_view_foreach (view, find_button_by_position_row_callback,
                         &data);
-    return data.key;
+    return data.button;
 }
