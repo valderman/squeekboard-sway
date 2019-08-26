@@ -9,207 +9,124 @@
   <symbol label="Å">Aring</symbol>
   <symbol label="Ø">Oslash</symbol>
   <symbol label="Æ">AE</symbol>
-  <key name="AD01">
-    <symbol label="q">q</symbol>
-    <symbol label="Q">Q</symbol>
-    <symbol label="1">1</symbol>
-    <symbol label="~">asciitilde</symbol>
-  </key>
-  <key name="AD02">
-    <symbol label="w">w</symbol>
-    <symbol label="W">W</symbol>
-    <symbol label="2">2</symbol>
-    <symbol label="`">quoteleft</symbol>
-  </key>
-  <key name="AD03">
-    <symbol label="e">e</symbol>
-    <symbol label="E">E</symbol>
-    <symbol label="3">3</symbol>
-    <symbol label="|">bar</symbol>
-  </key>
-  <key name="AD04">
-    <symbol label="r">r</symbol>
-    <symbol label="R">R</symbol>
-    <symbol label="4">4</symbol>
-    <symbol label="&#183;">U00B7</symbol>
-  </key>
-  <key name="AD05">
-    <symbol label="t">t</symbol>
-    <symbol label="T">T</symbol>
-    <symbol label="5">5</symbol>
-    <symbol label="&#8730;">squareroot</symbol>
-  </key>
-  <key name="AD06">
-    <symbol label="y">y</symbol>
-    <symbol label="Y">Y</symbol>
-    <symbol label="6">6</symbol>
-    <symbol label="&#960;">Greek_pi</symbol>
-  </key>
-  <key name="AD07">
-    <symbol label="u">u</symbol>
-    <symbol label="U">U</symbol>
-    <symbol label="7">7</symbol>
-    <symbol label="&#247;">division</symbol>
-  </key>
-  <key name="AD08">
-    <symbol label="i">i</symbol>
-    <symbol label="I">I</symbol>
-    <symbol label="8">8</symbol>
-    <symbol label="&#215;">multiply</symbol>
-  </key>
-  <key name="AD09">
-    <symbol label="o">o</symbol>
-    <symbol label="O">O</symbol>
-    <symbol label="9">9</symbol>
-    <symbol label="&#182;">paragraph</symbol>
-  </key>
-  <key name="AD10">
-    <symbol label="p">p</symbol>
-    <symbol label="P">P</symbol>
-    <symbol label="0">0</symbol>
-    <symbol label="&#9651;">U25B3</symbol>
-  </key>
-  <key name="AD11">
-    <symbol keyval="229" label="&#229;">aring</symbol>
-    <symbol keyval="197" label="&#197;">Aring</symbol>
-    <symbol label=""></symbol>
-    <symbol label=""></symbol>
-    <!-- Empty labels cause keys to be hidden when the level they are defined
-         for is shown. -->
-  </key>
-  <key name="AC01">
-    <symbol label="a">a</symbol>
-    <symbol label="A">A</symbol>
-    <symbol label="@">at</symbol>
-    <symbol label="&#169;">copyright</symbol>
-  </key>
-  <key name="AC02">
-    <symbol label="s">s</symbol>
-    <symbol label="S">S</symbol>
-    <symbol label="#">numbersign</symbol>
-    <symbol label="&#174;">U00AE</symbol>
-  </key>
-  <key name="AC03">
-    <symbol label="d">d</symbol>
-    <symbol label="D">D</symbol>
-    <symbol label="$">dollar</symbol>
-    <symbol label="&#163;">U00A3</symbol>
-  </key>
-  <key name="AC04">
-    <symbol label="f">f</symbol>
-    <symbol label="F">F</symbol>
-    <symbol label="%">percent</symbol>
-    <symbol label="&#8364;">EuroSign</symbol>
-  </key>
-  <key name="AC05">
-    <symbol label="g">g</symbol>
-    <symbol label="G">G</symbol>
-    <symbol label="&amp;">ampersand</symbol>
-    <symbol label="&#165;">U00A5</symbol>
-  </key>
-  <key name="AC06">
-    <symbol label="h">h</symbol>
-    <symbol label="H">H</symbol>
-    <symbol label="-">minus</symbol>
-    <symbol label="^">asciicircum</symbol>
-  </key>
-  <key name="AC07">
-    <symbol label="j">j</symbol>
-    <symbol label="J">J</symbol>
-    <symbol label="_">underscore</symbol>
-    <symbol label="&#176;">degree</symbol>
-  </key>
-  <key name="AC08">
-    <symbol label="k">k</symbol>
-    <symbol label="K">K</symbol>
-    <symbol label="+">plus</symbol>
-    <symbol label="=">equal</symbol>
-  </key>
-  <key name="AC09">
-    <symbol label="l">l</symbol>
-    <symbol label="L">L</symbol>
-    <symbol label="(">parenleft</symbol>
-    <symbol label="{">braceleft</symbol>
-  </key>
-  <key name="AC10">
-    <symbol keyval="248" label="&#248;">oslash</symbol>
-    <symbol keyval="216" label="&#216;">Oslash</symbol>
-    <symbol label=")">parenright</symbol>
-    <symbol label="}">braceright</symbol>
-  </key>
-  <key name="AC11">
-    <symbol keyval="230" label="&#230;">ae</symbol>
-    <symbol keyval="198" label="&#198;">AE</symbol>
-    <symbol label=""></symbol>
-    <symbol label=""></symbol>
-  </key>
-  <key name="RTRN">
-    <symbol keyval="65293" icon="key-enter">Return</symbol>
-  </key>
-  <key name="LFSH">
-    <keysym keyval="65505" icon="key-shift">Shift_L</keysym>
-    <keysym keyval="65505" icon="key-shift">Shift_L</keysym>
-    <keysym keyval="65505" label="=/+">Shift_L</keysym>
-    <keysym keyval="65505" label="123">Shift_L</keysym>
-  </key>
-  <key name="AB01">
-    <symbol label="z">z</symbol>
-    <symbol label="Z">Z</symbol>
-    <symbol label=",">comma</symbol>
-    <symbol label="\">backslash</symbol>
-  </key>
-  <key name="AB02">
-    <symbol label="x">x</symbol>
-    <symbol label="X">X</symbol>
-    <symbol label="&quot;">quotedbl</symbol>
-    <symbol label="/">slash</symbol>
-  </key>
-  <key name="AB03">
-    <symbol label="c">c</symbol>
-    <symbol label="C">C</symbol>
-    <symbol label="'">quoteright</symbol>
-    <symbol label="&lt;">less</symbol>
-  </key>
-  <key name="AB04">
-    <symbol label="v">v</symbol>
-    <symbol label="V">V</symbol>
-    <symbol label=":">colon</symbol>
-    <symbol label="&gt;">greater</symbol>
-  </key>
-  <key name="AB05">
-    <symbol label="b">b</symbol>
-    <symbol label="B">B</symbol>
-    <symbol label=";">semicolon</symbol>
-    <symbol label="=">equal</symbol>
-  </key>
-  <key name="AB06">
-    <symbol label="n">n</symbol>
-    <symbol label="N">N</symbol>
-    <symbol label="!">exclam</symbol>
-    <symbol label="[">bracketleft</symbol>
-  </key>
-  <key name="AB07">
-    <symbol label="m">m</symbol>
-    <symbol label="M">M</symbol>
-    <symbol label="?">question</symbol>
-    <symbol label="]">bracketright</symbol>
-  </key>
-  <key name="AB08">
-    <symbol label=".">period</symbol>
-  </key>
-  <key name="ABC123">
-    <symbol label="123">show_numbers</symbol>
-    <symbol label="123">show_numbers</symbol>
-    <symbol label="ABC">show_letters</symbol>
-    <symbol label="ABC">show_letters</symbol>
-  </key>
-  <key name="I149">
-    <symbol icon="keyboard-mode-symbolic" tooltip="Setup">preferences</symbol>
-  </key>
-  <key name="SPCE">
-    <symbol label=" ">space</symbol>
-  </key>
-  <key name="BKSP">
-    <symbol keyval="65288" icon="edit-clear-symbolic">BackSpace</symbol>
-  </key>
+  <symbol label="q">q</symbol>
+  <symbol label="Q">Q</symbol>
+  <symbol label="1">1</symbol>
+  <symbol label="~">asciitilde</symbol>
+  <symbol label="w">w</symbol>
+  <symbol label="W">W</symbol>
+  <symbol label="2">2</symbol>
+  <symbol label="`">quoteleft</symbol>
+  <symbol label="e">e</symbol>
+  <symbol label="E">E</symbol>
+  <symbol label="3">3</symbol>
+  <symbol label="|">bar</symbol>
+  <symbol label="r">r</symbol>
+  <symbol label="R">R</symbol>
+  <symbol label="4">4</symbol>
+  <symbol label="&#183;">U00B7</symbol>
+  <symbol label="t">t</symbol>
+  <symbol label="T">T</symbol>
+  <symbol label="5">5</symbol>
+  <symbol label="&#8730;">squareroot</symbol>
+  <symbol label="y">y</symbol>
+  <symbol label="Y">Y</symbol>
+  <symbol label="6">6</symbol>
+  <symbol label="&#960;">Greek_pi</symbol>
+  <symbol label="u">u</symbol>
+  <symbol label="U">U</symbol>
+  <symbol label="7">7</symbol>
+  <symbol label="&#247;">division</symbol>
+  <symbol label="i">i</symbol>
+  <symbol label="I">I</symbol>
+  <symbol label="8">8</symbol>
+  <symbol label="&#215;">multiply</symbol>
+  <symbol label="o">o</symbol>
+  <symbol label="O">O</symbol>
+  <symbol label="9">9</symbol>
+  <symbol label="&#182;">paragraph</symbol>
+  <symbol label="p">p</symbol>
+  <symbol label="P">P</symbol>
+  <symbol label="0">0</symbol>
+  <symbol label="&#9651;">U25B3</symbol>
+  <symbol keyval="229" label="&#229;">aring</symbol>
+  <symbol keyval="197" label="&#197;">Aring</symbol>
+  <symbol label="a">a</symbol>
+  <symbol label="A">A</symbol>
+  <symbol label="@">at</symbol>
+  <symbol label="&#169;">copyright</symbol>
+  <symbol label="s">s</symbol>
+  <symbol label="S">S</symbol>
+  <symbol label="#">numbersign</symbol>
+  <symbol label="&#174;">U00AE</symbol>
+  <symbol label="d">d</symbol>
+  <symbol label="D">D</symbol>
+  <symbol label="$">dollar</symbol>
+  <symbol label="&#163;">U00A3</symbol>
+  <symbol label="f">f</symbol>
+  <symbol label="F">F</symbol>
+  <symbol label="%">percent</symbol>
+  <symbol label="&#8364;">EuroSign</symbol>
+  <symbol label="g">g</symbol>
+  <symbol label="G">G</symbol>
+  <symbol label="&amp;">ampersand</symbol>
+  <symbol label="&#165;">U00A5</symbol>
+  <symbol label="h">h</symbol>
+  <symbol label="H">H</symbol>
+  <symbol label="-">minus</symbol>
+  <symbol label="^">asciicircum</symbol>
+  <symbol label="j">j</symbol>
+  <symbol label="J">J</symbol>
+  <symbol label="_">underscore</symbol>
+  <symbol label="&#176;">degree</symbol>
+  <symbol label="k">k</symbol>
+  <symbol label="K">K</symbol>
+  <symbol label="+">plus</symbol>
+  <symbol label="=">equal</symbol>
+  <symbol label="l">l</symbol>
+  <symbol label="L">L</symbol>
+  <symbol label="(">parenleft</symbol>
+  <symbol label="{">braceleft</symbol>
+  <symbol keyval="248" label="&#248;">oslash</symbol>
+  <symbol keyval="216" label="&#216;">Oslash</symbol>
+  <symbol label=")">parenright</symbol>
+  <symbol label="}">braceright</symbol>
+  <symbol keyval="230" label="&#230;">ae</symbol>
+  <symbol keyval="198" label="&#198;">AE</symbol>
+  <symbol keyval="65293" icon="key-enter">Return</symbol>
+  <symbol keyval="65505" icon="key-shift">Shift_L</symbol>
+  <symbol label="z">z</symbol>
+  <symbol label="Z">Z</symbol>
+  <symbol label=",">comma</symbol>
+  <symbol label="\">backslash</symbol>
+  <symbol label="x">x</symbol>
+  <symbol label="X">X</symbol>
+  <symbol label="&quot;">quotedbl</symbol>
+  <symbol label="/">slash</symbol>
+  <symbol label="c">c</symbol>
+  <symbol label="C">C</symbol>
+  <symbol label="'">quoteright</symbol>
+  <symbol label="&lt;">less</symbol>
+  <symbol label="v">v</symbol>
+  <symbol label="V">V</symbol>
+  <symbol label=":">colon</symbol>
+  <symbol label="&gt;">greater</symbol>
+  <symbol label="b">b</symbol>
+  <symbol label="B">B</symbol>
+  <symbol label=";">semicolon</symbol>
+  <symbol label="=">equal</symbol>
+  <symbol label="n">n</symbol>
+  <symbol label="N">N</symbol>
+  <symbol label="!">exclam</symbol>
+  <symbol label="[">bracketleft</symbol>
+  <symbol label="m">m</symbol>
+  <symbol label="M">M</symbol>
+  <symbol label="?">question</symbol>
+  <symbol label="]">bracketright</symbol>
+  <symbol label=".">period</symbol>
+  <symbol label="123">show_numbers</symbol>
+  <symbol label="ABC">show_letters</symbol>
+  <symbol label="&#9786;" icon="keyboard-mode-symbolic" tooltip="Setup">preferences</symbol>
+  <symbol label=" ">space</symbol>
+  <symbol keyval="65288" icon="edit-clear-symbolic">BackSpace</symbol>
 </symbols>
