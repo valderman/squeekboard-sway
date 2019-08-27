@@ -284,18 +284,15 @@ eek_gtk_keyboard_real_unmap (GtkWidget *self)
 	    eek_gtk_keyboard_get_instance_private (EEK_GTK_KEYBOARD (self));
 
     if (priv->keyboard) {
-        GList *list, *head;
+        GList *head;
 
-        /* Make a copy of HEAD before sending "released" signal on
-           elements, so that the default handler of
-           EekKeyboard::key-released signal can remove elements from its
-           internal copy */
-        list = g_list_copy(priv->keyboard->pressed_buttons);
-        for (head = list; head; head = g_list_next (head)) {
-            g_log("squeek", G_LOG_LEVEL_DEBUG, "emit EekKey released");
-            g_signal_emit_by_name (head->data, "released");
+        for (head = priv->keyboard->pressed_buttons; head; head = g_list_next (head)) {
+            /* Unlike other places where we call this, we don't call
+               on_button_released afterwards since we don't want to queue a
+               redraw. */
+            eek_keyboard_release_button(priv->keyboard, head->data,
+                                        gdk_event_get_time(NULL));
         }
-        g_list_free (list);
     }
 
     GTK_WIDGET_CLASS (eek_gtk_keyboard_parent_class)->unmap (self);
@@ -352,14 +349,12 @@ eek_gtk_keyboard_dispose (GObject *object)
     }
 
     if (priv->keyboard) {
-        GList *list, *head;
+        GList *head;
 
-        list = g_list_copy(priv->keyboard->pressed_buttons);
-        for (head = list; head; head = g_list_next (head)) {
-            g_log("squeek", G_LOG_LEVEL_DEBUG, "emit EekKey pressed");
-            g_signal_emit_by_name (head->data, "released", level_keyboard_current(priv->keyboard));
+        for (head = priv->keyboard->pressed_buttons; head; head = g_list_next (head)) {
+            eek_keyboard_release_button(priv->keyboard, head->data,
+                                        gdk_event_get_time(NULL));
         }
-        g_list_free (list);
 
         priv->keyboard = NULL;
     }
