@@ -153,12 +153,12 @@ eekboard_context_service_real_create_keyboard (EekboardContextService *self,
     struct xkb_keymap *keymap = xkb_keymap_new_from_string(context, keymap_str,
         XKB_KEYMAP_FORMAT_TEXT_V1, XKB_KEYMAP_COMPILE_NO_FLAGS);
 
+    if (!keymap)
+        g_error("Bad keymap:\n%s", keymap_str);
+
     free(keymap_str);
 
     xkb_context_unref(context);
-    if (!keymap) {
-        g_error("Bad keymap");
-    }
     keyboard->keymap = keymap;
 
     keymap_str = xkb_keymap_get_as_string(keymap, XKB_KEYMAP_FORMAT_TEXT_V1);
