@@ -146,10 +146,6 @@ eekboard_context_service_real_create_keyboard (EekboardContextService *self,
 
     gchar *keymap_str = eek_keyboard_get_keymap(keyboard);
 
-    int f = open("maprs.map", O_CREAT | O_WRONLY, 0600);
-    write(f, keymap_str, strlen(keymap_str));
-    close(f);
-
     struct xkb_keymap *keymap = xkb_keymap_new_from_string(context, keymap_str,
         XKB_KEYMAP_FORMAT_TEXT_V1, XKB_KEYMAP_COMPILE_NO_FLAGS);
 
