@@ -41,6 +41,12 @@ pub mod c {
         pub height: f64
     }
     
+    impl Bounds {
+        pub fn zero() -> Bounds {
+            Bounds { x: 0f64, y: 0f64, width: 0f64, height: 0f64 }
+        }
+    }
+    
     type ButtonCallback = unsafe extern "C" fn(button: *mut ::layout::Button, data: *mut UserData);
     type RowCallback = unsafe extern "C" fn(row: *mut ::layout::Row, data: *mut UserData);
 
@@ -341,22 +347,26 @@ pub mod c {
                 unsafe { eek_get_outline_size(keyboard, button.oref.0) }
             }).collect()
         }
-        
+
         /// Places each button in order, starting from 0 on the left,
         /// keeping the spacing.
         /// Sizes each button according to outline dimensions.
-        /// Sets the row size correctly
+        /// Places each row in order, starting from 0 on the top,
+        /// keeping the spacing.
+        /// Sets button and row sizes according to their contents.
         #[no_mangle]
         pub extern "C"
-        fn squeek_row_place_buttons(
-            row: *mut ::layout::Row,
-            keyboard: *const LevelKeyboard,
+        fn squeek_view_place_contents(
+            view: *mut ::layout::View,
+            keyboard: *const LevelKeyboard, // source of outlines
         ) {
-            let row = unsafe { &mut *row };
+            let view = unsafe { &mut *view };
             
-            let sizes = squeek_buttons_get_outlines(&row.buttons, keyboard);
-            
-            row.place_buttons_with_sizes(sizes);
+            let sizes: Vec<Vec<Bounds>> = view.rows.iter().map(|row|
+                squeek_buttons_get_outlines(&row.buttons, keyboard)
+            ).collect();
+
+            view.place_buttons_with_sizes(sizes);
         }
 
         #[no_mangle]
@@ -538,6 +548,12 @@ pub mod c {
     }
 }
 
+#[derive(Debug)]
+pub struct Size {
+    pub width: f64,
+    pub height: f64,
+}
+
 /// The graphical representation of a button
 #[derive(Clone, Debug)]
 pub struct Button {
@@ -550,6 +566,7 @@ pub struct Button {
 
 
 const BUTTON_SPACING: f64 = 4.0;
+const ROW_SPACING: f64 = 7.0;
 
 /// The graphical representation of a row of buttons
 pub struct Row {
@@ -567,51 +584,102 @@ impl Row {
             bounds: None,
         }
     }
-    fn place_buttons_with_sizes(&mut self, outlines: Vec<c::Bounds>) {
-        let max_height = outlines.iter().map(
+    
+    fn last(positions: &Vec<c::Bounds>) -> Option<&c::Bounds> {
+        let len = positions.len();
+        match len {
+            0 => None,
+            l => Some(&positions[l - 1])
+        }
+    }
+    
+    fn calculate_button_positions(outlines: Vec<c::Bounds>)
+        -> Vec<c::Bounds>
+    {
+        let mut x_offset = 0f64;
+        outlines.iter().map(|outline| {
+            x_offset += outline.x; // account for offset outlines
+            let position = c::Bounds {
+                x: x_offset,
+                ..outline.clone()
+            };
+            x_offset += outline.width + BUTTON_SPACING;
+            position
+        }).collect()
+    }
+    
+    fn calculate_row_size(positions: &Vec<c::Bounds>) -> Size {
+        let max_height = positions.iter().map(
             |bounds| FloatOrd(bounds.height)
         ).max()
             .unwrap_or(FloatOrd(0f64))
             .0;
-
-        let mut acc = 0f64;
-        let x_offsets: Vec<f64> = outlines.iter().map(|outline| {
-            acc += outline.x; // account for offset outlines
-            let out = acc;
-            acc += outline.width + BUTTON_SPACING;
-            out
-        }).collect();
-
-        let total_width = acc;
-
-        for ((mut button, outline), offset)
-            in &mut self.buttons
-                .iter_mut()
-                .zip(outlines)
-                .zip(x_offsets) {
-            button.bounds = Some(c::Bounds {
-                x: offset,
-                ..outline
-            });
-        }
         
-        let old_row_bounds = self.bounds.as_ref().unwrap().clone();
-        self.bounds = Some(c::Bounds {
-            // FIXME: do centering of each row based on keyboard dimensions,
-            // one level up the iterators
-            // now centering by comparing previous width to the new,
-            // calculated one
-            x: (old_row_bounds.width - total_width) / 2f64,
-            width: total_width,
-            height: max_height,
-            ..old_row_bounds
-        });
+        let total_width = match Row::last(positions) {
+            Some(position) => position.x + position.width,
+            None => 0f64,
+        };
+        Size { width: total_width, height: max_height }
     }
 }
 
 pub struct View {
+    /// Position relative to keyboard origin
     bounds: c::Bounds,
     rows: Vec<Box<Row>>,
+}
+
+impl View {
+    /// Determines the positions of rows based on their sizes
+    /// Each row will be centered horizontally
+    /// The collection of rows will not be altered vertically
+    /// (TODO: make view bounds a constraint,
+    /// and derive a scaling factor that lets contents fit into view)
+    fn calculate_row_positions(&self, sizes: Vec<Size>) -> Vec<c::Bounds> {
+        let mut y_offset = self.bounds.y;
+        sizes.into_iter().map(|size| {
+            let position = c::Bounds {
+                x: (self.bounds.width - size.width) / 2f64,
+                y: y_offset,
+                width: size.width,
+                height: size.height,
+            };
+            y_offset += size.height + ROW_SPACING;
+            position
+        }).collect()
+    }
+
+    /// Uses button outline information to place all buttons and rows inside.
+    /// The view itself will not be affected by the sizes
+    fn place_buttons_with_sizes(
+        &mut self,
+        button_outlines: Vec<Vec<c::Bounds>>
+    ) {
+        // Determine all positions
+        let button_positions: Vec<_>
+            = button_outlines.into_iter()
+                .map(Row::calculate_button_positions)
+                .collect();
+        
+        let row_sizes = button_positions.iter()
+            .map(Row::calculate_row_size)
+            .collect();
+
+        let row_positions = self.calculate_row_positions(row_sizes);
+
+        // Apply all positions
+        for ((mut row, row_position), button_positions)
+            in self.rows.iter_mut()
+                .zip(row_positions)
+                .zip(button_positions) {
+            row.bounds = Some(row_position);
+            for (mut button, button_position)
+                in row.buttons.iter_mut()
+                    .zip(button_positions) {
+                button.bounds = Some(button_position);
+            }
+        }
+    }
 }
 
 mod procedures {

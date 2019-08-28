@@ -71,5 +71,7 @@ void squeek_view_foreach(struct squeek_view*,
 struct squeek_row *squeek_view_get_row(struct squeek_view *view,
                                        struct squeek_button *button);
 
-void squeek_row_place_buttons(struct squeek_row *row, LevelKeyboard *keyboard);
+
+void
+squeek_view_place_contents(struct squeek_view *view, LevelKeyboard *keyboard);
 #endif
