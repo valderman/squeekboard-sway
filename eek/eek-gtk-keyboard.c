@@ -55,6 +55,8 @@ typedef struct _EekGtkKeyboardPrivate
     LevelKeyboard *keyboard;
     GtkCssProvider *css_provider;
     GtkStyleContext *scontext;
+
+    GdkEventSequence *sequence; // unowned reference
 } EekGtkKeyboardPrivate;
 
 G_DEFINE_TYPE_WITH_PRIVATE (EekGtkKeyboard, eek_gtk_keyboard, GTK_TYPE_DRAWING_AREA)
@@ -249,18 +251,29 @@ handle_touch_event (GtkWidget     *widget,
                     GdkEventTouch *event)
 {
     EekGtkKeyboard        *self = EEK_GTK_KEYBOARD (widget);
+    EekGtkKeyboardPrivate *priv = eek_gtk_keyboard_get_instance_private (self);
 
+    /* For each new touch, release the previous one and record the new event
+       sequence. */
     if (event->type == GDK_TOUCH_BEGIN) {
+        release(self, event->time);
+        priv->sequence = event->sequence;
         depress(self, event->x, event->y, event->time);
         return TRUE;
     }
 
-    if (event->type == GDK_TOUCH_UPDATE) {
+    /* Only allow the latest touch point to be dragged. */
+    if (event->type == GDK_TOUCH_UPDATE && event->sequence == priv->sequence) {
         drag(self, event->x, event->y, event->time);
     }
-    if (event->type == GDK_TOUCH_END || event->type == GDK_TOUCH_CANCEL) {
+    else if (event->type == GDK_TOUCH_END || event->type == GDK_TOUCH_CANCEL) {
         // TODO: can the event have different coords than the previous update event?
-        release(self, event->time);
+        /* Only respond to the release of the latest touch point. Previous
+           touches have already been released. */
+        if (event->sequence == priv->sequence) {
+            release(self, event->time);
+            priv->sequence = NULL;
+        }
     }
     return TRUE;
 }
