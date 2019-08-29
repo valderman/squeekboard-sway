@@ -913,14 +913,6 @@ eek_renderer_get_foreground_color (EekRenderer *renderer,
     color->alpha = gcolor.alpha;
 }
 
-struct _FindKeyByPositionCallbackData {
-    EekPoint point;
-    EekPoint origin;
-    gint angle;
-    struct squeek_button *button;
-};
-typedef struct _FindKeyByPositionCallbackData FindKeyByPositionCallbackData;
-
 static gboolean
 sign (EekPoint *p1, EekPoint *p2, EekPoint *p3)
 {
@@ -968,17 +960,6 @@ eek_are_bounds_inside (EekBounds bounds, EekPoint point, EekPoint origin, int32_
     return 0;
 }
 
-static void
-find_button_by_position_row_callback (struct squeek_row *row,
-                                       gpointer user_data)
-{
-    FindKeyByPositionCallbackData *data = user_data;
-    if (data->button) {
-        return;
-    }
-    data->button = squeek_row_find_button_by_position(row, data->point, data->origin);
-}
-
 /**
  * eek_renderer_find_key_by_position:
  * @renderer: The renderer normally used to render the key
@@ -994,30 +975,13 @@ eek_renderer_find_button_by_position (EekRenderer *renderer,
                                    gdouble      x,
                                    gdouble      y)
 {
-    FindKeyByPositionCallbackData data;
-
     g_return_val_if_fail (EEK_IS_RENDERER(renderer), NULL);
 
     EekRendererPrivate *priv = eek_renderer_get_instance_private (renderer);
-    EekBounds bounds = squeek_view_get_bounds (view);
 
-    /* Transform from widget coordinates to keyboard coordinates */
-    x = (x - priv->origin_x)/priv->scale - bounds.x;
-    y = (y - priv->origin_y)/priv->scale - bounds.y;
-
-    if (x < 0 ||
-        y < 0 ||
-        x > bounds.width ||
-        y > bounds.height)
-        return NULL;
-
-    data.point.x = x;
-    data.point.y = y;
-    data.origin.x = 0;
-    data.origin.y = 0;
-    data.button = NULL;
-
-    squeek_view_foreach (view, find_button_by_position_row_callback,
-                        &data);
-    return data.button;
+    EekPoint point = {
+        .x = (x - priv->origin_x)/priv->scale,
+        .y = (y - priv->origin_y)/priv->scale,
+    };
+    return squeek_view_find_button_by_position(view, point);
 }
