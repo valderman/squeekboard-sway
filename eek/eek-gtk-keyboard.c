@@ -117,7 +117,8 @@ eek_gtk_keyboard_real_draw (GtkWidget *self,
         struct button_place place = squeek_view_find_key(
             view, squeek_button_get_key(head->data)
         );
-        render_pressed_button (self, &place);
+        if (place.button)
+            render_pressed_button (self, &place);
     }
 
     /* redraw locked key */
@@ -128,7 +129,8 @@ eek_gtk_keyboard_real_draw (GtkWidget *self,
                 ((EekModifierKey *)head->data)->button
             )
         );
-        render_locked_button (self, &place);
+        if (place.button)
+            render_locked_button (self, &place);
     }
 
     return FALSE;

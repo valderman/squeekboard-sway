@@ -1,3 +1,22 @@
+/**
+ * Layout-related data.
+ * 
+ * The `View` contains `Row`s and each `Row` contains `Button`s.
+ * They carry data relevant to their positioning only,
+ * except the Button, which also carries some data
+ * about its appearance and function.
+ * 
+ * The layout is determined bottom-up, by measuring `Button` sizes,
+ * deriving `Row` sizes from them, and then centering them within the `View`.
+ * 
+ * That makes the `View` position immutable,
+ * and therefore different than the other positions.
+ * 
+ * Note that it might be a better idea
+ * to make `View` position depend on its contents,
+ * and let the renderer scale and center it within the widget.
+ */
+
 use std::cell::RefCell;
 use std::rc::Rc;
 use std::vec::Vec;
@@ -310,7 +329,7 @@ pub mod c {
     }
     
     /// Entry points for more complex procedures and algoithms which span multiple modules
-    mod procedures {
+    pub mod procedures {
         use super::*;
         
         #[repr(transparent)]
@@ -332,7 +351,7 @@ pub mod c {
 
             /// Checks if point falls within bounds,
             /// which are relative to origin and rotated by angle (I think)
-            fn eek_are_bounds_inside (bounds: Bounds,
+            pub fn eek_are_bounds_inside (bounds: Bounds,
                 point: Point,
                 origin: Point,
                 angle: i32
@@ -369,36 +388,6 @@ pub mod c {
             view.place_buttons_with_sizes(sizes);
         }
 
-        #[no_mangle]
-        pub extern "C"
-        fn squeek_row_find_button_by_position(
-            row: *mut Row, point: Point, origin: Point
-        ) -> *mut Button {
-            let row = unsafe { &mut *row };
-            let row_bounds = row.bounds
-                .as_ref().expect("Missing bounds on row");
-            let origin = Point {
-                x: origin.x + row_bounds.x,
-                y: origin.y + row_bounds.y,
-            };
-            let angle = row.angle;
-            let result = row.buttons.iter_mut().find(|button| {
-                let bounds = button.bounds
-                    .as_ref().expect("Missing bounds on button")
-                    .clone();
-                let point = point.clone();
-                let origin = origin.clone();
-                unsafe {
-                    eek_are_bounds_inside(bounds, point, origin, angle) == 1
-                }
-            });
-            
-            match result {
-                Some(button) => button.as_mut() as *mut Button,
-                None => ptr::null_mut(),
-            }
-        }
-        
         fn squeek_row_contains(row: &Row, needle: *const Button) -> bool {
             row.buttons.iter().position(
                 // TODO: wrap Button properly in Rc; this comparison is unreliable
@@ -445,6 +434,20 @@ pub mod c {
                 None => ( ptr::null(), ptr::null() ),
             };
             ButtonPlace { row, button }
+        }
+
+
+        #[no_mangle]
+        pub extern "C"
+        fn squeek_view_find_button_by_position(
+            view: *mut View, point: Point
+        ) -> *mut Button {
+            let view = unsafe { &mut *view };
+            let result = view.find_button_by_position(point);
+            match result {
+                Some(button) => button.as_mut() as *mut Button,
+                None => ptr::null_mut(),
+            }
         }
         
         #[cfg(test)]
@@ -559,12 +562,13 @@ pub struct Size {
 pub struct Button {
     oref: c::OutlineRef,
     /// TODO: abolish Option, buttons should be created with bounds fully formed
+    /// Position relative to some origin (i.e. parent/row)
     bounds: Option<c::Bounds>,
     /// current state, shared with other buttons
     pub state: Rc<RefCell<KeyState>>,
 }
 
-
+// FIXME: derive from the style/margin/padding
 const BUTTON_SPACING: f64 = 4.0;
 const ROW_SPACING: f64 = 7.0;
 
@@ -573,6 +577,7 @@ pub struct Row {
     buttons: Vec<Box<Button>>,
     /// Angle is not really used anywhere...
     angle: i32,
+    /// Position relative to some origin (i.e. parent/view origin)
     bounds: Option<c::Bounds>,
 }
 
@@ -621,6 +626,27 @@ impl Row {
         };
         Size { width: total_width, height: max_height }
     }
+
+    /// Finds the first button that covers the specified point
+    /// relative to row's position's origin
+    fn find_button_by_position(&mut self, point: c::Point)
+        -> Option<&mut Box<Button>>
+    {
+        let row_bounds = self.bounds.as_ref().expect("Missing bounds on row");
+        let origin = c::Point {
+            x: row_bounds.x,
+            y: row_bounds.y,
+        };
+        let angle = self.angle;
+        self.buttons.iter_mut().find(|button| {
+            let bounds = button.bounds
+                .as_ref().expect("Missing bounds on button")
+                .clone();
+            let point = point.clone();
+            let origin = origin.clone();
+            procedures::is_point_inside(bounds, point, origin, angle)
+        })
+    }
 }
 
 pub struct View {
@@ -633,8 +659,10 @@ impl View {
     /// Determines the positions of rows based on their sizes
     /// Each row will be centered horizontally
     /// The collection of rows will not be altered vertically
-    /// (TODO: make view bounds a constraint,
+    /// (TODO: maybe make view bounds a constraint,
     /// and derive a scaling factor that lets contents fit into view)
+    /// (or TODO: blow up view bounds to match contents
+    /// and then scale the entire thing)
     fn calculate_row_positions(&self, sizes: Vec<Size>) -> Vec<c::Bounds> {
         let mut y_offset = self.bounds.y;
         sizes.into_iter().map(|size| {
@@ -680,6 +708,23 @@ impl View {
             }
         }
     }
+
+    /// Finds the first button that covers the specified point
+    /// relative to view's position's origin
+    fn find_button_by_position(&mut self, point: c::Point)
+        -> Option<&mut Box<Button>>
+    {
+        // make point relative to the inside of the view,
+        // which is the origin of all rows
+        let point = c::Point {
+            x: point.x - self.bounds.x,
+            y: point.y - self.bounds.y,
+        };
+
+        self.rows.iter_mut().find_map(
+            |row| row.find_button_by_position(point.clone())
+        )
+    }
 }
 
 mod procedures {
@@ -702,5 +747,18 @@ mod procedures {
             }).collect(); // collecting not to let row references outlive the function
             row_paths.into_iter()
         }).collect()
+    }
+    
+    /// Checks if point is inside bounds which are rotated by angle.
+    /// FIXME: what's origin about?
+    pub fn is_point_inside(
+        bounds: c::Bounds,
+        point: c::Point,
+        origin: c::Point,
+        angle: i32
+    ) -> bool {
+        (unsafe {
+            c::procedures::eek_are_bounds_inside(bounds, point, origin, angle)
+        }) == 1
     }
 }
