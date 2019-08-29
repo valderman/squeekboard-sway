@@ -132,8 +132,8 @@ void eek_keyboard_press_button(LevelKeyboard *keyboard, struct squeek_button *bu
 }
 
 void eek_keyboard_release_button(LevelKeyboard *keyboard,
-                              struct squeek_button *button,
-                               guint32      timestamp) {
+                                 struct squeek_button *button,
+                                 guint32 timestamp) {
     for (GList *head = keyboard->pressed_buttons; head; head = g_list_next (head)) {
         if (head->data == button) {
             keyboard->pressed_buttons = g_list_remove_link (keyboard->pressed_buttons, head);
@@ -200,7 +200,7 @@ LevelKeyboard *level_keyboard_new(EekboardContextService *manager, struct squeek
  */
 struct squeek_button*
 eek_keyboard_find_button_by_name (LevelKeyboard *keyboard,
-                               const gchar *name)
+                                  const gchar *name)
 {
     return g_hash_table_lookup (keyboard->names, name);
 }

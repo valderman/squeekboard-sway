@@ -131,8 +131,7 @@ create_keyboard_surface_row_callback (struct squeek_row *row,
     cairo_rotate (data->cr, angle * G_PI / 180);
 
     data->row = row;
-    squeek_row_foreach(row, create_keyboard_surface_button_callback,
-                                 data);
+    squeek_row_foreach(row, create_keyboard_surface_button_callback, data);
 
     cairo_restore (data->cr);
 }
@@ -175,8 +174,8 @@ render_keyboard_surface (EekRenderer *renderer, struct squeek_view *view)
 
     /* draw rows */
     squeek_view_foreach(level_keyboard_current(priv->keyboard),
-                                 create_keyboard_surface_row_callback,
-                                 &data);
+                        create_keyboard_surface_row_callback,
+                        &data);
     cairo_restore (data.cr);
 
     cairo_destroy (data.cr);
@@ -971,9 +970,9 @@ eek_are_bounds_inside (EekBounds bounds, EekPoint point, EekPoint origin, int32_
  **/
 struct squeek_button *
 eek_renderer_find_button_by_position (EekRenderer *renderer,
-                                   struct squeek_view *view,
-                                   gdouble      x,
-                                   gdouble      y)
+                                      struct squeek_view *view,
+                                      gdouble      x,
+                                      gdouble      y)
 {
     g_return_val_if_fail (EEK_IS_RENDERER(renderer), NULL);
 
