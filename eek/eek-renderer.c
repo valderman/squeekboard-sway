@@ -196,6 +196,20 @@ render_button_outline (EekRenderer *renderer,
         return;
 
     EekBounds bounds = squeek_button_get_bounds(button);
+
+    /* Set the name of the button on the widget path, using the name obtained
+       from the button's symbol. */
+    g_autoptr (GtkWidgetPath) path = NULL;
+    path = gtk_widget_path_copy (gtk_style_context_get_path (priv->key_context));
+    struct squeek_symbol *symbol = squeek_button_get_symbol(button);
+    const char *name = squeek_symbol_get_name(symbol);
+    gtk_widget_path_iter_set_name (path, -1, name);
+
+    /* Update the style context with the updated widget path. */
+    gtk_style_context_set_path (priv->key_context, path);
+
+    /* Set the state to take into account whether the button is active
+       (pressed) or normal. */
     gtk_style_context_set_state(priv->key_context,
         active ? GTK_STATE_FLAG_ACTIVE : GTK_STATE_FLAG_NORMAL);
 
