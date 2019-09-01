@@ -56,14 +56,5 @@ struct _EekLayoutClass
 
 GType        eek_layout_get_type  (void) G_GNUC_CONST;
 
-void         eek_layout_place_rows(LevelKeyboard *keyboard, struct squeek_view *level);
-
-void         eek_layout_update_layout(LevelKeyboard *keyboard);
-
-
-LevelKeyboard *
-level_keyboard_from_layout (EekLayout *layout,
-                  gdouble    initial_width,
-                  gdouble    initial_height);
 G_END_DECLS
 #endif  /* EEK_LAYOUT_H */

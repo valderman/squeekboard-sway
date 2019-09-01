@@ -34,7 +34,6 @@
 
 #include "eek-renderer.h"
 #include "eek-keyboard.h"
-#include "src/symbol.h"
 
 #include "eek-gtk-keyboard.h"
 
@@ -109,7 +108,7 @@ eek_gtk_keyboard_real_draw (GtkWidget *self,
 
     eek_renderer_render_keyboard (priv->renderer, cr);
 
-    struct squeek_view *view = priv->keyboard->views[priv->keyboard->level];
+    struct squeek_view *view = squeek_layout_get_current_view(priv->keyboard->layout);
 
     /* redraw pressed key */
     const GList *list = priv->keyboard->pressed_buttons;

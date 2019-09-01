@@ -1,28 +1,28 @@
-use std::vec::Vec;
+/*! State of the emulated keyboard and keys */
 
-use super::symbol;
+use std::cell::RefCell;
+use std::collections::HashMap;
+use std::fmt;
+use std::io;
+use std::rc::Rc;
+use std::string::FromUtf8Error;
+    
+use ::symbol::{ Symbol, Action };
+
+use std::io::Write;
+use std::iter::{ FromIterator, IntoIterator };
 
 /// Gathers stuff defined in C or called by C
 pub mod c {
     use super::*;
-    use ::util::c::{ as_cstr, into_cstring };
+    use ::util::c::as_cstr;
     
-    use std::cell::RefCell;
     use std::ffi::CString;
     use std::os::raw::c_char;
-    use std::ptr;
-    use std::rc::Rc;
 
     // traits
     
     use std::borrow::ToOwned;
-
-    
-    // The following defined in C
-    #[no_mangle]
-    extern "C" {
-        fn eek_keysym_from_name(name: *const c_char) -> u32;
-    }
 
     /// The wrapped structure for KeyState suitable for handling in C
     /// Since C doesn't respect borrowing rules,
@@ -64,23 +64,6 @@ pub mod c {
     // TODO: unwrapping
 
     // The following defined in Rust. TODO: wrap naked pointers to Rust data inside RefCells to prevent multiple writers
-    
-    // TODO: this will receive data from the filesystem,
-    // so it should handle garbled strings in the future
-    #[no_mangle]
-    pub extern "C"
-    fn squeek_key_new(keycode: u32) -> CKeyState {
-        let state: Rc<RefCell<KeyState>> = Rc::new(RefCell::new(
-            KeyState {
-                pressed: false,
-                locked: false,
-                keycode: keycode,
-                symbol: None,
-            }
-        ));
-        CKeyState::wrap(state)
-    }
-    
     #[no_mangle]
     pub extern "C"
     fn squeek_key_free(key: CKeyState) {
@@ -115,103 +98,7 @@ pub mod c {
     #[no_mangle]
     pub extern "C"
     fn squeek_key_get_keycode(key: CKeyState) -> u32 {
-        return key.to_owned().keycode as u32;
-    }
-    
-    #[no_mangle]
-    pub extern "C"
-    fn squeek_key_set_keycode(key: CKeyState, code: u32) {
-        key.borrow_mut(|key| key.keycode = code);
-    }
-    
-    // TODO: this will receive data from the filesystem,
-    // so it should handle garbled strings in the future
-    #[no_mangle]
-    pub extern "C"
-    fn squeek_key_add_symbol(
-        key: CKeyState,
-        element: *const c_char,
-        text_raw: *const c_char, keyval: u32,
-        label: *const c_char, icon: *const c_char,
-        tooltip: *const c_char,
-    ) {
-        let element = as_cstr(&element)
-            .expect("Missing element name");
-
-        let text = into_cstring(text_raw)
-            .unwrap_or_else(|e| {
-                eprintln!("Text unreadable: {}", e);
-                None
-            })
-            .and_then(|text| {
-                if text.as_bytes() == b"" {
-                    None
-                } else {
-                    Some(text)
-                }
-            });
-
-        let icon = into_cstring(icon)
-            .unwrap_or_else(|e| {
-                eprintln!("Icon name unreadable: {}", e);
-                None
-            });
-
-        use symbol::*;
-        // Only read label if there's no icon
-        let label = match icon {
-            Some(icon) => Label::IconName(icon),
-            None => Label::Text(
-                into_cstring(label)
-                    .unwrap_or_else(|e| {
-                        eprintln!("Label unreadable: {}", e);
-                        Some(CString::new(" ").unwrap())
-                    })
-                    .unwrap_or_else(|| {
-                        eprintln!("Label missing");
-                        CString::new(" ").unwrap()
-                    })
-            ),
-        };
-
-        let tooltip = into_cstring(tooltip)
-            .unwrap_or_else(|e| {
-                eprintln!("Tooltip unreadable: {}", e);
-                None
-            });
-        
-
-        key.borrow_mut(|key| {
-            if let Some(_) = key.symbol {
-                eprintln!("Key {:?} already has a symbol defined", text);
-                return;
-            }
-
-            key.symbol = Some(match element.to_bytes() {
-                b"symbol" => Symbol {
-                    action: Action::Submit {
-                        text: text,
-                        keys: Vec::new(),
-                    },
-                    label: label,
-                    tooltip: tooltip,
-                },
-                _ => panic!("unsupported element type {:?}", element),
-            });
-        });
-    }
-
-    #[no_mangle]
-    pub extern "C"
-    fn squeek_key_get_symbol(key: CKeyState) -> *const symbol::Symbol {
-        key.borrow_mut(|key| {
-            match key.symbol {
-                // This pointer stays after the function exits,
-                // so it must reference borrowed data and not any copy
-                Some(ref symbol) => symbol as *const symbol::Symbol,
-                None => ptr::null(),
-            }
-        })
+        return key.to_owned().keycode.unwrap_or(0u32);
     }
 
     #[no_mangle]
@@ -225,20 +112,14 @@ pub mod c {
             .to_str()
             .expect("Bad key name");
 
-        let symbol_name = match key.to_owned().symbol {
-            Some(ref symbol) => match &symbol.action {
-                symbol::Action::Submit { text: Some(text), .. } => {
-                    Some(
-                        text.clone()
-                            .into_string().expect("Bad symbol")
-                    )
-                },
-                _ => None
+        let symbol_name = match key.to_owned().symbol.action {
+            Action::Submit { text: Some(text), .. } => {
+                Some(
+                    text.clone()
+                        .into_string().expect("Bad symbol text")
+                )
             },
-            None => {
-                eprintln!("Key {} has no symbol", key_name);
-                None
-            },
+            _ => None
         };
 
         let inner = match symbol_name {
@@ -251,7 +132,7 @@ pub mod c {
             .into_raw()
     }
     
-        #[no_mangle]
+    #[no_mangle]
     pub extern "C"
     fn squeek_key_get_action_name(
         key_name: *const c_char,
@@ -262,20 +143,14 @@ pub mod c {
             .to_str()
             .expect("Bad key name");
 
-        let symbol_name = match key.to_owned().symbol {
-            Some(ref symbol) => match &symbol.action {
-                symbol::Action::Submit { text: Some(text), .. } => {
-                    Some(
-                        text.clone()
-                            .into_string().expect("Bad symbol")
-                    )
-                },
-                _ => None
+        let symbol_name = match key.to_owned().symbol.action {
+            Action::Submit { text: Some(text), .. } => {
+                Some(
+                    text.clone()
+                        .into_string().expect("Bad symbol text")
+                )
             },
-            None => {
-                eprintln!("Key {} has no symbol", key_name);
-                None
-            },
+            _ => None
         };
 
         let inner = match symbol_name {
@@ -287,14 +162,115 @@ pub mod c {
             .expect("Couldn't convert string")
             .into_raw()
     }
-
 }
 
 #[derive(Debug, Clone)]
 pub struct KeyState {
     pub pressed: bool,
     pub locked: bool,
-    pub keycode: u32,
-    // TODO: remove the optionality of a symbol
-    pub symbol: Option<symbol::Symbol>,
+    pub keycode: Option<u32>,
+    pub symbol: Symbol,
+}
+
+/// Generates a mapping where each key gets a keycode, starting from 8
+pub fn generate_keycodes<'a, C: IntoIterator<Item=&'a str>>(
+    key_names: C
+) -> HashMap<String, u32> {
+    HashMap::from_iter(
+        key_names.into_iter()
+            .map(|name| String::from(name))
+            .zip(8..)
+    )
+}
+
+#[derive(Debug)]
+pub enum FormattingError {
+    Utf(FromUtf8Error),
+    Format(io::Error),
+}
+
+impl fmt::Display for FormattingError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            FormattingError::Utf(e) => write!(f, "UTF: {}", e),
+            FormattingError::Format(e) => write!(f, "Format: {}", e),
+        }
+    }
+}
+
+impl From<io::Error> for FormattingError {
+    fn from(e: io::Error) -> Self {
+        FormattingError::Format(e)
+    }
+}
+
+/// Generates a de-facto single level keymap. TODO: actually drop second level
+/// TODO: take in keysym->keycode mapping
+pub fn generate_keymap(
+    keystates: &HashMap::<String, Rc<RefCell<KeyState>>>
+) -> Result<String, FormattingError> {
+    let mut buf: Vec<u8> = Vec::new();
+    writeln!(
+        buf,
+        "xkb_keymap {{
+
+    xkb_keycodes \"squeekboard\" {{
+        minimum = 8;
+        maximum = 255;"
+    )?;
+    
+    for (name, state) in keystates.iter() {
+        if let Some(keycode) = state.borrow().keycode {
+            write!(
+                buf,
+                "
+        <{}> = {};",
+                name,
+                keycode
+            )?;
+        }
+    }
+    
+    writeln!(
+        buf,
+        "
+    }};
+    
+    xkb_symbols \"squeekboard\" {{
+
+        name[Group1] = \"Letters\";
+        name[Group2] = \"Numbers/Symbols\";"
+    )?;
+    
+    for (name, state) in keystates.iter() {
+        if let Some(_) = state.borrow().keycode {
+            write!(
+                buf,
+                "
+        key <{}> {{ [ {0} ] }};",
+                name,
+            )?;
+        }
+    }
+    writeln!(
+        buf,
+        "
+    }};
+
+    xkb_types \"squeekboard\" {{
+
+	type \"TWO_LEVEL\" {{
+            modifiers = Shift;
+            map[Shift] = Level2;
+            level_name[Level1] = \"Base\";
+            level_name[Level2] = \"Shift\";
+	}};
+    }};
+
+    xkb_compatibility \"squeekboard\" {{
+    }};
+}};"
+    )?;
+    
+    String::from_utf8(buf).map_err(FormattingError::Utf)
 }

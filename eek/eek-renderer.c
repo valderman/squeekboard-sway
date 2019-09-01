@@ -24,8 +24,6 @@
 #include <string.h>
 #include <gdk-pixbuf/gdk-pixbuf.h>
 
-#include "src/symbol.h"
-
 #include "eek-renderer.h"
 
 enum {
@@ -188,13 +186,6 @@ render_button_outline (EekRenderer *renderer,
                     gboolean     active)
 {
     EekRendererPrivate *priv = eek_renderer_get_instance_private (renderer);
-    EekOutline *outline;
-
-    guint oref = squeek_button_get_oref(button);
-    outline = level_keyboard_get_outline (priv->keyboard, oref);
-    if (outline == NULL)
-        return;
-
     EekBounds bounds = squeek_button_get_bounds(button);
     gtk_style_context_set_state(priv->key_context,
         active ? GTK_STATE_FLAG_ACTIVE : GTK_STATE_FLAG_NORMAL);
@@ -214,17 +205,11 @@ render_button (EekRenderer *self,
             gboolean     active)
 {
     EekRendererPrivate *priv = eek_renderer_get_instance_private (self);
-    EekOutline *outline;
     cairo_surface_t *outline_surface;
     GHashTable *outline_surface_cache;
     PangoLayout *layout;
     PangoRectangle extents = { 0, };
     EekColor foreground;
-
-    guint oref = squeek_button_get_oref (place->button);
-    outline = level_keyboard_get_outline (priv->keyboard, oref);
-    if (outline == NULL)
-        return;
 
     /* render outline */
     EekBounds bounds = squeek_button_get_bounds(place->button);
@@ -234,7 +219,7 @@ render_button (EekRenderer *self,
     else
         outline_surface_cache = priv->outline_surface_cache;
 
-    outline_surface = g_hash_table_lookup (outline_surface_cache, outline);
+    outline_surface = g_hash_table_lookup (outline_surface_cache, place->button);
     if (!outline_surface) {
         cairo_t *cr;
 
@@ -258,7 +243,7 @@ render_button (EekRenderer *self,
         cairo_destroy (cr);
 
         g_hash_table_insert (outline_surface_cache,
-                             outline,
+                             (gpointer)place->button,
                              outline_surface);
     }
 
@@ -267,16 +252,12 @@ render_button (EekRenderer *self,
 
     eek_renderer_get_foreground_color (self, priv->key_context, &foreground);
     /* render icon (if any) */
-    struct squeek_symbol *symbol = squeek_button_get_symbol(place->button);
-    if (!symbol)
-        return;
+    const char *icon_name = squeek_button_get_icon_name(place->button);
 
-    if (squeek_symbol_get_icon_name (symbol)) {
+    if (icon_name) {
         gint scale = priv->scale_factor;
         cairo_surface_t *icon_surface =
-            eek_renderer_get_icon_surface (self,
-                                           squeek_symbol_get_icon_name (symbol),
-                                           16 / priv->scale,
+            eek_renderer_get_icon_surface (self, icon_name, 16 / priv->scale,
                                            scale);
         if (icon_surface) {
             gint width = cairo_image_surface_get_width (icon_surface);
@@ -371,18 +352,16 @@ eek_renderer_real_render_button_label (EekRenderer *self,
 {
     EekRendererPrivate *priv = eek_renderer_get_instance_private (self);
 
-    const gchar *label;
+    const gchar *label = squeek_button_get_label(button);
+
+    if (!label) {
+        return;
+    }
+
     PangoFontDescription *font;
     PangoLayoutLine *line;
     gdouble scale;
 
-    struct squeek_symbol *symbol = squeek_button_get_symbol(button);
-    if (!symbol)
-        return;
-
-    label = squeek_symbol_get_label (symbol);
-    if (!label)
-        return;
 
     if (!priv->font) {
         const PangoFontDescription *base_font;
@@ -480,7 +459,7 @@ eek_renderer_real_render_keyboard (EekRenderer *self,
         cairo_get_target (cr), 0, 0,
         priv->allocation_width, priv->allocation_height);
 
-    render_keyboard_surface (self, priv->keyboard->views[priv->keyboard->level]);
+    render_keyboard_surface (self, squeek_layout_get_current_view(priv->keyboard->layout));
 
     cairo_set_source_surface (cr, priv->keyboard_surface, 0.0, 0.0);
     source = cairo_get_source (cr);

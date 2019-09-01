@@ -45,9 +45,3 @@ void
 eek_layout_init (EekLayout *self)
 {
 }
-
-void
-eek_layout_update_layout(LevelKeyboard *keyboard)
-{
-    squeek_view_place_contents(level_keyboard_current(keyboard), keyboard);
-}

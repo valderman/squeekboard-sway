@@ -4,6 +4,7 @@ use std::num::Wrapping;
 use std::string::String;
 
 use super::bitflags;
+use ::util::c::into_cstring;
 
 // Traits
 use std::convert::TryFrom;
@@ -13,15 +14,8 @@ use std::convert::TryFrom;
 pub mod c {
     use super::*;
     
-    use std::ffi::CStr;
     use std::os::raw::{c_char, c_void};
-    
-    fn into_cstring(s: *const c_char) -> Result<CString, std::ffi::NulError> {
-        CString::new(
-            unsafe {CStr::from_ptr(s)}.to_bytes()
-        )
-    }
-    
+
     // The following defined in C
         
     /// struct zwp_input_method_v2*
@@ -91,7 +85,9 @@ pub mod c {
     {
         let imservice = check_imservice(imservice, im).unwrap();
         imservice.pending = IMProtocolState {
-            surrounding_text: into_cstring(text).expect("Received invalid string"),
+            surrounding_text: into_cstring(text)
+                .expect("Received invalid string")
+                .expect("Received null string"),
             surrounding_cursor: cursor,
             ..imservice.pending.clone()
         };

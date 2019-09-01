@@ -90,7 +90,7 @@ send_fake_key (SeatEmitter *emitter,
                gboolean pressed,
                uint32_t timestamp)
 {
-    guint level = keyboard->level;
+    guint level = squeek_layout_get_level(keyboard->layout);
     uint32_t group = (level / 2);
 
     zwp_virtual_keyboard_v1_modifiers(emitter->virtual_keyboard, 0, 0, 0, group);

@@ -1,4 +1,4 @@
-/**
+/*!
  * Layout-related data.
  * 
  * The `View` contains `Row`s and each `Row` contains `Button`s.
@@ -18,6 +18,8 @@
  */
 
 use std::cell::RefCell;
+use std::collections::HashMap;
+use std::ffi::CString;
 use std::rc::Rc;
 use std::vec::Vec;
 
@@ -29,14 +31,15 @@ use ::symbol::*;
 pub mod c {
     use super::*;
 
-    use std::os::raw::c_void;
+    use std::ffi::CStr;
+    use std::os::raw::{ c_char, c_void };
     use std::ptr;
 
     // The following defined in C
 
     #[repr(transparent)]
     pub struct UserData(*const c_void);
-    
+
     /// The index in the relevant outline table
     #[repr(C)]
     #[derive(Clone, Debug)]
@@ -60,57 +63,18 @@ pub mod c {
         pub height: f64
     }
     
-    impl Bounds {
-        pub fn zero() -> Bounds {
-            Bounds { x: 0f64, y: 0f64, width: 0f64, height: 0f64 }
-        }
-    }
-    
     type ButtonCallback = unsafe extern "C" fn(button: *mut ::layout::Button, data: *mut UserData);
     type RowCallback = unsafe extern "C" fn(row: *mut ::layout::Row, data: *mut UserData);
 
     // The following defined in Rust. TODO: wrap naked pointers to Rust data inside RefCells to prevent multiple writers
-    
-    #[no_mangle]
-    pub extern "C"
-    fn squeek_view_new(bounds: Bounds) -> *mut ::layout::View {
-        Box::into_raw(Box::new(::layout::View {
-            rows: Vec::new(),
-            bounds: bounds,
-        }))
-    }
 
     #[no_mangle]
     pub extern "C"
     fn squeek_view_get_bounds(view: *const ::layout::View) -> Bounds {
         unsafe { &*view }.bounds.clone()
     }
-    
-    #[no_mangle]
-    pub extern "C"
-    fn squeek_view_set_bounds(view: *mut ::layout::View, bounds: Bounds) {
-        unsafe { &mut *view }.bounds = bounds;
-    }
-    
-    /// Places a row into the view and returns a reference to it
-    #[no_mangle]
-    pub extern "C"
-    fn squeek_view_create_row(
-        view: *mut ::layout::View,
-        angle: i32,
-    ) -> *mut ::layout::Row {
-        let view = unsafe { &mut *view };
 
-        view.rows.push(Box::new(::layout::Row::new(angle)));
-        // Return the reference directly instead of a Box, it's not on the stack
-        // It will live as long as the Vec
-        let last_idx = view.rows.len() - 1;
-        // Caution: Box can't be returned directly,
-        // so returning a reference to its innards
-        view.rows[last_idx].as_mut() as *mut ::layout::Row
-    }
-    
-        #[no_mangle]
+    #[no_mangle]
     pub extern "C"
     fn squeek_view_foreach(
         view: *mut ::layout::View,
@@ -122,68 +86,6 @@ pub mod c {
             let row = row.as_mut() as *mut ::layout::Row;
             unsafe { callback(row, data) };
         }
-    }
-
-    
-    #[no_mangle]
-    pub extern "C"
-    fn squeek_row_new(angle: i32) -> *mut ::layout::Row {
-        Box::into_raw(Box::new(::layout::Row::new(angle)))
-    }
-    
-    /// Places a button into the row and returns a reference to it
-    #[no_mangle]
-    pub extern "C"
-    fn squeek_row_create_button(
-        row: *mut ::layout::Row,
-        keycode: u32, oref: u32
-    ) -> *mut ::layout::Button {
-        let row = unsafe { &mut *row };
-        let state: Rc<RefCell<::keyboard::KeyState>> = Rc::new(RefCell::new(
-            ::keyboard::KeyState {
-                pressed: false,
-                locked: false,
-                keycode: keycode,
-                symbol: None,
-            }
-        ));
-        row.buttons.push(Box::new(::layout::Button {
-            oref: OutlineRef(oref),
-            bounds: None,
-            state: state,
-        }));
-        // Return the reference directly instead of a Box, it's not on the stack
-        // It will live as long as the Vec
-        let last_idx = row.buttons.len() - 1;
-        // Caution: Box can't be returned directly,
-        // so returning a reference to its innards
-        row.buttons[last_idx].as_mut() as *mut ::layout::Button
-    }
-    
-    /// Places a button into the row, copying its state,
-    /// and returns a reference to it
-    #[no_mangle]
-    pub extern "C"
-    fn squeek_row_create_button_with_state(
-        row: *mut ::layout::Row,
-        button: *const ::layout::Button,
-    ) -> *mut ::layout::Button {
-        let row = unsafe { &mut *row };
-        let source = unsafe { &*button };
-        row.buttons.push(Box::new(source.clone()));
-        // Return the reference directly instead of a Box, it's not on the stack
-        // It will live as long as the Vec
-        let last_idx = row.buttons.len() - 1;
-        // Caution: Box can't be returned directly,
-        // so returning a reference to its innards directly
-        row.buttons[last_idx].as_mut() as *mut ::layout::Button
-    }
-    
-    #[no_mangle]
-    pub extern "C"
-    fn squeek_row_set_angle(row: *mut ::layout::Row, angle: i32) {
-        let row = unsafe { &mut *row };
-        row.angle = angle;
     }
     
     #[no_mangle]
@@ -203,14 +105,6 @@ pub mod c {
         }
     }
 
-    /// Set bounds by consuming the value
-    #[no_mangle]
-    pub extern "C"
-    fn squeek_row_set_bounds(row: *mut ::layout::Row, bounds: Bounds) {
-        let row = unsafe { &mut *row };
-        row.bounds = Some(bounds);
-    }
-    
     #[no_mangle]
     pub extern "C"
     fn squeek_row_foreach(
@@ -233,57 +127,11 @@ pub mod c {
 
     #[no_mangle]
     pub extern "C"
-    fn squeek_button_new(keycode: u32, oref: u32) -> *mut ::layout::Button {
-        let state: Rc<RefCell<::keyboard::KeyState>> = Rc::new(RefCell::new(
-            ::keyboard::KeyState {
-                pressed: false,
-                locked: false,
-                keycode: keycode,
-                symbol: None,
-            }
-        ));
-        Box::into_raw(Box::new(::layout::Button {
-            oref: OutlineRef(oref),
-            bounds: None,
-            state: state,
-        }))
-    }
-
-    #[no_mangle]
-    pub extern "C"
-    fn squeek_button_new_with_state(source: *mut ::layout::Button) -> *mut ::layout::Button {
-        let source = unsafe { &*source };
-        let button = Box::new(source.clone());
-        Box::into_raw(button)
-    }
-    
-    #[no_mangle]
-    pub extern "C"
-    fn squeek_button_get_oref(button: *const ::layout::Button) -> u32 {
-        let button = unsafe { &*button };
-        button.oref.0
-    }
-
-    // Bounds transparently mapped to C, therefore no pointer needed
-
-    #[no_mangle]
-    pub extern "C"
     fn squeek_button_get_bounds(button: *const ::layout::Button) -> Bounds {
         let button = unsafe { &*button };
-        match &button.bounds {
-            Some(bounds) => bounds.clone(),
-            None => panic!("Button doesn't have any bounds yet"),
-        }
+        button.bounds.clone()
     }
-    
-    /// Set bounds by consuming the value
-    #[no_mangle]
-    pub extern "C"
-    fn squeek_button_set_bounds(button: *mut ::layout::Button, bounds: Bounds) {
-        let button = unsafe { &mut *button };
-        button.bounds = Some(bounds);
-    }
-    
+
     /// Borrow a new reference to key state. Doesn't need freeing
     #[no_mangle]
     pub extern "C"
@@ -302,12 +150,43 @@ pub mod c {
     ) -> *const Symbol {
         let button = unsafe { &*button };
         let state = button.state.borrow();
-        match state.symbol {
-            Some(ref symbol) => symbol as *const Symbol,
-            None => ptr::null(),
+        &state.symbol as *const Symbol
+    }
+    
+    #[no_mangle]
+    pub extern "C"
+    fn squeek_button_get_label(
+        button: *const ::layout::Button
+    ) -> *const c_char {
+        let button = unsafe { &*button };
+        match &button.label {
+            Label::Text(text) => text.as_ptr(),
+            // returning static strings to C is a bit cumbersome
+            Label::IconName(_) => unsafe {
+                // CStr doesn't allocate anything, so it only points to
+                // the 'static str, avoiding a memory leak
+                CStr::from_bytes_with_nul_unchecked(b"icon\0")
+            }.as_ptr(),
         }
     }
     
+    #[no_mangle]
+    pub extern "C"
+    fn squeek_button_get_icon_name(button: *const Button) -> *const c_char {
+        let button = unsafe { &*button };
+        match &button.label {
+            Label::Text(_) => ptr::null(),
+            Label::IconName(name) => name.as_ptr(),
+        }
+    }
+    
+    #[no_mangle]
+    pub extern "C"
+    fn squeek_button_get_name(button: *const Button) -> *const c_char {
+        let button = unsafe { &*button };
+        button.name.as_ptr()
+    }
+
     #[no_mangle]
     pub extern "C"
     fn squeek_button_has_key(
@@ -328,13 +207,61 @@ pub mod c {
         println!("{:?}", button);
     }
     
+    #[no_mangle]
+    pub extern "C"
+    fn squeek_layout_get_current_view(layout: *const Layout) -> *const View {
+        let layout = unsafe { &*layout };
+        let view_name = layout.current_view.clone();
+        layout.views.get(&view_name)
+            .expect("Current view doesn't exist")
+            .as_ref() as *const View
+    }
+
+    /// FIXME: very temporary way to minimize level impact
+    #[no_mangle]
+    pub extern "C"
+    fn squeek_layout_get_level(layout: *const Layout) -> u32 {
+        let layout = unsafe { &*layout };
+        match layout.current_view.as_str() {
+            "base" => 0,
+            "upper" => 1,
+            "numbers" => 2,
+            "symbols" => 3,
+            _ => 0
+        }
+    }
+
+    #[no_mangle]
+    pub extern "C"
+    fn squeek_layout_set_level(layout: *mut Layout, level: u32) {
+        let mut layout = unsafe { &mut*layout };
+        layout.current_view = String::from(match level {
+            0 => "base",
+            1 => "upper",
+            2 => "numbers",
+            3 => "symbols",
+            _ => "base",
+        })
+    }
+
+    #[no_mangle]
+    pub extern "C"
+    fn squeek_layout_get_keymap(layout: *const Layout) -> *const c_char {
+        let layout = unsafe { &*layout };
+        layout.keymap_str.as_ptr()
+    }
+
+    #[no_mangle]
+    pub extern "C"
+    fn squeek_layout_free(layout: *mut Layout) {
+        unsafe { Box::from_raw(layout) };
+    }
+    
+    
     /// Entry points for more complex procedures and algoithms which span multiple modules
     pub mod procedures {
         use super::*;
-        
-        #[repr(transparent)]
-        pub struct LevelKeyboard(*const c_void);
-        
+
         #[repr(C)]
         #[derive(PartialEq, Debug)]
         pub struct ButtonPlace {
@@ -344,11 +271,6 @@ pub mod c {
 
         #[no_mangle]
         extern "C" {
-            fn eek_get_outline_size(
-                keyboard: *const LevelKeyboard,
-                outline: u32
-            ) -> Bounds;
-
             /// Checks if point falls within bounds,
             /// which are relative to origin and rotated by angle (I think)
             pub fn eek_are_bounds_inside (bounds: Bounds,
@@ -356,15 +278,6 @@ pub mod c {
                 origin: Point,
                 angle: i32
             ) -> u32;
-        }
-        
-        fn squeek_buttons_get_outlines(
-            buttons: &Vec<Box<Button>>,
-            keyboard: *const LevelKeyboard,
-        ) -> Vec<Bounds> {
-            buttons.iter().map(|button| {
-                unsafe { eek_get_outline_size(keyboard, button.oref.0) }
-            }).collect()
         }
 
         /// Places each button in order, starting from 0 on the left,
@@ -375,17 +288,19 @@ pub mod c {
         /// Sets button and row sizes according to their contents.
         #[no_mangle]
         pub extern "C"
-        fn squeek_view_place_contents(
-            view: *mut ::layout::View,
-            keyboard: *const LevelKeyboard, // source of outlines
+        fn squeek_layout_place_contents(
+            layout: *mut Layout,
         ) {
-            let view = unsafe { &mut *view };
-            
-            let sizes: Vec<Vec<Bounds>> = view.rows.iter().map(|row|
-                squeek_buttons_get_outlines(&row.buttons, keyboard)
-            ).collect();
+            let layout = unsafe { &mut *layout };
+            for view in layout.views.values_mut() {
+                let sizes: Vec<Vec<Bounds>> = view.rows.iter().map(|row| {
+                    row.buttons.iter()
+                        .map(|button| button.bounds.clone())
+                        .collect()
+                }).collect();
 
-            view.place_buttons_with_sizes(sizes);
+                view.place_buttons_with_sizes(sizes);
+            }
         }
 
         fn squeek_row_contains(row: &Row, needle: *const Button) -> bool {
@@ -454,35 +369,36 @@ pub mod c {
         mod test {
             use super::*;
 
+            use super::super::test::*;
+
             #[test]
             fn row_has_button() {
-                let mut row = Row::new(0);
-                let button = squeek_row_create_button(&mut row as *mut Row, 0, 0);
-                assert_eq!(squeek_row_contains(&row, button), true);
-                let shared_button = squeek_row_create_button_with_state(
-                    &mut row as *mut Row,
-                    button
+                let state = make_state();
+                let button = make_button_with_state(
+                    "test".into(),
+                    state.clone()
                 );
-                assert_eq!(squeek_row_contains(&row, shared_button), true);
+                let button_ptr = button_as_raw(&button);
+                let mut row = Row::new(0);
+                row.buttons.push(button);
+                assert_eq!(squeek_row_contains(&row, button_ptr), true);
+                let shared_button = make_button_with_state(
+                    "test2".into(),
+                    state
+                );
+                let shared_button_ptr = button_as_raw(&shared_button);
+                row.buttons.push(shared_button);
+                assert_eq!(squeek_row_contains(&row, shared_button_ptr), true);
                 let row = Row::new(0);
-                assert_eq!(squeek_row_contains(&row, button), false);
+                assert_eq!(squeek_row_contains(&row, button_ptr), false);
             }
 
             #[test]
             fn view_has_button() {
-                let state = Rc::new(RefCell::new(::keyboard::KeyState {
-                    pressed: false,
-                    locked: false,
-                    keycode: 0,
-                    symbol: None,
-                }));
+                let state = make_state();
                 let state_clone = ::keyboard::c::CKeyState::wrap(state.clone());
 
-                let button = Box::new(Button {
-                    oref: OutlineRef(0),
-                    bounds: None,
-                    state: state,
-                });
+                let button = make_button_with_state("1".into(), state);
                 let button_ptr = button.as_ref() as *const Button;
                 
                 let row = Box::new(Row {
@@ -535,18 +451,64 @@ pub mod c {
     #[cfg(test)]
     mod test {
         use super::*;
+        
+        use ::keyboard::c::CKeyState;
+
+        pub fn make_state() -> Rc<RefCell<::keyboard::KeyState>> {
+            Rc::new(RefCell::new(::keyboard::KeyState {
+                pressed: false,
+                locked: false,
+                keycode: None,
+                symbol: Symbol {
+                    action: Action::SetLevel(0),
+                }
+            }))
+        }
+
+        pub fn make_button_with_state(
+            name: String,
+            state: Rc<RefCell<::keyboard::KeyState>>,
+        ) -> Box<Button> {
+            Box::new(Button {
+                name: CString::new(name.clone()).unwrap(),
+                corner_radius: 0f64,
+                bounds: c::Bounds {
+                    x: 0f64, y: 0f64, width: 0f64, height: 0f64
+                },
+                label: Label::Text(CString::new(name).unwrap()),
+                state: state,
+            })
+        }
+
+        pub fn button_as_raw(button: &Box<Button>) -> *const Button {
+            button.as_ref() as *const Button
+        }
 
         #[test]
         fn button_has_key() {
-            let button = squeek_button_new(0, 0);
-            let state = squeek_button_get_key(button);
-            assert_eq!(squeek_button_has_key(button, state.clone()), 1);
-            let other_button = squeek_button_new(0, 0);
-            assert_eq!(squeek_button_has_key(other_button, state.clone()), 0);
-            let other_state = ::keyboard::c::squeek_key_new(0);
-            assert_eq!(squeek_button_has_key(button, other_state), 0);
-            let shared_button = squeek_button_new_with_state(button);
-            assert_eq!(squeek_button_has_key(shared_button, state), 1);
+            let state = make_state();
+            let button = make_button_with_state("1".into(), state.clone());
+            assert_eq!(
+                squeek_button_has_key(
+                    button_as_raw(&button),
+                    CKeyState::wrap(state.clone())
+                ),
+                1
+            );
+            let other_state = make_state();
+            let other_button = make_button_with_state("1".into(), other_state);
+            assert_eq!(
+                squeek_button_has_key(
+                    button_as_raw(&other_button),
+                    CKeyState::wrap(state.clone())
+                ),
+                0
+            );
+            let orphan_state = CKeyState::wrap(make_state());
+            assert_eq!(
+                squeek_button_has_key(button_as_raw(&button), orphan_state),
+                0
+            );
         }
     }
 }
@@ -557,13 +519,25 @@ pub struct Size {
     pub height: f64,
 }
 
+#[derive(Debug, Clone)]
+pub enum Label {
+    /// Text used to display the symbol
+    Text(CString),
+    /// Icon name used to render the symbol
+    IconName(CString),
+}
+
 /// The graphical representation of a button
 #[derive(Clone, Debug)]
 pub struct Button {
-    oref: c::OutlineRef,
-    /// TODO: abolish Option, buttons should be created with bounds fully formed
+    /// ID string, e.g. for CSS 
+    pub name: CString,
+    /// Label to display to the user
+    pub label: Label,
+    pub corner_radius: f64,
+    /// TODO: position the buttons before they get initial bounds
     /// Position relative to some origin (i.e. parent/row)
-    bounds: Option<c::Bounds>,
+    pub bounds: c::Bounds,
     /// current state, shared with other buttons
     pub state: Rc<RefCell<KeyState>>,
 }
@@ -574,11 +548,11 @@ const ROW_SPACING: f64 = 7.0;
 
 /// The graphical representation of a row of buttons
 pub struct Row {
-    buttons: Vec<Box<Button>>,
+    pub buttons: Vec<Box<Button>>,
     /// Angle is not really used anywhere...
-    angle: i32,
+    pub angle: i32,
     /// Position relative to some origin (i.e. parent/view origin)
-    bounds: Option<c::Bounds>,
+    pub bounds: Option<c::Bounds>,
 }
 
 impl Row {
@@ -639,9 +613,7 @@ impl Row {
         };
         let angle = self.angle;
         self.buttons.iter_mut().find(|button| {
-            let bounds = button.bounds
-                .as_ref().expect("Missing bounds on button")
-                .clone();
+            let bounds = button.bounds.clone();
             let point = point.clone();
             let origin = origin.clone();
             procedures::is_point_inside(bounds, point, origin, angle)
@@ -651,8 +623,8 @@ impl Row {
 
 pub struct View {
     /// Position relative to keyboard origin
-    bounds: c::Bounds,
-    rows: Vec<Box<Row>>,
+    pub bounds: c::Bounds,
+    pub rows: Vec<Box<Row>>,
 }
 
 impl View {
@@ -704,7 +676,7 @@ impl View {
             for (mut button, button_position)
                 in row.buttons.iter_mut()
                     .zip(button_positions) {
-                button.bounds = Some(button_position);
+                button.bounds = button_position;
             }
         }
     }
@@ -725,6 +697,13 @@ impl View {
             |row| row.find_button_by_position(point.clone())
         )
     }
+}
+
+pub struct Layout {
+    pub current_view: String,
+    pub views: HashMap<String, Box<View>>,
+    // TODO: move to ::keyboard::Keyboard
+    pub keymap_str: CString,
 }
 
 mod procedures {

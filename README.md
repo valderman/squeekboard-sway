@@ -3,14 +3,18 @@
 
 *Squeekboard* is a virtual keyboard supporting Wayland, built primarily for the *Librem 5* phone.
 
+It squeaks because some Rust got inside.
+
 Features
 --------
 
 ### Present
 
 - GTK3
-- Custom xml-defined keyboards
+- Custom yaml-defined keyboards
 - DBus interface to show and hide
+- Use Wayland input method protocol to show and hide
+- Use Wayland virtual keyboard protocol
 
 ### Temporarily dropped
 
@@ -18,8 +22,7 @@ Features
 
 ### TODO
 
-- Use Wayland virtual keyboard protocol
-- Use Wayland text input protocol
+- Pick up user-defined layouts
 - Use Wayland input method protocol
 - Pick up DBus interface files from /usr/share
 
@@ -38,6 +41,7 @@ $ cd squeekboard
 $ mkdir ../build
 $ meson ../build/
 $ cd ../build
+$ ninja test
 $ ninja install
 ```
 
