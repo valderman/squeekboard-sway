@@ -178,14 +178,7 @@ pub mod c {
         // so returning a reference to its innards directly
         row.buttons[last_idx].as_mut() as *mut ::layout::Button
     }
-    
-    #[no_mangle]
-    pub extern "C"
-    fn squeek_row_set_angle(row: *mut ::layout::Row, angle: i32) {
-        let row = unsafe { &mut *row };
-        row.angle = angle;
-    }
-    
+
     #[no_mangle]
     pub extern "C"
     fn squeek_row_get_angle(row: *const ::layout::Row) -> i32 {
@@ -201,14 +194,6 @@ pub mod c {
             Some(bounds) => bounds.clone(),
             None => panic!("Row doesn't have any bounds yet"),
         }
-    }
-
-    /// Set bounds by consuming the value
-    #[no_mangle]
-    pub extern "C"
-    fn squeek_row_set_bounds(row: *mut ::layout::Row, bounds: Bounds) {
-        let row = unsafe { &mut *row };
-        row.bounds = Some(bounds);
     }
     
     #[no_mangle]
@@ -274,14 +259,6 @@ pub mod c {
             Some(bounds) => bounds.clone(),
             None => panic!("Button doesn't have any bounds yet"),
         }
-    }
-    
-    /// Set bounds by consuming the value
-    #[no_mangle]
-    pub extern "C"
-    fn squeek_button_set_bounds(button: *mut ::layout::Button, bounds: Bounds) {
-        let button = unsafe { &mut *button };
-        button.bounds = Some(bounds);
     }
     
     /// Borrow a new reference to key state. Doesn't need freeing
