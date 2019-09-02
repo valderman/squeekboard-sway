@@ -992,6 +992,7 @@ eek_renderer_find_button_by_position (EekRenderer *renderer,
 
     EekRendererPrivate *priv = eek_renderer_get_instance_private (renderer);
 
+    /* Transform from widget coordinates to keyboard coordinates */
     EekPoint point = {
         .x = (x - priv->origin_x)/priv->scale,
         .y = (y - priv->origin_y)/priv->scale,

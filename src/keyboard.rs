@@ -47,6 +47,13 @@ pub mod c {
         unsafe { key.unwrap() }; // reference dropped
     }
     
+    /// Compares pointers to the data
+    #[no_mangle]
+    pub extern "C"
+    fn squeek_key_equal(key: CKeyState, key2: CKeyState) -> u32 {
+        return Rc::ptr_eq(&key.clone_ref(), &key2.clone_ref()) as u32
+    }
+    
     #[no_mangle]
     pub extern "C"
     fn squeek_key_is_pressed(key: CKeyState) -> u32 {

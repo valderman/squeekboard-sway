@@ -55,10 +55,9 @@ eek_modifier_key_free (EekModifierKey *modkey)
 /// and instead refer to the contained symbols
 static guint
 set_key_states (LevelKeyboard    *keyboard,
-                struct squeek_button *button,
+                struct squeek_key *key,
                 guint new_level)
 {
-    struct squeek_key *key = squeek_button_get_key(button);
     // Keys locking rules hardcoded for the time being...
     const gchar *name = squeek_symbol_get_name(squeek_key_get_symbol(key));
     // Lock the shift whenever it's pressed on the baselevel
@@ -66,19 +65,19 @@ set_key_states (LevelKeyboard    *keyboard,
     if (g_strcmp0(name, "Shift_L") == 0 && keyboard->level == 0) {
         EekModifierKey *modifier_key = g_slice_new (EekModifierKey);
         modifier_key->modifiers = 0;
-        modifier_key->button = button;
-        keyboard->locked_buttons =
-            g_list_prepend (keyboard->locked_buttons, modifier_key);
+        modifier_key->key = key;
+        keyboard->locked_keys =
+            g_list_prepend (keyboard->locked_keys, modifier_key);
         squeek_key_set_locked(key, true);
     }
     if (keyboard->level == 1) {
         // Only shift is locked in this state, unlock on any key press
-        for (GList *head = keyboard->locked_buttons; head; ) {
+        for (GList *head = keyboard->locked_keys; head; ) {
             EekModifierKey *modifier_key = head->data;
             GList *next = g_list_next (head);
-            keyboard->locked_buttons =
-                g_list_remove_link (keyboard->locked_buttons, head);
-            squeek_key_set_locked(squeek_button_get_key(modifier_key->button), false);
+            keyboard->locked_keys =
+                g_list_remove_link (keyboard->locked_keys, head);
+            squeek_key_set_locked(modifier_key->key, false);
             g_list_free1 (head);
             head = next;
         }
@@ -89,13 +88,13 @@ set_key_states (LevelKeyboard    *keyboard,
 
 // FIXME: unhardcode, parse some user information as to which key triggers which view (level)
 static void
-set_level_from_press (LevelKeyboard *keyboard, struct squeek_button *button)
+set_level_from_press (LevelKeyboard *keyboard, struct squeek_key *key)
 {
     /* The levels are: 0 Letters, 1 Upper case letters, 2 Numbers, 3 Symbols */
     guint level = keyboard->level;
     /* Handle non-emitting keys */
-    if (button) {
-        const gchar *name = squeek_symbol_get_name(squeek_key_get_symbol(squeek_button_get_key(button)));
+    if (key) {
+        const gchar *name = squeek_symbol_get_name(squeek_key_get_symbol(key));
         if (g_strcmp0(name, "show_numbers") == 0) {
             level = 2;
         } else if (g_strcmp0(name, "show_letters") == 0) {
@@ -107,15 +106,14 @@ set_level_from_press (LevelKeyboard *keyboard, struct squeek_button *button)
         }
     }
 
-    keyboard->level = set_key_states(keyboard, button, level);
+    keyboard->level = set_key_states(keyboard, key, level);
 
     eek_layout_update_layout(keyboard);
 }
 
-void eek_keyboard_press_button(LevelKeyboard *keyboard, struct squeek_button *button, guint32 timestamp) {
-    struct squeek_key *key = squeek_button_get_key(button);
+void eek_keyboard_press_key(LevelKeyboard *keyboard, struct squeek_key *key, guint32 timestamp) {
     squeek_key_set_pressed(key, TRUE);
-    keyboard->pressed_buttons = g_list_prepend (keyboard->pressed_buttons, button);
+    keyboard->pressed_keys = g_list_prepend (keyboard->pressed_keys, key);
 
     struct squeek_symbol *symbol = squeek_key_get_symbol(key);
     if (!symbol)
@@ -131,26 +129,26 @@ void eek_keyboard_press_button(LevelKeyboard *keyboard, struct squeek_button *bu
     emit_key_activated(keyboard->manager, keyboard, keycode, TRUE, timestamp);
 }
 
-void eek_keyboard_release_button(LevelKeyboard *keyboard,
-                                 struct squeek_button *button,
-                                 guint32 timestamp) {
-    for (GList *head = keyboard->pressed_buttons; head; head = g_list_next (head)) {
-        if (head->data == button) {
-            keyboard->pressed_buttons = g_list_remove_link (keyboard->pressed_buttons, head);
+void eek_keyboard_release_key(LevelKeyboard *keyboard,
+                              struct squeek_key *key,
+                              guint32 timestamp) {
+    for (GList *head = keyboard->pressed_keys; head; head = g_list_next (head)) {
+        if (squeek_key_equal(head->data, key)) {
+            keyboard->pressed_keys = g_list_remove_link (keyboard->pressed_keys, head);
             g_list_free1 (head);
             break;
         }
     }
 
-    struct squeek_symbol *symbol = squeek_button_get_symbol(button);
+    struct squeek_symbol *symbol = squeek_key_get_symbol(key);
     if (!symbol)
         return;
 
-    set_level_from_press (keyboard, button);
+    set_level_from_press (keyboard, key);
 
     // "Borrowed" from eek-context-service; doesn't influence the state but forwards the event
 
-    guint keycode = squeek_key_get_keycode (squeek_button_get_key(button));
+    guint keycode = squeek_key_get_keycode (key);
 
     emit_key_activated(keyboard->manager, keyboard, keycode, FALSE, timestamp);
 }
