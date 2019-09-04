@@ -194,9 +194,8 @@ pub mod c {
         state: ::keyboard::c::CKeyState,
     ) -> u32 {
         let button = unsafe { &*button };
-        let state = state.unwrap();
+        let state = state.clone_ref();
         let equal = Rc::ptr_eq(&button.state, &state);
-        Rc::into_raw(state); // Prevent dropping
         equal as u32
     }
     
@@ -333,12 +332,9 @@ pub mod c {
             needle: ::keyboard::c::CKeyState,
         ) -> ButtonPlace {
             let view = unsafe { &*view };
-            let state = needle.unwrap();
+            let state = needle.clone_ref();
             
             let paths = ::layout::procedures::find_key_paths(view, &state);
-
-            // Iterators used up, can turn the reference back into pointer
-            Rc::into_raw(state);
 
             // Can only return 1 entry back to C
             let (row, button) = match paths.get(0) {

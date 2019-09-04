@@ -15,59 +15,20 @@ use std::iter::{ FromIterator, IntoIterator };
 /// Gathers stuff defined in C or called by C
 pub mod c {
     use super::*;
+    use ::util::c;
     use ::util::c::as_cstr;
     
     use std::ffi::CString;
     use std::os::raw::c_char;
 
-    // traits
-    
-    use std::borrow::ToOwned;
-
-    /// The wrapped structure for KeyState suitable for handling in C
-    /// Since C doesn't respect borrowing rules,
-    /// RefCell will enforce them dynamically (only 1 writer/many readers)
-    /// Rc is implied and will ensure timely dropping
-    #[repr(transparent)]
-    pub struct CKeyState(*const RefCell<KeyState>);
-    
-    impl Clone for CKeyState {
-        fn clone(&self) -> Self {
-            CKeyState(self.0.clone())
-        }
-    }
-
-    impl CKeyState {
-        pub fn wrap(state: Rc<RefCell<KeyState>>) -> CKeyState {
-            CKeyState(Rc::into_raw(state))
-        }
-        pub fn unwrap(self) -> Rc<RefCell<KeyState>> {
-            unsafe { Rc::from_raw(self.0) }
-        }
-        fn to_owned(self) -> KeyState {
-            let rc = self.unwrap();
-            let state = rc.borrow().to_owned();
-            Rc::into_raw(rc); // Prevent dropping
-            state
-        }
-        fn borrow_mut<F, T>(self, f: F) -> T where F: FnOnce(&mut KeyState) -> T {
-            let rc = self.unwrap();
-            let ret = {
-                let mut state = rc.borrow_mut();
-                f(&mut state)
-            };
-            Rc::into_raw(rc); // Prevent dropping
-            ret
-        }
-    }
-
-    // TODO: unwrapping
+    pub type CKeyState = c::Wrapped<KeyState>;
 
     // The following defined in Rust. TODO: wrap naked pointers to Rust data inside RefCells to prevent multiple writers
+
     #[no_mangle]
     pub extern "C"
     fn squeek_key_free(key: CKeyState) {
-        key.unwrap(); // reference dropped
+        unsafe { key.unwrap() }; // reference dropped
     }
     
     #[no_mangle]
@@ -80,7 +41,9 @@ pub mod c {
     #[no_mangle]
     pub extern "C"
     fn squeek_key_set_pressed(key: CKeyState, pressed: u32) {
-        key.borrow_mut(|key| key.pressed = pressed != 0);
+        let key = key.clone_ref();
+        let mut key = key.borrow_mut();
+        key.pressed = pressed != 0;
     }
     
     #[no_mangle]
@@ -92,7 +55,9 @@ pub mod c {
     #[no_mangle]
     pub extern "C"
     fn squeek_key_set_locked(key: CKeyState, locked: u32) {
-        key.borrow_mut(|key| key.locked = locked != 0);
+        let key = key.clone_ref();
+        let mut key = key.borrow_mut();
+        key.locked = locked != 0;
     }
     
     #[no_mangle]
@@ -116,10 +81,10 @@ pub mod c {
             Action::Submit { text: Some(text), .. } => {
                 Some(
                     text.clone()
-                        .into_string().expect("Bad symbol text")
+                        .into_string().expect("Bad symbol")
                 )
             },
-            _ => None
+            _ => None,
         };
 
         let inner = match symbol_name {
