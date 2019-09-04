@@ -105,6 +105,14 @@ pub mod c {
         }
     }
 
+    /// Set bounds by consuming the value
+    #[no_mangle]
+    pub extern "C"
+    fn squeek_row_set_bounds(row: *mut ::layout::Row, bounds: Bounds) {
+        let row = unsafe { &mut *row };
+        row.bounds = Some(bounds);
+    }
+    
     #[no_mangle]
     pub extern "C"
     fn squeek_row_foreach(

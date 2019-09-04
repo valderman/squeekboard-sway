@@ -12,6 +12,7 @@ struct squeek_view;
 struct squeek_layout;
 
 int32_t squeek_row_get_angle(const struct squeek_row*);
+
 EekBounds squeek_row_get_bounds(const struct squeek_row*);
 
 uint32_t squeek_row_contains(struct squeek_row*, struct squeek_button *button);
@@ -28,10 +29,9 @@ void squeek_row_free(struct squeek_row*);
 
 uint32_t squeek_button_get_oref(const struct squeek_button*);
 EekBounds squeek_button_get_bounds(const struct squeek_button*);
-void squeek_button_set_bounds(struct squeek_button* button, EekBounds bounds);
 const char *squeek_button_get_label(const struct squeek_button*);
 const char *squeek_button_get_icon_name(const struct squeek_button*);
-const char *squeek_button_get_name(struct squeek_button*);
+const char *squeek_button_get_name(const struct squeek_button*);
 
 struct squeek_key *squeek_button_get_key(const struct squeek_button*);
 uint32_t *squeek_button_has_key(const struct squeek_button* button,

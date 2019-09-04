@@ -6,4 +6,5 @@ Exec=squeekboard
 Icon=squeekboard
 Terminal=false
 Type=Application
+NoDisplay=true
 Categories=GTK;Utility;
