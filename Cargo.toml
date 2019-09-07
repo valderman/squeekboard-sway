@@ -1,0 +1,8 @@
+[package]
+name = "rs"
+version = "0.1.0"
+
+[lib]
+name = "rs"
+path = "src/lib.rs"
+crate-type = ["staticlib"]

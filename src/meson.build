@@ -56,25 +56,27 @@ deps = [
 #  dependency('libxklavier'), # FIXME remove
 ]
 
-# Replacement for eekboard-server
-rslib = static_library(
-  'rslib',
-  sources: ['lib.rs'],
-  rust_crate_type: 'staticlib'
+cargo = find_program('cargo')
+cargo_script = find_program('../cargo.sh')
+
+rslibs = custom_target(
+    'rslibs',
+    build_by_default: true,
+    build_always_stale: true,
+    output: ['librs.a'],
+    install: false,
+    command: [cargo_script, '@CURRENT_SOURCE_DIR@', '@OUTPUT@', 'build']
 )
 
-rstests = executable(
-  'rstests',
-  sources: ['lib.rs'],
-  rust_args: ['--test'],
-  install: false
+test(
+    'rstest',
+    cargo_script,
+    args: [meson.source_root(), '', 'test']
 )
-
-test('rstests', rstests)
 
 libsqueekboard = static_library('libsqueekboard',
   sources,
-  link_with: rslib,
+  link_with: [rslibs],
   include_directories: [include_directories('..'), include_directories('../eek')],
   dependencies: deps,
   c_args: [

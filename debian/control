@@ -3,8 +3,10 @@ Section: x11
 Priority: optional
 Maintainer: Dorota Czaplejewicz <dorota.czaplejewicz@puri.sm>
 Build-Depends:
+ cargo,
  debhelper (>= 10),
- meson (>=0.43.0),
+ meson (>=0.51.0),
+ ninja-build,
  pkg-config,
  libglib2.0-dev,
  libgtk-3-dev,
