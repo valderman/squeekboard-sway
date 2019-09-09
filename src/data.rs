@@ -293,7 +293,7 @@ impl Layout {
 
         let views = HashMap::from_iter(
             self.views.iter().map(|(name, view)| {(
-                String::from(name),
+                name.clone(),
                 Box::new(::layout::View {
                     bounds: ::layout::c::Bounds {
                         x: self.bounds.x,
