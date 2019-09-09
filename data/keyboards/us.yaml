@@ -40,7 +40,9 @@ views:
 buttons:
     Shift_L:
         action:
-            set_view: "upper"
+            locking:
+                lock_view: "upper"
+                unlock_view: "base"
         outline: "altline"
         icon: "key-shift"
     BackSpace:

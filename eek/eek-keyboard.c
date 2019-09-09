@@ -49,64 +49,47 @@ eek_modifier_key_free (EekModifierKey *modkey)
     g_slice_free (EekModifierKey, modkey);
 }
 
-/// Updates the state of locked keys based on the key that was activated
-/// FIXME: make independent of what the key are named,
-/// and instead refer to the contained symbols
-static guint
-set_key_states (LevelKeyboard    *keyboard,
-                struct squeek_button *button,
-                guint new_level)
+void
+eek_keyboard_set_button_locked (LevelKeyboard    *keyboard,
+                                struct squeek_button *button)
 {
-    // Keys locking rules hardcoded for the time being...
-    const gchar *name = squeek_button_get_name(button);
-    // Lock the shift whenever it's pressed on the baselevel
-    // TODO: need to lock shift on the destination level
-    if (g_strcmp0(name, "Shift_L") == 0 && squeek_layout_get_level(keyboard->layout) == 0) {
-        EekModifierKey *modifier_key = g_slice_new (EekModifierKey);
-        modifier_key->modifiers = 0;
-        modifier_key->button = button;
-        keyboard->locked_buttons =
+    EekModifierKey *modifier_key = g_slice_new (EekModifierKey);
+    modifier_key->modifiers = 0;
+    modifier_key->button = button;
+    keyboard->locked_buttons =
             g_list_prepend (keyboard->locked_buttons, modifier_key);
-        struct squeek_key *key = squeek_button_get_key(button);
-        squeek_key_set_locked(key, true);
-    }
-    if (squeek_layout_get_level(keyboard->layout) == 1) {
-        // Only shift is locked in this state, unlock on any key press
-        for (GList *head = keyboard->locked_buttons; head; ) {
-            EekModifierKey *modifier_key = head->data;
-            GList *next = g_list_next (head);
-            keyboard->locked_buttons =
-                g_list_remove_link (keyboard->locked_buttons, head);
-            squeek_key_set_locked(squeek_button_get_key(modifier_key->button), false);
-            g_list_free1 (head);
-            head = next;
-        }
-        return 0;
-    }
-    return new_level;
 }
 
-// FIXME: unhardcode, parse some user information as to which key triggers which view (level)
+/// Unlock all locked keys.
+/// All locked keys will unlock at the next keypress (should be called "stuck")
+/// Returns the number of handled keys
+/// TODO: may need to check key type in order to chain locks
+/// before pressing an "emitting" key
+static int unlock_keys(LevelKeyboard *keyboard) {
+    int handled = 0;
+    for (GList *head = keyboard->locked_buttons; head; ) {
+        EekModifierKey *modifier_key = head->data;
+        GList *next = g_list_next (head);
+        keyboard->locked_buttons =
+                g_list_remove_link (keyboard->locked_buttons, head);
+        //squeek_key_set_locked(squeek_button_get_key(modifier_key->button), false);
+
+        squeek_layout_set_state_from_press(keyboard->layout, keyboard, modifier_key->button);
+        g_list_free1 (head);
+        head = next;
+        handled++;
+    }
+    return handled;
+}
+
 static void
 set_level_from_press (LevelKeyboard *keyboard, struct squeek_button *button)
 {
-    /* The levels are: 0 Letters, 1 Upper case letters, 2 Numbers, 3 Symbols */
-    guint level = squeek_layout_get_level(keyboard->layout);
-    /* Handle non-emitting keys */
-    if (button) {
-        const gchar *name = squeek_button_get_name(button);
-        if (g_strcmp0(name, "show_numbers") == 0) {
-            level = 2;
-        } else if (g_strcmp0(name, "show_letters") == 0) {
-            level = 0;
-        } else if (g_strcmp0(name, "show_symbols") == 0) {
-            level = 3;
-        } else if (g_strcmp0(name, "Shift_L") == 0) {
-            level ^= 1;
-        }
+    // If the currently locked key was already handled in the unlock phase,
+    // then skip
+    if (unlock_keys(keyboard) == 0) {
+        squeek_layout_set_state_from_press(keyboard->layout, keyboard, button);
     }
-
-    squeek_layout_set_level(keyboard->layout, set_key_states(keyboard, button, level));
 }
 
 void eek_keyboard_press_button(LevelKeyboard *keyboard, struct squeek_button *button, guint32 timestamp) {

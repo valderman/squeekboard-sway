@@ -22,7 +22,7 @@ impl KeySym {
 pub struct XKeySym(pub u32);
 
 /// Use to switch layouts
-type Level = u8;
+type Level = String;
 
 /// Use to send modified keypresses
 #[derive(Debug, Clone)]
@@ -34,8 +34,14 @@ pub enum Modifier {
 /// Action to perform on the keypress and, in reverse, on keyrelease
 #[derive(Debug, Clone)]
 pub enum Action {
-    /// Switch to this level TODO: reverse?
+    /// Switch to this view
     SetLevel(Level),
+    /// Switch to a view and latch
+    LockLevel {
+        lock: Level,
+        /// When unlocked by pressing it or emitting a key
+        unlock: Level,
+    },
     /// Set this modifier TODO: release?
     SetModifier(Modifier),
     /// Submit some text

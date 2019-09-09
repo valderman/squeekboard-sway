@@ -224,33 +224,6 @@ pub mod c {
             .as_ref() as *const View
     }
 
-    /// FIXME: very temporary way to minimize level impact
-    #[no_mangle]
-    pub extern "C"
-    fn squeek_layout_get_level(layout: *const Layout) -> u32 {
-        let layout = unsafe { &*layout };
-        match layout.current_view.as_str() {
-            "base" => 0,
-            "upper" => 1,
-            "numbers" => 2,
-            "symbols" => 3,
-            _ => 0
-        }
-    }
-
-    #[no_mangle]
-    pub extern "C"
-    fn squeek_layout_set_level(layout: *mut Layout, level: u32) {
-        let mut layout = unsafe { &mut*layout };
-        layout.current_view = String::from(match level {
-            0 => "base",
-            1 => "upper",
-            2 => "numbers",
-            3 => "symbols",
-            _ => "base",
-        })
-    }
-
     #[no_mangle]
     pub extern "C"
     fn squeek_layout_get_keymap(layout: *const Layout) -> *const c_char {
@@ -275,6 +248,9 @@ pub mod c {
             row: *const Row,
             button: *const Button,
         }
+        
+        #[repr(transparent)]
+        pub struct LevelKeyboard(*const c_void);
 
         #[no_mangle]
         extern "C" {
@@ -285,6 +261,53 @@ pub mod c {
                 origin: Point,
                 angle: i32
             ) -> u32;
+            
+            pub fn eek_keyboard_set_button_locked(
+                keyboard: *mut LevelKeyboard,
+                button: *const Button
+            );
+        }
+        
+        #[no_mangle]
+        pub extern "C"
+        fn squeek_layout_set_state_from_press(
+            layout: *mut Layout,
+            keyboard: *mut LevelKeyboard,
+            button_ptr: *const Button,
+        ) {
+            let layout = unsafe { &mut *layout };
+            let button = unsafe { &*button_ptr };
+            // don't want to leave this borrowed in the function body
+            let state = {
+                let state = button.state.borrow();
+                state.clone()
+            };
+
+            let view_name = match state.symbol.action {
+                ::symbol::Action::SetLevel(name) => {
+                    Some(name.clone())
+                },
+                ::symbol::Action::LockLevel { lock, unlock } => {
+                    let mut current_state = button.state.borrow_mut();
+                    current_state.locked ^= true;
+                    if current_state.locked {
+                        unsafe {
+                            eek_keyboard_set_button_locked(
+                                keyboard,
+                                button_ptr
+                            )
+                        };
+                    }
+                    Some(if state.locked { unlock } else { lock }.clone())
+                },
+                _ => None,
+            };
+
+            if let Some(view_name) = view_name {
+                if let Err(_e) = layout.set_view(view_name.clone()) {
+                    eprintln!("No such view: {}, ignoring switch", view_name)
+                };
+            };
         }
 
         /// Places each button in order, starting from 0 on the left,
@@ -464,7 +487,7 @@ pub mod c {
                 locked: false,
                 keycode: None,
                 symbol: Symbol {
-                    action: Action::SetLevel(0),
+                    action: Action::SetLevel("default".into()),
                 }
             }))
         }
@@ -708,6 +731,19 @@ pub struct Layout {
     pub views: HashMap<String, Box<View>>,
     // TODO: move to ::keyboard::Keyboard
     pub keymap_str: CString,
+}
+
+struct NoSuchView;
+
+impl Layout {
+    fn set_view(&mut self, view: String) -> Result<(), NoSuchView> {
+        if self.views.contains_key(&view) {
+            self.current_view = view;
+            Ok(())
+        } else {
+            Err(NoSuchView)
+        }
+    }
 }
 
 mod procedures {

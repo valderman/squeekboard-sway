@@ -205,7 +205,8 @@ struct ButtonMeta {
 #[derive(Debug, Deserialize, PartialEq)]
 #[serde(deny_unknown_fields)]
 enum Action {
-    /// FIXME: start using it
+    #[serde(rename="locking")]
+    Locking { lock_view: String, unlock_view: String },
     #[serde(rename="set_view")]
     SetView(String),
     #[serde(rename="show_prefs")]
@@ -274,14 +275,11 @@ impl Layout {
                 pressed: false,
                 locked: false,
                 keycode: keycodes.get(*name).map(|k| *k),
-                symbol: ::symbol::Symbol {
-                    // FIXME: allow user to switch views
-                    action: ::symbol::Action::Submit {
-                        text: None,
-                        // TODO: derive keysym name & value from button name
-                        keys: vec!(),
-                    },
-                },
+                symbol: create_symbol(
+                    &self.buttons,
+                    name,
+                    self.views.keys().collect()
+                ),
             }))
         )});
 
@@ -331,6 +329,58 @@ impl Layout {
                     .expect("Invalid keymap string generated")
             },
         })
+    }
+}
+
+fn create_symbol(
+    button_info: &HashMap<String, ButtonMeta>,
+    name: &str,
+    view_names: Vec<&String>,
+) -> ::symbol::Symbol {
+    let default_meta = ButtonMeta::default();
+    let symbol_meta = button_info.get(name)
+        .unwrap_or(&default_meta);
+    
+    fn filter_view_name(
+        button_name: &str,
+        view_name: String,
+        view_names: &Vec<&String>
+    ) -> String {
+        if view_names.contains(&&view_name) {
+            view_name
+        } else {
+            eprintln!(
+                "Button {} switches to missing view {}",
+                button_name,
+                view_name
+            );
+            "base".into()
+        }
+    }
+    
+    match &symbol_meta.action {
+        Some(Action::SetView(view_name)) => ::symbol::Symbol {
+            action: ::symbol::Action::SetLevel(
+                filter_view_name(name, view_name.clone(), &view_names)
+            ),
+        },
+        Some(Action::Locking { lock_view, unlock_view }) => ::symbol::Symbol {
+            action: ::symbol::Action::LockLevel {
+                lock: filter_view_name(name, lock_view.clone(), &view_names),
+                unlock: filter_view_name(
+                    name,
+                    unlock_view.clone(),
+                    &view_names
+                ),
+            },
+        },
+        _ => ::symbol::Symbol {
+            action: ::symbol::Action::Submit {
+                text: None,
+                // TODO: derive keysym name & value from button name
+                keys: vec!(),
+            },
+        },
     }
 }
 
