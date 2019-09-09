@@ -4,7 +4,8 @@
 
 
 const KEYBOARDS: &[(*const str, *const str)] = &[
-    ("us", include_str!("../data/keyboards/us.yaml"))
+    ("us", include_str!("../data/keyboards/us.yaml")),
+    ("nb", include_str!("../data/keyboards/nb.yaml")),
 ];
 
 pub fn get_keyboard(needle: &str) -> Option<&'static str> {
