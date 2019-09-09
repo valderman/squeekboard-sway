@@ -2,7 +2,6 @@
 <gresources>
   <gresource prefix="/sm/puri/squeekboard">
    <file compressed="true">style.css</file>
-   <file compressed="true" preprocess="xml-stripblanks">keyboards/geometry/number-keypad.xml</file>
    <file compressed="true" preprocess="xml-stripblanks">keyboards/keyboards.xml</file>
    <file compressed="true" preprocess="xml-stripblanks">keyboards/symbols/ar.xml</file>
    <file compressed="true" preprocess="xml-stripblanks">keyboards/symbols/as-inscript.xml</file>
@@ -31,7 +30,6 @@
    <file compressed="true" preprocess="xml-stripblanks">keyboards/symbols/ua.xml</file>
    <file compressed="true" preprocess="xml-stripblanks">keyboards/symbols/ug.xml</file>
    <file compressed="true" preprocess="xml-stripblanks">keyboards/symbols/zh-bopomofo.xml</file>
-   <file compressed="true" preprocess="xml-stripblanks">keyboards/symbols/special/number.xml</file>
    <file>icons/key-enter.svg</file>
    <file>icons/key-shift.svg</file>
    <file>icons/keyboard-mode-symbolic.svg</file>
