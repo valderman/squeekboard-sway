@@ -2,6 +2,9 @@
 name = "rs"
 version = "0.1.0"
 
+[dependencies]
+bitflags = "1.1"
+
 [lib]
 name = "rs"
 path = "src/lib.rs"

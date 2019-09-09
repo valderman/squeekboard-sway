@@ -1,5 +1,5 @@
 #[macro_use]
-mod bitflags;
+extern crate bitflags;
 
 mod float_ord;
 mod imservice;
