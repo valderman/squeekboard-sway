@@ -121,12 +121,10 @@ eek_gtk_keyboard_real_draw (GtkWidget *self,
     }
 
     /* redraw locked key */
-    list = priv->keyboard->locked_buttons;
+    list = priv->keyboard->locked_keys;
     for (const GList *head = list; head; head = g_list_next (head)) {
         struct button_place place = squeek_view_find_key(
-            view, squeek_button_get_key(
-                ((EekModifierKey *)head->data)->button
-            )
+            view, ((EekModifierKey *)head->data)->key
         );
         if (place.button)
             render_locked_button (self, &place);

@@ -262,9 +262,9 @@ pub mod c {
                 angle: i32
             ) -> u32;
             
-            pub fn eek_keyboard_set_button_locked(
+            pub fn eek_keyboard_set_key_locked(
                 keyboard: *mut LevelKeyboard,
-                button: *const Button
+                key: ::keyboard::c::CKeyState,
             );
         }
         
@@ -273,32 +273,32 @@ pub mod c {
         fn squeek_layout_set_state_from_press(
             layout: *mut Layout,
             keyboard: *mut LevelKeyboard,
-            button_ptr: *const Button,
+            key: ::keyboard::c::CKeyState,
         ) {
             let layout = unsafe { &mut *layout };
-            let button = unsafe { &*button_ptr };
-            // don't want to leave this borrowed in the function body
-            let state = {
-                let state = button.state.borrow();
-                state.clone()
-            };
 
-            let view_name = match state.symbol.action {
+            let view_name = match key.to_owned().symbol.action {
                 ::symbol::Action::SetLevel(name) => {
                     Some(name.clone())
                 },
                 ::symbol::Action::LockLevel { lock, unlock } => {
-                    let mut current_state = button.state.borrow_mut();
-                    current_state.locked ^= true;
-                    if current_state.locked {
+                    let locked = {
+                        let key = key.clone_ref();
+                        let mut key = key.borrow_mut();
+                        key.locked ^= true;
+                        key.locked
+                    };
+
+                    if locked {
                         unsafe {
-                            eek_keyboard_set_button_locked(
+                            eek_keyboard_set_key_locked(
                                 keyboard,
-                                button_ptr
+                                key
                             )
-                        };
+                        }
                     }
-                    Some(if state.locked { unlock } else { lock }.clone())
+
+                    Some(if locked { lock } else { unlock }.clone())
                 },
                 _ => None,
             };

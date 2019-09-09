@@ -55,7 +55,7 @@ struct squeek_button *squeek_view_find_button_by_position(struct squeek_view *vi
 void
 squeek_layout_place_contents(struct squeek_layout*);
 struct squeek_view *squeek_layout_get_current_view(struct squeek_layout*);
-void squeek_layout_set_state_from_press(struct squeek_layout* layout, LevelKeyboard *keyboard, struct squeek_button* button);
+void squeek_layout_set_state_from_press(struct squeek_layout* layout, LevelKeyboard *keyboard, struct squeek_key* key);
 
 
 struct squeek_layout *squeek_load_layout(const char *type);

@@ -36,7 +36,7 @@ G_BEGIN_DECLS
 struct _EekModifierKey {
     /*< public >*/
     EekModifierType modifiers;
-    struct squeek_button *button;
+    struct squeek_key *key;
 };
 typedef struct _EekModifierKey EekModifierKey;
 
@@ -48,7 +48,7 @@ struct _LevelKeyboard {
     size_t keymap_len; // length of the data inside keymap_fd
 
     GList *pressed_buttons; // struct squeek_button*
-    GList *locked_buttons; // struct squeek_button*
+    GList *locked_keys; // struct squeek_button*
 
     guint id; // as a key to layout choices
 

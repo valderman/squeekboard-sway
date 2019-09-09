@@ -50,14 +50,14 @@ eek_modifier_key_free (EekModifierKey *modkey)
 }
 
 void
-eek_keyboard_set_button_locked (LevelKeyboard    *keyboard,
-                                struct squeek_button *button)
+eek_keyboard_set_key_locked (LevelKeyboard    *keyboard,
+                            struct squeek_key *key)
 {
     EekModifierKey *modifier_key = g_slice_new (EekModifierKey);
     modifier_key->modifiers = 0;
-    modifier_key->button = button;
-    keyboard->locked_buttons =
-            g_list_prepend (keyboard->locked_buttons, modifier_key);
+    modifier_key->key = key;
+    keyboard->locked_keys =
+            g_list_prepend (keyboard->locked_keys, modifier_key);
 }
 
 /// Unlock all locked keys.
@@ -67,14 +67,14 @@ eek_keyboard_set_button_locked (LevelKeyboard    *keyboard,
 /// before pressing an "emitting" key
 static int unlock_keys(LevelKeyboard *keyboard) {
     int handled = 0;
-    for (GList *head = keyboard->locked_buttons; head; ) {
+    for (GList *head = keyboard->locked_keys; head; ) {
         EekModifierKey *modifier_key = head->data;
         GList *next = g_list_next (head);
-        keyboard->locked_buttons =
-                g_list_remove_link (keyboard->locked_buttons, head);
+        keyboard->locked_keys =
+                g_list_remove_link (keyboard->locked_keys, head);
         //squeek_key_set_locked(squeek_button_get_key(modifier_key->button), false);
 
-        squeek_layout_set_state_from_press(keyboard->layout, keyboard, modifier_key->button);
+        squeek_layout_set_state_from_press(keyboard->layout, keyboard, modifier_key->key);
         g_list_free1 (head);
         head = next;
         handled++;
@@ -83,12 +83,12 @@ static int unlock_keys(LevelKeyboard *keyboard) {
 }
 
 static void
-set_level_from_press (LevelKeyboard *keyboard, struct squeek_button *button)
+set_level_from_press (LevelKeyboard *keyboard, struct squeek_key *key)
 {
     // If the currently locked key was already handled in the unlock phase,
     // then skip
     if (unlock_keys(keyboard) == 0) {
-        squeek_layout_set_state_from_press(keyboard->layout, keyboard, button);
+        squeek_layout_set_state_from_press(keyboard->layout, keyboard, key);
     }
 }
 
@@ -118,11 +118,13 @@ void eek_keyboard_release_button(LevelKeyboard *keyboard,
         }
     }
 
-    set_level_from_press (keyboard, button);
+    struct squeek_key *key = squeek_button_get_key(button);
+
+    set_level_from_press (keyboard, key);
 
     // "Borrowed" from eek-context-service; doesn't influence the state but forwards the event
 
-    guint keycode = squeek_key_get_keycode (squeek_button_get_key(button));
+    guint keycode = squeek_key_get_keycode (key);
 
     emit_key_activated(keyboard->manager, keyboard, keycode, FALSE, timestamp);
 }
