@@ -92,10 +92,9 @@ set_level_from_press (LevelKeyboard *keyboard, struct squeek_key *key)
     }
 }
 
-void eek_keyboard_press_button(LevelKeyboard *keyboard, struct squeek_button *button, guint32 timestamp) {
-    struct squeek_key *key = squeek_button_get_key(button);
+void eek_keyboard_press_key(LevelKeyboard *keyboard, struct squeek_key *key, guint32 timestamp) {
     squeek_key_set_pressed(key, TRUE);
-    keyboard->pressed_buttons = g_list_prepend (keyboard->pressed_buttons, button);
+    keyboard->pressed_keys = g_list_prepend (keyboard->pressed_keys, key);
 
     // Only take action about setting level *after* the key has taken effect, i.e. on release
     //set_level_from_press (keyboard, key);
@@ -107,18 +106,16 @@ void eek_keyboard_press_button(LevelKeyboard *keyboard, struct squeek_button *bu
     emit_key_activated(keyboard->manager, keyboard, keycode, TRUE, timestamp);
 }
 
-void eek_keyboard_release_button(LevelKeyboard *keyboard,
-                                 struct squeek_button *button,
-                                 guint32 timestamp) {
-    for (GList *head = keyboard->pressed_buttons; head; head = g_list_next (head)) {
-        if (head->data == button) {
-            keyboard->pressed_buttons = g_list_remove_link (keyboard->pressed_buttons, head);
+void eek_keyboard_release_key(LevelKeyboard *keyboard,
+                              struct squeek_key *key,
+                              guint32 timestamp) {
+    for (GList *head = keyboard->pressed_keys; head; head = g_list_next (head)) {
+        if (squeek_key_equal(head->data, key)) {
+            keyboard->pressed_keys = g_list_remove_link (keyboard->pressed_keys, head);
             g_list_free1 (head);
             break;
         }
     }
-
-    struct squeek_key *key = squeek_button_get_key(button);
 
     set_level_from_press (keyboard, key);
 

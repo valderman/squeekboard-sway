@@ -47,8 +47,8 @@ struct _LevelKeyboard {
     int keymap_fd; // keymap formatted as XKB string
     size_t keymap_len; // length of the data inside keymap_fd
 
-    GList *pressed_buttons; // struct squeek_button*
-    GList *locked_keys; // struct squeek_button*
+    GList *pressed_keys; // struct squeek_key*
+    GList *locked_keys; // struct EekModifierKey*
 
     guint id; // as a key to layout choices
 
@@ -67,8 +67,11 @@ EekModifierKey     *eek_modifier_key_copy
 void                eek_modifier_key_free
                                      (EekModifierKey      *modkey);
 
-void eek_keyboard_press_button(LevelKeyboard *keyboard, struct squeek_button *button, guint32 timestamp);
-void eek_keyboard_release_button(LevelKeyboard *keyboard, struct squeek_button *button, guint32 timestamp);
+void eek_keyboard_press_key(LevelKeyboard *keyboard, struct squeek_key *key, guint32 timestamp);
+void eek_keyboard_release_key(LevelKeyboard *keyboard, struct squeek_key *key, guint32 timestamp);
+
+gchar *             eek_keyboard_get_keymap
+                                     (LevelKeyboard *keyboard);
 
 struct squeek_view *level_keyboard_current(LevelKeyboard *keyboard);
 LevelKeyboard *level_keyboard_new(EekboardContextService *manager, struct squeek_layout *layout);
