@@ -81,7 +81,8 @@ eek_gtk_keyboard_real_realize (GtkWidget      *self)
                            GDK_KEY_RELEASE_MASK |
                            GDK_BUTTON_PRESS_MASK |
                            GDK_BUTTON_RELEASE_MASK |
-                           GDK_BUTTON_MOTION_MASK);
+                           GDK_BUTTON_MOTION_MASK |
+                           GDK_TOUCH_MASK);
 
     GTK_WIDGET_CLASS (eek_gtk_keyboard_parent_class)->realize (self);
 }
@@ -274,27 +275,27 @@ handle_touch_event (GtkWidget     *widget,
     EekGtkKeyboard        *self = EEK_GTK_KEYBOARD (widget);
     EekGtkKeyboardPrivate *priv = eek_gtk_keyboard_get_instance_private (self);
 
+    /* For each new touch, release the previous one and record the new event
+       sequence. */
     if (event->type == GDK_TOUCH_BEGIN) {
-        if (priv->sequence) {
-            // Ignore second and following touch points
-            return FALSE;
-        }
+        release(self, event->time);
         priv->sequence = event->sequence;
         depress(self, event->x, event->y, event->time);
         return TRUE;
     }
 
-    if (priv->sequence != event->sequence) {
-        return FALSE;
-    }
-
-    if (event->type == GDK_TOUCH_UPDATE) {
+    /* Only allow the latest touch point to be dragged. */
+    if (event->type == GDK_TOUCH_UPDATE && event->sequence == priv->sequence) {
         drag(self, event->x, event->y, event->time);
     }
-    if (event->type == GDK_TOUCH_END || event->type == GDK_TOUCH_CANCEL) {
+    else if (event->type == GDK_TOUCH_END || event->type == GDK_TOUCH_CANCEL) {
         // TODO: can the event have different coords than the previous update event?
-        release(self, event->time);
-        priv->sequence = NULL;
+        /* Only respond to the release of the latest touch point. Previous
+           touches have already been released. */
+        if (event->sequence == priv->sequence) {
+            release(self, event->time);
+            priv->sequence = NULL;
+        }
     }
     return TRUE;
 }
