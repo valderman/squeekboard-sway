@@ -19,9 +19,21 @@
 }
 
 #Return {
-    background: #6480ff
+    background: #1c71d8;
+    border-color: #1a5fb4
+}
+
+#Return:active {
+    background: #1c71d8;
+    border-color: #3584e4;
 }
 
 #Shift_L {
-    background: #363438
+    background: #2b292f;
+    border-color: #3e3a44
+}
+
+#Shift_L:active {
+    background: #1c71d8;
+    border-color: #3584e4;
 }
