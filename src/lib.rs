@@ -1,7 +1,7 @@
 #[macro_use]
 extern crate bitflags;
 
-mod float_ord;
+pub mod float_ord;
 mod imservice;
 mod keyboard;
 mod layout;

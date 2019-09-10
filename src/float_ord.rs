@@ -67,6 +67,7 @@ float_ord_impl!(f64, u64, 64);
 /// # Example
 ///
 /// ```
+/// use rs::float_ord;
 /// let mut v = [-5.0, 4.0, 1.0, -3.0, 2.0];
 ///
 /// float_ord::sort(&mut v);
