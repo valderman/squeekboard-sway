@@ -230,7 +230,8 @@ bitflags!{
 /// Map to `text_input_unstable_v3.content_purpose` values
 ///
 /// ```
-/// assert_eq!(ContentPurpose::Alpha as u32, 0);
+/// use rs::imservice::ContentPurpose;
+/// assert_eq!(ContentPurpose::Alpha as u32, 1);
 /// ```
 #[derive(Debug, Clone)]
 pub enum ContentPurpose {
