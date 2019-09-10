@@ -1,9 +1,8 @@
 #[macro_use]
+extern crate bitflags;
+#[macro_use]
 extern crate maplit;
 extern crate serde;
-
-#[macro_use]
-mod bitflags;
 
 mod data;
 mod float_ord;
