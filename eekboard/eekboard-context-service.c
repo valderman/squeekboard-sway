@@ -29,6 +29,7 @@
 
 #include <fcntl.h>
 #include <stdio.h>
+#define _XOPEN_SOURCE 500
 #include <string.h>
 #include <sys/mman.h>
 #include <sys/random.h> // TODO: this is Linux-specific
@@ -163,7 +164,7 @@ eekboard_context_service_real_create_keyboard (EekboardContextService *self,
     g_autofree char *path = strdup("/eek_keymap-XXXXXX");
     char *r = &path[strlen(path) - 6];
     getrandom(r, 6, GRND_NONBLOCK);
-    for (uint i = 0; i < 6; i++) {
+    for (unsigned i = 0; i < 6; i++) {
         r[i] = (r[i] & 0b1111111) | 0b1000000; // A-z
         r[i] = r[i] > 'z' ? '?' : r[i]; // The randomizer doesn't need to be good...
     }
@@ -181,7 +182,7 @@ eekboard_context_service_real_create_keyboard (EekboardContextService *self,
     if ((void*)ptr == (void*)-1) {
         g_error("Failed to set up mmap");
     }
-    strcpy(ptr, keymap_str);
+    strncpy(ptr, keymap_str, keyboard->keymap_len);
     munmap(ptr, keyboard->keymap_len);
     free(keymap_str);
 
