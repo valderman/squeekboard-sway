@@ -3,6 +3,7 @@ extern crate bitflags;
 #[macro_use]
 extern crate maplit;
 extern crate serde;
+extern crate xkbcommon;
 
 mod data;
 pub mod float_ord;

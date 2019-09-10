@@ -46,6 +46,7 @@ test_check_xkb (void)
 
     xkb_context_unref(context);
     if (!keymap) {
+        printf("%s", keymap_str);
         g_error("Bad keymap");
     }
 
