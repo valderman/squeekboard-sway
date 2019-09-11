@@ -546,7 +546,7 @@ pub struct Size {
     pub height: f64,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Label {
     /// Text used to display the symbol
     Text(CString),

@@ -177,7 +177,6 @@ impl From<io::Error> for FormattingError {
 }
 
 /// Generates a de-facto single level keymap. TODO: actually drop second level
-/// TODO: take in keysym->keycode mapping
 pub fn generate_keymap(
     keystates: &HashMap::<String, Rc<RefCell<KeyState>>>
 ) -> Result<String, FormattingError> {
@@ -192,14 +191,24 @@ pub fn generate_keymap(
     )?;
     
     for (name, state) in keystates.iter() {
-        if let Some(keycode) = state.borrow().keycode {
-            write!(
-                buf,
-                "
+        let state = state.borrow();
+        if let ::symbol::Action::Submit { text: _, keys } = &state.symbol.action {
+            match keys.len() {
+                0 => eprintln!("Key {} has no keysyms", name),
+                a => {
+                    // TODO: don't ignore any keysyms
+                    if a > 1 {
+                        eprintln!("Key {} multiple keysyms", name);
+                    }
+                    write!(
+                        buf,
+                        "
         <{}> = {};",
-                name,
-                keycode
-            )?;
+                        keys[0].0,
+                        state.keycode.unwrap()
+                    )?;
+                },
+            };
         }
     }
     
@@ -215,13 +224,15 @@ pub fn generate_keymap(
     )?;
     
     for (name, state) in keystates.iter() {
-        if let Some(_) = state.borrow().keycode {
-            write!(
-                buf,
-                "
+        if let ::symbol::Action::Submit { text: _, keys } = &state.borrow().symbol.action {
+            if let Some(keysym) = keys.iter().next() {
+                write!(
+                    buf,
+                    "
         key <{}> {{ [ {0} ] }};",
-                name,
-            )?;
+                    keysym.0,
+                )?;
+            }
         }
     }
     writeln!(

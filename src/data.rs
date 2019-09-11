@@ -11,6 +11,8 @@ use std::path::PathBuf;
 use std::rc::Rc;
 use std::vec::Vec;
 
+use xkbcommon::xkb;
+
 use ::keyboard::{
     KeyState,
     generate_keymap, generate_keycodes, FormattingError
@@ -358,6 +360,39 @@ fn create_symbol(
         }
     }
     
+    fn keysym_valid(name: &str) -> bool {
+        xkb::keysym_from_name(name, xkb::KEYSYM_NO_FLAGS) != xkb::KEY_NoSymbol
+    }
+    
+    let keysym = match &symbol_meta.action {
+        Some(_) => None,
+        None => Some(match &symbol_meta.keysym {
+            Some(keysym) => match keysym_valid(keysym.as_str()) {
+                true => keysym.clone(),
+                false => {
+                    eprintln!("Keysym name invalid: {}", keysym);
+                    "space".into() // placeholder
+                },
+            },
+            None => match keysym_valid(name) {
+                true => String::from(name),
+                false => match name.chars().count() {
+                    1 => format!("U{:04X}", name.chars().next().unwrap() as u32),
+                    // If the name is longer than 1 char,
+                    // then it's not a single Unicode char,
+                    // but was trying to be an identifier
+                    _ => {
+                        eprintln!(
+                            "Could not derive a valid keysym for key {}",
+                            name
+                        );
+                        "space".into() // placeholder
+                    }
+                },
+            },
+        }),
+    };
+    
     match &symbol_meta.action {
         Some(Action::SetView(view_name)) => ::symbol::Symbol {
             action: ::symbol::Action::SetLevel(
@@ -374,11 +409,18 @@ fn create_symbol(
                 ),
             },
         },
-        _ => ::symbol::Symbol {
+        Some(Action::ShowPrefs) => ::symbol::Symbol {
             action: ::symbol::Action::Submit {
                 text: None,
-                // TODO: derive keysym name & value from button name
-                keys: vec!(),
+                keys: Vec::new(),
+            },
+        },
+        None => ::symbol::Symbol {
+            action: ::symbol::Action::Submit {
+                text: None,
+                keys: vec!(
+                    ::symbol::KeySym(keysym.unwrap()),
+                ),
             },
         },
     }
@@ -524,10 +566,75 @@ mod tests {
     }
     
     #[test]
+    fn test_layout_punctuation() {
+        let out = Layout::from_yaml_stream(PathBuf::from("tests/layout_key1.yaml"))
+            .unwrap()
+            .build()
+            .unwrap();
+        assert_eq!(
+            out.views["base"]
+                .rows[0]
+                .buttons[0]
+                .label,
+            ::layout::Label::Text(CString::new("test").unwrap())
+        );
+    }
+
+    #[test]
+    fn test_layout_unicode() {
+        let out = Layout::from_yaml_stream(PathBuf::from("tests/layout_key2.yaml"))
+            .unwrap()
+            .build()
+            .unwrap();
+        assert_eq!(
+            out.views["base"]
+                .rows[0]
+                .buttons[0]
+                .label,
+            ::layout::Label::Text(CString::new("test").unwrap())
+        );
+    }
+    
+    #[test]
     fn parsing_fallback() {
         assert!(load_layout_from_resource(FALLBACK_LAYOUT_NAME)
             .and_then(|layout| layout.build().map_err(LoadError::BadKeyMap))
             .is_ok()
+        );
+    }
+    
+    #[test]
+    fn unicode_keysym() {
+        let keysym = xkb::keysym_from_name(
+            format!("U{:X}", "å".chars().next().unwrap() as u32).as_str(),
+            xkb::KEYSYM_NO_FLAGS,
+        );
+        let keysym = xkb::keysym_to_utf8(keysym);
+        assert_eq!(keysym, "å\0");
+    }
+    
+    #[test]
+    fn test_key_unicode() {
+        assert_eq!(
+            create_symbol(
+                &hashmap!{
+                    ".".into() => ButtonMeta {
+                        icon: None,
+                        keysym: None,
+                        action: None,
+                        label: Some("test".into()),
+                        outline: None,
+                    }
+                },
+                ".",
+                Vec::new()
+            ),
+            ::symbol::Symbol {
+                action: ::symbol::Action::Submit {
+                    text: None,
+                    keys: vec!(::symbol::KeySym("U002E".into())),
+                },
+            }
         );
     }
 }
