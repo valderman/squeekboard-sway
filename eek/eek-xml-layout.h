@@ -63,7 +63,7 @@ EekXmlKeyboardDesc *eek_xml_keyboard_desc_copy (EekXmlKeyboardDesc *desc);
 void                eek_xml_keyboard_desc_free (EekXmlKeyboardDesc *desc);
 
 LevelKeyboard *
-eek_xml_layout_real_create_keyboard (EekLayout *self,
+eek_xml_layout_real_create_keyboard (const char *keyboard_type,
                                      EekboardContextService *manager);
 G_END_DECLS
 #endif  /* EEK_XML_LAYOUT_H */

@@ -23,7 +23,6 @@ sources = [
   '../eek/eek-keysym.c',
   '../eek/eek-layout.c',
   '../eek/eek-renderer.c',
-  '../eek/eek-section.c',
   '../eek/eek-types.c',
   '../eek/eek-xml-layout.c',
   '../eek/layersurface.c',
@@ -65,6 +64,7 @@ rslibs = custom_target(
     build_always_stale: true,
     output: ['librs.a'],
     install: false,
+    console: true,
     command: [cargo_script, '@CURRENT_SOURCE_DIR@', '@OUTPUT@', 'build']
 )
 

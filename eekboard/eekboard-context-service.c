@@ -89,70 +89,23 @@ static LevelKeyboard *
 eekboard_context_service_real_create_keyboard (EekboardContextService *self,
                                                const gchar            *keyboard_type)
 {
-    EekLayout *layout;
-    GError *error;
-
-    if (g_str_has_prefix (keyboard_type, "xkb:")) {
-        /* TODO: Depends on xklavier
-        XklConfigRec *rec =
-            eekboard_xkl_config_rec_from_string (&keyboard_type[4]);
-
-        if (display == NULL)
-            //display = XOpenDisplay (NULL);
-            return NULL; // FIXME: replace with wl display
-
-        error = NULL;
-        layout = eek_xkl_layout_new (display, &error);
-        if (layout == NULL) {
-            g_warning ("can't create keyboard %s: %s",
-                       keyboard_type, error->message);
-            g_error_free (error);
-            return NULL;
-        }
-
-        if (!eek_xkl_layout_set_config (EEK_XKL_LAYOUT(layout), rec)) {
-            g_object_unref (layout);
-            return NULL;
-        }
-        */
-        return NULL;
-    } else {
-        error = NULL;
-        layout = eek_xml_layout_new (keyboard_type, &error);
-        if (layout == NULL) {
-            g_warning ("can't create keyboard %s: %s",
-                       keyboard_type, error->message);
-            g_error_free (error);
-            keyboard_type = "us";
-            error = NULL;
-            layout = eek_xml_layout_new (keyboard_type, &error);
-            if (layout == NULL) {
-                g_error ("failed to create fallback layout: %s", error->message);
-                g_error_free (error);
-                return NULL;
-            }
-        }
-    }
-    LevelKeyboard *keyboard = eek_xml_layout_real_create_keyboard(layout, self);
+    LevelKeyboard *keyboard = eek_xml_layout_real_create_keyboard(keyboard_type, self);
     if (!keyboard) {
         g_error("Failed to create a keyboard");
     }
-    g_object_unref (layout);
 
     struct xkb_context *context = xkb_context_new(XKB_CONTEXT_NO_FLAGS);
     if (!context) {
         g_error("No context created");
     }
 
-    gchar *keymap_str = eek_keyboard_get_keymap(keyboard);
+    const gchar *keymap_str = squeek_layout_get_keymap(keyboard->layout);
 
     struct xkb_keymap *keymap = xkb_keymap_new_from_string(context, keymap_str,
         XKB_KEYMAP_FORMAT_TEXT_V1, XKB_KEYMAP_COMPILE_NO_FLAGS);
 
     if (!keymap)
         g_error("Bad keymap:\n%s", keymap_str);
-
-    free(keymap_str);
 
     xkb_context_unref(context);
     keyboard->keymap = keymap;
@@ -183,7 +136,6 @@ eekboard_context_service_real_create_keyboard (EekboardContextService *self,
     }
     strcpy(ptr, keymap_str);
     munmap(ptr, keyboard->keymap_len);
-    free(keymap_str);
 
     return keyboard;
 }

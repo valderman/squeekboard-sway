@@ -42,18 +42,13 @@ typedef struct _EekModifierKey EekModifierKey;
 
 /// Keyboard state holder
 struct _LevelKeyboard {
-    struct squeek_view *views[4];
-    guint level;
+    struct squeek_layout *layout;
     struct xkb_keymap *keymap;
     int keymap_fd; // keymap formatted as XKB string
     size_t keymap_len; // length of the data inside keymap_fd
-    GArray *outline_array;
 
     GList *pressed_keys; // struct squeek_key*
     GList *locked_keys; // struct EekModifierKey*
-
-    /* Map button names to button objects: */
-    GHashTable *names;
 
     guint id; // as a key to layout choices
 
@@ -61,18 +56,12 @@ struct _LevelKeyboard {
 };
 typedef struct _LevelKeyboard LevelKeyboard;
 
-struct squeek_button *eek_keyboard_find_button_by_name(LevelKeyboard *keyboard,
-                                      const gchar        *name);
-
 /// Represents the path to the button within a view
 struct button_place {
     const struct squeek_row *row;
     const struct squeek_button *button;
 };
 
-EekOutline         *level_keyboard_get_outline
-                                     (LevelKeyboard        *keyboard,
-                                      guint               oref);
 EekModifierKey     *eek_modifier_key_copy
                                      (EekModifierKey     *modkey);
 void                eek_modifier_key_free
@@ -85,7 +74,7 @@ gchar *             eek_keyboard_get_keymap
                                      (LevelKeyboard *keyboard);
 
 struct squeek_view *level_keyboard_current(LevelKeyboard *keyboard);
-LevelKeyboard *level_keyboard_new(EekboardContextService *manager, struct squeek_view *views[], GHashTable *name_button_hash);
+LevelKeyboard *level_keyboard_new(EekboardContextService *manager, struct squeek_layout *layout);
 void level_keyboard_deinit(LevelKeyboard *self);
 void level_keyboard_free(LevelKeyboard *self);
 

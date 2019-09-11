@@ -25,22 +25,16 @@
 
 #include "config.h"
 
-#include "eek/eek.h"
 #include "eek/eek-xml-layout.h"
+#include "eek/eek-keyboard.h"
+
+#include "src/layout.h"
 
 static void
 test_check_xkb (void)
 {
-    EekLayout *layout;
-    LevelKeyboard *keyboard;
-    GError *error;
-
-    error = NULL;
-    layout = eek_xml_layout_new ("us", &error);
-    g_assert_no_error (error);
-
-    keyboard = eek_xml_layout_real_create_keyboard(layout, NULL);
-    gchar *keymap_str = eek_keyboard_get_keymap(keyboard);
+    LevelKeyboard *keyboard = eek_xml_layout_real_create_keyboard("us", NULL);
+    const gchar *keymap_str = squeek_layout_get_keymap(keyboard->layout);
 
     struct xkb_context *context = xkb_context_new(XKB_CONTEXT_NO_FLAGS);
     if (!context) {
@@ -50,14 +44,11 @@ test_check_xkb (void)
     struct xkb_keymap *keymap = xkb_keymap_new_from_string(context, keymap_str,
         XKB_KEYMAP_FORMAT_TEXT_V1, XKB_KEYMAP_COMPILE_NO_FLAGS);
 
-    free(keymap_str);
-
     xkb_context_unref(context);
     if (!keymap) {
         g_error("Bad keymap");
     }
 
-    g_object_unref (layout);
     level_keyboard_free(keyboard);
 }
 
