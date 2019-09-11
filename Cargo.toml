@@ -8,4 +8,4 @@ bitflags = "1.1"
 [lib]
 name = "rs"
 path = "src/lib.rs"
-crate-type = ["staticlib"]
+crate-type = ["staticlib", "rlib"]
