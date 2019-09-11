@@ -5,8 +5,8 @@ extern crate maplit;
 extern crate serde;
 
 mod data;
-mod float_ord;
-mod imservice;
+pub mod float_ord;
+pub mod imservice;
 mod keyboard;
 mod layout;
 mod resources;

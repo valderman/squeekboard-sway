@@ -11,4 +11,4 @@ serde_yaml = "0.8"
 [lib]
 name = "rs"
 path = "src/lib.rs"
-crate-type = ["staticlib"]
+crate-type = ["staticlib", "rlib"]

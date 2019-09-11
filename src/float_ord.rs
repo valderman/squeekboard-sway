@@ -5,6 +5,10 @@
 /* Adapted from https://github.com/notriddle/rust-float-ord revision e995165f
  * maintained by Michael Howell <michael@notriddle.com>
  * licensed under MIT / Apache-2.0 licenses
+ * 
+ * This version drops any dependency on rand.
+ * Caution: Don't pull the version from crates.io
+ * before making sure rand is optional.
  */
 
 extern crate core;
@@ -67,6 +71,7 @@ float_ord_impl!(f64, u64, 64);
 /// # Example
 ///
 /// ```
+/// use rs::float_ord;
 /// let mut v = [-5.0, 4.0, 1.0, -3.0, 2.0];
 ///
 /// float_ord::sort(&mut v);
