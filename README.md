@@ -62,6 +62,15 @@ $ cd ../build/
 $ src/squeekboard
 ```
 
+### Maintenance
+
+Use the `cargo.sh` script for maintaining the Cargo part of the build. The script takes the usual Cargo commands, after the first 2 positionsl arguments: source directory, and output artifact. So, `cargo test` becomes:
+
+```
+cd build_dir
+/source_path/cargo.sh /source_path '' test
+```
+
 ### Testing
 
 ```
