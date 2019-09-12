@@ -1,6 +1,6 @@
 #!/usr/bin/make -f
 
-export CARGO_HOME=/tmp/cargo
+export CARGO_HOME = $(CURDIR)/debian/cargo
 export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 
 %:
