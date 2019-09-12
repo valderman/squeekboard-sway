@@ -53,33 +53,7 @@ $ cd ../build/
 $ src/squeekboard
 ```
 
-### Maintenance
+Developing
+----------
 
-Use the `cargo.sh` script for maintaining the Cargo part of the build. The script takes the usual Cargo commands, after the first 2 positionsl arguments: source directory, and output artifact. So, `cargo test` becomes:
-
-```
-cd build_dir
-/source_path/cargo.sh /source_path '' test
-```
-
-### Testing
-
-Testing with an application:
-
-```
-python3 tests/entry.py
-```
-
-Testing visibility:
-
-```
-$ busctl call --user sm.puri.OSK0 /sm/puri/OSK0 sm.puri.OSK0 SetVisible b true
-$ busctl call --user sm.puri.OSK0 /sm/puri/OSK0 sm.puri.OSK0 SetVisible b false
-```
-
-Testing layouts:
-
-```
-$ gsettings set org.gnome.desktop.input-sources sources "[('xkb', 'us'), ('xkb', 'ua')]"
-$ gsettings set org.gnome.desktop.input-sources current 1
-```
+See `HACKING.md`
