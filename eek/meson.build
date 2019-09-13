@@ -6,15 +6,3 @@ enum_headers = [
 
 enums = gnome.mkenums_simple('eek-enumtypes', sources: enum_headers)
 
-python = find_program('python3')
-
-gen_keysym_entries_xkeysym = generator(
-  python,
-  arguments: ['@CURRENT_SOURCE_DIR@/gen-keysym-entries.py', 'xkeysym_keysym_entries', '@INPUT@'],
-  capture: true,
-  output: 'eek-@BASENAME@.h',
-)
-
-keysym_entries = [
-  gen_keysym_entries_xkeysym.process('./xkeysym-keysym-entries.txt'),
-]

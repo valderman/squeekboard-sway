@@ -24,7 +24,6 @@
 
 #include "eek-keyboard.h"
 #include "eek-layout.h"
-#include "eek-keysym.h"
 
 void eek_init (void);
 
