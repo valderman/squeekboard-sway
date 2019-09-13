@@ -5,7 +5,7 @@ extern crate maplit;
 extern crate serde;
 extern crate xkbcommon;
 
-mod data;
+pub mod data;
 pub mod float_ord;
 pub mod imservice;
 mod keyboard;

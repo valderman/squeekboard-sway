@@ -55,9 +55,6 @@ deps = [
 #  dependency('libxklavier'), # FIXME remove
 ]
 
-cargo = find_program('cargo')
-cargo_script = find_program('../cargo.sh')
-
 rslibs = custom_target(
     'rslibs',
     build_by_default: true,

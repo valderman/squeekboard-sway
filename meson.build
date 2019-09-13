@@ -53,6 +53,9 @@ summary = [
 ]
 message('\n'.join(summary))
 
+cargo = find_program('cargo')
+cargo_script = find_program('cargo.sh')
+
 subdir('data')
 subdir('protocols')
 subdir('eek')
