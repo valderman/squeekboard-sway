@@ -23,45 +23,9 @@
 #ifndef EEK_XML_LAYOUT_H
 #define EEK_XML_LAYOUT_H 1
 
-#include <gio/gio.h>
-#include "eek-layout.h"
+#include "eek-types.h"
 
 G_BEGIN_DECLS
-
-#define EEK_TYPE_XML_LAYOUT (eek_xml_layout_get_type())
-G_DECLARE_DERIVABLE_TYPE (EekXmlLayout, eek_xml_layout, EEK, XML_LAYOUT, EekLayout)
-
-/**
- * EekXmlLayoutClass:
- */
-struct _EekXmlLayoutClass
-{
-    /*< private >*/
-    EekLayoutClass parent_class;
-
-    /* padding */
-    gpointer pdummy[24];
-};
-
-struct _EekXmlKeyboardDesc
-{
-    gchar *id;
-    gchar *name;
-    gchar *geometry;
-    gchar *symbols;
-    gchar *language;
-    gchar *longname;
-};
-typedef struct _EekXmlKeyboardDesc EekXmlKeyboardDesc;
-
-GType               eek_xml_layout_get_type    (void) G_GNUC_CONST;
-EekLayout          *eek_xml_layout_new         (const gchar        *id,
-                                                GError            **error);
-GList              *eek_xml_list_keyboards     (void);
-
-EekXmlKeyboardDesc *eek_xml_keyboard_desc_copy (EekXmlKeyboardDesc *desc);
-void                eek_xml_keyboard_desc_free (EekXmlKeyboardDesc *desc);
-
 LevelKeyboard *
 eek_xml_layout_real_create_keyboard (const char *keyboard_type,
                                      EekboardContextService *manager);

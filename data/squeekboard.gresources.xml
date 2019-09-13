@@ -2,7 +2,6 @@
 <gresources>
   <gresource prefix="/sm/puri/squeekboard">
    <file compressed="true">style.css</file>
-   <file compressed="true" preprocess="xml-stripblanks">keyboards/keyboards.xml</file>
    <file compressed="true" preprocess="xml-stripblanks">keyboards/symbols/ar.xml</file>
    <file compressed="true" preprocess="xml-stripblanks">keyboards/symbols/as-inscript.xml</file>
    <file compressed="true" preprocess="xml-stripblanks">keyboards/symbols/be.xml</file>
