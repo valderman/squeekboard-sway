@@ -48,7 +48,7 @@ pub mod c {
 const FALLBACK_LAYOUT_NAME: &str = "us";
 
 #[derive(Debug)]
-enum LoadError {
+pub enum LoadError {
     BadData(Error),
     MissingResource,
     BadResource(serde_yaml::Error),
@@ -67,7 +67,7 @@ impl fmt::Display for LoadError {
     }
 }
 
-fn load_layout_from_resource(
+pub fn load_layout_from_resource(
     name: &str
 ) -> Result<Layout, LoadError> {
     let data = resources::get_keyboard(name)
@@ -169,7 +169,7 @@ fn load_layout_with_fallback(
 /// The root element describing an entire keyboard
 #[derive(Debug, Deserialize, PartialEq)]
 #[serde(deny_unknown_fields)]
-struct Layout {
+pub struct Layout {
     bounds: Bounds,
     views: HashMap<String, Vec<ButtonIds>>,
     #[serde(default)] 
@@ -223,7 +223,7 @@ struct Outline {
 }
 
 #[derive(Debug)]
-enum Error {
+pub enum Error {
     Yaml(serde_yaml::Error),
     Io(io::Error),
 }
@@ -248,7 +248,7 @@ impl Layout {
         serde_yaml::from_reader(infile)
             .map_err(Error::Yaml)
     }
-    fn build(self) -> Result<::layout::Layout, FormattingError> {
+    pub fn build(self) -> Result<::layout::Layout, FormattingError> {
         let button_names = self.views.values()
             .flat_map(|rows| {
                 rows.iter()

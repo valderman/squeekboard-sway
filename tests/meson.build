@@ -19,11 +19,10 @@ test_link_args = [
   '-fPIC',
 ]
 
-tests = [
-  'test-keymap-generation'
+c_tests = [
 ]
 
-foreach name : tests
+foreach name : c_tests
 
     test_sources = [name + '.c']
 
@@ -43,6 +42,17 @@ foreach name : tests
 
     test(name, t, env: test_env)
 
+endforeach
+
+# The layout test is in the examples directory
+# due to the way Cargo builds executables
+# and the need to call it manually
+foreach layout : ['us', 'nb']
+    test(
+        'test_layout_' + layout,
+        cargo_script,
+        args: [meson.source_root(), '', 'run', '--example', 'test_layout', layout]
+    )
 endforeach
 
 endif
