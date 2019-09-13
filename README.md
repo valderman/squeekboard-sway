@@ -22,7 +22,6 @@ Features
 
 ### TODO
 
-- Pick up user-defined layouts
 - Use Wayland input method protocol
 - Pick up DBus interface files from /usr/share
 
@@ -45,19 +44,11 @@ $ ninja test
 $ ninja install
 ```
 
-For development, alter the `meson` call:
-
-```
-$ meson ../build/ --prefix=../install
-```
-
-and don't skip `ninja install` before running. The last step is necessary in order to find the keyboard definition files.
-
 Running
 -------
 
 ```
-$ rootston
+$ phoc # if no compatible Wayland compositor is running yet
 $ cd ../build/
 $ src/squeekboard
 ```
@@ -73,9 +64,22 @@ cd build_dir
 
 ### Testing
 
+Testing with an application:
+
+```
+python3 tests/entry.py
+```
+
+Testing visibility:
+
 ```
 $ busctl call --user sm.puri.OSK0 /sm/puri/OSK0 sm.puri.OSK0 SetVisible b true
 $ busctl call --user sm.puri.OSK0 /sm/puri/OSK0 sm.puri.OSK0 SetVisible b false
+```
+
+Testing layouts:
+
+```
 $ gsettings set org.gnome.desktop.input-sources sources "[('xkb', 'us'), ('xkb', 'ua')]"
 $ gsettings set org.gnome.desktop.input-sources current 1
 ```
