@@ -62,7 +62,10 @@ const char *squeek_layout_get_keymap(const struct squeek_layout*);
 enum squeek_arrangement_kind squeek_layout_get_kind(const struct squeek_layout *);
 void squeek_layout_free(struct squeek_layout*);
 
-void squeek_layout_release(struct squeek_layout *layout, struct zwp_virtual_keyboard_v1 *virtual_keyboard, uint32_t timestamp, EekGtkKeyboard *ui_keyboard);
+void squeek_layout_release(struct squeek_layout *layout, struct zwp_virtual_keyboard_v1 *virtual_keyboard,
+                           struct transformation widget_to_layout,
+                           uint32_t timestamp,
+                           EekGtkKeyboard *ui_keyboard);
 void squeek_layout_release_all_only(struct squeek_layout *layout, struct zwp_virtual_keyboard_v1 *virtual_keyboard, uint32_t timestamp);
 void squeek_layout_depress(struct squeek_layout *layout, struct zwp_virtual_keyboard_v1 *virtual_keyboard,
                            double x_widget, double y_widget,

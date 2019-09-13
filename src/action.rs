@@ -36,4 +36,5 @@ pub enum Action {
         /// The key events this symbol submits when submitting text is not possible
         keys: Vec<KeySym>,
     },
+    ShowPreferences,
 }

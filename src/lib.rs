@@ -1,5 +1,10 @@
 #[macro_use]
 extern crate bitflags;
+extern crate gio;
+extern crate glib;
+extern crate glib_sys;
+extern crate gtk;
+extern crate gtk_sys;
 #[allow(unused_imports)]
 #[macro_use] // only for tests
 extern crate maplit;
@@ -13,6 +18,7 @@ pub mod imservice;
 mod keyboard;
 mod layout;
 mod outputs;
+mod popover;
 mod resources;
 mod submission;
 mod util;

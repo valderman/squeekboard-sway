@@ -37,6 +37,7 @@ pub mod c {
     use std::ffi::CStr;
     use std::os::raw::{ c_char, c_void };
     use std::ptr;
+    use gtk_sys;
 
     // The following defined in C
 
@@ -45,7 +46,7 @@ pub mod c {
 
     #[repr(transparent)]
     #[derive(Copy, Clone)]
-    pub struct EekGtkKeyboard(*const c_void);
+    pub struct EekGtkKeyboard(pub *const gtk_sys::GtkWidget);
 
     /// Defined in eek-types.h
     #[repr(C)]
@@ -245,12 +246,31 @@ pub mod c {
             origin_y: f64,
             scale: f64,
         }
-        
+
         impl Transformation {
             fn forward(&self, p: Point) -> Point {
                 Point {
                     x: (p.x - self.origin_x) / self.scale,
                     y: (p.y - self.origin_y) / self.scale,
+                }
+            }
+            fn reverse(&self, p: Point) -> Point {
+                Point {
+                    x: p.x * self.scale + self.origin_x,
+                    y: p.y * self.scale + self.origin_y,
+                }
+            }
+            pub fn reverse_bounds(&self, b: Bounds) -> Bounds {
+                let start = self.reverse(Point { x: b.x, y: b.y });
+                let end = self.reverse(Point {
+                    x: b.x + b.width,
+                    y: b.y + b.height,
+                });
+                Bounds {
+                    x: start.x,
+                    y: start.y,
+                    width: end.x - start.x,
+                    height: end.y - start.y,
                 }
             }
         }
@@ -319,28 +339,30 @@ pub mod c {
             }
         }
 
+        /// Release pointer in the specified position
         #[no_mangle]
         pub extern "C"
         fn squeek_layout_release(
             layout: *mut Layout,
             virtual_keyboard: ZwpVirtualKeyboardV1, // TODO: receive a reference to the backend
+            widget_to_layout: Transformation,
             time: u32,
             ui_keyboard: EekGtkKeyboard,
         ) {
+            let time = Timestamp(time);
             let layout = unsafe { &mut *layout };
             let virtual_keyboard = VirtualKeyboard(virtual_keyboard);
             // The list must be copied,
             // because it will be mutated in the loop
             for key in layout.pressed_keys.clone() {
                 let key: &Rc<RefCell<KeyState>> = key.borrow();
-                layout.release_key(
+                ui::release_key(
+                    layout,
                     &virtual_keyboard,
-                    &mut key.clone(),
-                    Timestamp(time)
-                );
-                let view = layout.get_current_view();
-                ::layout::procedures::release_ui_buttons(
-                    &view, key, ui_keyboard,
+                    &widget_to_layout,
+                    time,
+                    ui_keyboard,
+                    key
                 );
             }
         }
@@ -418,6 +440,7 @@ pub mod c {
             time: u32,
             ui_keyboard: EekGtkKeyboard,
         ) {
+            let time = Timestamp(time);
             let layout = unsafe { &mut *layout };
             let virtual_keyboard = VirtualKeyboard(virtual_keyboard);
 
@@ -442,36 +465,30 @@ pub mod c {
                     if Rc::ptr_eq(&state, &wrapped_key.0) {
                         found = true;
                     } else {
-                        layout.release_key(
+                        ui::release_key(
+                            layout,
                             &virtual_keyboard,
-                            &mut key.clone(), 
-                            Timestamp(time),
-                        );
-                        let view = layout.get_current_view();
-                        ::layout::procedures::release_ui_buttons(
-                            &view, key, ui_keyboard,
+                            &widget_to_layout,
+                            time,
+                            ui_keyboard,
+                            key,
                         );
                     }
                 }
                 if !found {
-                    layout.press_key(
-                        &virtual_keyboard,
-                        &mut state,
-                        Timestamp(time),
-                    );
+                    layout.press_key(&virtual_keyboard, &mut state, time);
                     unsafe { eek_gtk_on_button_pressed(c_place, ui_keyboard) };
                 }
             } else {
                 for wrapped_key in pressed {
                     let key: &Rc<RefCell<KeyState>> = wrapped_key.borrow();
-                    layout.release_key(
+                    ui::release_key(
+                        layout,
                         &virtual_keyboard,
-                        &mut key.clone(), 
-                        Timestamp(time),
-                    );
-                    let view = layout.get_current_view();
-                    ::layout::procedures::release_ui_buttons(
-                        &view, key, ui_keyboard,
+                        &widget_to_layout,
+                        time,
+                        ui_keyboard,
+                        key,
                     );
                 }
             }
@@ -501,6 +518,28 @@ pub mod c {
                         },
                     }
                 }
+            }
+        }
+
+        #[cfg(test)]
+        mod test {
+            use super::*;
+            
+            fn near(a: f64, b: f64) -> bool {
+                (a - b).abs() < ((a + b) * 0.001f64).abs()
+            }
+            
+            #[test]
+            fn transform_back() {
+                let transform = Transformation {
+                    origin_x: 10f64,
+                    origin_y: 11f64,
+                    scale: 12f64,
+                };
+                let point = Point { x: 1f64, y: 1f64 };
+                let transformed = transform.reverse(transform.forward(point.clone()));
+                assert!(near(point.x, transformed.x));
+                assert!(near(point.y, transformed.y));
             }
         }
     }
@@ -717,6 +756,12 @@ pub struct Layout {
     pub keymap_str: CString,
     // Changeable state
     // a Vec would be enough, but who cares, this will be small & fast enough
+    // TODO: turn those into per-input point *_buttons to track dragging.
+    // The renderer doesn't need the list of pressed keys any more,
+    // because it needs to iterate
+    // through all buttons of the current view anyway.
+    // When the list tracks actual location,
+    // it becomes possible to place popovers and other UI accurately.
     pub pressed_keys: HashSet<::util::Pointer<RefCell<KeyState>>>,
     pub locked_keys: HashSet<::util::Pointer<RefCell<KeyState>>>,
 }
@@ -948,6 +993,64 @@ mod procedures {
                 true
             );
         }
+    }
+    
+    pub fn get_button_bounds(
+        view: &View,
+        row: &Row,
+        button: &Button
+    ) -> Option<c::Bounds> {
+        match &row.bounds {
+            Some(row) => Some(c::Bounds {
+                x: view.bounds.x + row.x + button.bounds.x,
+                y: view.bounds.y + row.y + button.bounds.y,
+                width: button.bounds.width,
+                height: button.bounds.height,
+            }),
+            _ => None,
+        }
+    }
+}
+
+/// Top level UI procedures
+mod ui {
+    use super::*;
+
+    // TODO: turn into release_button
+    pub fn release_key(
+        layout: &mut Layout,
+        virtual_keyboard: &VirtualKeyboard,
+        widget_to_layout: &c::procedures::Transformation,
+        time: Timestamp,
+        ui_keyboard: c::EekGtkKeyboard,
+        key: &Rc<RefCell<KeyState>>,
+    ) {
+        layout.release_key(virtual_keyboard, &mut key.clone(), time);
+
+        let view = layout.get_current_view();
+        let action = RefCell::borrow(key).action.clone();
+        if let Action::ShowPreferences = action {
+            let paths = ::layout::procedures::find_key_paths(
+                view, key
+            );
+            // getting first item will cause mispositioning
+            // with more than one button with the same key
+            // on the keyboard
+            if let Some((row, button)) = paths.get(0) {
+                let bounds = ::layout::procedures::get_button_bounds(
+                    view, row, button
+                ).unwrap_or_else(|| {
+                    eprintln!("BUG: Clicked button has no position?");
+                    c::Bounds { x: 0f64, y: 0f64, width: 0f64, height: 0f64 }
+                });
+                ::popover::show(
+                    ui_keyboard,
+                    widget_to_layout.reverse_bounds(bounds)
+                );
+            }
+        }
+        
+        procedures::release_ui_buttons(view, key, ui_keyboard);
     }
 }
 

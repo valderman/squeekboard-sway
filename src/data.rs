@@ -509,10 +509,7 @@ fn create_action(
                 &view_names
             ),
         },
-        Some(Action::ShowPrefs) => ::action::Action::Submit {
-            text: None,
-            keys: Vec::new(),
-        },
+        Some(Action::ShowPrefs) => ::action::Action::ShowPreferences,
         None => ::action::Action::Submit {
             text: None,
             keys: keysyms.into_iter().map(::action::KeySym).collect(),
