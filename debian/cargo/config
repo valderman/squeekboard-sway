@@ -1,0 +1,12 @@
+# When modifying this file, consider instead
+# to take advantage of the method that Cargo packagers use
+# to set up all the necessary stuff automatically:
+# https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=907629#30
+
+[source.crates-io]
+registry = 'https://github.com/rust-lang/crates.io-index'
+replace-with = 'vendored-sources'
+
+[source.vendored-sources]
+directory = '/usr/share/cargo/registry'
+
