@@ -1,5 +1,5 @@
 ---
-bounds: { x: 0, y: 10, width: 426, height: 229 }
+bounds: { x: 0, y: 6.33, width: 426, height: 250 }
 
 outlines:
     default:
