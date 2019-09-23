@@ -26,6 +26,26 @@ build_meson:
     - meson . _build/ -Ddepdatadir=/usr/share
     - ninja -C _build install
 
+build_deb:
+    <<: *tags
+    stage: build
+    artifacts:
+      paths:
+        - "*.deb"
+    script:
+        - apt-get -y install devscripts
+        - debuild -i -us -uc -b
+        - cp ../*.deb .
+
+test_lintian:
+    <<: *tags
+    stage: test
+    dependencies:
+        - build_deb
+    script:
+        - apt-get -y install lintian
+        - lintian *.deb
+
 test:
   <<: *tags
   stage: test
