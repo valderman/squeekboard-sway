@@ -6,15 +6,15 @@
 
 set -e
 
-SOURCE_DIR="$1"
+SCRIPT_PATH=`realpath $0`
+SOURCE_DIR=`dirname $0`
 
 export CARGO_TARGET_DIR=`pwd`
-if [ ! -z ${2} ]; then
-    OUT_PATH=`realpath "${2}"`
+if [ ! -z ${1} ]; then
+    OUT_PATH=`realpath "${1}"`
 fi
 
 cd $SOURCE_DIR
-shift
 shift
 cargo $BUILD_ARG $@
 

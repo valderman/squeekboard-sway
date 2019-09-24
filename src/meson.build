@@ -60,13 +60,13 @@ rslibs = custom_target(
     output: ['librs.a'],
     install: false,
     console: true,
-    command: [cargo_script, '@CURRENT_SOURCE_DIR@', '@OUTPUT@', 'build']
+    command: [cargo_script, '@OUTPUT@', 'build']
 )
 
 test(
     'rstest',
     cargo_script,
-    args: [meson.source_root(), '', 'test']
+    args: ['', 'test']
 )
 
 libsqueekboard = static_library('libsqueekboard',
