@@ -570,8 +570,8 @@ pub struct Button {
 }
 
 // FIXME: derive from the style/margin/padding
-const BUTTON_SPACING: f64 = 4.0;
-const ROW_SPACING: f64 = 7.0;
+const BUTTON_SPACING: f64 = 4.67;
+const ROW_SPACING: f64 = 11.33;
 
 /// The graphical representation of a row of buttons
 pub struct Row {

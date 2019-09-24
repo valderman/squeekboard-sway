@@ -1,41 +1,44 @@
 ---
-bounds: { x: 10, y: 10, width: 410, height: 229 }
+bounds: { x: 0, y: 1, width: 360, height: 198 }
 
 outlines:
     default:
         corner_radius: 1
-        bounds: { x: 0, y: 0, width: 37.46341, height: 52 }
+        bounds: { x: 0, y: 0, width: 30.67, height: 40.67 }
     altline:
         corner_radius: 1
-        bounds: { x: 0, y: 0, width: 48.39024, height: 52 }
-    outline7:
+        bounds: { x: 0, y: 0, width: 48, height: 40.67 }
+    wide:
         corner_radius: 1
-        bounds: { x: 0, y: 0, width: 88.97561, height: 52 }
+        bounds: { x: 0, y: 0, width: 57.33, height: 40.67 }
     spaceline:
         corner_radius: 1
-        bounds: { x: 0, y: 0, width: 150.5853, height: 52 }
+        bounds: { x: 0, y: 0, width: 137.33, height: 40.67 }
+    special:
+        corner_radius: 1
+        bounds: { x: 0, y: 0, width: 39.33, height: 40.67 }
 
 views:
     base:
         - "q w e r t y u i o p"
         - "a s d f g h j k l"
         - "Shift_L   z x c v b n m  BackSpace"
-        - "show_numbers preferences         space        .    Return"
+        - "show_numbers preferences         space        period Return"
     upper:
         - "Q W E R T Y U I O P"
         - "A S D F G H J K L"
         - "Shift_L   Z X C V B N M  BackSpace"
-        - "show_numbers preferences         space        .    Return"
+        - "show_numbers preferences         space        period Return"
     numbers:
         - "1 2 3 4 5 6 7 8 9 0"
         - "@ # $ % & - _ + ( )"
         - "show_symbols   , \" ' colon ; ! ?  BackSpace"
-        - "show_letters preferences         space        .    Return"
+        - "show_letters preferences         space        period Return"
     symbols:
         - "~ ` | · √ π τ ÷ × ¶"
         - "© ® £ € ¥ ^ ° * { }"
-        - "show_numbers   \\ / < > = [ ]  BackSpace"
-        - "show_letters preferences         space        .    Return"
+        - "show_numbers_from_symbols   \\ / < > = [ ]  BackSpace"
+        - "show_letters preferences         space        period Return"
 
 buttons:
     Shift_L:
@@ -50,9 +53,14 @@ buttons:
         icon: "edit-clear-symbolic"
     preferences:
         action: "show_prefs"
-        outline: "altline"
+        outline: "special"
         icon: "keyboard-mode-symbolic"
     show_numbers:
+        action:
+            set_view: "numbers"
+        outline: "wide"
+        label: "123"
+    show_numbers_from_symbols:
         action:
             set_view: "numbers"
         outline: "altline"
@@ -60,20 +68,21 @@ buttons:
     show_letters:
         action:
             set_view: "base"
-        outline: "altline"
+        outline: "wide"
         label: "ABC"
     show_symbols:
         action:
             set_view: "symbols"
         outline: "altline"
         label: "*/="
-    ".":
-        outline: altline
+    period:
+        outline: "special"
+        label: "."
     space:
-        outline: spaceline
+        outline: "spaceline"
         label: " "
     Return:
-        outline: outline7
+        outline: "wide"
         icon: "key-enter"
     colon:
         label: ":"

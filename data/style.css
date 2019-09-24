@@ -10,12 +10,12 @@
     border-style: solid;
     border-width: 1px;
     border-color: #5e5c64;
-    border-radius: 2px;
+    border-radius: 3px;
 }
 
 .key:active {
-    background: #1c71d8;
-    border-color: #3584e4;
+    background: #545256;
+    border-color: #716e78;
 }
 
 #Return {
@@ -36,4 +36,39 @@
 #Shift_L:active {
     background: #1c71d8;
     border-color: #3584e4;
+}
+
+#show_numbers {
+    background: #2b292f;
+    border-color: #3e3a44
+}
+
+#show_letters {
+    background: #2b292f;
+    border-color: #3e3a44
+}
+
+#show_symbols {
+    background: #2b292f;
+    border-color: #3e3a44
+}
+
+#show_numbers_from_symbols {
+    background: #2b292f;
+    border-color: #3e3a44
+}
+
+#preferences {
+    background: #2b292f;
+    border-color: #3e3a44
+}
+
+#period {
+    background: #2b292f;
+    border-color: #3e3a44
+}
+
+#BackSpace {
+    background: #2b292f;
+    border-color: #3e3a44
 }
