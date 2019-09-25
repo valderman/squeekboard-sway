@@ -40,6 +40,7 @@ struct _ServerContextService {
 
     GtkWidget *window;
     GtkWidget *widget;
+    guint hiding;
 
     gdouble size_constraint_landscape[2];
     gdouble size_constraint_portrait[2];
@@ -245,6 +246,11 @@ server_context_service_real_show_keyboard (EekboardContextService *_context)
 {
     ServerContextService *context = SERVER_CONTEXT_SERVICE(_context);
 
+    if (context->hiding) {
+	    g_source_remove (context->hiding);
+	    context->hiding = 0;
+    }
+
     if (!context->window)
         make_window (context);
     if (!context->widget)
@@ -255,12 +261,22 @@ server_context_service_real_show_keyboard (EekboardContextService *_context)
     gtk_widget_show (context->window);
 }
 
+static gboolean
+on_hide (ServerContextService *context)
+{
+    gtk_widget_hide (context->window);
+    context->hiding = 0;
+
+    return G_SOURCE_REMOVE;
+}
+
 static void
 server_context_service_real_hide_keyboard (EekboardContextService *_context)
 {
     ServerContextService *context = SERVER_CONTEXT_SERVICE(_context);
 
-    gtk_widget_hide (context->window);
+    if (!context->hiding)
+	context->hiding = g_timeout_add (200, (GSourceFunc) on_hide, context);
 
     EEKBOARD_CONTEXT_SERVICE_CLASS (server_context_service_parent_class)->
         hide_keyboard (_context);
