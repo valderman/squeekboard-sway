@@ -1,4 +1,7 @@
 ---
+row_spacing: 11.33
+button_spacing: 4.67
+
 bounds: { x: 0, y: 6.33, width: 410, height: 250 }
 
 outlines:
