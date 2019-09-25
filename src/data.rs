@@ -218,7 +218,6 @@ enum Action {
 #[derive(Debug, Clone, Deserialize, PartialEq)]
 #[serde(deny_unknown_fields)]
 struct Outline {
-    corner_radius: f64,
     bounds: Bounds,
 }
 
@@ -469,7 +468,6 @@ fn create_button(
         .unwrap_or_else(|| {
             eprintln!("No default outline defied Using 1x1!");
             Outline {
-                corner_radius: 0f64,
                 bounds: Bounds { x: 0f64, y: 0f64, width: 1f64, height: 1f64 },
             }
         });
@@ -483,7 +481,6 @@ fn create_button(
             width: outline.bounds.width,
             height: outline.bounds.height,
         },
-        corner_radius: outline.corner_radius,
         label: label,
         state: state,
     }
@@ -517,7 +514,6 @@ mod tests {
                 },
                 outlines: hashmap!{
                     "default".into() => Outline {
-                        corner_radius: 1f64,
                         bounds: Bounds {
                             x: 0f64, y: 0f64, width: 0f64, height: 0f64
                         }, 

@@ -3,16 +3,12 @@ bounds: { x: 0, y: 6.33, width: 410, height: 250 }
 
 outlines:
     default:
-        corner_radius: 1
         bounds: { x: 0, y: 0, width: 37.46341, height: 52 }
     altline:
-        corner_radius: 1
         bounds: { x: 0, y: 0, width: 48.39024, height: 52 }
     outline7:
-        corner_radius: 1
         bounds: { x: 0, y: 0, width: 88.97561, height: 52 }
     spaceline:
-        corner_radius: 1
         bounds: { x: 0, y: 0, width: 120.5853, height: 52 }
 
 views:

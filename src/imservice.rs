@@ -3,7 +3,6 @@ use std::ffi::CString;
 use std::num::Wrapping;
 use std::string::String;
 
-use super::bitflags;
 use ::util::c::into_cstring;
 
 // Traits

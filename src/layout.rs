@@ -498,7 +498,6 @@ pub mod c {
         ) -> Box<Button> {
             Box::new(Button {
                 name: CString::new(name.clone()).unwrap(),
-                corner_radius: 0f64,
                 bounds: c::Bounds {
                     x: 0f64, y: 0f64, width: 0f64, height: 0f64
                 },
@@ -561,7 +560,6 @@ pub struct Button {
     pub name: CString,
     /// Label to display to the user
     pub label: Label,
-    pub corner_radius: f64,
     /// TODO: position the buttons before they get initial bounds
     /// Position relative to some origin (i.e. parent/row)
     pub bounds: c::Bounds,
