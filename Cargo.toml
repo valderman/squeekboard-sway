@@ -3,11 +3,11 @@ name = "rs"
 version = "0.1.0"
 
 [dependencies]
-bitflags = "1.0"
-maplit = "1.0"
-serde = { version = "1.0", features = ["derive"] }
-serde_yaml = "0.8"
-xkbcommon = { version = "0.4", features = ["wayland"] }
+bitflags = "1.0.*"
+maplit = "1.0.*"
+serde = { version = "1.0.*", features = ["derive"] }
+serde_yaml = "0.8.*"
+xkbcommon = { version = "0.4.*", features = ["wayland"] }
 
 [lib]
 name = "rs"
