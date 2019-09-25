@@ -51,7 +51,7 @@ foreach layout : ['us', 'nb', 'number']
     test(
         'test_layout_' + layout,
         cargo_script,
-        args: [meson.source_root(), '', 'run', '--example', 'test_layout', layout]
+        args: ['', 'run', '--example', 'test_layout', layout]
     )
 endforeach
 
