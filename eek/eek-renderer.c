@@ -40,8 +40,6 @@ typedef struct _EekRendererPrivate
     GtkStyleContext *layout_context;
     GtkStyleContext *button_context;
 
-    EekColor default_foreground_color;
-    EekColor default_background_color;
     gdouble border_width;
 
     gdouble allocation_width;
@@ -53,6 +51,7 @@ typedef struct _EekRendererPrivate
 
     PangoFontDescription *ascii_font;
     PangoFontDescription *font;
+    // TODO: Drop those or transform into general button surface caches
     GHashTable *outline_surface_cache;
     GHashTable *active_outline_surface_cache;
     GHashTable *icons;
@@ -61,9 +60,6 @@ typedef struct _EekRendererPrivate
 } EekRendererPrivate;
 
 G_DEFINE_TYPE_WITH_PRIVATE (EekRenderer, eek_renderer, G_TYPE_OBJECT)
-
-static const EekColor DEFAULT_FOREGROUND_COLOR = {0.3, 0.3, 0.3, 1.0};
-static const EekColor DEFAULT_BACKGROUND_COLOR = {1.0, 1.0, 1.0, 1.0};
 
 /* eek-keyboard-drawing.c */
 static void eek_renderer_real_render_button_label (EekRenderer *self,
@@ -602,8 +598,6 @@ eek_renderer_init (EekRenderer *self)
 
     priv->keyboard = NULL;
     priv->pcontext = NULL;
-    priv->default_foreground_color = DEFAULT_FOREGROUND_COLOR;
-    priv->default_background_color = DEFAULT_BACKGROUND_COLOR;
     priv->border_width = 1.0;
     priv->allocation_width = 0.0;
     priv->allocation_height = 0.0;
@@ -872,30 +866,6 @@ eek_renderer_render_keyboard (EekRenderer *renderer,
 {
     g_return_if_fail (EEK_IS_RENDERER(renderer));
     EEK_RENDERER_GET_CLASS(renderer)->render_keyboard (renderer, cr);
-}
-
-void
-eek_renderer_set_default_foreground_color (EekRenderer    *renderer,
-                                           const EekColor *color)
-{
-    g_return_if_fail (EEK_IS_RENDERER(renderer));
-    g_return_if_fail (color);
-
-    EekRendererPrivate *priv = eek_renderer_get_instance_private (renderer);
-
-    memcpy (&priv->default_foreground_color, color, sizeof(EekColor));
-}
-
-void
-eek_renderer_set_default_background_color (EekRenderer    *renderer,
-                                           const EekColor *color)
-{
-    g_return_if_fail (EEK_IS_RENDERER(renderer));
-    g_return_if_fail (color);
-
-    EekRendererPrivate *priv = eek_renderer_get_instance_private (renderer);
-
-    memcpy (&priv->default_background_color, color, sizeof(EekColor));
 }
 
 void
