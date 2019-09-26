@@ -4,7 +4,7 @@
     font-family: cantarell, sans-serif;
 }
 
-.key {
+button {
     color: #deddda;
     background: #464448;
     border-style: solid;
@@ -13,7 +13,7 @@
     border-radius: 3px;
 }
 
-.key:active {
+button:active {
     background: #545256;
     border-color: #716e78;
 }
