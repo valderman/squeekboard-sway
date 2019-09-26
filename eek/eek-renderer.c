@@ -38,7 +38,7 @@ typedef struct _EekRendererPrivate
     PangoContext *pcontext;
     GtkCssProvider *css_provider;
     GtkStyleContext *layout_context;
-    GtkStyleContext *button_context;
+    GtkStyleContext *button_context; // TODO: maybe move a copy to each button
 
     EekColor default_foreground_color;
     EekColor default_background_color;
@@ -179,35 +179,14 @@ render_keyboard_surface (EekRenderer *renderer, struct squeek_view *view)
 }
 
 static void
-render_button_outline (EekRenderer *renderer,
-                    cairo_t     *cr,
-                    const struct squeek_button *button,
-                    gboolean     active)
+render_button_outline (cairo_t     *cr,
+                       GtkStyleContext *ctx,
+                    const struct squeek_button *button)
 {
-    EekRendererPrivate *priv = eek_renderer_get_instance_private (renderer);
     EekBounds bounds = squeek_button_get_bounds(button);
 
-    /* Set the name of the button on the widget path, using the name obtained
-       from the button's symbol. */
-    g_autoptr (GtkWidgetPath) path = NULL;
-    path = gtk_widget_path_copy (gtk_style_context_get_path (priv->button_context));
-    const char *name = squeek_button_get_name(button);
-    gtk_widget_path_iter_set_name (path, -1, name);
-
-    /* Update the style context with the updated widget path. */
-    gtk_style_context_set_path (priv->button_context, path);
-
-    /* Set the state to take into account whether the button is active
-       (pressed) or normal. */
-    gtk_style_context_set_state(priv->button_context,
-        active ? GTK_STATE_FLAG_ACTIVE : GTK_STATE_FLAG_NORMAL);
-
-    gtk_render_background (priv->button_context,
-                           cr, 0, 0, bounds.width, bounds.height);
-    gtk_render_frame (priv->button_context,
-                      cr, 0, 0, bounds.width, bounds.height);
-
-    gtk_style_context_set_state(priv->button_context, GTK_STATE_FLAG_NORMAL);
+    gtk_render_background (ctx, cr, 0, 0, bounds.width, bounds.height);
+    gtk_render_frame (ctx, cr, 0, 0, bounds.width, bounds.height);
 }
 
 static void
@@ -222,6 +201,22 @@ render_button (EekRenderer *self,
     PangoLayout *layout;
     PangoRectangle extents = { 0, };
     EekColor foreground;
+
+    GtkStyleContext *ctx = priv->button_context;
+    /* Set the name of the button on the widget path, using the name obtained
+       from the button's symbol. */
+    g_autoptr (GtkWidgetPath) path = NULL;
+    path = gtk_widget_path_copy (gtk_style_context_get_path (ctx));
+    const char *name = squeek_button_get_name(place->button);
+    gtk_widget_path_iter_set_name (path, -1, name);
+
+    /* Update the style context with the updated widget path. */
+    gtk_style_context_set_path (ctx, path);
+    /* Set the state to take into account whether the button is active
+       (pressed) or normal. */
+    gtk_style_context_set_state(ctx,
+        active ? GTK_STATE_FLAG_ACTIVE : GTK_STATE_FLAG_NORMAL);
+
 
     /* render outline */
     EekBounds bounds = squeek_button_get_bounds(place->button);
@@ -249,7 +244,7 @@ render_button (EekRenderer *self,
 
         cairo_save (cr);
         eek_renderer_apply_transformation_for_button (self, cr, place, 1.0, FALSE);
-        render_button_outline (self, cr, place->button, active);
+        render_button_outline (cr, ctx, place->button);
         cairo_restore (cr);
 
         cairo_destroy (cr);
@@ -262,7 +257,7 @@ render_button (EekRenderer *self,
     cairo_set_source_surface (cr, outline_surface, 0.0, 0.0);
     cairo_paint (cr);
 
-    eek_renderer_get_foreground_color (self, priv->button_context, &foreground);
+    eek_renderer_get_foreground_color (self, ctx, &foreground);
     /* render icon (if any) */
     const char *icon_name = squeek_button_get_icon_name(place->button);
 
@@ -311,6 +306,7 @@ render_button (EekRenderer *self,
                            foreground.blue,
                            foreground.alpha);
 
+    gtk_style_context_set_state(ctx, GTK_STATE_FLAG_NORMAL);
     pango_cairo_show_layout (cr, layout);
     cairo_restore (cr);
     g_object_unref (layout);
@@ -640,24 +636,30 @@ eek_renderer_init (EekRenderer *self)
     gtk_css_provider_load_from_resource (priv->css_provider,
         "/sm/puri/squeekboard/style.css");
 
-    /* Create a style context for keys */
+    /* Create a style context for the layout */
     GtkWidgetPath *path = gtk_widget_path_new();
     gtk_widget_path_append_type(path, layout_type());
 
     priv->layout_context = gtk_style_context_new();
     gtk_style_context_set_path(priv->layout_context, path);
+    gtk_widget_path_unref(path);
     gtk_style_context_add_provider (priv->layout_context,
         GTK_STYLE_PROVIDER(priv->css_provider),
         GTK_STYLE_PROVIDER_PRIORITY_USER);
 
+    /* Create a style context for the buttons */
+    path = gtk_widget_path_new();
+    gtk_widget_path_append_type(path, layout_type());
     gtk_widget_path_append_type(path, button_type());
     priv->button_context = gtk_style_context_new ();
     gtk_style_context_set_path(priv->button_context, path);
+    gtk_widget_path_unref(path);
+
+    gtk_style_context_set_parent(priv->button_context, priv->layout_context);
     gtk_style_context_set_state (priv->button_context, GTK_STATE_FLAG_NORMAL);
     gtk_style_context_add_provider (priv->button_context,
         GTK_STYLE_PROVIDER(priv->css_provider),
         GTK_STYLE_PROVIDER_PRIORITY_USER);
-    gtk_widget_path_unref(path);
 }
 
 static void
