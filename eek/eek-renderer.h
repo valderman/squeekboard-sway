@@ -57,8 +57,7 @@ struct _EekRendererClass
 
 GType            eek_renderer_get_type         (void) G_GNUC_CONST;
 EekRenderer     *eek_renderer_new              (LevelKeyboard     *keyboard,
-                                                PangoContext    *pcontext,
-                                                GtkStyleContext *scontext);
+                                                PangoContext    *pcontext);
 void             eek_renderer_set_allocation_size
                                                (EekRenderer     *renderer,
                                                 gdouble          width,
