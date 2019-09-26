@@ -179,12 +179,10 @@ render_keyboard_surface (EekRenderer *renderer, struct squeek_view *view)
 }
 
 static void
-render_button_outline (cairo_t     *cr,
-                       GtkStyleContext *ctx,
-                    const struct squeek_button *button)
+render_outline (cairo_t     *cr,
+                GtkStyleContext *ctx,
+                EekBounds bounds)
 {
-    EekBounds bounds = squeek_button_get_bounds(button);
-
     gtk_render_background (ctx, cr, 0, 0, bounds.width, bounds.height);
     gtk_render_frame (ctx, cr, 0, 0, bounds.width, bounds.height);
 }
@@ -244,7 +242,7 @@ render_button (EekRenderer *self,
 
         cairo_save (cr);
         eek_renderer_apply_transformation_for_button (self, cr, place, 1.0, FALSE);
-        render_button_outline (cr, ctx, place->button);
+        render_outline (cr, ctx, bounds);
         cairo_restore (cr);
 
         cairo_destroy (cr);
