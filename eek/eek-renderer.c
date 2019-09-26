@@ -67,11 +67,6 @@ static const EekColor DEFAULT_FOREGROUND_COLOR = {0.3, 0.3, 0.3, 1.0};
 static const EekColor DEFAULT_BACKGROUND_COLOR = {1.0, 1.0, 1.0, 1.0};
 
 /* eek-keyboard-drawing.c */
-extern void _eek_rounded_polygon               (cairo_t     *cr,
-                                                gdouble      radius,
-                                                EekPoint    *points,
-                                                guint         num_points);
-
 static void eek_renderer_real_render_button_label (EekRenderer *self,
                                                 PangoLayout *layout,
                                                 const struct squeek_button *button);
