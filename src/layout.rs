@@ -328,8 +328,8 @@ pub mod c {
                         .map(|button| button.bounds.clone())
                         .collect()
                 }).collect();
-
-                view.place_buttons_with_sizes(sizes, view.spacing.clone());
+                let spacing = view.spacing.clone();
+                view.place_buttons_with_sizes(sizes, spacing);
             }
         }
 
