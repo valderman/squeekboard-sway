@@ -32,6 +32,7 @@ EekBounds squeek_button_get_bounds(const struct squeek_button*);
 const char *squeek_button_get_label(const struct squeek_button*);
 const char *squeek_button_get_icon_name(const struct squeek_button*);
 const char *squeek_button_get_name(const struct squeek_button*);
+const char *squeek_button_get_outline_name(const struct squeek_button*);
 
 struct squeek_key *squeek_button_get_key(const struct squeek_button*);
 uint32_t *squeek_button_has_key(const struct squeek_button* button,

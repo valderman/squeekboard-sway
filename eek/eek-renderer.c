@@ -187,34 +187,17 @@ render_outline (cairo_t     *cr,
     gtk_render_frame (ctx, cr, 0, 0, bounds.width, bounds.height);
 }
 
-static void
-render_button (EekRenderer *self,
-            cairo_t     *cr,
-            struct button_place *place,
-            gboolean     active)
-{
-    EekRendererPrivate *priv = eek_renderer_get_instance_private (self);
+static void render_button_in_context(EekRenderer *self,
+                                     cairo_t     *cr,
+                                     GtkStyleContext *ctx,
+                                     struct button_place *place,
+                                     gboolean active) {
     cairo_surface_t *outline_surface;
     GHashTable *outline_surface_cache;
     PangoLayout *layout;
     PangoRectangle extents = { 0, };
     EekColor foreground;
-
-    GtkStyleContext *ctx = priv->button_context;
-    /* Set the name of the button on the widget path, using the name obtained
-       from the button's symbol. */
-    g_autoptr (GtkWidgetPath) path = NULL;
-    path = gtk_widget_path_copy (gtk_style_context_get_path (ctx));
-    const char *name = squeek_button_get_name(place->button);
-    gtk_widget_path_iter_set_name (path, -1, name);
-
-    /* Update the style context with the updated widget path. */
-    gtk_style_context_set_path (ctx, path);
-    /* Set the state to take into account whether the button is active
-       (pressed) or normal. */
-    gtk_style_context_set_state(ctx,
-        active ? GTK_STATE_FLAG_ACTIVE : GTK_STATE_FLAG_NORMAL);
-
+    EekRendererPrivate *priv = eek_renderer_get_instance_private (self);
 
     /* render outline */
     EekBounds bounds = squeek_button_get_bounds(place->button);
@@ -225,6 +208,7 @@ render_button (EekRenderer *self,
         outline_surface_cache = priv->outline_surface_cache;
 
     outline_surface = g_hash_table_lookup (outline_surface_cache, place->button);
+
     if (!outline_surface) {
         cairo_t *cr;
 
@@ -251,7 +235,6 @@ render_button (EekRenderer *self,
                              (gpointer)place->button,
                              outline_surface);
     }
-
     cairo_set_source_surface (cr, outline_surface, 0.0, 0.0);
     cairo_paint (cr);
 
@@ -286,7 +269,6 @@ render_button (EekRenderer *self,
             return;
         }
     }
-
     /* render label */
     layout = pango_cairo_create_layout (cr);
     eek_renderer_real_render_button_label (self, layout, place->button);
@@ -303,11 +285,42 @@ render_button (EekRenderer *self,
                            foreground.green,
                            foreground.blue,
                            foreground.alpha);
-
-    gtk_style_context_set_state(ctx, GTK_STATE_FLAG_NORMAL);
     pango_cairo_show_layout (cr, layout);
     cairo_restore (cr);
     g_object_unref (layout);
+
+}
+
+static void
+render_button (EekRenderer *self,
+            cairo_t     *cr,
+            struct button_place *place,
+            gboolean     active)
+{
+    EekRendererPrivate *priv = eek_renderer_get_instance_private (self);
+
+    GtkStyleContext *ctx = priv->button_context;
+    /* Set the name of the button on the widget path, using the name obtained
+       from the button's symbol. */
+    g_autoptr (GtkWidgetPath) path = NULL;
+    path = gtk_widget_path_copy (gtk_style_context_get_path (ctx));
+    const char *name = squeek_button_get_name(place->button);
+    gtk_widget_path_iter_set_name (path, -1, name);
+
+    /* Update the style context with the updated widget path. */
+    gtk_style_context_set_path (ctx, path);
+    /* Set the state to take into account whether the button is active
+       (pressed) or normal. */
+    gtk_style_context_set_state(ctx,
+        active ? GTK_STATE_FLAG_ACTIVE : GTK_STATE_FLAG_NORMAL);
+    const char *outline_name = squeek_button_get_outline_name(place->button);
+    gtk_style_context_add_class(ctx, outline_name);
+
+    render_button_in_context(self, cr, ctx, place, active);
+
+    // Save and restore functions don't work if gtk_render_* was used in between
+    gtk_style_context_set_state(ctx, GTK_STATE_FLAG_NORMAL);
+    gtk_style_context_remove_class(ctx, outline_name);
 }
 
 /**

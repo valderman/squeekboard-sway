@@ -40,11 +40,6 @@ pub mod c {
     #[repr(transparent)]
     pub struct UserData(*const c_void);
 
-    /// The index in the relevant outline table
-    #[repr(C)]
-    #[derive(Clone, Debug)]
-    pub struct OutlineRef(u32);
-
     /// Defined in eek-types.h
     #[repr(C)]
     #[derive(Clone, Debug)]
@@ -193,6 +188,13 @@ pub mod c {
     fn squeek_button_get_name(button: *const Button) -> *const c_char {
         let button = unsafe { &*button };
         button.name.as_ptr()
+    }
+    
+    #[no_mangle]
+    pub extern "C"
+    fn squeek_button_get_outline_name(button: *const Button) -> *const c_char {
+        let button = unsafe { &*button };
+        button.outline_name.as_ptr()
     }
 
     #[no_mangle]
@@ -502,6 +504,7 @@ pub mod c {
                 bounds: c::Bounds {
                     x: 0f64, y: 0f64, width: 0f64, height: 0f64
                 },
+                outline_name: CString::new("test").unwrap(),
                 label: Label::Text(CString::new(name).unwrap()),
                 state: state,
             })
@@ -565,6 +568,8 @@ pub struct Button {
     /// TODO: position the buttons before they get initial bounds
     /// Position relative to some origin (i.e. parent/row)
     pub bounds: c::Bounds,
+    /// The name of the visual class applied
+    pub outline_name: CString,
     /// current state, shared with other buttons
     pub state: Rc<RefCell<KeyState>>,
 }

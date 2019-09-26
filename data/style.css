@@ -18,6 +18,13 @@ button:active {
     border-color: #716e78;
 }
 
+button.altline,
+button.special,
+button.wide {
+    background: #2b292f;
+    border-color: #3e3a44
+}
+
 #Return {
     background: #1c71d8;
     border-color: #1a5fb4
@@ -26,49 +33,4 @@ button:active {
 #Return:active {
     background: #1c71d8;
     border-color: #3584e4;
-}
-
-#Shift_L {
-    background: #2b292f;
-    border-color: #3e3a44
-}
-
-#Shift_L:active {
-    background: #1c71d8;
-    border-color: #3584e4;
-}
-
-#show_numbers {
-    background: #2b292f;
-    border-color: #3e3a44
-}
-
-#show_letters {
-    background: #2b292f;
-    border-color: #3e3a44
-}
-
-#show_symbols {
-    background: #2b292f;
-    border-color: #3e3a44
-}
-
-#show_numbers_from_symbols {
-    background: #2b292f;
-    border-color: #3e3a44
-}
-
-#preferences {
-    background: #2b292f;
-    border-color: #3e3a44
-}
-
-#period {
-    background: #2b292f;
-    border-color: #3e3a44
-}
-
-#BackSpace {
-    background: #2b292f;
-    border-color: #3e3a44
 }
