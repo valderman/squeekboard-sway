@@ -170,6 +170,8 @@ fn load_layout_with_fallback(
 #[derive(Debug, Deserialize, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct Layout {
+    row_spacing: f64,
+    button_spacing: f64,
     bounds: Bounds,
     views: HashMap<String, Vec<ButtonIds>>,
     #[serde(default)] 
@@ -301,6 +303,10 @@ impl Layout {
                         y: self.bounds.y,
                         width: self.bounds.width,
                         height: self.bounds.height,
+                    },
+                    spacing: ::layout::Spacing {
+                        row: self.row_spacing,
+                        button: self.button_spacing,
                     },
                     rows: view.iter().map(|row| {
                         Box::new(::layout::Row {
@@ -499,6 +505,8 @@ mod tests {
                 PathBuf::from("tests/layout.yaml")
             ).unwrap(),
             Layout {
+                row_spacing: 0f64,
+                button_spacing: 0f64,
                 bounds: Bounds { x: 0f64, y: 0f64, width: 0f64, height: 0f64 },
                 views: hashmap!(
                     "base".into() => vec!("test".into()),

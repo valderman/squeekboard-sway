@@ -328,8 +328,8 @@ pub mod c {
                         .map(|button| button.bounds.clone())
                         .collect()
                 }).collect();
-
-                view.place_buttons_with_sizes(sizes);
+                let spacing = view.spacing.clone();
+                view.place_buttons_with_sizes(sizes, spacing);
             }
         }
 
@@ -440,6 +440,10 @@ pub mod c {
                         x: 0f64, y: 0f64,
                         width: 0f64, height: 0f64
                     },
+                    spacing: Spacing {
+                        button: 0f64,
+                        row: 0f64,
+                    },
                     rows: vec!(row),
                 };
 
@@ -458,6 +462,10 @@ pub mod c {
                     bounds: Bounds {
                         x: 0f64, y: 0f64,
                         width: 0f64, height: 0f64
+                    },
+                    spacing: Spacing {
+                        button: 0f64,
+                        row: 0f64,
                     },
                     rows: Vec::new(),
                 };
@@ -567,10 +575,6 @@ pub struct Button {
     pub state: Rc<RefCell<KeyState>>,
 }
 
-// FIXME: derive from the style/margin/padding
-const BUTTON_SPACING: f64 = 4.67;
-const ROW_SPACING: f64 = 11.33;
-
 /// The graphical representation of a row of buttons
 pub struct Row {
     pub buttons: Vec<Box<Button>>,
@@ -597,7 +601,7 @@ impl Row {
         }
     }
     
-    fn calculate_button_positions(outlines: Vec<c::Bounds>)
+    fn calculate_button_positions(outlines: Vec<c::Bounds>, button_spacing: f64)
         -> Vec<c::Bounds>
     {
         let mut x_offset = 0f64;
@@ -607,7 +611,7 @@ impl Row {
                 x: x_offset,
                 ..outline.clone()
             };
-            x_offset += outline.width + BUTTON_SPACING;
+            x_offset += outline.width + button_spacing;
             position
         }).collect()
     }
@@ -646,9 +650,16 @@ impl Row {
     }
 }
 
+#[derive(Clone, Debug)]
+pub struct Spacing {
+    pub row: f64,
+    pub button: f64,
+}
+
 pub struct View {
     /// Position relative to keyboard origin
     pub bounds: c::Bounds,
+    pub spacing: Spacing,
     pub rows: Vec<Box<Row>>,
 }
 
@@ -660,7 +671,9 @@ impl View {
     /// and derive a scaling factor that lets contents fit into view)
     /// (or TODO: blow up view bounds to match contents
     /// and then scale the entire thing)
-    fn calculate_row_positions(&self, sizes: Vec<Size>) -> Vec<c::Bounds> {
+    fn calculate_row_positions(&self, sizes: Vec<Size>, row_spacing: f64)
+        -> Vec<c::Bounds>
+    {
         let mut y_offset = self.bounds.y;
         sizes.into_iter().map(|size| {
             let position = c::Bounds {
@@ -669,7 +682,7 @@ impl View {
                 width: size.width,
                 height: size.height,
             };
-            y_offset += size.height + ROW_SPACING;
+            y_offset += size.height + row_spacing;
             position
         }).collect()
     }
@@ -678,19 +691,23 @@ impl View {
     /// The view itself will not be affected by the sizes
     fn place_buttons_with_sizes(
         &mut self,
-        button_outlines: Vec<Vec<c::Bounds>>
+        button_outlines: Vec<Vec<c::Bounds>>,
+        spacing: Spacing,
     ) {
         // Determine all positions
         let button_positions: Vec<_>
             = button_outlines.into_iter()
-                .map(Row::calculate_button_positions)
+                .map(|outlines| {
+                    Row::calculate_button_positions(outlines, spacing.button)
+                })
                 .collect();
         
         let row_sizes = button_positions.iter()
             .map(Row::calculate_row_size)
             .collect();
 
-        let row_positions = self.calculate_row_positions(row_sizes);
+        let row_positions
+            = self.calculate_row_positions(row_sizes, spacing.row);
 
         // Apply all positions
         for ((mut row, row_position), button_positions)
