@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 # This script manages Cargo operations
 # while keeping the artifact directory within the build tree
