@@ -8,7 +8,7 @@ export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 
 # The Debian version of linked-hash-map doesn't provide any hash,
 # causing Cargo to refuse to build with a crates.io copy
-build:
+build-arch:
 	rm Cargo.lock
 	dh $@ --builddirectory=_build --buildsystem=meson
 
