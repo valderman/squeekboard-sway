@@ -6,18 +6,19 @@
 
 set -e
 
-SCRIPT_PATH=`realpath $0`
-SOURCE_DIR=`dirname $0`
+SCRIPT_PATH="$(realpath "$0")"
+SOURCE_DIR="$(dirname "$SCRIPT_PATH")"
 
-export CARGO_TARGET_DIR=`pwd`
-if [ ! -z ${1} ]; then
-    OUT_PATH=`realpath "${1}"`
+CARGO_TARGET_DIR="$(pwd)"
+export CARGO_TARGET_DIR
+if [ -n "${1}" ]; then
+    OUT_PATH="$(realpath "$1")"
 fi
 
-cd $SOURCE_DIR
+cd "$SOURCE_DIR"
 shift
-cargo $BUILD_ARG $@
+cargo "$@"
 
-if [ ! -z ${OUT_PATH} ]; then
+if [ -n "${OUT_PATH}" ]; then
     cp "${CARGO_TARGET_DIR}"/debug/librs.a "${OUT_PATH}"
 fi
