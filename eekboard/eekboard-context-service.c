@@ -51,7 +51,6 @@ enum {
     PROP_0, // Magic: without this, keyboard is not useable in g_object_notify
     PROP_KEYBOARD,
     PROP_VISIBLE,
-    PROP_FULLSCREEN,
     PROP_LAST
 };
 
@@ -70,7 +69,6 @@ static guint signals[LAST_SIGNAL] = { 0, };
 struct _EekboardContextServicePrivate {
     gboolean enabled;
     gboolean visible;
-    gboolean fullscreen;
 
     LevelKeyboard *keyboard; // currently used keyboard
     GHashTable *keyboard_hash; // a table of available keyboards, per layout
@@ -170,9 +168,6 @@ eekboard_context_service_set_property (GObject      *object,
     case PROP_VISIBLE:
         context->priv->visible = g_value_get_boolean (value);
         break;
-    case PROP_FULLSCREEN:
-        context->priv->fullscreen = g_value_get_boolean (value);
-        break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
         break;
@@ -193,9 +188,6 @@ eekboard_context_service_get_property (GObject    *object,
         break;
     case PROP_VISIBLE:
         g_value_set_boolean (value, context->priv->visible);
-        break;
-    case PROP_FULLSCREEN:
-        g_value_set_boolean (value, context->priv->fullscreen);
         break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -401,20 +393,6 @@ eekboard_context_service_class_init (EekboardContextServiceClass *klass)
     g_object_class_install_property (gobject_class,
                                      PROP_VISIBLE,
                                      pspec);
-
-    /**
-     * EekboardContextService:fullscreen:
-     *
-     * Flag to indicate if keyboard is rendered in fullscreen mode.
-     */
-    pspec = g_param_spec_boolean ("fullscreen",
-                                  "Fullscreen",
-                                  "Fullscreen",
-                                  FALSE,
-                                  G_PARAM_READWRITE);
-    g_object_class_install_property (gobject_class,
-                                     PROP_FULLSCREEN,
-                                     pspec);
 }
 
 static void
@@ -522,19 +500,6 @@ LevelKeyboard *
 eekboard_context_service_get_keyboard (EekboardContextService *context)
 {
     return context->priv->keyboard;
-}
-
-/**
- * eekboard_context_service_get_fullscreen:
- * @context: an #EekboardContextService
- *
- * Check if keyboard is rendered in fullscreen mode in @context.
- * Returns: %TRUE or %FALSE
- */
-gboolean
-eekboard_context_service_get_fullscreen (EekboardContextService *context)
-{
-    return context->priv->fullscreen;
 }
 
 void eekboard_context_service_set_keymap(EekboardContextService *context,

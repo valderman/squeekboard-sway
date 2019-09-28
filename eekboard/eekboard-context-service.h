@@ -98,8 +98,6 @@ void          eekboard_context_service_hide_keyboard
                                               (EekboardContextService *context);
 void          eekboard_context_service_destroy (EekboardContextService *context);
 LevelKeyboard *eekboard_context_service_get_keyboard(EekboardContextService *context);
-gboolean      eekboard_context_service_get_fullscreen
-                                              (EekboardContextService *context);
 
 void eekboard_context_service_set_keymap(EekboardContextService *context,
                                          const LevelKeyboard *keyboard);
