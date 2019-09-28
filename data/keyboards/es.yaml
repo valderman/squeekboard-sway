@@ -1,0 +1,98 @@
+---
+row_spacing: 11.33
+button_spacing: 4.67
+
+bounds: { x: 0, y: 1, width: 360, height: 198 }
+
+outlines:
+    default:
+        bounds: { x: 0, y: 0, width: 30.67, height: 40.67 }
+    altline:
+        bounds: { x: 0, y: 0, width: 48, height: 40.67 }
+    wide:
+        bounds: { x: 0, y: 0, width: 57.33, height: 40.67 }
+    spaceline:
+        bounds: { x: 0, y: 0, width: 95.00, height: 40.67 }
+    special:
+        bounds: { x: 0, y: 0, width: 39.33, height: 40.67 }
+
+views:
+    base:
+        - "q w e r t y u i o p"
+        - "a s d f g h j k l ñ"
+        - "Shift_L   z x c v b n m  BackSpace"
+        - "show_numbers show_eschar preferences         space        ? period Return"
+    upper:
+        - "Q W E R T Y U I O P"
+        - "A S D F G H J K L Ñ"
+        - "Shift_L   Z X C V B N M  BackSpace"
+        - "show_numbers show_eschar preferences         space        ¿ period Return"
+    numbers:
+        - "1 2 3 4 5 6 7 8 9 0"
+        - "@ # € % & - _ + ( )"
+        - "show_symbols   , \" ' colon ; ! ?  BackSpace"
+        - "show_letters show_eschar preferences         space        ? period Return"
+    symbols:
+        - "~ ` | · √ π τ ÷ × ¶"
+        - "© ® £ $ ¥ ^ ° * { }"
+        - "show_numbers_from_symbols   \\ / < > = [ ]  BackSpace"
+        - "show_letters show_eschar preferences         space        ? period Return"
+    eschar:
+        - "á é í ó ú Á É Í Ó Ú"
+        - "ñ Ñ ç Ç « » ¡ ! { }"
+        - "show_numbers_from_symbols   \\ / < > = [ ]  BackSpace"
+        - "show_letters show_symbols preferences         space        ? period Return"
+
+buttons:
+    Shift_L:
+        action:
+            locking:
+                lock_view: "upper"
+                unlock_view: "base"
+        outline: "altline"
+        icon: "key-shift"
+    BackSpace:
+        outline: "altline"
+        icon: "edit-clear-symbolic"
+    preferences:
+        action: "show_prefs"
+        outline: "default"
+        icon: "keyboard-mode-symbolic"
+    show_numbers:
+        action:
+            set_view: "numbers"
+        outline: "altline"
+        label: "123"
+    show_numbers_from_symbols:
+        action:
+            set_view: "numbers"
+        outline: "altline"
+        label: "123"
+    show_letters:
+        action:
+            set_view: "base"
+        outline: "altline"
+        label: "ABC"
+    show_symbols:
+        action:
+            set_view: "symbols"
+        outline: "altline"
+        label: "*/="
+    show_eschar:
+        action:
+            set_view: "eschar"
+        outline: "altline"
+        label: "áÇ"
+    period:
+        outline: "default"
+        label: "."
+    space:
+        outline: "spaceline"
+        label: " "
+    Return:
+        outline: "altline"
+        icon: "key-enter"
+    colon:
+        label: ":"
+    "\"":
+        keysym: "quotedbl"
