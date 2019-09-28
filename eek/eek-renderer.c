@@ -578,7 +578,7 @@ static GType new_type(char *name) {
 static GType layout_type() {
     static GType type = 0;
     if (!type) {
-        type = new_type("layout");
+        type = new_type("sq_view");
     }
     return type;
 }
@@ -586,7 +586,7 @@ static GType layout_type() {
 static GType button_type() {
     static GType type = 0;
     if (!type) {
-        type = new_type("button");
+        type = new_type("sq_button");
     }
     return type;
 }

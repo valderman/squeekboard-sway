@@ -1,10 +1,10 @@
-layout {
+sq_view {
     background-color: rgba(0, 0, 0, 255);
     color: #ffffff;
     font-family: cantarell, sans-serif;
 }
 
-button {
+sq_button {
     color: #deddda;
     background: #464448;
     border-style: solid;
@@ -13,7 +13,7 @@ button {
     border-radius: 3px;
 }
 
-button:active {
+sq_button:active {
     background: #545256;
     border-color: #716e78;
 }
