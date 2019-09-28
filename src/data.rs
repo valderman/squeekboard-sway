@@ -40,7 +40,7 @@ pub mod c {
             .expect("Bad layout name")
             .expect("Empty layout name");
 
-        let layout = load_layout_with_fallback(name);
+        let layout = build_layout_with_fallback(name);
         Box::into_raw(Box::new(layout))
     }
 }
@@ -76,6 +76,7 @@ pub fn load_layout_from_resource(
                 .map_err(|e| LoadError::BadResource(e))
 }
 
+#[derive(Debug, PartialEq)]
 enum DataSource {
     File(PathBuf),
     Resource(String),
@@ -93,16 +94,14 @@ impl fmt::Display for DataSource {
 /// Tries to load the layout from the first place where it's present.
 /// If the layout exists, but is broken, fallback is activated.
 fn load_layout(
-    name: &str
+    name: &str,
+    keyboards_path: Option<PathBuf>,
 ) -> (
-    Result<::layout::Layout, LoadError>, // last attempted
+    Result<Layout, LoadError>, // last attempted
     DataSource, // last attempt source
     Option<(LoadError, DataSource)>, // first attempt source
 ) {
-    let path = env::var_os("SQUEEKBOARD_KEYBOARDSDIR")
-        .map(PathBuf::from)
-        .or_else(|| xdg::data_path("squeekboard/keyboards"))
-        .map(|path| path.join(name).with_extension("yaml"));
+    let path = keyboards_path.map(|path| path.join(name).with_extension("yaml"));
 
     let layout = match path {
         Some(path) => Some((
@@ -126,6 +125,19 @@ fn load_layout(
             DataSource::Resource(name.into()),
         ),
     };
+
+    (layout, source, failed_attempt)
+}
+
+fn build_layout(
+    name: &str,
+    keyboards_path: Option<PathBuf>,
+) -> (
+    Result<::layout::Layout, LoadError>, // last attempted
+    DataSource, // last attempt source
+    Option<(LoadError, DataSource)>, // first attempt source
+) {
+    let (layout, source, failed_attempt) = load_layout(name, keyboards_path);
     
     // FIXME: attempt at each step of fallback
     let layout = layout.and_then(
@@ -135,10 +147,14 @@ fn load_layout(
     (layout, source, failed_attempt)
 }
 
-fn load_layout_with_fallback(
+fn build_layout_with_fallback(
     name: &str
 ) -> ::layout::Layout {
-    let (layout, source, attempt) = load_layout(name);
+    let path = env::var_os("SQUEEKBOARD_KEYBOARDSDIR")
+        .map(PathBuf::from)
+        .or_else(|| xdg::data_path("squeekboard/keyboards"));
+    
+    let (layout, source, attempt) = build_layout(name, path.clone());
     
     if let Some((e, source)) = attempt {
         eprintln!(
@@ -153,7 +169,7 @@ fn load_layout_with_fallback(
                 "Failed to load layout from {}: {}, using fallback",
                 source, e
             );
-            load_layout(FALLBACK_LAYOUT_NAME)
+            build_layout(FALLBACK_LAYOUT_NAME, path)
         },
         (res, source) => (res, source, None),
     };
@@ -618,6 +634,20 @@ mod tests {
         assert!(load_layout_from_resource(FALLBACK_LAYOUT_NAME)
             .and_then(|layout| layout.build().map_err(LoadError::BadKeyMap))
             .is_ok()
+        );
+    }
+    
+    /// First fallback should be to builtin, not to FALLBACK_LAYOUT_NAME
+    #[test]
+    fn fallbacks_order() {
+        let (layout, source, _failure) = load_layout(
+            "nb",
+            Some(PathBuf::from("tests"))
+        );
+        
+        assert_eq!(
+            source,
+            load_layout("nb", None).1
         );
     }
     
