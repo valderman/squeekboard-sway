@@ -28,7 +28,6 @@ sources = [
   enums,
   '../eekboard/key-emitter.c',
   '../eekboard/eekboard-context-service.c',
-  '../eekboard/eekboard-context.c',
   '../eekboard/eekboard-service.c',
   #  '../eekboard/eekboard-xklutil.c',
   squeekboard_resources,

@@ -52,17 +52,6 @@ struct _ServerContextServiceClass {
 
 G_DEFINE_TYPE (ServerContextService, server_context_service, EEKBOARD_TYPE_CONTEXT_SERVICE);
 
-static void set_geometry  (ServerContextService *context);
-
-static void
-on_monitors_changed (GdkScreen            *screen,
-                     ServerContextService *context)
-
-{
-    if (context->window)
-        set_geometry (context);
-}
-
 static void
 on_destroy (GtkWidget *widget, gpointer user_data)
 {
@@ -109,15 +98,6 @@ on_notify_keyboard (GObject              *object,
 }
 
 static void
-on_notify_fullscreen (GObject              *object,
-                      GParamSpec           *spec,
-                      ServerContextService *context)
-{
-    if (context->window)
-        set_geometry (context);
-}
-
-static void
 on_notify_map (GObject    *object,
                ServerContextService *context)
 {
@@ -130,49 +110,6 @@ on_notify_unmap (GObject    *object,
                  ServerContextService *context)
 {
     g_object_set (context, "visible", FALSE, NULL);
-}
-
-
-static void
-set_geometry (ServerContextService *context)
-{
-    GdkScreen   *screen   = gdk_screen_get_default ();
-    GdkWindow   *root     = gdk_screen_get_root_window (screen);
-    GdkDisplay  *display  = gdk_display_get_default ();
-    GdkMonitor  *monitor  = gdk_display_get_monitor_at_window (display, root);
-    LevelKeyboard *keyboard = eekboard_context_service_get_keyboard (EEKBOARD_CONTEXT_SERVICE(context));
-
-    GdkRectangle rect;
-
-    gdk_monitor_get_geometry (monitor, &rect);
-    EekBounds bounds = squeek_view_get_bounds (level_keyboard_current(keyboard));
-
-    if (eekboard_context_service_get_fullscreen (EEKBOARD_CONTEXT_SERVICE(context))) {
-        gint width  = rect.width;
-        gint height = rect.height;
-
-        if (width > height) {
-            width  *= context->size_constraint_landscape[0];
-            height *= context->size_constraint_landscape[1];
-        } else {
-            width  *= context->size_constraint_portrait[0];
-            height *= context->size_constraint_portrait[1];
-        }
-
-        if (width * bounds.height > height * bounds.width)
-            width = (height / bounds.height) * bounds.width;
-        else
-            height = (width / bounds.width) * bounds.height;
-
-        gtk_window_resize (GTK_WINDOW(context->widget), width, height);
-
-        gtk_window_move (GTK_WINDOW(context->window),
-                         (rect.width - width) / 2,
-                         rect.height - height);
-
-        gtk_window_set_decorated (GTK_WINDOW(context->window), FALSE);
-        gtk_window_set_resizable (GTK_WINDOW(context->window), FALSE);
-    }
 }
 
 #define KEYBOARD_HEIGHT 210
@@ -238,7 +175,6 @@ make_widget (ServerContextService *context)
     gtk_widget_set_has_tooltip (context->widget, TRUE);
     gtk_container_add (GTK_CONTAINER(context->window), context->widget);
     gtk_widget_show (context->widget);
-    set_geometry (context);
 }
 
 static void
@@ -365,20 +301,9 @@ server_context_service_class_init (ServerContextServiceClass *klass)
 static void
 server_context_service_init (ServerContextService *context)
 {
-    GdkScreen *screen = gdk_screen_get_default ();
-
-    g_signal_connect (screen,
-                      "monitors-changed",
-                      G_CALLBACK(on_monitors_changed),
-                      context);
     g_signal_connect (context,
                       "notify::keyboard",
                       G_CALLBACK(on_notify_keyboard),
-                      context);
-
-    g_signal_connect (context,
-                      "notify::fullscreen",
-                      G_CALLBACK(on_notify_fullscreen),
                       context);
 }
 
