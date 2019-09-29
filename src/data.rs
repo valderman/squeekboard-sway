@@ -480,6 +480,7 @@ fn create_button(
 
     ::layout::Button {
         name: cname,
+        outline_name: CString::new(outline_name).expect("Bad outline"),
         // TODO: do layout before creating buttons
         bounds: ::layout::c::Bounds {
             x: outline.bounds.x,
