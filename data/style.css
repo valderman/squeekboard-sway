@@ -18,9 +18,9 @@ sq_button:active {
     border-color: #716e78;
 }
 
-button.altline,
-button.special,
-button.wide {
+sq_button.altline,
+sq_button.special,
+sq_button.wide {
     background: #2b292f;
     border-color: #3e3a44
 }
