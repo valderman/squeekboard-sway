@@ -69,7 +69,7 @@ static void eek_renderer_real_render_button_label (EekRenderer *self,
 static void invalidate                         (EekRenderer *renderer);
 static void render_button                         (EekRenderer *self,
                                                 cairo_t     *cr, struct button_place *place,
-                                                gboolean     active);
+                                                gboolean     pressed, gboolean locked);
 
 struct _CreateKeyboardSurfaceCallbackData {
     cairo_t *cr;
@@ -99,7 +99,7 @@ create_keyboard_surface_button_callback (struct squeek_button *button,
         .row = data->row,
         .button = button,
     };
-    render_button (data->renderer, data->cr, &place, FALSE);
+    render_button (data->renderer, data->cr, &place, FALSE, FALSE);
 
     cairo_restore (data->cr);
 }
@@ -286,7 +286,8 @@ static void
 render_button (EekRenderer *self,
             cairo_t     *cr,
             struct button_place *place,
-            gboolean     active)
+               gboolean     pressed,
+               gboolean     locked)
 {
     EekRendererPrivate *priv = eek_renderer_get_instance_private (self);
 
@@ -303,15 +304,21 @@ render_button (EekRenderer *self,
     /* Set the state to take into account whether the button is active
        (pressed) or normal. */
     gtk_style_context_set_state(ctx,
-        active ? GTK_STATE_FLAG_ACTIVE : GTK_STATE_FLAG_NORMAL);
+        pressed ? GTK_STATE_FLAG_ACTIVE : GTK_STATE_FLAG_NORMAL);
     const char *outline_name = squeek_button_get_outline_name(place->button);
+    if (locked) {
+        gtk_style_context_add_class(ctx, "locked");
+    }
     gtk_style_context_add_class(ctx, outline_name);
 
-    render_button_in_context(self, cr, ctx, place, active);
+    render_button_in_context(self, cr, ctx, place, pressed);
 
     // Save and restore functions don't work if gtk_render_* was used in between
     gtk_style_context_set_state(ctx, GTK_STATE_FLAG_NORMAL);
     gtk_style_context_remove_class(ctx, outline_name);
+    if (locked) {
+        gtk_style_context_remove_class(ctx, "locked");
+    }
 }
 
 /**
@@ -442,7 +449,8 @@ eek_renderer_real_render_button (EekRenderer *self,
     struct squeek_key *key = squeek_button_get_key(place->button);
     render_button (
                 self, cr, place,
-                squeek_key_is_pressed(key) || squeek_key_is_locked (key)
+                squeek_key_is_pressed(key),
+                squeek_key_is_locked (key)
     );
     cairo_restore (cr);
 }
