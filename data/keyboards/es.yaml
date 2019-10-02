@@ -40,8 +40,8 @@ views:
     eschars:
         - "á é í ó ú Á É Í Ó Ú"
         - "à è ì ò ù À È Ì Ò Ù"
-        - "show_numbers ü ç Ü Ç ¡ « »  BackSpace"
-        - "show_letters show_symbols preferences         space        ! period Return"
+        - "show_numbers ü ç ï Ü Ç Ï ¡  BackSpace"
+        - "show_letters show_eschars preferences         space        « » Return"
 
 buttons:
     Shift_L:
