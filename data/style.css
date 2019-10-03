@@ -25,6 +25,11 @@ sq_button.wide {
     border-color: #3e3a44
 }
 
+sq_button.locked {
+    background: #ffffff;
+    color: #2b292f;
+}
+
 #Return {
     background: #1c71d8;
     border-color: #1a5fb4
