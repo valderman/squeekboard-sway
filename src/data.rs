@@ -67,15 +67,6 @@ impl fmt::Display for LoadError {
     }
 }
 
-pub fn load_layout_from_resource(
-    name: &str
-) -> Result<Layout, LoadError> {
-    let data = resources::get_keyboard(name)
-                .ok_or(LoadError::MissingResource)?;
-    serde_yaml::from_str(data)
-                .map_err(|e| LoadError::BadResource(e))
-}
-
 #[derive(Debug, PartialEq)]
 enum DataSource {
     File(PathBuf),
@@ -101,11 +92,13 @@ fn load_layout(
     DataSource, // last attempt source
     Option<(LoadError, DataSource)>, // first attempt source
 ) {
-    let path = keyboards_path.map(|path| path.join(name).with_extension("yaml"));
+    let path = keyboards_path.map(|path|
+        path.join(name).with_extension("yaml")
+    );
 
     let layout = match path {
         Some(path) => Some((
-            Layout::from_yaml_stream(path.clone())
+            Layout::from_file(path.clone())
                 .map_err(LoadError::BadData)
                 .and_then(|layout|
                     layout.build().map_err(LoadError::BadKeyMap)
@@ -124,7 +117,7 @@ fn load_layout(
     let (layout, source) = match layout {
         Some((layout, path)) => (Ok(layout), path),
         None => (
-            load_layout_from_resource(name)
+            Layout::from_resource(name)
                 .and_then(|layout|
                     layout.build().map_err(LoadError::BadKeyMap)
                 ),
@@ -135,6 +128,24 @@ fn load_layout(
     (layout, source, failed_attempt)
 }
 
+fn log_attempt_info(attempt: Option<(LoadError, DataSource)>) {
+    match attempt {
+        Some((
+            LoadError::BadData(Error::Missing(_e)),
+            DataSource::File(_file)
+        )) => {
+            // Missing file, not to worry. TODO: print in debug logging level
+        }
+        Some((e, source)) => {
+            eprintln!(
+                "Failed to load layout from {}: {}, trying builtin",
+                source, e
+            );
+        },
+        _ => {}
+    };
+}
+
 fn load_layout_with_fallback(
     name: &str
 ) -> ::layout::Layout {
@@ -143,13 +154,8 @@ fn load_layout_with_fallback(
         .or_else(|| xdg::data_path("squeekboard/keyboards"));
     
     let (layout, source, attempt) = load_layout(name, path.clone());
-    
-    if let Some((e, source)) = attempt {
-        eprintln!(
-            "Failed to load layout from {}: {}, trying builtin",
-            source, e
-        );
-    };
+
+    log_attempt_info(attempt);
     
     let (layout, source, attempt) = match (layout, source) {
         (Err(e), source) => {
@@ -162,12 +168,7 @@ fn load_layout_with_fallback(
         (res, source) => (res, source, None),
     };
 
-    if let Some((e, source)) = attempt {
-        eprintln!(
-            "Failed to load layout from {}: {}, trying builtin",
-            source, e
-        );
-    };
+    log_attempt_info(attempt);
 
     match (layout, source) {
         (Err(e), source) => {
@@ -241,10 +242,15 @@ struct Outline {
     bounds: Bounds,
 }
 
+/// Errors encountered loading the layout into yaml
 #[derive(Debug)]
 pub enum Error {
     Yaml(serde_yaml::Error),
     Io(io::Error),
+    /// The file was missing.
+    /// It's distinct from Io in order to make it matchable
+    /// without calling io::Error::kind()
+    Missing(io::Error),
 }
 
 impl fmt::Display for Error {
@@ -252,21 +258,38 @@ impl fmt::Display for Error {
         match self {
             Error::Yaml(e) => write!(f, "YAML: {}", e),
             Error::Io(e) => write!(f, "IO: {}", e),
+            Error::Missing(e) => write!(f, "Missing: {}", e),
+        }
+    }
+}
+
+impl From<io::Error> for Error {
+    fn from(e: io::Error) -> Self {
+        let kind = e.kind();
+        match kind {
+            io::ErrorKind::NotFound => Error::Missing(e),
+            _ => Error::Io(e),
         }
     }
 }
 
 impl Layout {
-    fn from_yaml_stream(path: PathBuf) -> Result<Layout, Error> {
+    pub fn from_resource(name: &str) -> Result<Layout, LoadError> {
+        let data = resources::get_keyboard(name)
+                    .ok_or(LoadError::MissingResource)?;
+        serde_yaml::from_str(data)
+                    .map_err(LoadError::BadResource)
+    }
+
+    fn from_file(path: PathBuf) -> Result<Layout, Error> {
         let infile = BufReader::new(
             fs::OpenOptions::new()
                 .read(true)
-                .open(&path)
-                .map_err(Error::Io)?
+                .open(&path)?
         );
-        serde_yaml::from_reader(infile)
-            .map_err(Error::Yaml)
+        serde_yaml::from_reader(infile).map_err(Error::Yaml)
     }
+
     pub fn build(self) -> Result<::layout::Layout, FormattingError> {
         let button_names = self.views.values()
             .flat_map(|rows| {
@@ -520,9 +543,7 @@ mod tests {
     #[test]
     fn test_parse_path() {
         assert_eq!(
-            Layout::from_yaml_stream(
-                PathBuf::from("tests/layout.yaml")
-            ).unwrap(),
+            Layout::from_file(PathBuf::from("tests/layout.yaml")).unwrap(),
             Layout {
                 row_spacing: 0f64,
                 button_spacing: 0f64,
@@ -553,7 +574,7 @@ mod tests {
     /// Check if the default protection works
     #[test]
     fn test_empty_views() {
-        let out = Layout::from_yaml_stream(PathBuf::from("tests/layout2.yaml"));
+        let out = Layout::from_file(PathBuf::from("tests/layout2.yaml"));
         match out {
             Ok(_) => assert!(false, "Data mistakenly accepted"),
             Err(e) => {
@@ -571,7 +592,7 @@ mod tests {
 
     #[test]
     fn test_extra_field() {
-        let out = Layout::from_yaml_stream(PathBuf::from("tests/layout3.yaml"));
+        let out = Layout::from_file(PathBuf::from("tests/layout3.yaml"));
         match out {
             Ok(_) => assert!(false, "Data mistakenly accepted"),
             Err(e) => {
@@ -590,7 +611,7 @@ mod tests {
     
     #[test]
     fn test_layout_punctuation() {
-        let out = Layout::from_yaml_stream(PathBuf::from("tests/layout_key1.yaml"))
+        let out = Layout::from_file(PathBuf::from("tests/layout_key1.yaml"))
             .unwrap()
             .build()
             .unwrap();
@@ -605,7 +626,7 @@ mod tests {
 
     #[test]
     fn test_layout_unicode() {
-        let out = Layout::from_yaml_stream(PathBuf::from("tests/layout_key2.yaml"))
+        let out = Layout::from_file(PathBuf::from("tests/layout_key2.yaml"))
             .unwrap()
             .build()
             .unwrap();
@@ -620,7 +641,7 @@ mod tests {
     
     #[test]
     fn parsing_fallback() {
-        assert!(load_layout_from_resource(FALLBACK_LAYOUT_NAME)
+        assert!(Layout::from_resource(FALLBACK_LAYOUT_NAME)
             .and_then(|layout| layout.build().map_err(LoadError::BadKeyMap))
             .is_ok()
         );

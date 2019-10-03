@@ -3,13 +3,13 @@ extern crate xkbcommon;
 
 use std::env;
 
-use rs::data::{ load_layout_from_resource, LoadError };
+use rs::data::{ Layout, LoadError };
 
 use xkbcommon::xkb;
 
 
 fn check_layout(name: &str) {
-    let layout = load_layout_from_resource(name)
+    let layout = Layout::from_resource(name)
         .and_then(|layout| layout.build().map_err(LoadError::BadKeyMap))
         .expect("layout broken");
     
