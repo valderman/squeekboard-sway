@@ -1,3 +1,9 @@
+squeekboard (1.2.1) amber-phone; urgency=medium
+
+  * Use different distribution
+
+ -- Dorota Czaplejewicz <dorota.czaplejewicz@puri.sm>  Tue, 08 Oct 2019 10:56:10 +0000
+
 squeekboard (1.2.0) unstable; urgency=medium
 
   * Use Cargo-based dependencies
