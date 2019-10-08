@@ -14,8 +14,8 @@ sq_button {
 }
 
 sq_button:active {
-    background: #545256;
-    border-color: #716e78;
+    background: #747077;
+    border-color: #96949d;
 }
 
 sq_button.altline,
