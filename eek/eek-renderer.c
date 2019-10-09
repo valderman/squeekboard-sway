@@ -174,8 +174,22 @@ render_outline (cairo_t     *cr,
                 GtkStyleContext *ctx,
                 EekBounds bounds)
 {
-    gtk_render_background (ctx, cr, 0, 0, bounds.width, bounds.height);
-    gtk_render_frame (ctx, cr, 0, 0, bounds.width, bounds.height);
+    GtkBorder margin, border;
+    gtk_style_context_get_margin(ctx, GTK_STATE_FLAG_NORMAL, &margin);
+    gtk_style_context_get_border(ctx, GTK_STATE_FLAG_NORMAL, &border);
+
+    gdouble x = margin.left + border.left;
+    gdouble y = margin.top + border.top;
+    EekBounds position = {
+        .x = x,
+        .y = y,
+        .width = bounds.width - x - (margin.right + border.right),
+        .height = bounds.height - y - (margin.bottom + border.bottom),
+    };
+    gtk_render_background (ctx, cr,
+        position.x, position.y, position.width, position.height);
+    gtk_render_frame (ctx, cr,
+        position.x, position.y, position.width, position.height);
 }
 
 static void render_button_in_context(EekRenderer *self,

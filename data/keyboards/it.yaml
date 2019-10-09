@@ -1,20 +1,17 @@
 ---
-row_spacing: 11.33
-button_spacing: 4.67
-
-bounds: { x: 0, y: 1, width: 360, height: 198 }
+bounds: { x: 0, y: 1, width: 360, height: 210 }
 
 outlines:
     default:
-        bounds: { x: 0, y: 0, width: 30.67, height: 40.67 }
+        bounds: { x: 0, y: 0, width: 35.33, height: 52 }
     altline:
-        bounds: { x: 0, y: 0, width: 48, height: 40.67 }
+        bounds: { x: 0, y: 0, width: 52.67, height: 52 }
     wide:
-        bounds: { x: 0, y: 0, width: 57.33, height: 40.67 }
+        bounds: { x: 0, y: 0, width: 62, height: 52 }
     spaceline:
-        bounds: { x: 0, y: 0, width: 95.00, height: 40.67 }
+        bounds: { x: 0, y: 0, width: 99.67, height: 52 }
     special:
-        bounds: { x: 0, y: 0, width: 39.33, height: 40.67 }
+        bounds: { x: 0, y: 0, width: 44, height: 52 }
 
 views:
     base:

@@ -1,14 +1,13 @@
 ---
-row_spacing: 11.33
-button_spacing: 4.67
-
-bounds: { x: 0, y: 6.33, width: 426, height: 250 }
+bounds: { x: 0, y: 0.33, width: 360, height: 210 }
 
 outlines:
     default:
         bounds: { x: 0, y: 0, width: 32, height: 52 }
     altline:
         bounds: { x: 0, y: 0, width: 48.39024, height: 52 }
+    wide:
+        bounds: { x: 0, y: 0, width: 62, height: 52 }
     outline7:
         bounds: { x: 0, y: 0, width: 88.97561, height: 52 }
     spaceline:
@@ -73,7 +72,7 @@ buttons:
         outline: spaceline
         label: " "
     Return:
-        outline: outline7
+        outline: "wide"
         icon: "key-enter"
     aring:
         label: "å"
