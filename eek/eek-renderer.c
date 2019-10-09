@@ -193,12 +193,7 @@ static void render_button_in_context(EekRenderer *self,
     /* render outline */
     EekBounds bounds = squeek_button_get_bounds(place->button);
 
-    if (active)
-        outline_surface_cache = priv->active_outline_surface_cache;
-    else
-        outline_surface_cache = priv->outline_surface_cache;
-
-    outline_surface = g_hash_table_lookup (outline_surface_cache, place->button);
+    outline_surface = NULL;
 
     if (!outline_surface) {
         cairo_t *cr;
@@ -221,10 +216,6 @@ static void render_button_in_context(EekRenderer *self,
         cairo_restore (cr);
 
         cairo_destroy (cr);
-
-        g_hash_table_insert (outline_surface_cache,
-                             (gpointer)place->button,
-                             outline_surface);
     }
     cairo_set_source_surface (cr, outline_surface, 0.0, 0.0);
     cairo_paint (cr);
