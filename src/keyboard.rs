@@ -5,7 +5,7 @@ use std::fmt;
 use std::io;
 use std::rc::Rc;
 use std::string::FromUtf8Error;
-    
+
 use ::action::Action;
 
 use std::io::Write;
@@ -222,4 +222,42 @@ pub fn generate_keymap(
     
     //println!("{}", String::from_utf8(buf.clone()).unwrap());
     String::from_utf8(buf).map_err(FormattingError::Utf)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    
+    use xkbcommon::xkb;
+
+    use ::action::KeySym;
+
+    #[test]
+    fn test_keymap_multi() {
+        let context = xkb::Context::new(xkb::CONTEXT_NO_FLAGS);
+
+        let keymap_str = generate_keymap(&hashmap!{
+            "ac".into() => KeyState {
+                action: Action::Submit {
+                    text: None,
+                    keys: vec!(KeySym("a".into()), KeySym("c".into())),
+                },
+                keycodes: vec!(9, 10),
+                locked: false,
+                pressed: false,
+            },
+        }).unwrap();
+
+        let keymap = xkb::Keymap::new_from_string(
+            &context,
+            keymap_str.clone(),
+            xkb::KEYMAP_FORMAT_TEXT_V1,
+            xkb::KEYMAP_COMPILE_NO_FLAGS,
+        ).expect("Failed to create keymap");
+
+        let state = xkb::State::new(&keymap);
+
+        assert_eq!(state.key_get_one_sym(9), xkb::KEY_a);
+        assert_eq!(state.key_get_one_sym(10), xkb::KEY_c);
+    }
 }
