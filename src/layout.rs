@@ -484,7 +484,7 @@ pub mod c {
             Rc::new(RefCell::new(::keyboard::KeyState {
                 pressed: false,
                 locked: false,
-                keycode: None,
+                keycodes: Vec::new(),
                 action: Action::SetLevel("default".into()),
             }))
         }

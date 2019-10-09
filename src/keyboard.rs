@@ -78,12 +78,30 @@ pub mod c {
         let mut key = key.borrow_mut();
         key.pressed = press != 0;
 
-        if let Some(keycode) = key.keycode {
+        let keycodes_count = key.keycodes.len();
+        for keycode in key.keycodes.iter() {
             let keycode = keycode - 8;
-            unsafe {
-                eek_virtual_keyboard_v1_key(
-                    virtual_keyboard, timestamp, keycode, press
-                );
+            match (key.pressed, keycodes_count) {
+                // Pressing a key made out of a single keycode is simple:
+                // press on press, release on release.
+                (_, 1) => unsafe {
+                    eek_virtual_keyboard_v1_key(
+                        virtual_keyboard, timestamp, keycode, press
+                    );
+                },
+                // A key made of multiple keycodes
+                // has to submit them one after the other
+                (true, _) => unsafe {
+                    eek_virtual_keyboard_v1_key(
+                        virtual_keyboard, timestamp, keycode, 1
+                    );
+                    eek_virtual_keyboard_v1_key(
+                        virtual_keyboard, timestamp, keycode, 0
+                    );
+                },
+                // Design choice here: submit multiple all at press time
+                // and do nothing at release time
+                (false, _) => {},
             }
         }
     }
@@ -93,7 +111,8 @@ pub mod c {
 pub struct KeyState {
     pub pressed: bool,
     pub locked: bool,
-    pub keycode: Option<u32>,
+    /// A cache of raw keycodes derived from Action::Sumbit given a keymap
+    pub keycodes: Vec<u32>,
     /// Static description of what the key does when pressed or released
     pub action: Action,
 }
@@ -147,22 +166,16 @@ pub fn generate_keymap(
     for (name, state) in keystates.iter() {
         let state = state.borrow();
         if let Action::Submit { text: _, keys } = &state.action {
-            match keys.len() {
-                0 => eprintln!("Key {} has no keysyms", name),
-                a => {
-                    // TODO: don't ignore any keysyms
-                    if a > 1 {
-                        eprintln!("Key {} multiple keysyms", name);
-                    }
-                    write!(
-                        buf,
-                        "
+            if let 0 = keys.len() { eprintln!("Key {} has no keysyms", name); };
+            for (named_keysym, keycode) in keys.iter().zip(&state.keycodes) {
+                write!(
+                    buf,
+                    "
         <{}> = {};",
-                        keys[0].0,
-                        state.keycode.unwrap()
-                    )?;
-                },
-            };
+                    named_keysym.0,
+                    keycode,
+                )?;
+            }
         }
     }
     
@@ -179,7 +192,7 @@ pub fn generate_keymap(
     
     for (name, state) in keystates.iter() {
         if let Action::Submit { text: _, keys } = &state.borrow().action {
-            if let Some(keysym) = keys.iter().next() {
+            for keysym in keys.iter() {
                 write!(
                     buf,
                     "
@@ -209,5 +222,6 @@ pub fn generate_keymap(
 }};"
     )?;
     
+    //println!("{}", String::from_utf8(buf.clone()).unwrap());
     String::from_utf8(buf).map_err(FormattingError::Utf)
 }
