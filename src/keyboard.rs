@@ -25,12 +25,6 @@ pub mod c {
 
     // The following defined in Rust. TODO: wrap naked pointers to Rust data inside RefCells to prevent multiple writers
 
-    #[no_mangle]
-    pub extern "C"
-    fn squeek_key_free(key: CKeyState) {
-        unsafe { key.unwrap() }; // reference dropped
-    }
-    
     /// Compares pointers to the data
     #[no_mangle]
     pub extern "C"
@@ -71,68 +65,6 @@ pub mod c {
     pub extern "C"
     fn squeek_key_get_keycode(key: CKeyState) -> u32 {
         return key.to_owned().keycode.unwrap_or(0u32);
-    }
-
-    #[no_mangle]
-    pub extern "C"
-    fn squeek_key_to_keymap_entry(
-        key_name: *const c_char,
-        key: CKeyState,
-    ) -> *const c_char {
-        let key_name = as_cstr(&key_name)
-            .expect("Missing key name")
-            .to_str()
-            .expect("Bad key name");
-
-        let symbol_name = match key.to_owned().symbol.action {
-            Action::Submit { text: Some(text), .. } => {
-                Some(
-                    text.clone()
-                        .into_string().expect("Bad symbol")
-                )
-            },
-            _ => None,
-        };
-
-        let inner = match symbol_name {
-            Some(name) => format!("[ {} ]", name),
-            _ => format!("[ ]"),
-        };
-
-        CString::new(format!("        key <{}> {{ {} }};\n", key_name, inner))
-            .expect("Couldn't convert string")
-            .into_raw()
-    }
-    
-    #[no_mangle]
-    pub extern "C"
-    fn squeek_key_get_action_name(
-        key_name: *const c_char,
-        key: CKeyState,
-    ) -> *const c_char {
-        let key_name = as_cstr(&key_name)
-            .expect("Missing key name")
-            .to_str()
-            .expect("Bad key name");
-
-        let symbol_name = match key.to_owned().symbol.action {
-            Action::Submit { text: Some(text), .. } => {
-                Some(
-                    text.clone()
-                        .into_string().expect("Bad symbol text")
-                )
-            },
-            _ => None
-        };
-
-        let inner = match symbol_name {
-            Some(name) => format!("[ {} ]", name),
-            _ => format!("[ ]"),
-        };
-
-        CString::new(format!("        key <{}> {{ {} }};\n", key_name, inner))
-            .expect("Couldn't convert string")
-            .into_raw()
     }
 }
 

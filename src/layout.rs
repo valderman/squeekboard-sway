@@ -144,18 +144,7 @@ pub mod c {
         let button = unsafe { &*button };
         ::keyboard::c::CKeyState::wrap(button.state.clone())
     }
-    
-    /// Really should just return the label
-    #[no_mangle]
-    pub extern "C"
-    fn squeek_button_get_symbol(
-        button: *const ::layout::Button,
-    ) -> *const Symbol {
-        let button = unsafe { &*button };
-        let state = button.state.borrow();
-        &state.symbol as *const Symbol
-    }
-    
+
     #[no_mangle]
     pub extern "C"
     fn squeek_button_get_label(
