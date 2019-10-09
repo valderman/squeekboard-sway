@@ -131,7 +131,6 @@ emit_key_activated (EekboardContextService *manager,
 */
     SeatEmitter emitter = {0};
     emitter.virtual_keyboard = manager->virtual_keyboard;
-    emitter.keymap = keyboard->keymap;
     update_modifier_info (&emitter);
     send_fake_key (&emitter, keyboard, keycode, pressed, timestamp);
 }

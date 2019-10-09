@@ -17,7 +17,24 @@ pub mod c {
     use super::*;
     use ::util::c;
 
+    use std::os::raw::c_void;
+
     pub type CKeyState = c::Wrapped<KeyState>;
+
+    #[repr(transparent)]
+    pub struct ZwpVirtualKeyboardV1(*const c_void);
+
+    #[no_mangle]
+    extern "C" {
+        /// Checks if point falls within bounds,
+        /// which are relative to origin and rotated by angle (I think)
+        pub fn eek_virtual_keyboard_v1_key(
+            virtual_keyboard: *mut ZwpVirtualKeyboardV1,
+            timestamp: u32,
+            keycode: u32,
+            press: u32,
+        );
+    }
 
     // The following defined in Rust. TODO: wrap naked pointers to Rust data inside RefCells to prevent multiple writers
 
@@ -34,15 +51,7 @@ pub mod c {
         //let key = unsafe { Rc::from_raw(key.0) };
         return key.to_owned().pressed as u32;
     }
-    
-    #[no_mangle]
-    pub extern "C"
-    fn squeek_key_set_pressed(key: CKeyState, pressed: u32) {
-        let key = key.clone_ref();
-        let mut key = key.borrow_mut();
-        key.pressed = pressed != 0;
-    }
-    
+
     #[no_mangle]
     pub extern "C"
     fn squeek_key_is_locked(key: CKeyState) -> u32 {
@@ -56,11 +65,27 @@ pub mod c {
         let mut key = key.borrow_mut();
         key.locked = locked != 0;
     }
-    
+
     #[no_mangle]
     pub extern "C"
-    fn squeek_key_get_keycode(key: CKeyState) -> u32 {
-        return key.to_owned().keycode.unwrap_or(0u32);
+    fn squeek_key_press(
+        key: CKeyState,
+        virtual_keyboard: *mut ZwpVirtualKeyboardV1,
+        press: u32,
+        timestamp: u32,
+    ) {
+        let key = key.clone_ref();
+        let mut key = key.borrow_mut();
+        key.pressed = press != 0;
+
+        if let Some(keycode) = key.keycode {
+            let keycode = keycode - 8;
+            unsafe {
+                eek_virtual_keyboard_v1_key(
+                    virtual_keyboard, timestamp, keycode, press
+                );
+            }
+        }
     }
 }
 
