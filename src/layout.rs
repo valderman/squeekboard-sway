@@ -23,9 +23,9 @@ use std::ffi::CString;
 use std::rc::Rc;
 use std::vec::Vec;
 
-use ::keyboard::*;
+use ::action::Action;
 use ::float_ord::FloatOrd;
-use ::symbol::*;
+use ::keyboard::*;
 
 /// Gathers stuff defined in C or called by C
 pub mod c {
@@ -269,10 +269,10 @@ pub mod c {
             let layout = unsafe { &mut *layout };
 
             let view_name = match key.to_owned().action {
-                ::symbol::Action::SetLevel(name) => {
+                Action::SetLevel(name) => {
                     Some(name.clone())
                 },
-                ::symbol::Action::LockLevel { lock, unlock } => {
+                Action::LockLevel { lock, unlock } => {
                     let locked = {
                         let key = key.clone_ref();
                         let mut key = key.borrow_mut();
@@ -309,9 +309,7 @@ pub mod c {
         /// Sets button and row sizes according to their contents.
         #[no_mangle]
         pub extern "C"
-        fn squeek_layout_place_contents(
-            layout: *mut Layout,
-        ) {
+        fn squeek_layout_place_contents(layout: *mut Layout) {
             let layout = unsafe { &mut *layout };
             for view in layout.views.values_mut() {
                 let sizes: Vec<Vec<Bounds>> = view.rows.iter().map(|row| {

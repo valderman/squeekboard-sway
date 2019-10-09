@@ -7,7 +7,7 @@ use std::io;
 use std::rc::Rc;
 use std::string::FromUtf8Error;
     
-use ::symbol::Action;
+use ::action::Action;
 
 use std::io::Write;
 use std::iter::{ FromIterator, IntoIterator };
@@ -125,7 +125,7 @@ pub fn generate_keymap(
     
     for (name, state) in keystates.iter() {
         let state = state.borrow();
-        if let ::symbol::Action::Submit { text: _, keys } = &state.action {
+        if let Action::Submit { text: _, keys } = &state.action {
             match keys.len() {
                 0 => eprintln!("Key {} has no keysyms", name),
                 a => {
@@ -157,7 +157,7 @@ pub fn generate_keymap(
     )?;
     
     for (name, state) in keystates.iter() {
-        if let ::symbol::Action::Submit { text: _, keys } = &state.borrow().action {
+        if let Action::Submit { text: _, keys } = &state.borrow().action {
             if let Some(keysym) = keys.iter().next() {
                 write!(
                     buf,

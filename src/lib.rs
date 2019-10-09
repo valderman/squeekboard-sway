@@ -11,6 +11,6 @@ pub mod imservice;
 mod keyboard;
 mod layout;
 mod resources;
-mod symbol;
+mod action;
 mod util;
 mod xdg;

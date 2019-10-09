@@ -384,7 +384,7 @@ fn create_action(
     button_info: &HashMap<String, ButtonMeta>,
     name: &str,
     view_names: Vec<&String>,
-) -> ::symbol::Action {
+) -> ::action::Action {
     let default_meta = ButtonMeta::default();
     let symbol_meta = button_info.get(name)
         .unwrap_or(&default_meta);
@@ -440,12 +440,12 @@ fn create_action(
     };
     
     match &symbol_meta.action {
-        Some(Action::SetView(view_name)) => ::symbol::Action::SetLevel(
+        Some(Action::SetView(view_name)) => ::action::Action::SetLevel(
             filter_view_name(name, view_name.clone(), &view_names)
         ),
         Some(Action::Locking {
             lock_view, unlock_view
-        }) => ::symbol::Action::LockLevel {
+        }) => ::action::Action::LockLevel {
             lock: filter_view_name(name, lock_view.clone(), &view_names),
             unlock: filter_view_name(
                 name,
@@ -453,14 +453,14 @@ fn create_action(
                 &view_names
             ),
         },
-        Some(Action::ShowPrefs) => ::symbol::Action::Submit {
+        Some(Action::ShowPrefs) => ::action::Action::Submit {
             text: None,
             keys: Vec::new(),
         },
-        None => ::symbol::Action::Submit {
+        None => ::action::Action::Submit {
             text: None,
             keys: vec!(
-                ::symbol::KeySym(keysym.unwrap()),
+                ::action::KeySym(keysym.unwrap()),
             ),
         },
     }
@@ -681,9 +681,9 @@ mod tests {
                 ".",
                 Vec::new()
             ),
-            ::symbol::Action::Submit {
+            ::action::Action::Submit {
                 text: None,
-                keys: vec!(::symbol::KeySym("U002E".into())),
+                keys: vec!(::action::KeySym("U002E".into())),
             }
         );
     }
