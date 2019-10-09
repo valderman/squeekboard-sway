@@ -268,7 +268,7 @@ pub mod c {
         ) {
             let layout = unsafe { &mut *layout };
 
-            let view_name = match key.to_owned().symbol.action {
+            let view_name = match key.to_owned().action {
                 ::symbol::Action::SetLevel(name) => {
                     Some(name.clone())
                 },
@@ -485,9 +485,7 @@ pub mod c {
                 pressed: false,
                 locked: false,
                 keycode: None,
-                symbol: Symbol {
-                    action: Action::SetLevel("default".into()),
-                }
+                action: Action::SetLevel("default".into()),
             }))
         }
 

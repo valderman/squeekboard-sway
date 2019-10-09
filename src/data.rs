@@ -319,7 +319,7 @@ impl Layout {
                 pressed: false,
                 locked: false,
                 keycode: keycodes.get(*name).map(|k| *k),
-                symbol: create_symbol(
+                action: create_action(
                     &self.buttons,
                     name,
                     self.views.keys().collect()
@@ -380,11 +380,11 @@ impl Layout {
     }
 }
 
-fn create_symbol(
+fn create_action(
     button_info: &HashMap<String, ButtonMeta>,
     name: &str,
     view_names: Vec<&String>,
-) -> ::symbol::Symbol {
+) -> ::symbol::Action {
     let default_meta = ButtonMeta::default();
     let symbol_meta = button_info.get(name)
         .unwrap_or(&default_meta);
@@ -440,34 +440,28 @@ fn create_symbol(
     };
     
     match &symbol_meta.action {
-        Some(Action::SetView(view_name)) => ::symbol::Symbol {
-            action: ::symbol::Action::SetLevel(
-                filter_view_name(name, view_name.clone(), &view_names)
+        Some(Action::SetView(view_name)) => ::symbol::Action::SetLevel(
+            filter_view_name(name, view_name.clone(), &view_names)
+        ),
+        Some(Action::Locking {
+            lock_view, unlock_view
+        }) => ::symbol::Action::LockLevel {
+            lock: filter_view_name(name, lock_view.clone(), &view_names),
+            unlock: filter_view_name(
+                name,
+                unlock_view.clone(),
+                &view_names
             ),
         },
-        Some(Action::Locking { lock_view, unlock_view }) => ::symbol::Symbol {
-            action: ::symbol::Action::LockLevel {
-                lock: filter_view_name(name, lock_view.clone(), &view_names),
-                unlock: filter_view_name(
-                    name,
-                    unlock_view.clone(),
-                    &view_names
-                ),
-            },
+        Some(Action::ShowPrefs) => ::symbol::Action::Submit {
+            text: None,
+            keys: Vec::new(),
         },
-        Some(Action::ShowPrefs) => ::symbol::Symbol {
-            action: ::symbol::Action::Submit {
-                text: None,
-                keys: Vec::new(),
-            },
-        },
-        None => ::symbol::Symbol {
-            action: ::symbol::Action::Submit {
-                text: None,
-                keys: vec!(
-                    ::symbol::KeySym(keysym.unwrap()),
-                ),
-            },
+        None => ::symbol::Action::Submit {
+            text: None,
+            keys: vec!(
+                ::symbol::KeySym(keysym.unwrap()),
+            ),
         },
     }
 }
@@ -674,7 +668,7 @@ mod tests {
     #[test]
     fn test_key_unicode() {
         assert_eq!(
-            create_symbol(
+            create_action(
                 &hashmap!{
                     ".".into() => ButtonMeta {
                         icon: None,
@@ -687,11 +681,9 @@ mod tests {
                 ".",
                 Vec::new()
             ),
-            ::symbol::Symbol {
-                action: ::symbol::Action::Submit {
-                    text: None,
-                    keys: vec!(::symbol::KeySym("U002E".into())),
-                },
+            ::symbol::Action::Submit {
+                text: None,
+                keys: vec!(::symbol::KeySym("U002E".into())),
             }
         );
     }

@@ -7,7 +7,7 @@ use std::io;
 use std::rc::Rc;
 use std::string::FromUtf8Error;
     
-use ::symbol::{ Symbol, Action };
+use ::symbol::Action;
 
 use std::io::Write;
 use std::iter::{ FromIterator, IntoIterator };
@@ -73,7 +73,8 @@ pub struct KeyState {
     pub pressed: bool,
     pub locked: bool,
     pub keycode: Option<u32>,
-    pub symbol: Symbol,
+    /// Static description of what the key does when pressed or released
+    pub action: Action,
 }
 
 /// Generates a mapping where each key gets a keycode, starting from 8
@@ -124,7 +125,7 @@ pub fn generate_keymap(
     
     for (name, state) in keystates.iter() {
         let state = state.borrow();
-        if let ::symbol::Action::Submit { text: _, keys } = &state.symbol.action {
+        if let ::symbol::Action::Submit { text: _, keys } = &state.action {
             match keys.len() {
                 0 => eprintln!("Key {} has no keysyms", name),
                 a => {
@@ -156,7 +157,7 @@ pub fn generate_keymap(
     )?;
     
     for (name, state) in keystates.iter() {
-        if let ::symbol::Action::Submit { text: _, keys } = &state.borrow().symbol.action {
+        if let ::symbol::Action::Submit { text: _, keys } = &state.borrow().action {
             if let Some(keysym) = keys.iter().next() {
                 write!(
                     buf,
