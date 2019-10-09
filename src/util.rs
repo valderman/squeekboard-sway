@@ -1,3 +1,8 @@
+/*! Assorted helpers */
+use std::collections::HashMap;
+
+use std::iter::FromIterator;
+
 pub mod c {
     use std::cell::RefCell;
     use std::ffi::{ CStr, CString };
@@ -100,4 +105,14 @@ pub mod c {
             Wrapped::wrap(self.clone_ref())
         }
     }
+}
+
+pub fn hash_map_map<K, V, F, K1, V1>(map: HashMap<K, V>, mut f: F)
+    -> HashMap<K1, V1>
+    where F: FnMut(K, V) -> (K1, V1),
+        K1: std::cmp::Eq + std::hash::Hash
+{
+    HashMap::from_iter(
+        map.into_iter().map(|(key, value)| f(key, value))
+    )
 }

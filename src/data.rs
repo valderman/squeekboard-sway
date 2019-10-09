@@ -19,6 +19,7 @@ use ::keyboard::{
 };
 use ::resources;
 use ::util::c::as_str;
+use ::util::hash_map_map;
 use ::xdg;
 
 // traits, derives
@@ -346,22 +347,30 @@ impl Layout {
             };
             (
                 name.into(),
-                Rc::new(RefCell::new(KeyState {
+                KeyState {
                     pressed: false,
                     locked: false,
                     keycodes,
                     action,
-                }))
+                }
             )
         });
 
-        let button_states =
-            HashMap::<String, Rc<RefCell<KeyState>>>::from_iter(
+        let button_states
+            = HashMap::<String, KeyState>::from_iter(
                 button_states
             );
 
         // TODO: generate from symbols
         let keymap_str = generate_keymap(&button_states)?;
+
+        let button_states_cache = hash_map_map(
+            button_states,
+            |name, state| {(
+                name,
+                Rc::new(RefCell::new(state))
+            )}
+        );
 
         let views = HashMap::from_iter(
             self.views.iter().map(|(name, view)| {(
@@ -386,7 +395,7 @@ impl Layout {
                                     &self.buttons,
                                     &self.outlines,
                                     name,
-                                    button_states.get(name.into())
+                                    button_states_cache.get(name.into())
                                         .expect("Button state not created")
                                         .clone()
                                 ))

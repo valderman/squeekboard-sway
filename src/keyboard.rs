@@ -1,6 +1,5 @@
 /*! State of the emulated keyboard and keys */
 
-use std::cell::RefCell;
 use std::collections::HashMap;
 use std::fmt;
 use std::io;
@@ -151,7 +150,7 @@ impl From<io::Error> for FormattingError {
 
 /// Generates a de-facto single level keymap. TODO: actually drop second level
 pub fn generate_keymap(
-    keystates: &HashMap::<String, Rc<RefCell<KeyState>>>
+    keystates: &HashMap::<String, KeyState>
 ) -> Result<String, FormattingError> {
     let mut buf: Vec<u8> = Vec::new();
     writeln!(
@@ -164,7 +163,6 @@ pub fn generate_keymap(
     )?;
     
     for (name, state) in keystates.iter() {
-        let state = state.borrow();
         if let Action::Submit { text: _, keys } = &state.action {
             if let 0 = keys.len() { eprintln!("Key {} has no keysyms", name); };
             for (named_keysym, keycode) in keys.iter().zip(&state.keycodes) {
@@ -191,7 +189,7 @@ pub fn generate_keymap(
     )?;
     
     for (name, state) in keystates.iter() {
-        if let Action::Submit { text: _, keys } = &state.borrow().action {
+        if let Action::Submit { text: _, keys } = &state.action {
             for keysym in keys.iter() {
                 write!(
                     buf,
