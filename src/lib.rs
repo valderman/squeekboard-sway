@@ -1,6 +1,7 @@
 #[macro_use]
 extern crate bitflags;
-#[macro_use]
+#[allow(unused_imports)]
+#[macro_use] // only for tests
 extern crate maplit;
 extern crate serde;
 extern crate xkbcommon;

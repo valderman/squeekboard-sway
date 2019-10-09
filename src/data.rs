@@ -644,7 +644,7 @@ mod tests {
     /// First fallback should be to builtin, not to FALLBACK_LAYOUT_NAME
     #[test]
     fn fallbacks_order() {
-        let (layout, source, _failure) = load_layout(
+        let (_layout, source, _failure) = load_layout(
             "nb",
             Some(PathBuf::from("tests"))
         );

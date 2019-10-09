@@ -253,6 +253,8 @@ pub mod c {
                 angle: i32
             ) -> u32;
             
+            // CKeyState is safe to pass to C as long as nothing dereferences it
+            #[allow(improper_ctypes)]
             pub fn eek_keyboard_set_key_locked(
                 keyboard: *mut LevelKeyboard,
                 key: ::keyboard::c::CKeyState,

@@ -16,10 +16,6 @@ use std::iter::{ FromIterator, IntoIterator };
 pub mod c {
     use super::*;
     use ::util::c;
-    use ::util::c::as_cstr;
-    
-    use std::ffi::CString;
-    use std::os::raw::c_char;
 
     pub type CKeyState = c::Wrapped<KeyState>;
 
