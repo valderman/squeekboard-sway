@@ -1,36 +1,5 @@
-eekboard is written by Daiki Ueno <ueno@unixuser.org>.  The following
-files contain code derived from other free software packages:
+squeekboard is written by Dorota Czaplejewicz <dorota.czaplejewicz@puri.sm> on behlf of Purism, SPC.
+eekboard was written by Daiki Ueno <ueno@unixuser.org>
 
-eek/eek-keyboard-drawing.h
-eek/eek-keyboard-drawing.c
+For more details, see the debian/copyright file.
 
-  These files contain code derived from the libgnomekbd library.
-  Copyright (C) 2006 Sergey V. Udaltsov <svu@gnome.org>
-
-eek/eek-theme.h
-eek/eek-theme.c
-eek/eek-theme-context.h
-eek/eek-theme-context.c
-eek/eek-theme-node.h
-eek/eek-theme-node.c
-
-  These files contain code derived from gnome-shell.
-
-  Copyright 2008-2010 Red Hat, Inc.
-  Copyright 2009 Steve Frécinaux
-  Copyright 2009, 2010 Florian Müllner
-  Copyright 2010 Adel Gadllah
-  Copyright 2010 Giovanni Campagna
-  Copyright 2003-2004 Dodji Seketeli
-
-data/icons/8x8/Makefile.am
-data/icons/16x16/Makefile.am
-data/icons/22x22/Makefile.am
-data/icons/24x24/Makefile.am
-data/icons/32x32/Makefile.am
-data/icons/48x48/Makefile.am
-data/icons/scalable/Makefile.am
-
-  These files contain code derived from im-chooser.
-
-  Copyright (C) 2006-2008 Red Hat, Inc. All rights reserved.
