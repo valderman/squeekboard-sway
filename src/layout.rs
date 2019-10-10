@@ -23,9 +23,9 @@ use std::ffi::CString;
 use std::rc::Rc;
 use std::vec::Vec;
 
-use ::keyboard::*;
+use ::action::Action;
 use ::float_ord::FloatOrd;
-use ::symbol::*;
+use ::keyboard::*;
 
 /// Gathers stuff defined in C or called by C
 pub mod c {
@@ -144,18 +144,7 @@ pub mod c {
         let button = unsafe { &*button };
         ::keyboard::c::CKeyState::wrap(button.state.clone())
     }
-    
-    /// Really should just return the label
-    #[no_mangle]
-    pub extern "C"
-    fn squeek_button_get_symbol(
-        button: *const ::layout::Button,
-    ) -> *const Symbol {
-        let button = unsafe { &*button };
-        let state = button.state.borrow();
-        &state.symbol as *const Symbol
-    }
-    
+
     #[no_mangle]
     pub extern "C"
     fn squeek_button_get_label(
@@ -264,6 +253,8 @@ pub mod c {
                 angle: i32
             ) -> u32;
             
+            // CKeyState is safe to pass to C as long as nothing dereferences it
+            #[allow(improper_ctypes)]
             pub fn eek_keyboard_set_key_locked(
                 keyboard: *mut LevelKeyboard,
                 key: ::keyboard::c::CKeyState,
@@ -279,11 +270,11 @@ pub mod c {
         ) {
             let layout = unsafe { &mut *layout };
 
-            let view_name = match key.to_owned().symbol.action {
-                ::symbol::Action::SetLevel(name) => {
+            let view_name = match key.to_owned().action {
+                Action::SetLevel(name) => {
                     Some(name.clone())
                 },
-                ::symbol::Action::LockLevel { lock, unlock } => {
+                Action::LockLevel { lock, unlock } => {
                     let locked = {
                         let key = key.clone_ref();
                         let mut key = key.borrow_mut();
@@ -320,9 +311,7 @@ pub mod c {
         /// Sets button and row sizes according to their contents.
         #[no_mangle]
         pub extern "C"
-        fn squeek_layout_place_contents(
-            layout: *mut Layout,
-        ) {
+        fn squeek_layout_place_contents(layout: *mut Layout) {
             let layout = unsafe { &mut *layout };
             for view in layout.views.values_mut() {
                 let sizes: Vec<Vec<Bounds>> = view.rows.iter().map(|row| {
@@ -495,10 +484,8 @@ pub mod c {
             Rc::new(RefCell::new(::keyboard::KeyState {
                 pressed: false,
                 locked: false,
-                keycode: None,
-                symbol: Symbol {
-                    action: Action::SetLevel("default".into()),
-                }
+                keycodes: Vec::new(),
+                action: Action::SetLevel("default".into()),
             }))
         }
 

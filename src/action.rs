@@ -37,10 +37,3 @@ pub enum Action {
         keys: Vec<KeySym>,
     },
 }
-
-/// Contains a static description of a particular key's actions
-#[derive(Debug, Clone, PartialEq)]
-pub struct Symbol {
-    /// The action that this key performs
-    pub action: Action,
-}

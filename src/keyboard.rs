@@ -1,13 +1,12 @@
 /*! State of the emulated keyboard and keys */
 
-use std::cell::RefCell;
 use std::collections::HashMap;
 use std::fmt;
 use std::io;
 use std::rc::Rc;
 use std::string::FromUtf8Error;
-    
-use ::symbol::{ Symbol, Action };
+
+use ::action::Action;
 
 use std::io::Write;
 use std::iter::{ FromIterator, IntoIterator };
@@ -16,21 +15,28 @@ use std::iter::{ FromIterator, IntoIterator };
 pub mod c {
     use super::*;
     use ::util::c;
-    use ::util::c::as_cstr;
-    
-    use std::ffi::CString;
-    use std::os::raw::c_char;
+
+    use std::os::raw::c_void;
 
     pub type CKeyState = c::Wrapped<KeyState>;
 
-    // The following defined in Rust. TODO: wrap naked pointers to Rust data inside RefCells to prevent multiple writers
+    #[repr(transparent)]
+    pub struct ZwpVirtualKeyboardV1(*const c_void);
 
     #[no_mangle]
-    pub extern "C"
-    fn squeek_key_free(key: CKeyState) {
-        unsafe { key.unwrap() }; // reference dropped
+    extern "C" {
+        /// Checks if point falls within bounds,
+        /// which are relative to origin and rotated by angle (I think)
+        pub fn eek_virtual_keyboard_v1_key(
+            virtual_keyboard: *mut ZwpVirtualKeyboardV1,
+            timestamp: u32,
+            keycode: u32,
+            press: u32,
+        );
     }
-    
+
+    // The following defined in Rust. TODO: wrap naked pointers to Rust data inside RefCells to prevent multiple writers
+
     /// Compares pointers to the data
     #[no_mangle]
     pub extern "C"
@@ -44,15 +50,7 @@ pub mod c {
         //let key = unsafe { Rc::from_raw(key.0) };
         return key.to_owned().pressed as u32;
     }
-    
-    #[no_mangle]
-    pub extern "C"
-    fn squeek_key_set_pressed(key: CKeyState, pressed: u32) {
-        let key = key.clone_ref();
-        let mut key = key.borrow_mut();
-        key.pressed = pressed != 0;
-    }
-    
+
     #[no_mangle]
     pub extern "C"
     fn squeek_key_is_locked(key: CKeyState) -> u32 {
@@ -66,73 +64,45 @@ pub mod c {
         let mut key = key.borrow_mut();
         key.locked = locked != 0;
     }
-    
-    #[no_mangle]
-    pub extern "C"
-    fn squeek_key_get_keycode(key: CKeyState) -> u32 {
-        return key.to_owned().keycode.unwrap_or(0u32);
-    }
 
     #[no_mangle]
     pub extern "C"
-    fn squeek_key_to_keymap_entry(
-        key_name: *const c_char,
+    fn squeek_key_press(
         key: CKeyState,
-    ) -> *const c_char {
-        let key_name = as_cstr(&key_name)
-            .expect("Missing key name")
-            .to_str()
-            .expect("Bad key name");
+        virtual_keyboard: *mut ZwpVirtualKeyboardV1,
+        press: u32,
+        timestamp: u32,
+    ) {
+        let key = key.clone_ref();
+        let mut key = key.borrow_mut();
+        key.pressed = press != 0;
 
-        let symbol_name = match key.to_owned().symbol.action {
-            Action::Submit { text: Some(text), .. } => {
-                Some(
-                    text.clone()
-                        .into_string().expect("Bad symbol")
-                )
-            },
-            _ => None,
-        };
-
-        let inner = match symbol_name {
-            Some(name) => format!("[ {} ]", name),
-            _ => format!("[ ]"),
-        };
-
-        CString::new(format!("        key <{}> {{ {} }};\n", key_name, inner))
-            .expect("Couldn't convert string")
-            .into_raw()
-    }
-    
-    #[no_mangle]
-    pub extern "C"
-    fn squeek_key_get_action_name(
-        key_name: *const c_char,
-        key: CKeyState,
-    ) -> *const c_char {
-        let key_name = as_cstr(&key_name)
-            .expect("Missing key name")
-            .to_str()
-            .expect("Bad key name");
-
-        let symbol_name = match key.to_owned().symbol.action {
-            Action::Submit { text: Some(text), .. } => {
-                Some(
-                    text.clone()
-                        .into_string().expect("Bad symbol text")
-                )
-            },
-            _ => None
-        };
-
-        let inner = match symbol_name {
-            Some(name) => format!("[ {} ]", name),
-            _ => format!("[ ]"),
-        };
-
-        CString::new(format!("        key <{}> {{ {} }};\n", key_name, inner))
-            .expect("Couldn't convert string")
-            .into_raw()
+        let keycodes_count = key.keycodes.len();
+        for keycode in key.keycodes.iter() {
+            let keycode = keycode - 8;
+            match (key.pressed, keycodes_count) {
+                // Pressing a key made out of a single keycode is simple:
+                // press on press, release on release.
+                (_, 1) => unsafe {
+                    eek_virtual_keyboard_v1_key(
+                        virtual_keyboard, timestamp, keycode, press
+                    );
+                },
+                // A key made of multiple keycodes
+                // has to submit them one after the other
+                (true, _) => unsafe {
+                    eek_virtual_keyboard_v1_key(
+                        virtual_keyboard, timestamp, keycode, 1
+                    );
+                    eek_virtual_keyboard_v1_key(
+                        virtual_keyboard, timestamp, keycode, 0
+                    );
+                },
+                // Design choice here: submit multiple all at press time
+                // and do nothing at release time
+                (false, _) => {},
+            }
+        }
     }
 }
 
@@ -140,8 +110,10 @@ pub mod c {
 pub struct KeyState {
     pub pressed: bool,
     pub locked: bool,
-    pub keycode: Option<u32>,
-    pub symbol: Symbol,
+    /// A cache of raw keycodes derived from Action::Sumbit given a keymap
+    pub keycodes: Vec<u32>,
+    /// Static description of what the key does when pressed or released
+    pub action: Action,
 }
 
 /// Generates a mapping where each key gets a keycode, starting from 8
@@ -178,7 +150,7 @@ impl From<io::Error> for FormattingError {
 
 /// Generates a de-facto single level keymap. TODO: actually drop second level
 pub fn generate_keymap(
-    keystates: &HashMap::<String, Rc<RefCell<KeyState>>>
+    keystates: &HashMap::<String, KeyState>
 ) -> Result<String, FormattingError> {
     let mut buf: Vec<u8> = Vec::new();
     writeln!(
@@ -191,24 +163,17 @@ pub fn generate_keymap(
     )?;
     
     for (name, state) in keystates.iter() {
-        let state = state.borrow();
-        if let ::symbol::Action::Submit { text: _, keys } = &state.symbol.action {
-            match keys.len() {
-                0 => eprintln!("Key {} has no keysyms", name),
-                a => {
-                    // TODO: don't ignore any keysyms
-                    if a > 1 {
-                        eprintln!("Key {} multiple keysyms", name);
-                    }
-                    write!(
-                        buf,
-                        "
+        if let Action::Submit { text: _, keys } = &state.action {
+            if let 0 = keys.len() { eprintln!("Key {} has no keysyms", name); };
+            for (named_keysym, keycode) in keys.iter().zip(&state.keycodes) {
+                write!(
+                    buf,
+                    "
         <{}> = {};",
-                        keys[0].0,
-                        state.keycode.unwrap()
-                    )?;
-                },
-            };
+                    named_keysym.0,
+                    keycode,
+                )?;
+            }
         }
     }
     
@@ -224,8 +189,8 @@ pub fn generate_keymap(
     )?;
     
     for (name, state) in keystates.iter() {
-        if let ::symbol::Action::Submit { text: _, keys } = &state.borrow().symbol.action {
-            if let Some(keysym) = keys.iter().next() {
+        if let Action::Submit { text: _, keys } = &state.action {
+            for keysym in keys.iter() {
                 write!(
                     buf,
                     "
@@ -255,5 +220,44 @@ pub fn generate_keymap(
 }};"
     )?;
     
+    //println!("{}", String::from_utf8(buf.clone()).unwrap());
     String::from_utf8(buf).map_err(FormattingError::Utf)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    
+    use xkbcommon::xkb;
+
+    use ::action::KeySym;
+
+    #[test]
+    fn test_keymap_multi() {
+        let context = xkb::Context::new(xkb::CONTEXT_NO_FLAGS);
+
+        let keymap_str = generate_keymap(&hashmap!{
+            "ac".into() => KeyState {
+                action: Action::Submit {
+                    text: None,
+                    keys: vec!(KeySym("a".into()), KeySym("c".into())),
+                },
+                keycodes: vec!(9, 10),
+                locked: false,
+                pressed: false,
+            },
+        }).unwrap();
+
+        let keymap = xkb::Keymap::new_from_string(
+            &context,
+            keymap_str.clone(),
+            xkb::KEYMAP_FORMAT_TEXT_V1,
+            xkb::KEYMAP_COMPILE_NO_FLAGS,
+        ).expect("Failed to create keymap");
+
+        let state = xkb::State::new(&keymap);
+
+        assert_eq!(state.key_get_one_sym(9), xkb::KEY_a);
+        assert_eq!(state.key_get_one_sym(10), xkb::KEY_c);
+    }
 }

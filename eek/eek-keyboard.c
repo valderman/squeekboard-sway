@@ -31,6 +31,7 @@
 #include <glib/gprintf.h>
 
 #include "eek-enumtypes.h"
+#include "eekboard/eekboard-context-service.h"
 #include "eekboard/key-emitter.h"
 #include "keymap.h"
 #include "src/keyboard.h"
@@ -93,17 +94,8 @@ set_level_from_press (LevelKeyboard *keyboard, struct squeek_key *key)
 }
 
 void eek_keyboard_press_key(LevelKeyboard *keyboard, struct squeek_key *key, guint32 timestamp) {
-    squeek_key_set_pressed(key, TRUE);
     keyboard->pressed_keys = g_list_prepend (keyboard->pressed_keys, key);
-
-    // Only take action about setting level *after* the key has taken effect, i.e. on release
-    //set_level_from_press (keyboard, key);
-
-    // "Borrowed" from eek-context-service; doesn't influence the state but forwards the event
-
-    guint keycode = squeek_key_get_keycode (key);
-
-    emit_key_activated(keyboard->manager, keyboard, keycode, TRUE, timestamp);
+    squeek_key_press(key, keyboard->manager->virtual_keyboard, KEY_PRESS, timestamp);
 }
 
 void eek_keyboard_release_key(LevelKeyboard *keyboard,
@@ -118,12 +110,7 @@ void eek_keyboard_release_key(LevelKeyboard *keyboard,
     }
 
     set_level_from_press (keyboard, key);
-
-    // "Borrowed" from eek-context-service; doesn't influence the state but forwards the event
-
-    guint keycode = squeek_key_get_keycode (key);
-
-    emit_key_activated(keyboard->manager, keyboard, keycode, FALSE, timestamp);
+    squeek_key_press(key, keyboard->manager->virtual_keyboard, KEY_RELEASE, timestamp);
 }
 
 void level_keyboard_deinit(LevelKeyboard *self) {

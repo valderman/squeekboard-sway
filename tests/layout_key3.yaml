@@ -1,0 +1,17 @@
+---
+# punctuation
+row_spacing: 0
+button_spacing: 0
+
+bounds:
+    x: 0
+    y: 0
+    width: 0
+    height: 0
+views:
+    base:
+        - "か゚" # 2 codepoints
+outlines:
+    default:
+        bounds: { x: 0, y: 0, width: 0, height: 0 }
+
