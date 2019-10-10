@@ -28,6 +28,7 @@
 #include "eekboard/eekboard-service.h"
 #include "eek/eek.h"
 #include "imservice.h"
+#include "outputs.h"
 #include "server-context-service.h"
 #include "wayland.h"
 
@@ -116,7 +117,7 @@ registry_handle_global (void *data,
     } else if (!strcmp (interface, "wl_output")) {
         struct wl_output *output = wl_registry_bind (registry, name,
             &wl_output_interface, 2);
-        g_ptr_array_add (instance->wayland.outputs, output);
+        squeek_outputs_register(instance->wayland.outputs, output);
     } else if (!strcmp(interface, "wl_seat")) {
         instance->wayland.seat = wl_registry_bind(registry, name,
             &wl_seat_interface, 1);

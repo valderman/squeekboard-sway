@@ -120,10 +120,12 @@ make_window (ServerContextService *context)
     if (context->window)
         g_error("Window already present");
 
+    struct wl_output *output = squeek_outputs_get_current(squeek_wayland->outputs);
+
     context->window = g_object_new (
         PHOSH_TYPE_LAYER_SURFACE,
         "layer-shell", squeek_wayland->layer_shell,
-        "wl-output", g_ptr_array_index(squeek_wayland->outputs, 0), // TODO: select output as needed,
+        "wl-output", output,
         "height", KEYBOARD_HEIGHT,
         "anchor", ZWLR_LAYER_SURFACE_V1_ANCHOR_BOTTOM
                   | ZWLR_LAYER_SURFACE_V1_ANCHOR_LEFT
