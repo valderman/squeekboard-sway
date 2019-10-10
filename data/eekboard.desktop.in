@@ -1,9 +1,0 @@
-[Desktop Entry]
-Name=Eekboard
-GenericName=Eekboard Virtual Keyboard
-Comment=Virtual Keyboard
-Exec=eekboard
-Icon=eekboard
-Terminal=false
-Type=Application
-Categories=GTK;Utility;
