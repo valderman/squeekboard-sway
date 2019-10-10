@@ -20,7 +20,8 @@
 #include <gtk/gtk.h>
 #include <glib/gi18n.h>
 
-#include "eek/eek-gtk.h"
+#include "eek/eek.h"
+#include "eek/eek-gtk-keyboard.h"
 #include "eek/layersurface.h"
 #include "wayland.h"
 
