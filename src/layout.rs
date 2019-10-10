@@ -27,6 +27,8 @@ use ::action::Action;
 use ::float_ord::FloatOrd;
 use ::keyboard::*;
 
+use ::util::CloneOwned;
+
 /// Gathers stuff defined in C or called by C
 pub mod c {
     use super::*;
@@ -270,7 +272,7 @@ pub mod c {
         ) {
             let layout = unsafe { &mut *layout };
 
-            let view_name = match key.to_owned().action {
+            let view_name = match key.clone_owned().action {
                 Action::SetLevel(name) => {
                     Some(name.clone())
                 },

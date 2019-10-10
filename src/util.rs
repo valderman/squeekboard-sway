@@ -4,6 +4,8 @@ use std::collections::HashMap;
 use std::iter::FromIterator;
 
 pub mod c {
+    use super::*;
+    
     use std::cell::RefCell;
     use std::ffi::{ CStr, CString };
     use std::os::raw::c_char;
@@ -63,7 +65,7 @@ pub mod c {
     /// RefCell will enforce them dynamically (only 1 writer/many readers)
     /// Rc is implied and will ensure timely dropping
     #[repr(transparent)]
-    pub struct Wrapped<T: Clone>(*const RefCell<T>);
+    pub struct Wrapped<T>(*const RefCell<T>);
 
     // It would be nice to implement `Borrow`
     // directly on the raw pointer to avoid one conversion call,
@@ -73,7 +75,7 @@ pub mod c {
     // Unfortunately, that needs a `Ref` struct with self-referential fields,
     // which is a bit too complex for now.
 
-    impl<T: Clone> Wrapped<T> {
+    impl<T> Wrapped<T> {
         pub fn wrap(state: Rc<RefCell<T>>) -> Wrapped<T> {
             Wrapped(Rc::into_raw(state))
         }
@@ -91,20 +93,31 @@ pub mod c {
             Rc::into_raw(used_rc); // prevent dropping the original reference
             rc
         }
+    }
+    
+    impl<T> Clone for Wrapped<T> {
+        fn clone(&self) -> Wrapped<T> {
+            Wrapped::wrap(self.clone_ref())
+        }
+    }
+    
+    /// ToOwned won't work here
+    /// because it's really difficult to implement Borrow on Wrapped<T>
+    /// with the Rc<RefCell<>> chain on the way to the data
+    impl<T: Clone> CloneOwned for Wrapped<T> {
+        type Owned = T;
 
-        /// Create a copy of the underlying data
-        pub fn to_owned(&self) -> T {
+        fn clone_owned(&self) -> T {
             let rc = self.clone_ref();
             let r = rc.borrow();
             r.to_owned()
         }
     }
-    
-    impl<T: Clone> Clone for Wrapped<T> {
-        fn clone(&self) -> Wrapped<T> {
-            Wrapped::wrap(self.clone_ref())
-        }
-    }
+}
+
+pub trait CloneOwned {
+    type Owned;
+    fn clone_owned(&self) -> Self::Owned;
 }
 
 pub fn hash_map_map<K, V, F, K1, V1>(map: HashMap<K, V>, mut f: F)
