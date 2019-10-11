@@ -42,6 +42,7 @@ struct _ServerContextService {
     GtkWidget *window;
     GtkWidget *widget;
     guint hiding;
+    guint last_requested_height;
 
     gdouble size_constraint_landscape[2];
     gdouble size_constraint_portrait[2];
@@ -110,7 +111,46 @@ static void
 on_notify_unmap (GObject    *object,
                  ServerContextService *context)
 {
+    (void)object;
     g_object_set (context, "visible", FALSE, NULL);
+}
+
+static uint32_t
+calculate_height(int32_t width)
+{
+    uint32_t height = 180;
+    if (width < 360 && width > 0) {
+        height = ((unsigned)width * 7 / 12); // to match 360×210
+    } else if (width < 540) {
+        height = 180 + (540 - (unsigned)width) * 30 / 180; // smooth transition
+    }
+    return height;
+}
+
+static void
+on_surface_configure(PhoshLayerSurface *surface, ServerContextService *context)
+{
+    gint width;
+    gint height;
+    g_object_get(G_OBJECT(surface),
+                 "width", &width,
+                 "height", &height,
+                 NULL);
+    guint desired_height = calculate_height(width);
+    guint configured_height = (guint)height;
+    // if height was already requested once but a different one was given
+    // (for the same set of surrounding properties),
+    // then it's probably not reasonable to ask for it again,
+    // as it's likely to create pointless loops
+    // of request->reject->request_again->...
+    if (desired_height != configured_height
+            && context->last_requested_height != desired_height) {
+        context->last_requested_height = desired_height;
+        phosh_layer_surface_set_size(surface, 0,
+                                     (gint)desired_height);
+        phosh_layer_surface_set_exclusive_zone(surface, (gint)desired_height);
+        phosh_layer_surface_wl_surface_commit (surface);
+    }
 }
 
 static void
@@ -121,12 +161,7 @@ make_window (ServerContextService *context)
 
     struct wl_output *output = squeek_outputs_get_current(squeek_wayland->outputs);
     int32_t width = squeek_outputs_get_perceptual_width(squeek_wayland->outputs, output);
-    uint32_t height = 180;
-    if (width < 360 && width > 0) {
-        height = ((unsigned)width * 7 / 12); // to match 360×210
-    } else if (width < 540) {
-        height = 180 + (540 - (unsigned)width) * 30 / 180; // smooth transition
-    }
+    uint32_t height = calculate_height(width);
 
     context->window = g_object_new (
         PHOSH_TYPE_LAYER_SURFACE,
@@ -147,6 +182,7 @@ make_window (ServerContextService *context)
                       "signal::destroy", G_CALLBACK(on_destroy), context,
                       "signal::map", G_CALLBACK(on_notify_map), context,
                       "signal::unmap", G_CALLBACK(on_notify_unmap), context,
+                      "signal::configured", G_CALLBACK(on_surface_configure), context,
                       NULL);
 
     // The properties below are just to make hacking easier.
