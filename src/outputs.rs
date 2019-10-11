@@ -191,7 +191,33 @@ pub mod c {
         let collection = collection.borrow();
         collection.outputs[0].output.clone()
     }
-    
+
+    #[no_mangle]
+    pub extern "C"
+    fn squeek_outputs_get_perceptual_width(
+        raw_collection: COutputs,
+        wl_output: WlOutput,
+    ) -> i32 {
+        let collection = raw_collection.clone_ref();
+        let collection = collection.borrow();
+
+        let output_state = collection.outputs
+            .iter()
+            .find_map(|o|
+                if o.output == wl_output { Some(&o.current) } else { None }
+            );
+
+        match output_state {
+            Some(OutputState {
+                current_mode: Some(super::Mode { width, height: _ } ),
+                scale: scale,
+            }) => width / scale,
+            _ => {
+                eprintln!("No width registered on output");
+                0
+            },
+        }
+    }
     // TODO: handle unregistration
 }
 

@@ -113,7 +113,6 @@ on_notify_unmap (GObject    *object,
     g_object_set (context, "visible", FALSE, NULL);
 }
 
-#define KEYBOARD_HEIGHT 210
 static void
 make_window (ServerContextService *context)
 {
@@ -121,18 +120,25 @@ make_window (ServerContextService *context)
         g_error("Window already present");
 
     struct wl_output *output = squeek_outputs_get_current(squeek_wayland->outputs);
+    int32_t width = squeek_outputs_get_perceptual_width(squeek_wayland->outputs, output);
+    uint32_t height = 180;
+    if (width < 360 && width > 0) {
+        height = ((unsigned)width * 7 / 12); // to match 360×210
+    } else if (width < 540) {
+        height = 180 + (540 - (unsigned)width) * 30 / 180; // smooth transition
+    }
 
     context->window = g_object_new (
         PHOSH_TYPE_LAYER_SURFACE,
         "layer-shell", squeek_wayland->layer_shell,
         "wl-output", output,
-        "height", KEYBOARD_HEIGHT,
+        "height", height,
         "anchor", ZWLR_LAYER_SURFACE_V1_ANCHOR_BOTTOM
                   | ZWLR_LAYER_SURFACE_V1_ANCHOR_LEFT
                   | ZWLR_LAYER_SURFACE_V1_ANCHOR_RIGHT,
         "layer", ZWLR_LAYER_SHELL_V1_LAYER_TOP,
         "kbd-interactivity", FALSE,
-        "exclusive-zone", KEYBOARD_HEIGHT,
+        "exclusive-zone", height,
         "namespace", "osk",
         NULL
     );
