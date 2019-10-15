@@ -18,6 +18,7 @@ add_project_arguments(
     '-Werror=maybe-uninitialized',
     '-Werror=missing-field-initializers',
     '-Werror=incompatible-pointer-types',
+    '-Werror=int-conversion',
   ],
   language: 'c'
 )
