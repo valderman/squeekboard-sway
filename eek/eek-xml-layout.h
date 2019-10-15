@@ -24,10 +24,13 @@
 #define EEK_XML_LAYOUT_H 1
 
 #include "eek-types.h"
+#include "src/layout.h"
 
 G_BEGIN_DECLS
+
 LevelKeyboard *
 eek_xml_layout_real_create_keyboard (const char *keyboard_type,
-                                     EekboardContextService *manager);
+                                     EekboardContextService *manager,
+                                     enum layout_type t);
 G_END_DECLS
 #endif  /* EEK_XML_LAYOUT_H */

@@ -19,6 +19,7 @@
 #define SERVER_CONTEXT_SERVICE_H 1
 
 #include "eekboard/eekboard-service.h"
+#include "src/layout.h"
 
 G_BEGIN_DECLS
 
@@ -33,6 +34,7 @@ G_BEGIN_DECLS
 typedef struct _ServerContextService ServerContextService;
 
 EekboardContextService *server_context_service_new ();
+enum layout_type server_context_service_get_layout_type(EekboardContextService*);
 
 G_END_DECLS
 #endif  /* SERVER_CONTEXT_SERVICE_H */

@@ -39,10 +39,11 @@ typedef struct _ServerContextServiceClass ServerContextServiceClass;
 struct _ServerContextService {
     EekboardContextService parent;
 
-    GtkWidget *window;
+    PhoshLayerSurface *window;
     GtkWidget *widget;
     guint hiding;
     guint last_requested_height;
+    enum layout_type last_type;
 
     gdouble size_constraint_landscape[2];
     gdouble size_constraint_portrait[2];
@@ -59,7 +60,7 @@ on_destroy (GtkWidget *widget, gpointer user_data)
 {
     ServerContextService *context = user_data;
 
-    g_assert (widget == context->window);
+    g_assert (widget == GTK_WIDGET(context->window));
 
     context->window = NULL;
     context->widget = NULL;
@@ -127,15 +128,30 @@ calculate_height(int32_t width)
     return height;
 }
 
+enum layout_type get_type(uint32_t width, uint32_t height) {
+    (void)height;
+    if (width < 540) {
+        return LAYOUT_TYPE_BASE;
+    }
+    return LAYOUT_TYPE_WIDE;
+}
+
 static void
 on_surface_configure(PhoshLayerSurface *surface, ServerContextService *context)
 {
     gint width;
     gint height;
     g_object_get(G_OBJECT(surface),
-                 "width", &width,
-                 "height", &height,
+                 "configured-width", &width,
+                 "configured-height", &height,
                  NULL);
+    // check if the change would switch types
+    enum layout_type new_type = get_type((uint32_t)width, (uint32_t)height);
+    if (context->last_type != new_type) {
+        context->last_type = new_type;
+        eekboard_context_service_update_layout(EEKBOARD_CONTEXT_SERVICE(context), context->last_type);
+    }
+
     guint desired_height = calculate_height(width);
     guint configured_height = (guint)height;
     // if height was already requested once but a different one was given
@@ -190,7 +206,7 @@ make_window (ServerContextService *context)
     // and there's no space in the protocol for others.
     // Those may still be useful in the future,
     // or for hacks with regular windows.
-    gtk_widget_set_can_focus (context->window, FALSE);
+    gtk_widget_set_can_focus (GTK_WIDGET(context->window), FALSE);
     g_object_set (G_OBJECT(context->window), "accept_focus", FALSE, NULL);
     gtk_window_set_title (GTK_WINDOW(context->window),
                           _("Squeekboard"));
@@ -239,13 +255,13 @@ server_context_service_real_show_keyboard (EekboardContextService *_context)
 
     EEKBOARD_CONTEXT_SERVICE_CLASS (server_context_service_parent_class)->
         show_keyboard (_context);
-    gtk_widget_show (context->window);
+    gtk_widget_show (GTK_WIDGET(context->window));
 }
 
 static gboolean
 on_hide (ServerContextService *context)
 {
-    gtk_widget_hide (context->window);
+    gtk_widget_hide (GTK_WIDGET(context->window));
     context->hiding = 0;
 
     return G_SOURCE_REMOVE;
@@ -356,4 +372,9 @@ EekboardContextService *
 server_context_service_new ()
 {
     return EEKBOARD_CONTEXT_SERVICE(g_object_new (SERVER_TYPE_CONTEXT_SERVICE, NULL));
+}
+
+enum layout_type server_context_service_get_layout_type(EekboardContextService *service)
+{
+    return SERVER_CONTEXT_SERVICE(service)->last_type;
 }

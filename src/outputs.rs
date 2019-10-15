@@ -210,7 +210,7 @@ pub mod c {
         match output_state {
             Some(OutputState {
                 current_mode: Some(super::Mode { width, height: _ } ),
-                scale: scale,
+                scale,
             }) => width / scale,
             _ => {
                 eprintln!("No width registered on output");

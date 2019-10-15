@@ -33,15 +33,23 @@ use serde::Deserialize;
 pub mod c {
     use super::*;
     use std::os::raw::c_char;
-    
+
     #[no_mangle]
     pub extern "C"
-    fn squeek_load_layout(name: *const c_char) -> *mut ::layout::Layout {
+    fn squeek_load_layout(
+        name: *const c_char,
+        type_: u32,
+    ) -> *mut ::layout::Layout {
+        let type_ = match type_ {
+            0 => LayoutType::Base,
+            1 => LayoutType::Wide,
+            _ => panic!("Bad enum value"),
+        };
         let name = as_str(&name)
             .expect("Bad layout name")
             .expect("Empty layout name");
 
-        let layout = load_layout_with_fallback(name);
+        let layout = load_layout_with_fallback(&name, type_);
         Box::into_raw(Box::new(layout))
     }
 }
@@ -68,6 +76,20 @@ impl fmt::Display for LoadError {
     }
 }
 
+pub enum LayoutType {
+    Base = 0,
+    Wide = 1,
+}
+
+impl LayoutType {
+    fn apply_to_name(&self, name: String) -> String {
+        match self {
+            LayoutType::Base => name,
+            LayoutType::Wide => name + "_wide",
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 enum DataSource {
     File(PathBuf),
@@ -86,22 +108,35 @@ impl fmt::Display for DataSource {
 /// Lists possible sources, with 0 as the most preferred one
 fn list_layout_sources(
     name: &str,
-    keyboards_path: Option<PathBuf>
+    type_: LayoutType,
+    keyboards_path: Option<PathBuf>,
 ) -> Vec<DataSource> {
     let mut ret = Vec::new();
-    if let Some(path) = keyboards_path.clone() {
-        ret.push(DataSource::File(path.join(name).with_extension("yaml")))
-    }
-    
-    ret.push(DataSource::Resource(name.to_owned()));
 
-    if let Some(path) = keyboards_path.clone() {
-        ret.push(DataSource::File(
-            path.join(FALLBACK_LAYOUT_NAME).with_extension("yaml")
-        ))
-    }
-    
-    ret.push(DataSource::Resource(FALLBACK_LAYOUT_NAME.to_owned()));
+    let mut add_by_name = |name: &str| {
+        if let Some(path) = keyboards_path.clone() {
+            ret.push(DataSource::File(
+                path.join(name.to_owned()).with_extension("yaml")
+            ))
+        }
+        
+        ret.push(DataSource::Resource(name.into()));
+    };
+
+    match &type_ {
+        LayoutType::Base => {},
+        type_ => add_by_name(&type_.apply_to_name(name.into())),
+    };
+
+    add_by_name(name);
+
+    match &type_ {
+        LayoutType::Base => {},
+        type_ => add_by_name(&type_.apply_to_name(FALLBACK_LAYOUT_NAME.into())),
+    };
+
+    add_by_name(FALLBACK_LAYOUT_NAME);
+
     ret
 }
 
@@ -124,13 +159,14 @@ fn load_layout(source: DataSource) -> Result<::layout::Layout, LoadError> {
 }
 
 fn load_layout_with_fallback(
-    name: &str
+    name: &str,
+    type_: LayoutType,
 ) -> ::layout::Layout {
     let path = env::var_os("SQUEEKBOARD_KEYBOARDSDIR")
         .map(PathBuf::from)
         .or_else(|| xdg::data_path("squeekboard/keyboards"));
     
-    for source in list_layout_sources(name, path) {
+    for source in list_layout_sources(name, type_, path) {
         let layout = load_layout(source.clone());
         match layout {
             Err(e) => match (e, source) {
@@ -665,7 +701,7 @@ mod tests {
     /// First fallback should be to builtin, not to FALLBACK_LAYOUT_NAME
     #[test]
     fn fallbacks_order() {
-        let sources = list_layout_sources("nb", None);
+        let sources = list_layout_sources("nb", LayoutType::Base, None);
         
         assert_eq!(
             sources,

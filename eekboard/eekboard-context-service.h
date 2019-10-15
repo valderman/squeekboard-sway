@@ -105,6 +105,7 @@ void eekboard_context_service_set_keymap(EekboardContextService *context,
 void eekboard_context_service_set_hint_purpose(EekboardContextService *context,
                                                uint32_t hint,
                                                uint32_t purpose);
-
+void
+eekboard_context_service_update_layout(EekboardContextService *context, enum layout_type t);
 G_END_DECLS
 #endif  /* EEKBOARD_CONTEXT_SERVICE_H */

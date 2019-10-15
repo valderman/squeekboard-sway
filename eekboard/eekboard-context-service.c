@@ -41,11 +41,9 @@
 #include "wayland.h"
 
 #include "eek/eek-xml-layout.h"
+#include "src/server-context-service.h"
 
 #include "eekboard/eekboard-context-service.h"
-
-#define CSW 640
-#define CSH 480
 
 enum {
     PROP_0, // Magic: without this, keyboard is not useable in g_object_notify
@@ -73,10 +71,6 @@ struct _EekboardContextServicePrivate {
     LevelKeyboard *keyboard; // currently used keyboard
     GHashTable *keyboard_hash; // a table of available keyboards, per layout
 
-    // TODO: make use of repeating buttons
-    guint repeat_timeout_id;
-    gboolean repeat_triggered;
-
     GSettings *settings;
     uint32_t hint;
     uint32_t purpose;
@@ -86,9 +80,10 @@ G_DEFINE_TYPE_WITH_PRIVATE (EekboardContextService, eekboard_context_service, G_
 
 static LevelKeyboard *
 eekboard_context_service_real_create_keyboard (EekboardContextService *self,
-                                               const gchar            *keyboard_type)
+                                               const gchar            *keyboard_type,
+                                               enum layout_type t)
 {
-    LevelKeyboard *keyboard = eek_xml_layout_real_create_keyboard(keyboard_type, self);
+    LevelKeyboard *keyboard = eek_xml_layout_real_create_keyboard(keyboard_type, self, t);
     if (!keyboard) {
         g_error("Failed to create a keyboard");
     }
@@ -231,8 +226,8 @@ settings_get_layout(GSettings *settings, char **type, char **layout)
     g_variant_unref(inputs);
 }
 
-static void
-settings_update_layout(EekboardContextService *context)
+void
+eekboard_context_service_update_layout(EekboardContextService *context, enum layout_type t)
 {
     g_autofree gchar *keyboard_type = NULL;
     g_autofree gchar *keyboard_layout = NULL;
@@ -262,7 +257,7 @@ settings_update_layout(EekboardContextService *context)
                                                 GUINT_TO_POINTER(keyboard_id));
     // create a keyboard
     if (!keyboard) {
-        keyboard = eekboard_context_service_real_create_keyboard(context, keyboard_layout);
+        keyboard = eekboard_context_service_real_create_keyboard(context, keyboard_layout, t);
 
         g_hash_table_insert (context->priv->keyboard_hash,
                              GUINT_TO_POINTER(keyboard_id),
@@ -272,9 +267,12 @@ settings_update_layout(EekboardContextService *context)
     }
     // set as current
     context->priv->keyboard = keyboard;
-    // TODO: this used to save the group, why?
-    //group = eek_element_get_group (EEK_ELEMENT(context->priv->keyboard));
+
     g_object_notify (G_OBJECT(context), "keyboard");
+}
+
+static void update_layout_and_type(EekboardContextService *context) {
+    eekboard_context_service_update_layout(context, server_context_service_get_layout_type(context));
 }
 
 static gboolean
@@ -285,7 +283,7 @@ settings_handle_layout_changed(GSettings *s,
     (void)keys;
     (void)n_keys;
     EekboardContextService *context = user_data;
-    settings_update_layout(context);
+    update_layout_and_type(context);
     return TRUE;
 }
 
@@ -299,7 +297,7 @@ eekboard_context_service_constructed (GObject *object)
     if (!context->virtual_keyboard) {
         g_error("Programmer error: Failed to receive a virtual keyboard instance");
     }
-    settings_update_layout(context);
+    update_layout_and_type(context);
 }
 
 static void
@@ -518,6 +516,6 @@ void eekboard_context_service_set_hint_purpose(EekboardContextService *context,
     if (priv->hint != hint || priv->purpose != purpose) {
         priv->hint = hint;
         priv->purpose = purpose;
-        settings_update_layout(context);
+        update_layout_and_type(context);
     }
 }
