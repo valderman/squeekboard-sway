@@ -112,31 +112,31 @@ fn list_layout_sources(
     keyboards_path: Option<PathBuf>,
 ) -> Vec<DataSource> {
     let mut ret = Vec::new();
+    {
+        let mut add_by_name = |name: &str| {
+            if let Some(path) = keyboards_path.clone() {
+                ret.push(DataSource::File(
+                    path.join(name.to_owned()).with_extension("yaml")
+                ))
+            }
+            
+            ret.push(DataSource::Resource(name.into()));
+        };
 
-    let mut add_by_name = |name: &str| {
-        if let Some(path) = keyboards_path.clone() {
-            ret.push(DataSource::File(
-                path.join(name.to_owned()).with_extension("yaml")
-            ))
-        }
-        
-        ret.push(DataSource::Resource(name.into()));
-    };
+        match &type_ {
+            LayoutType::Base => {},
+            type_ => add_by_name(&type_.apply_to_name(name.into())),
+        };
 
-    match &type_ {
-        LayoutType::Base => {},
-        type_ => add_by_name(&type_.apply_to_name(name.into())),
-    };
+        add_by_name(name);
 
-    add_by_name(name);
+        match &type_ {
+            LayoutType::Base => {},
+            type_ => add_by_name(&type_.apply_to_name(FALLBACK_LAYOUT_NAME.into())),
+        };
 
-    match &type_ {
-        LayoutType::Base => {},
-        type_ => add_by_name(&type_.apply_to_name(FALLBACK_LAYOUT_NAME.into())),
-    };
-
-    add_by_name(FALLBACK_LAYOUT_NAME);
-
+        add_by_name(FALLBACK_LAYOUT_NAME);
+    }
     ret
 }
 
