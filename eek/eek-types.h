@@ -1,6 +1,7 @@
 /* 
  * Copyright (C) 2010-2011 Daiki Ueno <ueno@unixuser.org>
  * Copyright (C) 2010-2011 Red Hat, Inc.
+ * Copyright (C) 2019 Purism, SPC
  * 
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -33,116 +34,9 @@ G_BEGIN_DECLS
 
 #define EEK_TYPE_POINT (eek_point_get_type ())
 #define EEK_TYPE_BOUNDS (eek_bounds_get_type ())
-#define EEK_TYPE_OUTLINE (eek_outline_get_type ())
 #define EEK_TYPE_COLOR (eek_color_get_type ())
 
-
-/**
- * EekOrientation:
- * @EEK_ORIENTATION_VERTICAL: the elements will be arranged vertically
- * @EEK_ORIENTATION_HORIZONTAL: the elements will be arranged horizontally
- * @EEK_ORIENTATION_INVALID: used for error reporting
- *
- * Orientation of rows in sections.  Elements in a row will be
- * arranged with the specified orientation.
- */
-typedef enum {
-    EEK_ORIENTATION_VERTICAL,
-    EEK_ORIENTATION_HORIZONTAL,
-    EEK_ORIENTATION_INVALID = -1
-} EekOrientation;
-
-/**
- * EekModifierBehavior:
- * @EEK_MODIFIER_BEHAVIOR_NONE: do nothing when a modifier key is pressed
- * @EEK_MODIFIER_BEHAVIOR_LOCK: toggle the modifier status each time a
- * modifier key are pressed
- * @EEK_MODIFIER_BEHAVIOR_LATCH: enable the modifier when a modifier
- * key is pressed and keep it enabled until any key is pressed.
- *
- * Modifier handling mode.
- */
-typedef enum {
-    EEK_MODIFIER_BEHAVIOR_NONE,
-    EEK_MODIFIER_BEHAVIOR_LOCK,
-    EEK_MODIFIER_BEHAVIOR_LATCH
-} EekModifierBehavior;
-
-/**
- * EekModifierType:
- * @EEK_SHIFT_MASK: the Shift key.
- * @EEK_LOCK_MASK: a Lock key (depending on the modifier mapping of the
- *  X server this may either be CapsLock or ShiftLock).
- * @EEK_CONTROL_MASK: the Control key.
- * @EEK_MOD1_MASK: the fourth modifier key (it depends on the modifier
- *  mapping of the X server which key is interpreted as this modifier, but
- *  normally it is the Alt key).
- * @EEK_MOD2_MASK: the fifth modifier key (it depends on the modifier
- *  mapping of the X server which key is interpreted as this modifier).
- * @EEK_MOD3_MASK: the sixth modifier key (it depends on the modifier
- *  mapping of the X server which key is interpreted as this modifier).
- * @EEK_MOD4_MASK: the seventh modifier key (it depends on the modifier
- *  mapping of the X server which key is interpreted as this modifier).
- * @EEK_MOD5_MASK: the eighth modifier key (it depends on the modifier
- *  mapping of the X server which key is interpreted as this modifier).
- * @EEK_BUTTON1_MASK: the first mouse button.
- * @EEK_BUTTON2_MASK: the second mouse button.
- * @EEK_BUTTON3_MASK: the third mouse button.
- * @EEK_BUTTON4_MASK: the fourth mouse button.
- * @EEK_BUTTON5_MASK: the fifth mouse button.
- * @EEK_SUPER_MASK: the Super modifier. Since 2.10
- * @EEK_HYPER_MASK: the Hyper modifier. Since 2.10
- * @EEK_META_MASK: the Meta modifier. Since 2.10
- * @EEK_RELEASE_MASK: not used in EEK itself. GTK+ uses it to differentiate
- *  between (keyval, modifiers) pairs from key press and release events.
- * @EEK_MODIFIER_MASK: a mask covering all modifier types.
- */
-typedef enum
-{
-  EEK_SHIFT_MASK    = 1 << 0,
-  EEK_LOCK_MASK	    = 1 << 1,
-  EEK_CONTROL_MASK  = 1 << 2,
-  EEK_MOD1_MASK	    = 1 << 3,
-  EEK_MOD2_MASK	    = 1 << 4,
-  EEK_MOD3_MASK	    = 1 << 5,
-  EEK_MOD4_MASK	    = 1 << 6,
-  EEK_MOD5_MASK	    = 1 << 7,
-  EEK_BUTTON1_MASK  = 1 << 8,
-  EEK_BUTTON2_MASK  = 1 << 9,
-  EEK_BUTTON3_MASK  = 1 << 10,
-  EEK_BUTTON4_MASK  = 1 << 11,
-  EEK_BUTTON5_MASK  = 1 << 12,
-
-  /* The next few modifiers are used by XKB, so we skip to the end.
-   * Bits 15 - 25 are currently unused. Bit 29 is used internally.
-   */
-  
-  EEK_SUPER_MASK    = 1 << 26,
-  EEK_HYPER_MASK    = 1 << 27,
-  EEK_META_MASK     = 1 << 28,
-  
-  EEK_RELEASE_MASK  = 1 << 30,
-
-  EEK_MODIFIER_MASK = 0x5c001fff
-} EekModifierType;
-
-/**
- * EEK_INVALID_KEYCODE:
- *
- * Pseudo keycode used for error reporting.
- */
-#define EEK_INVALID_KEYCODE (0)
-    
-typedef struct _EekElement EekElement;
-typedef struct _EekSymbol EekSymbol;
-typedef struct _EekText EekText;
-typedef struct _EekTheme EekTheme;
-typedef struct _EekThemeContext EekThemeContext;
-typedef struct _EekThemeNode EekThemeNode;
-
-typedef struct _EekSymbolMatrix EekSymbolMatrix;
 typedef struct _EekBounds EekBounds;
-typedef struct _EekOutline EekOutline;
 typedef struct _EekColor EekColor;
 
 typedef struct _EekboardContextService EekboardContextService;
@@ -192,26 +86,6 @@ EekBounds *eek_bounds_copy     (const EekBounds *bounds);
 void       eek_bounds_free     (EekBounds       *bounds);
 
 /**
- * EekOutline:
- * @corner_radius: radius of corners of rounded polygon
- * @points: an array of points represents a polygon
- * @num_points: the length of @points
- *
- * 2D rounded polygon used to draw key shape
- */
-struct _EekOutline
-{
-    /*< public >*/
-    gdouble corner_radius;
-    EekPoint *points;
-    guint num_points;
-};
-
-GType       eek_outline_get_type (void) G_GNUC_CONST;
-EekOutline *eek_outline_copy     (const EekOutline *outline);
-void        eek_outline_free     (EekOutline       *outline);
-
-/**
  * EekColor:
  * @red: red component of color, between 0.0 and 1.0
  * @green: green component of color, between 0.0 and 1.0
@@ -237,21 +111,6 @@ EekColor *eek_color_new      (gdouble         red,
                               gdouble         alpha);
 EekColor *eek_color_copy     (const EekColor *color);
 void      eek_color_free     (EekColor       *color);
-
-typedef enum {
-  EEK_GRADIENT_NONE,
-  EEK_GRADIENT_VERTICAL,
-  EEK_GRADIENT_HORIZONTAL,
-  EEK_GRADIENT_RADIAL
-} EekGradientType;
-
-GQuark eek_error_quark (void);
-
-#define EEK_ERROR eek_error_quark ()
-typedef enum {
-  EEK_ERROR_LAYOUT_ERROR,
-  EEK_ERROR_FAILED
-} EekErrorEnum;
 
 G_END_DECLS
 #endif  /* EEK_TYPES_H */
