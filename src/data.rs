@@ -68,7 +68,7 @@ impl fmt::Display for LoadError {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 enum DataSource {
     File(PathBuf),
     Resource(String),
@@ -83,72 +83,44 @@ impl fmt::Display for DataSource {
     }
 }
 
-/// Tries to load the layout from the first place where it's present.
-/// If the layout exists, but is broken, fallback is activated.
-fn load_layout(
+/// Lists possible sources, with 0 as the most preferred one
+fn list_layout_sources(
     name: &str,
-    keyboards_path: Option<PathBuf>,
-) -> (
-    Result<::layout::Layout, LoadError>, // last attempted
-    DataSource, // last attempt source
-    Option<(LoadError, DataSource)>, // first attempt source
-) {
-    let path = keyboards_path.map(|path|
-        path.join(name).with_extension("yaml")
-    );
+    keyboards_path: Option<PathBuf>
+) -> Vec<DataSource> {
+    let mut ret = Vec::new();
+    if let Some(path) = keyboards_path.clone() {
+        ret.push(DataSource::File(path.join(name).with_extension("yaml")))
+    }
+    
+    ret.push(DataSource::Resource(name.to_owned()));
 
-    let layout = match path {
-        Some(path) => Some((
+    if let Some(path) = keyboards_path.clone() {
+        ret.push(DataSource::File(
+            path.join(FALLBACK_LAYOUT_NAME).with_extension("yaml")
+        ))
+    }
+    
+    ret.push(DataSource::Resource(FALLBACK_LAYOUT_NAME.to_owned()));
+    ret
+}
+
+fn load_layout(source: DataSource) -> Result<::layout::Layout, LoadError> {
+    match source {
+        DataSource::File(path) => {
             Layout::from_file(path.clone())
                 .map_err(LoadError::BadData)
                 .and_then(|layout|
                     layout.build().map_err(LoadError::BadKeyMap)
-                ),
-            DataSource::File(path),
-        )),
-        None => None, // No env var, not an error
-    };
-
-    let (failed_attempt, layout) = match layout {
-        Some((Ok(layout), path)) => (None, Some((layout, path))),
-        Some((Err(e), path)) => (Some((e, path)), None),
-        None => (None, None),
-    };
-    
-    let (layout, source) = match layout {
-        Some((layout, path)) => (Ok(layout), path),
-        None => (
-            Layout::from_resource(name)
+                )
+        },
+        DataSource::Resource(name) => {
+            Layout::from_resource(&name)
                 .and_then(|layout|
                     layout.build().map_err(LoadError::BadKeyMap)
-                ),
-            DataSource::Resource(name.into()),
-        ),
-    };
-
-    (layout, source, failed_attempt)
-}
-
-fn log_attempt_info(attempt: Option<(LoadError, DataSource)>) {
-    match attempt {
-        Some((
-            LoadError::BadData(Error::Missing(e)),
-            DataSource::File(file)
-        )) => {
-            eprintln!(
-                "Tried file {:?}, but it's missing: {}",
-                file, e
-            );
-            // Missing file, not to worry. TODO: print in debug logging level
+                )
         },
-        Some((e, source)) => {
-            eprintln!(
-                "Failed to load layout from {}: {}, trying builtin",
-                source, e
-            );
-        },
-        _ => {}
-    };
+    }
 }
 
 fn load_layout_with_fallback(
@@ -158,36 +130,27 @@ fn load_layout_with_fallback(
         .map(PathBuf::from)
         .or_else(|| xdg::data_path("squeekboard/keyboards"));
     
-    let (layout, source, attempt) = load_layout(name, path.clone());
-
-    log_attempt_info(attempt);
-    
-    let (layout, source, attempt) = match (layout, source) {
-        (Err(e), source) => {
-            eprintln!(
-                "Failed to load layout from {}: {}, using fallback",
-                source, e
-            );
-            load_layout(FALLBACK_LAYOUT_NAME, path)
-        },
-        (res, source) => (res, source, None),
-    };
-
-    log_attempt_info(attempt);
-
-    match (layout, source) {
-        (Err(e), source) => {
-            panic!(
-                format!("Failed to load hardcoded layout from {}: {:?}",
+    for source in list_layout_sources(name, path) {
+        let layout = load_layout(source.clone());
+        match layout {
+            Err(e) => match (e, source) {
+                (
+                    LoadError::BadData(Error::Missing(e)),
+                    DataSource::File(file)
+                ) => eprintln!( // TODO: print in debug logging level
+                    "Tried file {:?}, but it's missing: {}",
+                    file, e
+                ),
+                (e, source) => eprintln!(
+                    "Failed to load layout from {}: {}, skipping",
                     source, e
-                )
-            );
-        },
-        (Ok(layout), source) => {
-            eprintln!("Loaded layout from {}", source);
-            layout
+                ),
+            },
+            Ok(layout) => return layout,
         }
     }
+
+    panic!("No useful layout found!");
 }
 
 /// The root element describing an entire keyboard
@@ -708,14 +671,14 @@ mod tests {
     /// First fallback should be to builtin, not to FALLBACK_LAYOUT_NAME
     #[test]
     fn fallbacks_order() {
-        let (_layout, source, _failure) = load_layout(
-            "nb",
-            Some(PathBuf::from("tests"))
-        );
+        let sources = list_layout_sources("nb", None);
         
         assert_eq!(
-            source,
-            load_layout("nb", None).1
+            sources,
+            vec!(
+                DataSource::Resource("nb".into()),
+                DataSource::Resource(FALLBACK_LAYOUT_NAME.into()),
+            )
         );
     }
     
