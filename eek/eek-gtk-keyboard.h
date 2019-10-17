@@ -28,7 +28,7 @@
 #include <glib.h>
 #include <gtk/gtk.h>
 
-#include "eek-keyboard.h"
+typedef struct _LevelKeyboard LevelKeyboard; // including causes weird bugs
 
 G_BEGIN_DECLS
 #define EEK_TYPE_GTK_KEYBOARD (eek_gtk_keyboard_get_type())

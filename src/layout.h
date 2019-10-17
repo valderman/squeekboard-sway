@@ -4,30 +4,31 @@
 #include <inttypes.h>
 #include <glib.h>
 #include "eek/eek-element.h"
+#include "eek/eek-gtk-keyboard.h"
+#include "eek/eek-types.h"
 #include "src/keyboard.h"
+#include "virtual-keyboard-unstable-v1-client-protocol.h"
 
 struct squeek_button;
 struct squeek_row;
 struct squeek_view;
 struct squeek_layout;
 
+/// Represents the path to the button within a view
+struct button_place {
+    const struct squeek_row *row;
+    const struct squeek_button *button;
+};
+
 int32_t squeek_row_get_angle(const struct squeek_row*);
 
 EekBounds squeek_row_get_bounds(const struct squeek_row*);
-
-uint32_t squeek_row_contains(struct squeek_row*, struct squeek_button *button);
-
-struct button_place squeek_view_find_key(struct squeek_view*, struct squeek_key *state);
-
 
 typedef void (*ButtonCallback) (struct squeek_button *button, gpointer user_data);
 void squeek_row_foreach(struct squeek_row*,
                             ButtonCallback   callback,
                             gpointer      user_data);
 
-void squeek_row_free(struct squeek_row*);
-
-uint32_t squeek_button_get_oref(const struct squeek_button*);
 EekBounds squeek_button_get_bounds(const struct squeek_button*);
 const char *squeek_button_get_label(const struct squeek_button*);
 const char *squeek_button_get_icon_name(const struct squeek_button*);
@@ -47,19 +48,23 @@ void squeek_view_foreach(struct squeek_view*,
                             RowCallback   callback,
                             gpointer      user_data);
 
-struct squeek_row *squeek_view_get_row(struct squeek_view *view,
-                                       struct squeek_button *button);
-
-struct squeek_button *squeek_view_find_button_by_position(struct squeek_view *view, EekPoint point);
-
-
 void
 squeek_layout_place_contents(struct squeek_layout*);
 struct squeek_view *squeek_layout_get_current_view(struct squeek_layout*);
-void squeek_layout_set_state_from_press(struct squeek_layout* layout, LevelKeyboard *keyboard, struct squeek_key* key);
-
 
 struct squeek_layout *squeek_load_layout(const char *type);
 const char *squeek_layout_get_keymap(const struct squeek_layout*);
 void squeek_layout_free(struct squeek_layout*);
+
+void squeek_layout_release(struct squeek_layout *layout, struct zwp_virtual_keyboard_v1 *virtual_keyboard, uint32_t timestamp, EekGtkKeyboard *ui_keyboard);
+void squeek_layout_release_all_only(struct squeek_layout *layout, struct zwp_virtual_keyboard_v1 *virtual_keyboard, uint32_t timestamp);
+void squeek_layout_depress(struct squeek_layout *layout, struct zwp_virtual_keyboard_v1 *virtual_keyboard,
+                           double x_widget, double y_widget,
+                           struct transformation widget_to_layout,
+                           uint32_t timestamp, EekGtkKeyboard *ui_keyboard);
+void squeek_layout_drag(struct squeek_layout *layout, struct zwp_virtual_keyboard_v1 *virtual_keyboard,
+                        double x_widget, double y_widget,
+                        struct transformation widget_to_layout,
+                        uint32_t timestamp, EekGtkKeyboard *ui_keyboard);
+void squeek_layout_draw_all_changed(struct squeek_layout *layout, EekGtkKeyboard *ui_keyboard);
 #endif

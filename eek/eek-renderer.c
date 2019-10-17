@@ -24,6 +24,7 @@
 #include <string.h>
 #include <gdk-pixbuf/gdk-pixbuf.h>
 
+#include "eek-keyboard.h"
 #include "eek-renderer.h"
 
 enum {
@@ -454,8 +455,8 @@ eek_renderer_real_render_button (EekRenderer *self,
     struct squeek_key *key = squeek_button_get_key(place->button);
     render_button (
                 self, cr, place,
-                squeek_key_is_pressed(key),
-                squeek_key_is_locked (key)
+                squeek_key_is_pressed(key) != 0,
+                squeek_key_is_locked (key) != 0
     );
     cairo_restore (cr);
 }
@@ -959,29 +960,16 @@ eek_are_bounds_inside (EekBounds bounds, EekPoint point, EekPoint origin, int32_
     return 0;
 }
 
-/**
- * eek_renderer_find_key_by_position:
- * @renderer: The renderer normally used to render the key
- * @x: The horizontal widget coordinate of the position to test for a key
- * @y: The vertical widget coordinate of the position to test for a key
- *
- * Return value: the key located at the position x, y in widget coordinates, or
- *   NULL if no key can be found at that location
- **/
-struct squeek_button *
-eek_renderer_find_button_by_position (EekRenderer *renderer,
-                                      struct squeek_view *view,
-                                      gdouble      x,
-                                      gdouble      y)
-{
-    g_return_val_if_fail (EEK_IS_RENDERER(renderer), NULL);
+struct transformation
+eek_renderer_get_transformation (EekRenderer *renderer) {
+    struct transformation failed = {0};
+    g_return_val_if_fail (EEK_IS_RENDERER(renderer), failed);
 
     EekRendererPrivate *priv = eek_renderer_get_instance_private (renderer);
-
-    /* Transform from widget coordinates to keyboard coordinates */
-    EekPoint point = {
-        .x = (x - priv->origin_x)/priv->scale,
-        .y = (y - priv->origin_y)/priv->scale,
+    struct transformation ret = {
+        .origin_x = priv->origin_x,
+        .origin_y = priv->origin_y,
+        .scale = priv->scale,
     };
-    return squeek_view_find_button_by_position(view, point);
+    return ret;
 }

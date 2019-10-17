@@ -112,5 +112,10 @@ EekColor *eek_color_new      (gdouble         red,
 EekColor *eek_color_copy     (const EekColor *color);
 void      eek_color_free     (EekColor       *color);
 
+struct transformation {
+    gdouble origin_x;
+    gdouble origin_y;
+    gdouble scale;
+};
 G_END_DECLS
 #endif  /* EEK_TYPES_H */
