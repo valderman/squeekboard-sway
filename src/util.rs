@@ -1,6 +1,8 @@
 /*! Assorted helpers */
 use std::collections::HashMap;
+use std::rc::Rc;
 
+use std::hash::{ Hash, Hasher };
 use std::iter::FromIterator;
 
 pub mod c {
@@ -128,4 +130,37 @@ pub fn hash_map_map<K, V, F, K1, V1>(map: HashMap<K, V>, mut f: F)
     HashMap::from_iter(
         map.into_iter().map(|(key, value)| f(key, value))
     )
+}
+
+/// Compares pointers but not internal values of Rc
+pub struct Pointer<T>(Rc<T>);
+
+impl<T> Hash for Pointer<T> {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        (&*self.0 as *const T).hash(state);
+    }
+}
+
+impl<T> PartialEq for Pointer<T> {
+    fn eq(&self, other: &Pointer<T>) -> bool {
+        Rc::ptr_eq(&self.0, &other.0)
+    }
+}
+
+impl<T> Eq for Pointer<T> {}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    use std::collections::HashSet;
+
+    #[test]
+    fn check_set() {
+        let mut s = HashSet::new();
+        let first = Rc::new(1u32);
+        s.insert(Pointer(first.clone()));
+        assert_eq!(s.insert(Pointer(Rc::new(2u32))), true);
+        assert_eq!(s.remove(&Pointer(first)), true);
+    }
 }
