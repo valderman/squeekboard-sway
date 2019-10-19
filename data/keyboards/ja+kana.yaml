@@ -239,17 +239,17 @@ buttons:
         action:
             set_view: "roman"
         outline: "wide"
-        label: "あa1"
+        label: "あᴀ₁"
     switch2num: # switch from latin characters to numbers view
         action:
             set_view: "numbers"
         outline: "wide"
-        label: "ぁ𝐀1"
+        label: "ぁA₁"
     switch2kana: # switch from numbers to hiragana view
         action:
             set_view: "base"
         outline: "wide"
-        label: "ぁa𝟏"
+        label: "ぁᴀ1"
     # Buttons for katakana and symbols
     ひらがな:
         action:
