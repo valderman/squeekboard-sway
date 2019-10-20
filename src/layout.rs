@@ -371,19 +371,21 @@ pub mod c {
             ui_keyboard: EekGtkKeyboard,
         ) {
             let layout = unsafe { &mut *layout };
-            let view = layout.get_current_view();
             let point = widget_to_layout.forward(
                 Point { x: x_widget, y: y_widget }
             );
             
-            let place = view.find_button_by_position(point);
             // the immutable reference to `layout` through `view`
             // must be dropped
             // before `layout.press_key` borrows it mutably again
-            let state_place = place.map(|place| {(
-                place.button.state.clone(),
-                place.into(),
-            )});
+            let state_place = {
+                let view = layout.get_current_view();
+                let place = view.find_button_by_position(point);
+                place.map(|place| {(
+                    place.button.state.clone(),
+                    place.into(),
+                )})
+            };
             
             if let Some((mut state, c_place)) = state_place {
                 layout.press_key(
@@ -412,19 +414,19 @@ pub mod c {
             let layout = unsafe { &mut *layout };
             let virtual_keyboard = VirtualKeyboard(virtual_keyboard);
 
-            let view = layout.get_current_view();
-            
             let point = widget_to_layout.forward(
                 Point { x: x_widget, y: y_widget }
             );
             
             let pressed = layout.pressed_keys.clone();
-            let place = view.find_button_by_position(point);
-
-            let state_place = place.map(|place| {(
-                place.button.state.clone(),
-                place.into(),
-            )});
+            let state_place = {
+                let view = layout.get_current_view();
+                let place = view.find_button_by_position(point);
+                place.map(|place| {(
+                    place.button.state.clone(),
+                    place.into(),
+                )})
+            };
 
             if let Some((mut state, c_place)) = state_place {
                 let mut found = false;
