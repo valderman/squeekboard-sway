@@ -73,28 +73,6 @@ eek_bounds_free (EekBounds *bounds)
     g_slice_free (EekBounds, bounds);
 }
 
-/* EekOutline */
-G_DEFINE_BOXED_TYPE(EekOutline, eek_outline,
-                    eek_outline_copy, eek_outline_free);
-
-EekOutline *
-eek_outline_copy (const EekOutline *outline)
-{
-    EekOutline *_outline = g_slice_dup (EekOutline, outline);
-    _outline->corner_radius = outline->corner_radius;
-    _outline->num_points = outline->num_points;
-    _outline->points = g_slice_alloc0 (sizeof (EekPoint) * outline->num_points);
-    memcpy (_outline->points, outline->points, sizeof (EekPoint) * outline->num_points);
-    return _outline;
-}
-
-void
-eek_outline_free (EekOutline *outline)
-{
-    g_slice_free1 (sizeof (EekPoint) * outline->num_points, outline->points);
-    g_slice_free (EekOutline, outline);
-}
-
 /* EekColor */
 G_DEFINE_BOXED_TYPE(EekColor, eek_color, eek_color_copy, eek_color_free);
 
@@ -125,10 +103,4 @@ eek_color_new (gdouble red,
     color->alpha = alpha;
 
     return color;
-}
-
-GQuark
-eek_error_quark (void)
-{
-  return g_quark_from_static_string ("eek-error-quark");
 }

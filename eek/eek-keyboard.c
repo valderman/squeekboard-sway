@@ -38,27 +38,12 @@
 
 #include "eek-keyboard.h"
 
-EekModifierKey *
-eek_modifier_key_copy (EekModifierKey *modkey)
-{
-    return g_slice_dup (EekModifierKey, modkey);
-}
-
-void
-eek_modifier_key_free (EekModifierKey *modkey)
-{
-    g_slice_free (EekModifierKey, modkey);
-}
-
 void
 eek_keyboard_set_key_locked (LevelKeyboard    *keyboard,
                             struct squeek_key *key)
 {
-    EekModifierKey *modifier_key = g_slice_new (EekModifierKey);
-    modifier_key->modifiers = 0;
-    modifier_key->key = key;
     keyboard->locked_keys =
-            g_list_prepend (keyboard->locked_keys, modifier_key);
+            g_list_prepend (keyboard->locked_keys, key);
 }
 
 /// Unlock all locked keys.
@@ -69,13 +54,12 @@ eek_keyboard_set_key_locked (LevelKeyboard    *keyboard,
 static int unlock_keys(LevelKeyboard *keyboard) {
     int handled = 0;
     for (GList *head = keyboard->locked_keys; head; ) {
-        EekModifierKey *modifier_key = head->data;
+        struct squeek_key *key = head->data;
         GList *next = g_list_next (head);
         keyboard->locked_keys =
                 g_list_remove_link (keyboard->locked_keys, head);
-        //squeek_key_set_locked(squeek_button_get_key(modifier_key->button), false);
 
-        squeek_layout_set_state_from_press(keyboard->layout, keyboard, modifier_key->key);
+        squeek_layout_set_state_from_press(keyboard->layout, keyboard, key);
         g_list_free1 (head);
         head = next;
         handled++;
