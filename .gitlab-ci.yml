@@ -49,7 +49,7 @@ test_lintian:
 test:
   <<: *tags
   stage: test
-  dependencies:
+  needs:
     - build_meson
   script:
     - ninja -C _build test
