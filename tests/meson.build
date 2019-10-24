@@ -47,7 +47,7 @@ endforeach
 # The layout test is in the examples directory
 # due to the way Cargo builds executables
 # and the need to call it manually
-foreach layout : ['us', 'de', 'el', 'es', 'it', 'nb', 'number']
+foreach layout : ['us', 'de', 'el', 'es', 'it', 'ja+kana', 'nb', 'number']
     test(
         'test_layout_' + layout,
         cargo_script,
