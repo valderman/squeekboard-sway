@@ -18,16 +18,17 @@
  */
 
 use std::cell::RefCell;
-use std::collections::HashMap;
+use std::collections::{ HashMap, HashSet };
 use std::ffi::CString;
 use std::rc::Rc;
 use std::vec::Vec;
 
 use ::action::Action;
 use ::float_ord::FloatOrd;
-use ::keyboard::*;
+use ::keyboard::{ KeyState, PressType };
+use ::submission::{ Timestamp, VirtualKeyboard };
 
-use ::util::CloneOwned;
+use std::borrow::Borrow;
 
 /// Gathers stuff defined in C or called by C
 pub mod c {
@@ -41,6 +42,10 @@ pub mod c {
 
     #[repr(transparent)]
     pub struct UserData(*const c_void);
+
+    #[repr(transparent)]
+    #[derive(Copy, Clone)]
+    pub struct EekGtkKeyboard(*const c_void);
 
     /// Defined in eek-types.h
     #[repr(C)]
@@ -101,14 +106,6 @@ pub mod c {
             None => panic!("Row doesn't have any bounds yet"),
         }
     }
-
-    /// Set bounds by consuming the value
-    #[no_mangle]
-    pub extern "C"
-    fn squeek_row_set_bounds(row: *mut ::layout::Row, bounds: Bounds) {
-        let row = unsafe { &mut *row };
-        row.bounds = Some(bounds);
-    }
     
     #[no_mangle]
     pub extern "C"
@@ -122,12 +119,6 @@ pub mod c {
             let button = button.as_mut() as *mut ::layout::Button;
             unsafe { callback(button, data) };
         }
-    }
-    
-    #[no_mangle]
-    pub extern "C"
-    fn squeek_row_free(row: *mut ::layout::Row) {
-        unsafe { Box::from_raw(row) }; // gets dropped
     }
 
     #[no_mangle]
@@ -187,18 +178,6 @@ pub mod c {
         let button = unsafe { &*button };
         button.outline_name.as_ptr()
     }
-
-    #[no_mangle]
-    pub extern "C"
-    fn squeek_button_has_key(
-        button: *const ::layout::Button,
-        state: ::keyboard::c::CKeyState,
-    ) -> u32 {
-        let button = unsafe { &*button };
-        let state = state.clone_ref();
-        let equal = Rc::ptr_eq(&button.state, &state);
-        equal as u32
-    }
     
     #[no_mangle]
     pub extern "C"
@@ -229,19 +208,48 @@ pub mod c {
     fn squeek_layout_free(layout: *mut Layout) {
         unsafe { Box::from_raw(layout) };
     }
-    
-    
+
     /// Entry points for more complex procedures and algoithms which span multiple modules
     pub mod procedures {
         use super::*;
 
+        use ::submission::c::ZwpVirtualKeyboardV1;
+
         #[repr(C)]
         #[derive(PartialEq, Debug)]
-        pub struct ButtonPlace {
+        pub struct CButtonPlace {
             row: *const Row,
             button: *const Button,
         }
+
+        impl<'a> From<ButtonPlace<'a>> for CButtonPlace {
+            fn from(value: ButtonPlace<'a>) -> CButtonPlace {
+                CButtonPlace {
+                    row: value.row as *const Row,
+                    button: value.button as *const Button,
+                }
+            }
+        }
         
+        /// Scale + translate
+        #[repr(C)]
+        pub struct Transformation {
+            origin_x: f64,
+            origin_y: f64,
+            scale: f64,
+        }
+        
+        impl Transformation {
+            fn forward(&self, p: Point) -> Point {
+                Point {
+                    x: (p.x - self.origin_x) / self.scale,
+                    y: (p.y - self.origin_y) / self.scale,
+                }
+            }
+        }
+
+        // This is constructed only in C, no need for warnings
+        #[allow(dead_code)]
         #[repr(transparent)]
         pub struct LevelKeyboard(*const c_void);
 
@@ -254,55 +262,34 @@ pub mod c {
                 origin: Point,
                 angle: i32
             ) -> u32;
-            
-            // CKeyState is safe to pass to C as long as nothing dereferences it
+
+            // Button and View are safe to pass to C
+            // as long as they don't outlive the call
+            // and nothing dereferences them
             #[allow(improper_ctypes)]
-            pub fn eek_keyboard_set_key_locked(
-                keyboard: *mut LevelKeyboard,
-                key: ::keyboard::c::CKeyState,
+            pub fn eek_gtk_on_button_released(
+                button: *const Button,
+                view: *const View,
+                keyboard: EekGtkKeyboard,
             );
-        }
-        
-        #[no_mangle]
-        pub extern "C"
-        fn squeek_layout_set_state_from_press(
-            layout: *mut Layout,
-            keyboard: *mut LevelKeyboard,
-            key: ::keyboard::c::CKeyState,
-        ) {
-            let layout = unsafe { &mut *layout };
 
-            let view_name = match key.clone_owned().action {
-                Action::SetLevel(name) => {
-                    Some(name.clone())
-                },
-                Action::LockLevel { lock, unlock } => {
-                    let locked = {
-                        let key = key.clone_ref();
-                        let mut key = key.borrow_mut();
-                        key.locked ^= true;
-                        key.locked
-                    };
-
-                    if locked {
-                        unsafe {
-                            eek_keyboard_set_key_locked(
-                                keyboard,
-                                key
-                            )
-                        }
-                    }
-
-                    Some(if locked { lock } else { unlock }.clone())
-                },
-                _ => None,
-            };
-
-            if let Some(view_name) = view_name {
-                if let Err(_e) = layout.set_view(view_name.clone()) {
-                    eprintln!("No such view: {}, ignoring switch", view_name)
-                };
-            };
+            // Button and View inside CButtonPlace are safe to pass to C
+            // as long as they don't outlive the call
+            // and nothing dereferences them
+            #[allow(improper_ctypes)]
+            pub fn eek_gtk_on_button_pressed(
+                place: CButtonPlace,
+                keyboard: EekGtkKeyboard,
+            );
+            
+            // Button and View inside CButtonPlace are safe to pass to C
+            // as long as they don't outlive the call
+            // and nothing dereferences them
+            #[allow(improper_ctypes)]
+            pub fn eek_gtk_render_locked_button(
+                keyboard: EekGtkKeyboard,
+                place: CButtonPlace,
+            );
         }
 
         /// Places each button in order, starting from 0 on the left,
@@ -325,209 +312,196 @@ pub mod c {
             }
         }
 
-        fn squeek_row_contains(row: &Row, needle: *const Button) -> bool {
-            row.buttons.iter().position(
-                // TODO: wrap Button properly in Rc; this comparison is unreliable
-                |button| button.as_ref() as *const ::layout::Button == needle
-            ).is_some()
-        }
-        
         #[no_mangle]
         pub extern "C"
-        fn squeek_view_get_row(
-            view: *mut View,
-            needle: *const ::layout::Button,
-        ) -> *mut Row {
-            let view = unsafe { &mut *view };
-            let result = view.rows.iter_mut().find(|row| {
-                squeek_row_contains(row, needle)
-            });
-            match result {
-                Some(row) => row.as_mut() as *mut Row,
-                None => ptr::null_mut(),
+        fn squeek_layout_release(
+            layout: *mut Layout,
+            virtual_keyboard: ZwpVirtualKeyboardV1, // TODO: receive a reference to the backend
+            time: u32,
+            ui_keyboard: EekGtkKeyboard,
+        ) {
+            let layout = unsafe { &mut *layout };
+            let virtual_keyboard = VirtualKeyboard(virtual_keyboard);
+            // The list must be copied,
+            // because it will be mutated in the loop
+            for key in layout.pressed_keys.clone() {
+                let key: &Rc<RefCell<KeyState>> = key.borrow();
+                layout.release_key(
+                    &virtual_keyboard,
+                    &mut key.clone(),
+                    Timestamp(time)
+                );
+                let view = layout.get_current_view();
+                ::layout::procedures::release_ui_buttons(
+                    &view, key, ui_keyboard,
+                );
+            }
+        }
+
+        /// Release all buittons but don't redraw
+        #[no_mangle]
+        pub extern "C"
+        fn squeek_layout_release_all_only(
+            layout: *mut Layout,
+            virtual_keyboard: ZwpVirtualKeyboardV1, // TODO: receive a reference to the backend
+            time: u32,
+        ) {
+            let layout = unsafe { &mut *layout };
+            let virtual_keyboard = VirtualKeyboard(virtual_keyboard);
+            // The list must be copied,
+            // because it will be mutated in the loop
+            for key in layout.pressed_keys.clone() {
+                let key: &Rc<RefCell<KeyState>> = key.borrow();
+                layout.release_key(
+                    &virtual_keyboard,
+                    &mut key.clone(),
+                    Timestamp(time)
+                );
             }
         }
 
         #[no_mangle]
         pub extern "C"
-        fn squeek_view_find_key(
-            view: *const View,
-            needle: ::keyboard::c::CKeyState,
-        ) -> ButtonPlace {
-            let view = unsafe { &*view };
-            let state = needle.clone_ref();
+        fn squeek_layout_depress(
+            layout: *mut Layout,
+            virtual_keyboard: ZwpVirtualKeyboardV1, // TODO: receive a reference to the backend
+            x_widget: f64, y_widget: f64,
+            widget_to_layout: Transformation,
+            time: u32,
+            ui_keyboard: EekGtkKeyboard,
+        ) {
+            let layout = unsafe { &mut *layout };
+            let point = widget_to_layout.forward(
+                Point { x: x_widget, y: y_widget }
+            );
             
-            let paths = ::layout::procedures::find_key_paths(view, &state);
-
-            // Can only return 1 entry back to C
-            let (row, button) = match paths.get(0) {
-                Some((row, button)) => (
-                    row.as_ref() as *const Row,
-                    button.as_ref() as *const Button,
-                ),
-                None => ( ptr::null(), ptr::null() ),
+            // the immutable reference to `layout` through `view`
+            // must be dropped
+            // before `layout.press_key` borrows it mutably again
+            let state_place = {
+                let view = layout.get_current_view();
+                let place = view.find_button_by_position(point);
+                place.map(|place| {(
+                    place.button.state.clone(),
+                    place.into(),
+                )})
             };
-            ButtonPlace { row, button }
+            
+            if let Some((mut state, c_place)) = state_place {
+                layout.press_key(
+                    &VirtualKeyboard(virtual_keyboard),
+                    &mut state,
+                    Timestamp(time),
+                );
+
+                unsafe { eek_gtk_on_button_pressed(c_place, ui_keyboard) };
+            }
         }
 
+        // FIXME: this will work funny
+        // when 2 touch points are on buttons and moving one after another
+        // Solution is to have separate pressed lists for each point
+        #[no_mangle]
+        pub extern "C"
+        fn squeek_layout_drag(
+            layout: *mut Layout,
+            virtual_keyboard: ZwpVirtualKeyboardV1, // TODO: receive a reference to the backend
+            x_widget: f64, y_widget: f64,
+            widget_to_layout: Transformation,
+            time: u32,
+            ui_keyboard: EekGtkKeyboard,
+        ) {
+            let layout = unsafe { &mut *layout };
+            let virtual_keyboard = VirtualKeyboard(virtual_keyboard);
+
+            let point = widget_to_layout.forward(
+                Point { x: x_widget, y: y_widget }
+            );
+            
+            let pressed = layout.pressed_keys.clone();
+            let state_place = {
+                let view = layout.get_current_view();
+                let place = view.find_button_by_position(point);
+                place.map(|place| {(
+                    place.button.state.clone(),
+                    place.into(),
+                )})
+            };
+
+            if let Some((mut state, c_place)) = state_place {
+                let mut found = false;
+                for wrapped_key in pressed {
+                    let key: &Rc<RefCell<KeyState>> = wrapped_key.borrow();
+                    if Rc::ptr_eq(&state, &wrapped_key.0) {
+                        found = true;
+                    } else {
+                        layout.release_key(
+                            &virtual_keyboard,
+                            &mut key.clone(), 
+                            Timestamp(time),
+                        );
+                        let view = layout.get_current_view();
+                        ::layout::procedures::release_ui_buttons(
+                            &view, key, ui_keyboard,
+                        );
+                    }
+                }
+                if !found {
+                    layout.press_key(
+                        &virtual_keyboard,
+                        &mut state,
+                        Timestamp(time),
+                    );
+                    unsafe { eek_gtk_on_button_pressed(c_place, ui_keyboard) };
+                }
+            } else {
+                for wrapped_key in pressed {
+                    let key: &Rc<RefCell<KeyState>> = wrapped_key.borrow();
+                    layout.release_key(
+                        &virtual_keyboard,
+                        &mut key.clone(), 
+                        Timestamp(time),
+                    );
+                    let view = layout.get_current_view();
+                    ::layout::procedures::release_ui_buttons(
+                        &view, key, ui_keyboard,
+                    );
+                }
+            }
+        }
 
         #[no_mangle]
         pub extern "C"
-        fn squeek_view_find_button_by_position(
-            view: *mut View, point: Point
-        ) -> *mut Button {
-            let view = unsafe { &mut *view };
-            let result = view.find_button_by_position(point);
-            match result {
-                Some(button) => button.as_mut() as *mut Button,
-                None => ptr::null_mut(),
-            }
-        }
-        
-        #[cfg(test)]
-        mod test {
-            use super::*;
-
-            use super::super::test::*;
-
-            #[test]
-            fn row_has_button() {
-                let state = make_state();
-                let button = make_button_with_state(
-                    "test".into(),
-                    state.clone()
-                );
-                let button_ptr = button_as_raw(&button);
-                let mut row = Row::new(0);
-                row.buttons.push(button);
-                assert_eq!(squeek_row_contains(&row, button_ptr), true);
-                let shared_button = make_button_with_state(
-                    "test2".into(),
-                    state
-                );
-                let shared_button_ptr = button_as_raw(&shared_button);
-                row.buttons.push(shared_button);
-                assert_eq!(squeek_row_contains(&row, shared_button_ptr), true);
-                let row = Row::new(0);
-                assert_eq!(squeek_row_contains(&row, button_ptr), false);
-            }
-
-            #[test]
-            fn view_has_button() {
-                let state = make_state();
-                let state_clone = ::keyboard::c::CKeyState::wrap(state.clone());
-
-                let button = make_button_with_state("1".into(), state);
-                let button_ptr = button.as_ref() as *const Button;
-                
-                let row = Box::new(Row {
-                    buttons: vec!(button),
-                    angle: 0,
-                    bounds: None
-                });
-                let row_ptr = row.as_ref() as *const Row;
-
-                let view = View {
-                    bounds: Bounds {
-                        x: 0f64, y: 0f64,
-                        width: 0f64, height: 0f64
-                    },
-                    rows: vec!(row),
-                };
-
-                assert_eq!(
-                    squeek_view_find_key(
-                        &view as *const View,
-                        state_clone.clone(),
-                    ),
-                    ButtonPlace {
-                        row: row_ptr,
-                        button: button_ptr,
+        fn squeek_layout_draw_all_changed(
+            layout: *mut Layout,
+            ui_keyboard: EekGtkKeyboard,
+        ) {
+            let layout = unsafe { &mut *layout };
+            
+            for row in &layout.get_current_view().rows {
+                for button in &row.buttons {
+                    let c_place = CButtonPlace::from(
+                        ButtonPlace { row, button }
+                    );
+                    let state = RefCell::borrow(&button.state);
+                    match (state.pressed, state.locked) {
+                        (PressType::Released, false) => {}
+                        (PressType::Pressed, _) => unsafe {
+                            eek_gtk_on_button_pressed(c_place, ui_keyboard)
+                        },
+                        (_, true) => unsafe {
+                            eek_gtk_render_locked_button(ui_keyboard, c_place)
+                        },
                     }
-                );
-
-                let view = View {
-                    bounds: Bounds {
-                        x: 0f64, y: 0f64,
-                        width: 0f64, height: 0f64
-                    },
-                    rows: Vec::new(),
-                };
-                assert_eq!(
-                    squeek_view_find_key(
-                        &view as *const View,
-                        state_clone.clone()
-                    ),
-                    ButtonPlace {
-                        row: ptr::null(),
-                        button: ptr::null(),
-                    }
-                );
+                }
             }
         }
     }
-    
-    #[cfg(test)]
-    mod test {
-        use super::*;
-        
-        use ::keyboard::c::CKeyState;
+}
 
-        pub fn make_state() -> Rc<RefCell<::keyboard::KeyState>> {
-            Rc::new(RefCell::new(::keyboard::KeyState {
-                pressed: false,
-                locked: false,
-                keycodes: Vec::new(),
-                action: Action::SetLevel("default".into()),
-            }))
-        }
-
-        pub fn make_button_with_state(
-            name: String,
-            state: Rc<RefCell<::keyboard::KeyState>>,
-        ) -> Box<Button> {
-            Box::new(Button {
-                name: CString::new(name.clone()).unwrap(),
-                bounds: c::Bounds {
-                    x: 0f64, y: 0f64, width: 0f64, height: 0f64
-                },
-                outline_name: CString::new("test").unwrap(),
-                label: Label::Text(CString::new(name).unwrap()),
-                state: state,
-            })
-        }
-
-        pub fn button_as_raw(button: &Box<Button>) -> *const Button {
-            button.as_ref() as *const Button
-        }
-
-        #[test]
-        fn button_has_key() {
-            let state = make_state();
-            let button = make_button_with_state("1".into(), state.clone());
-            assert_eq!(
-                squeek_button_has_key(
-                    button_as_raw(&button),
-                    CKeyState::wrap(state.clone())
-                ),
-                1
-            );
-            let other_state = make_state();
-            let other_button = make_button_with_state("1".into(), other_state);
-            assert_eq!(
-                squeek_button_has_key(
-                    button_as_raw(&other_button),
-                    CKeyState::wrap(state.clone())
-                ),
-                0
-            );
-            let orphan_state = CKeyState::wrap(make_state());
-            assert_eq!(
-                squeek_button_has_key(button_as_raw(&button), orphan_state),
-                0
-            );
-        }
-    }
+pub struct ButtonPlace<'a> {
+    button: &'a Button,
+    row: &'a Row,
 }
 
 #[derive(Debug)]
@@ -570,14 +544,6 @@ pub struct Row {
 }
 
 impl Row {
-    fn new(angle: i32) -> Row {
-        Row {
-            buttons: Vec::new(),
-            angle: angle,
-            bounds: None,
-        }
-    }
-    
     fn last(positions: &Vec<c::Bounds>) -> Option<&c::Bounds> {
         let len = positions.len();
         match len {
@@ -615,8 +581,8 @@ impl Row {
 
     /// Finds the first button that covers the specified point
     /// relative to row's position's origin
-    fn find_button_by_position(&mut self, point: c::Point)
-        -> Option<&mut Box<Button>>
+    fn find_button_by_position(&self, point: c::Point)
+        -> Option<&Box<Button>>
     {
         let row_bounds = self.bounds.as_ref().expect("Missing bounds on row");
         let origin = c::Point {
@@ -624,7 +590,7 @@ impl Row {
             y: row_bounds.y,
         };
         let angle = self.angle;
-        self.buttons.iter_mut().find(|button| {
+        self.buttons.iter().find(|button| {
             let bounds = button.bounds.clone();
             let point = point.clone();
             let origin = origin.clone();
@@ -704,8 +670,8 @@ impl View {
 
     /// Finds the first button that covers the specified point
     /// relative to view's position's origin
-    fn find_button_by_position(&mut self, point: c::Point)
-        -> Option<&mut Box<Button>>
+    fn find_button_by_position(&self, point: c::Point)
+        -> Option<ButtonPlace>
     {
         // make point relative to the inside of the view,
         // which is the origin of all rows
@@ -714,22 +680,43 @@ impl View {
             y: point.y - self.bounds.y,
         };
 
-        self.rows.iter_mut().find_map(
-            |row| row.find_button_by_position(point.clone())
-        )
+        self.rows.iter().find_map(|row| {
+            row.find_button_by_position(point.clone())
+                .map(|button| ButtonPlace {row, button})
+        })
     }
 }
 
+// TODO: split into sth like
+// Arrangement (views) + details (keymap) + State (keys)
+/// State of the UI, contains the backend as well
 pub struct Layout {
     pub current_view: String,
+    // Views own the actual buttons which have state
+    // Maybe they should own UI only,
+    // and keys should be owned by a dedicated non-UI-State?
     pub views: HashMap<String, Box<View>>,
-    // TODO: move to ::keyboard::Keyboard
+
+    // Non-UI stuff
+    /// xkb keymap applicable to the contained keys. Unchangeable
     pub keymap_str: CString,
+    // Changeable state
+    // a Vec would be enough, but who cares, this will be small & fast enough
+    pub pressed_keys: HashSet<::util::Pointer<RefCell<KeyState>>>,
+    pub locked_keys: HashSet<::util::Pointer<RefCell<KeyState>>>,
 }
 
 struct NoSuchView;
 
+// Unfortunately, changes are not atomic due to mutability :(
+// An error will not be recoverable
+// The usage of &mut on Rc<RefCell<KeyState>> doesn't mean anything special.
+// Cloning could also be used.
 impl Layout {
+    fn get_current_view(&self) -> &Box<View> {
+        self.views.get(&self.current_view).expect("Selected nonexistent view")
+    }
+
     fn set_view(&mut self, view: String) -> Result<(), NoSuchView> {
         if self.views.contains_key(&view) {
             self.current_view = view;
@@ -738,11 +725,91 @@ impl Layout {
             Err(NoSuchView)
         }
     }
+
+    fn release_key(
+        &mut self,
+        virtual_keyboard: &VirtualKeyboard,
+        mut key: &mut Rc<RefCell<KeyState>>,
+        time: Timestamp,
+    ) {
+        if !self.pressed_keys.remove(&::util::Pointer(key.clone())) {
+            eprintln!("Warning: key {:?} was not pressed", key);
+        }
+        virtual_keyboard.switch(
+            &mut key.borrow_mut(),
+            PressType::Released,
+            time,
+        );
+        self.set_level_from_press(&mut key);
+    }
+    
+    fn press_key(
+        &mut self,
+        virtual_keyboard: &VirtualKeyboard,
+        key: &mut Rc<RefCell<KeyState>>,
+        time: Timestamp,
+    ) {
+        if !self.pressed_keys.insert(::util::Pointer(key.clone())) {
+            eprintln!("Warning: key {:?} was already pressed", key);
+        }
+        virtual_keyboard.switch(
+            &mut key.borrow_mut(),
+            PressType::Pressed,
+            time,
+        );
+    }
+
+    fn set_level_from_press(&mut self, key: &Rc<RefCell<KeyState>>) {
+        let keys = self.locked_keys.clone();
+        for key in &keys {
+            self.locked_keys.remove(key);
+            self.set_state_from_press(key.borrow());
+        }
+
+        // Don't handle the same key twice, but handle it at least once,
+        // because its press is the reason we're here
+        if !keys.contains(&::util::Pointer(key.clone())) {
+            self.set_state_from_press(key);
+        }
+    }
+
+    fn set_state_from_press(&mut self, key: &Rc<RefCell<KeyState>>) {
+        // Action should not hold a reference to key,
+        // because key is later borrowed for mutation. So action is cloned.
+        // RefCell::borrow() is covered up by (dyn Borrow)::borrow()
+        // if used like key.borrow() :(
+        let action = RefCell::borrow(key).action.clone();
+        let view_name = match action {
+            Action::SetLevel(name) => {
+                Some(name.clone())
+            },
+            Action::LockLevel { lock, unlock } => {
+                let locked = {
+                    let mut key = key.borrow_mut();
+                    key.locked ^= true;
+                    key.locked
+                };
+
+                if locked {
+                    self.locked_keys.insert(::util::Pointer(key.clone()));
+                }
+
+                Some(if locked { lock } else { unlock }.clone())
+            },
+            _ => None,
+        };
+
+        if let Some(view_name) = view_name {
+            if let Err(_e) = self.set_view(view_name.clone()) {
+                eprintln!("No such view: {}, ignoring switch", view_name)
+            };
+        };
+    }
 }
 
 mod procedures {
     use super::*;
-    
+
     type Path<'v> = (&'v Box<Row>, &'v Box<Button>);
 
     /// Finds all `(row, button)` paths that refer to the specified key `state`
@@ -773,5 +840,113 @@ mod procedures {
         (unsafe {
             c::procedures::eek_are_bounds_inside(bounds, point, origin, angle)
         }) == 1
+    }
+
+    /// Switch off all UI buttons associated with the (state) key
+    pub fn release_ui_buttons(
+        view: &Box<View>,
+        key: &Rc<RefCell<KeyState>>,
+        ui_keyboard: c::EekGtkKeyboard,
+    ) {
+        let paths = ::layout::procedures::find_key_paths(&view, key);
+        for (_row, button) in paths {
+            unsafe {
+                c::procedures::eek_gtk_on_button_released(
+                    button.as_ref() as *const Button,
+                    view.as_ref() as *const View,
+                    ui_keyboard,
+                );
+            };
+        }
+    }
+    
+    #[cfg(test)]
+    mod test {
+        use super::*;
+
+        use ::layout::test::*;
+
+        /// Checks whether the path points to the same boxed instances.
+        /// The instance constraint will be droppable
+        /// when C stops holding references to the data
+        #[test]
+        fn view_has_button() {
+            fn as_ptr<T>(v: &Box<T>) -> *const T {
+                v.as_ref() as *const T
+            }
+
+            let state = make_state();
+            let state_clone = state.clone();
+
+            let button = make_button_with_state("1".into(), state);
+            let button_ptr = as_ptr(&button);
+            
+            let row = Box::new(Row {
+                buttons: vec!(button),
+                angle: 0,
+                bounds: None
+            });
+            let row_ptr = as_ptr(&row);
+
+            let view = View {
+                bounds: c::Bounds {
+                    x: 0f64, y: 0f64,
+                    width: 0f64, height: 0f64
+                },
+                rows: vec!(row),
+            };
+
+            assert_eq!(
+                find_key_paths(&view, &state_clone.clone()).iter()
+                    .map(|(row, button)| { (as_ptr(row), as_ptr(button)) })
+                    .collect::<Vec<_>>(),
+                vec!(
+                    (row_ptr, button_ptr)
+                )
+            );
+
+            let view = View {
+                bounds: c::Bounds {
+                    x: 0f64, y: 0f64,
+                    width: 0f64, height: 0f64
+                },
+                rows: Vec::new(),
+            };
+            assert_eq!(
+                find_key_paths(&view, &state_clone.clone()).is_empty(),
+                true
+            );
+        }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    use std::ffi::CString;
+
+    pub fn make_state() -> Rc<RefCell<::keyboard::KeyState>> {
+        Rc::new(RefCell::new(::keyboard::KeyState {
+            pressed: PressType::Released,
+            locked: false,
+            keycodes: Vec::new(),
+            action: Action::SetLevel("default".into()),
+        }))
+    }
+
+    pub fn make_button_with_state(
+        name: String,
+        state: Rc<RefCell<::keyboard::KeyState>>,
+    ) -> Box<Button> {
+        Box::new(Button {
+            name: CString::new(name.clone()).unwrap(),
+            bounds: c::Bounds {
+                x: 0f64, y: 0f64, width: 0f64, height: 0f64
+            },
+            outline_name: CString::new("test").unwrap(),
+            label: Label::Text(CString::new(name).unwrap()),
+            state: state,
+        })
     }
 }

@@ -1,6 +1,9 @@
 /*! Assorted helpers */
 use std::collections::HashMap;
+use std::rc::Rc;
 
+use std::borrow::Borrow;
+use std::hash::{ Hash, Hasher };
 use std::iter::FromIterator;
 
 pub mod c {
@@ -109,7 +112,7 @@ pub mod c {
 
         fn clone_owned(&self) -> T {
             let rc = self.clone_ref();
-            let r = rc.borrow();
+            let r = RefCell::borrow(&rc);
             r.to_owned()
         }
     }
@@ -128,4 +131,55 @@ pub fn hash_map_map<K, V, F, K1, V1>(map: HashMap<K, V>, mut f: F)
     HashMap::from_iter(
         map.into_iter().map(|(key, value)| f(key, value))
     )
+}
+
+/// Compares pointers but not internal values of Rc
+pub struct Pointer<T>(pub Rc<T>);
+
+impl<T> Pointer<T> {
+    pub fn new(value: T) -> Self {
+        Pointer(Rc::new(value))
+    }
+}
+
+impl<T> Hash for Pointer<T> {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        (&*self.0 as *const T).hash(state);
+    }
+}
+
+impl<T> PartialEq for Pointer<T> {
+    fn eq(&self, other: &Pointer<T>) -> bool {
+        Rc::ptr_eq(&self.0, &other.0)
+    }
+}
+
+impl<T> Eq for Pointer<T> {}
+
+impl<T> Clone for Pointer<T> {
+    fn clone(&self) -> Self {
+        Pointer(self.0.clone())
+    }
+}
+
+impl<T> Borrow<Rc<T>> for Pointer<T> {
+    fn borrow(&self) -> &Rc<T> {
+        &self.0
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    use std::collections::HashSet;
+
+    #[test]
+    fn check_set() {
+        let mut s = HashSet::new();
+        let first = Rc::new(1u32);
+        s.insert(Pointer(first.clone()));
+        assert_eq!(s.insert(Pointer(Rc::new(2u32))), true);
+        assert_eq!(s.remove(&Pointer(first)), true);
+    }
 }

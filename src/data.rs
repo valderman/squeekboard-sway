@@ -14,7 +14,7 @@ use std::vec::Vec;
 use xkbcommon::xkb;
 
 use ::keyboard::{
-    KeyState,
+    KeyState, PressType,
     generate_keymap, generate_keycodes, FormattingError
 };
 use ::resources;
@@ -309,7 +309,7 @@ impl Layout {
             (
                 name.into(),
                 KeyState {
-                    pressed: false,
+                    pressed: PressType::Released,
                     locked: false,
                     keycodes,
                     action,
@@ -370,6 +370,8 @@ impl Layout {
                 CString::new(keymap_str)
                     .expect("Invalid keymap string generated")
             },
+            locked_keys: HashSet::new(),
+            pressed_keys: HashSet::new(),
         })
     }
 }

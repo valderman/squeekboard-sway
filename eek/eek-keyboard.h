@@ -35,28 +35,16 @@ G_BEGIN_DECLS
 
 /// Keyboard state holder
 struct _LevelKeyboard {
-    struct squeek_layout *layout;
+    struct squeek_layout *layout; // owned
     struct xkb_keymap *keymap;
     int keymap_fd; // keymap formatted as XKB string
     size_t keymap_len; // length of the data inside keymap_fd
-
-    GList *pressed_keys; // struct squeek_key*
-    GList *locked_keys; // struct squeek_key*
 
     guint id; // as a key to layout choices
 
     EekboardContextService *manager; // unowned reference
 };
 typedef struct _LevelKeyboard LevelKeyboard;
-
-/// Represents the path to the button within a view
-struct button_place {
-    const struct squeek_row *row;
-    const struct squeek_button *button;
-};
-
-void eek_keyboard_press_key(LevelKeyboard *keyboard, struct squeek_key *key, guint32 timestamp);
-void eek_keyboard_release_key(LevelKeyboard *keyboard, struct squeek_key *key, guint32 timestamp);
 
 gchar *             eek_keyboard_get_keymap
                                      (LevelKeyboard *keyboard);
