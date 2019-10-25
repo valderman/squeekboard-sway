@@ -240,7 +240,7 @@ static void render_button_in_context(EekRenderer *self,
     if (icon_name) {
         gint scale = priv->scale_factor;
         cairo_surface_t *icon_surface =
-            eek_renderer_get_icon_surface (self, icon_name, 16 / priv->scale,
+            eek_renderer_get_icon_surface (icon_name, 16 / priv->scale,
                                            scale);
         if (icon_surface) {
             gint width = cairo_image_surface_get_width (icon_surface);
@@ -258,6 +258,7 @@ static void render_button_in_context(EekRenderer *self,
                                        foreground.blue,
                                        foreground.alpha);
             cairo_mask_surface (cr, icon_surface, 0.0, 0.0);
+            cairo_surface_destroy(icon_surface);
             cairo_fill (cr);
             cairo_restore (cr);
             return;
@@ -834,38 +835,28 @@ eek_renderer_create_pango_layout (EekRenderer  *renderer)
     return pango_layout_new (priv->pcontext);
 }
 
-/// Surfaces returned from this are cached and must not be freed
 cairo_surface_t *
-eek_renderer_get_icon_surface (EekRenderer *renderer,
-                               const gchar *icon_name,
+eek_renderer_get_icon_surface (const gchar *icon_name,
                                gint size,
                                gint scale)
 {
     GError *error = NULL;
-    cairo_surface_t *surface;
+    cairo_surface_t *surface = gtk_icon_theme_load_surface (gtk_icon_theme_get_default (),
+                                                            icon_name,
+                                                            size,
+                                                            scale,
+                                                            NULL,
+                                                            0,
+                                                            &error);
 
-    g_return_val_if_fail (EEK_IS_RENDERER(renderer), NULL);
-
-    EekRendererPrivate *priv = eek_renderer_get_instance_private (renderer);
-
-    surface = g_hash_table_lookup (priv->icons, icon_name);
-    if (!surface) {
-        surface = gtk_icon_theme_load_surface (gtk_icon_theme_get_default (),
-                                               icon_name,
-                                               size,
-                                               scale,
-                                               NULL,
-                                               0,
-                                               &error);
-        g_hash_table_insert (priv->icons, g_strdup(icon_name), surface);
-        if (surface == NULL) {
-            g_warning ("can't get icon surface for %s: %s",
-                       icon_name,
-                       error->message);
-            g_error_free (error);
-            return NULL;
-        }
+    if (surface == NULL) {
+        g_warning ("can't get icon surface for %s: %s",
+                   icon_name,
+                   error->message);
+        g_error_free (error);
+        return NULL;
     }
+
     return surface;
 }
 
