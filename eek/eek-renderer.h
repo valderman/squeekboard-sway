@@ -82,7 +82,7 @@ void             eek_renderer_render_button       (EekRenderer     *renderer,
                                                 gdouble          scale,
                                                 gboolean         rotate);
 
-cairo_surface_t *eek_renderer_get_icon_surface (EekRenderer     *renderer,
+cairo_surface_t *eek_renderer_get_icon_surface(EekRenderer     *renderer,
                                                 const gchar     *icon_name,
                                                 gint             size,
                                                 gint             scale);

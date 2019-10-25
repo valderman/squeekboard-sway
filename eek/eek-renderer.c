@@ -198,8 +198,7 @@ static void render_button_in_context(EekRenderer *self,
                                      GtkStyleContext *ctx,
                                      struct button_place *place,
                                      gboolean active) {
-    cairo_surface_t *outline_surface;
-    GHashTable *outline_surface_cache;
+    cairo_surface_t *outline_surface = NULL;
     PangoLayout *layout;
     PangoRectangle extents = { 0, };
     EekColor foreground;
@@ -208,9 +207,7 @@ static void render_button_in_context(EekRenderer *self,
     /* render outline */
     EekBounds bounds = squeek_button_get_bounds(place->button);
 
-    outline_surface = NULL;
-
-    if (!outline_surface) {
+    {
         cairo_t *cr;
 
         // Outline will be drawn on the outside of the button, so the
@@ -233,6 +230,7 @@ static void render_button_in_context(EekRenderer *self,
         cairo_destroy (cr);
     }
     cairo_set_source_surface (cr, outline_surface, 0.0, 0.0);
+    cairo_surface_destroy(outline_surface);
     cairo_paint (cr);
 
     eek_renderer_get_foreground_color (self, ctx, &foreground);
@@ -261,7 +259,6 @@ static void render_button_in_context(EekRenderer *self,
                                        foreground.alpha);
             cairo_mask_surface (cr, icon_surface, 0.0, 0.0);
             cairo_fill (cr);
-
             cairo_restore (cr);
             return;
         }
@@ -285,7 +282,6 @@ static void render_button_in_context(EekRenderer *self,
     pango_cairo_show_layout (cr, layout);
     cairo_restore (cr);
     g_object_unref (layout);
-
 }
 
 static void
@@ -838,6 +834,7 @@ eek_renderer_create_pango_layout (EekRenderer  *renderer)
     return pango_layout_new (priv->pcontext);
 }
 
+/// Surfaces returned from this are cached and must not be freed
 cairo_surface_t *
 eek_renderer_get_icon_surface (EekRenderer *renderer,
                                const gchar *icon_name,
