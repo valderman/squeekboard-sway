@@ -9,9 +9,9 @@
 #include "src/keyboard.h"
 #include "virtual-keyboard-unstable-v1-client-protocol.h"
 
-enum layout_type {
-    LAYOUT_TYPE_BASE = 0,
-    LAYOUT_TYPE_WIDE = 1,
+enum squeek_arrangement_kind {
+    ARRANGEMENT_KIND_BASE = 0,
+    ARRANGEMENT_KIND_WIDE = 1,
 };
 
 struct squeek_button;
@@ -59,6 +59,7 @@ struct squeek_view *squeek_layout_get_current_view(struct squeek_layout*);
 
 struct squeek_layout *squeek_load_layout(const char *name, uint32_t type);
 const char *squeek_layout_get_keymap(const struct squeek_layout*);
+enum squeek_arrangement_kind squeek_layout_get_kind(const struct squeek_layout *);
 void squeek_layout_free(struct squeek_layout*);
 
 void squeek_layout_release(struct squeek_layout *layout, struct zwp_virtual_keyboard_v1 *virtual_keyboard, uint32_t timestamp, EekGtkKeyboard *ui_keyboard);

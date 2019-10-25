@@ -2,7 +2,6 @@
  * This could be done using GResource, but that would need additional work.
  */
 
-
 const KEYBOARDS: &[(*const str, *const str)] = &[
     ("us", include_str!("../data/keyboards/us.yaml")),
     ("us_wide", include_str!("../data/keyboards/us_wide.yaml")),

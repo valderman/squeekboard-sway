@@ -38,7 +38,7 @@ typedef struct _EekRendererPrivate
     LevelKeyboard *keyboard;
     PangoContext *pcontext;
     GtkCssProvider *css_provider;
-    GtkStyleContext *layout_context;
+    GtkStyleContext *view_context;
     GtkStyleContext *button_context; // TODO: maybe move a copy to each button
 
     gdouble border_width;
@@ -131,7 +131,7 @@ render_keyboard_surface (EekRenderer *renderer, struct squeek_view *view)
     EekRendererPrivate *priv = eek_renderer_get_instance_private (renderer);
     EekColor foreground;
 
-    eek_renderer_get_foreground_color (priv->layout_context, &foreground);
+    eek_renderer_get_foreground_color (priv->view_context, &foreground);
 
     EekBounds bounds = squeek_view_get_bounds (level_keyboard_current(priv->keyboard));
 
@@ -142,11 +142,11 @@ render_keyboard_surface (EekRenderer *renderer, struct squeek_view *view)
     };
 
     /* Paint the background covering the entire widget area */
-    gtk_render_background (priv->layout_context,
+    gtk_render_background (priv->view_context,
                            data.cr,
                            0, 0,
                            priv->allocation_width, priv->allocation_height);
-    gtk_render_frame (priv->layout_context,
+    gtk_render_frame (priv->view_context,
                       data.cr,
                       0, 0,
                       priv->allocation_width, priv->allocation_height);
@@ -500,7 +500,7 @@ eek_renderer_set_property (GObject      *object,
                            GParamSpec   *pspec)
 {
     EekRendererPrivate *priv = eek_renderer_get_instance_private (
-		    EEK_RENDERER(object));
+            EEK_RENDERER(object));
 
     switch (prop_id) {
     case PROP_PCONTEXT:
@@ -596,7 +596,7 @@ static GType new_type(char *name) {
     );
 }
 
-static GType layout_type() {
+static GType view_type() {
     static GType type = 0;
     if (!type) {
         type = new_type("sq_view");
@@ -649,31 +649,6 @@ eek_renderer_init (EekRenderer *self)
     priv->css_provider = gtk_css_provider_new ();
     gtk_css_provider_load_from_resource (priv->css_provider,
         "/sm/puri/squeekboard/style.css");
-
-    /* Create a style context for the layout */
-    GtkWidgetPath *path = gtk_widget_path_new();
-    gtk_widget_path_append_type(path, layout_type());
-
-    priv->layout_context = gtk_style_context_new();
-    gtk_style_context_set_path(priv->layout_context, path);
-    gtk_widget_path_unref(path);
-    gtk_style_context_add_provider (priv->layout_context,
-        GTK_STYLE_PROVIDER(priv->css_provider),
-        GTK_STYLE_PROVIDER_PRIORITY_USER);
-
-    /* Create a style context for the buttons */
-    path = gtk_widget_path_new();
-    gtk_widget_path_append_type(path, layout_type());
-    gtk_widget_path_append_type(path, button_type());
-    priv->button_context = gtk_style_context_new ();
-    gtk_style_context_set_path(priv->button_context, path);
-    gtk_widget_path_unref(path);
-
-    gtk_style_context_set_parent(priv->button_context, priv->layout_context);
-    gtk_style_context_set_state (priv->button_context, GTK_STATE_FLAG_NORMAL);
-    gtk_style_context_add_provider (priv->button_context,
-        GTK_STYLE_PROVIDER(priv->css_provider),
-        GTK_STYLE_PROVIDER_PRIORITY_USER);
 }
 
 static void
@@ -702,6 +677,37 @@ eek_renderer_new (LevelKeyboard  *keyboard,
                          NULL);
     EekRendererPrivate *priv = eek_renderer_get_instance_private (renderer);
     priv->keyboard = keyboard;
+
+    /* Create a style context for the layout */
+    GtkWidgetPath *path = gtk_widget_path_new();
+    gtk_widget_path_append_type(path, view_type());
+
+    priv->view_context = gtk_style_context_new();
+    gtk_style_context_set_path(priv->view_context, path);
+    gtk_widget_path_unref(path);
+    if (squeek_layout_get_kind(priv->keyboard->layout) == ARRANGEMENT_KIND_WIDE) {
+        gtk_style_context_add_class(priv->view_context, "wide");
+    }
+    gtk_style_context_add_provider (priv->view_context,
+        GTK_STYLE_PROVIDER(priv->css_provider),
+        GTK_STYLE_PROVIDER_PRIORITY_USER);
+    printf("view: %s\n", gtk_style_context_to_string(priv->view_context, GTK_STYLE_CONTEXT_PRINT_SHOW_STYLE));
+
+    /* Create a style context for the buttons */
+    path = gtk_widget_path_new();
+    gtk_widget_path_append_type(path, view_type());
+    if (squeek_layout_get_kind(priv->keyboard->layout) == ARRANGEMENT_KIND_WIDE) {
+        gtk_widget_path_iter_add_class(path, -1, "wide");
+    }
+    gtk_widget_path_append_type(path, button_type());
+    priv->button_context = gtk_style_context_new ();
+    gtk_style_context_set_path(priv->button_context, path);
+    gtk_widget_path_unref(path);
+    gtk_style_context_set_parent(priv->button_context, priv->view_context);
+    gtk_style_context_set_state (priv->button_context, GTK_STATE_FLAG_NORMAL);
+    gtk_style_context_add_provider (priv->button_context,
+        GTK_STYLE_PROVIDER(priv->css_provider),
+        GTK_STYLE_PROVIDER_PRIORITY_USER);
     return renderer;
 }
 

@@ -205,6 +205,13 @@ pub mod c {
 
     #[no_mangle]
     pub extern "C"
+    fn squeek_layout_get_kind(layout: *const Layout) -> u32 {
+        let layout = unsafe { &*layout };
+        layout.kind.clone() as u32
+    }
+
+    #[no_mangle]
+    pub extern "C"
     fn squeek_layout_free(layout: *mut Layout) {
         unsafe { Box::from_raw(layout) };
     }
@@ -687,10 +694,18 @@ impl View {
     }
 }
 
+/// The physical characteristic of layout for the purpose of styling
+#[derive(Clone, PartialEq, Debug)]
+pub enum ArrangementKind {
+    Base = 0,
+    Wide = 1,
+}
+
 // TODO: split into sth like
 // Arrangement (views) + details (keymap) + State (keys)
 /// State of the UI, contains the backend as well
 pub struct Layout {
+    pub kind: ArrangementKind,
     pub current_view: String,
     // Views own the actual buttons which have state
     // Maybe they should own UI only,
@@ -706,6 +721,12 @@ pub struct Layout {
     pub locked_keys: HashSet<::util::Pointer<RefCell<KeyState>>>,
 }
 
+/// A builder structure for picking up layout data from storage
+pub struct LayoutData {
+    pub views: HashMap<String, Box<View>>,
+    pub keymap_str: CString,
+}
+
 struct NoSuchView;
 
 // Unfortunately, changes are not atomic due to mutability :(
@@ -713,6 +734,16 @@ struct NoSuchView;
 // The usage of &mut on Rc<RefCell<KeyState>> doesn't mean anything special.
 // Cloning could also be used.
 impl Layout {
+    pub fn new(data: LayoutData, kind: ArrangementKind) -> Layout {
+        Layout {
+            kind,
+            current_view: "base".to_owned(),
+            views: data.views,
+            keymap_str: data.keymap_str,
+            pressed_keys: HashSet::new(),
+            locked_keys: HashSet::new(),
+        }
+    }
     fn get_current_view(&self) -> &Box<View> {
         self.views.get(&self.current_view).expect("Selected nonexistent view")
     }

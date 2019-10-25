@@ -81,7 +81,7 @@ G_DEFINE_TYPE_WITH_PRIVATE (EekboardContextService, eekboard_context_service, G_
 static LevelKeyboard *
 eekboard_context_service_real_create_keyboard (EekboardContextService *self,
                                                const gchar            *keyboard_type,
-                                               enum layout_type t)
+                                               enum squeek_arrangement_kind t)
 {
     LevelKeyboard *keyboard = eek_xml_layout_real_create_keyboard(keyboard_type, self, t);
     if (!keyboard) {
@@ -227,7 +227,7 @@ settings_get_layout(GSettings *settings, char **type, char **layout)
 }
 
 void
-eekboard_context_service_update_layout(EekboardContextService *context, enum layout_type t)
+eekboard_context_service_update_layout(EekboardContextService *context, enum squeek_arrangement_kind t)
 {
     g_autofree gchar *keyboard_type = NULL;
     g_autofree gchar *keyboard_layout = NULL;

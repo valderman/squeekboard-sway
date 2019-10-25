@@ -43,7 +43,7 @@ struct _ServerContextService {
     GtkWidget *widget;
     guint hiding;
     guint last_requested_height;
-    enum layout_type last_type;
+    enum squeek_arrangement_kind last_type;
 
     gdouble size_constraint_landscape[2];
     gdouble size_constraint_portrait[2];
@@ -128,12 +128,12 @@ calculate_height(int32_t width)
     return height;
 }
 
-enum layout_type get_type(uint32_t width, uint32_t height) {
+enum squeek_arrangement_kind get_type(uint32_t width, uint32_t height) {
     (void)height;
     if (width < 540) {
-        return LAYOUT_TYPE_BASE;
+        return ARRANGEMENT_KIND_BASE;
     }
-    return LAYOUT_TYPE_WIDE;
+    return ARRANGEMENT_KIND_WIDE;
 }
 
 static void
@@ -146,7 +146,7 @@ on_surface_configure(PhoshLayerSurface *surface, ServerContextService *context)
                  "configured-height", &height,
                  NULL);
     // check if the change would switch types
-    enum layout_type new_type = get_type((uint32_t)width, (uint32_t)height);
+    enum squeek_arrangement_kind new_type = get_type((uint32_t)width, (uint32_t)height);
     if (context->last_type != new_type) {
         context->last_type = new_type;
         eekboard_context_service_update_layout(EEKBOARD_CONTEXT_SERVICE(context), context->last_type);
@@ -374,7 +374,7 @@ server_context_service_new ()
     return EEKBOARD_CONTEXT_SERVICE(g_object_new (SERVER_TYPE_CONTEXT_SERVICE, NULL));
 }
 
-enum layout_type server_context_service_get_layout_type(EekboardContextService *service)
+enum squeek_arrangement_kind server_context_service_get_layout_type(EekboardContextService *service)
 {
     return SERVER_CONTEXT_SERVICE(service)->last_type;
 }
