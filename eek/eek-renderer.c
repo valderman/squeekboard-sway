@@ -241,8 +241,7 @@ static void render_button_in_context(EekRenderer *self,
 
     if (icon_name) {
         cairo_surface_t *icon_surface =
-            eek_renderer_get_icon_surface (icon_name, (gint)(16 / scale),
-                                           scale_factor);
+            eek_renderer_get_icon_surface (icon_name, 16, scale_factor);
         if (icon_surface) {
             gint width = cairo_image_surface_get_width (icon_surface);
             gint height = cairo_image_surface_get_height (icon_surface);
