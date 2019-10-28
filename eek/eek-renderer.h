@@ -65,7 +65,7 @@ void             eek_renderer_set_allocation_size
 void             eek_renderer_get_size         (EekRenderer     *renderer,
                                                 gdouble         *width,
                                                 gdouble         *height);
-void             eek_renderer_get_button_bounds   (EekRenderer     *renderer,
+void             eek_renderer_get_button_bounds   (EekBounds view_bounds,
                                                 struct button_place *button,
                                                 EekBounds       *bounds,
                                                 gboolean         rotate);
@@ -82,8 +82,7 @@ void             eek_renderer_render_button       (EekRenderer     *renderer,
                                                 gdouble          scale,
                                                 gboolean         rotate);
 
-cairo_surface_t *eek_renderer_get_icon_surface (EekRenderer     *renderer,
-                                                const gchar     *icon_name,
+cairo_surface_t *eek_renderer_get_icon_surface(const gchar     *icon_name,
                                                 gint             size,
                                                 gint             scale);
 
@@ -97,14 +96,14 @@ void             eek_renderer_set_default_background_color
                                                (EekRenderer     *renderer,
                                                 const EekColor  *color);
 void             eek_renderer_get_foreground_color
-                                               (EekRenderer     *renderer,
-                                                GtkStyleContext *context,
+                                               (GtkStyleContext *context,
                                                 EekColor        *color);
 void             eek_renderer_set_border_width (EekRenderer     *renderer,
                                                 gdouble          border_width);
 void             eek_renderer_apply_transformation_for_button
-                                               (EekRenderer     *renderer,
-                                                cairo_t         *cr, struct button_place *place,
+                                               (cairo_t         *cr,
+                                                EekBounds view_bounds,
+                                                struct button_place *place,
                                                 gdouble          scale,
                                                 gboolean         rotate);
 
