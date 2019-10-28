@@ -5,7 +5,7 @@ outlines:
     default:
         bounds: { x: 0, y: 0, width: 54, height: 42 }
     altline:
-        bounds: { x: 0, y: 0, width: 73, height: 42 }
+        bounds: { x: 0, y: 0, width: 81, height: 42 }
     wide:
         bounds: { x: 0, y: 0, width: 108, height: 42 }
     spaceline:
