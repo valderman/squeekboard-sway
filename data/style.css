@@ -4,7 +4,7 @@ sq_view {
     font-family: cantarell, sans-serif;
 }
 
-sq_button {
+sq_view sq_button {
     color: #deddda;
     background: #464448;
     border-style: solid;
@@ -12,6 +12,10 @@ sq_button {
     border-color: #5e5c64;
     border-radius: 3px;
     margin: 4px 2px 4px 2px;
+}
+
+sq_view.wide sq_button {
+    margin: 1px 1px 1px 1px;
 }
 
 sq_button:active {

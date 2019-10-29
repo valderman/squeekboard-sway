@@ -20,7 +20,8 @@
 #include <gtk/gtk.h>
 #include <glib/gi18n.h>
 
-#include "eek/eek-gtk.h"
+#include "eek/eek.h"
+#include "eek/eek-gtk-keyboard.h"
 #include "eek/layersurface.h"
 #include "wayland.h"
 
@@ -38,9 +39,11 @@ typedef struct _ServerContextServiceClass ServerContextServiceClass;
 struct _ServerContextService {
     EekboardContextService parent;
 
-    GtkWidget *window;
+    PhoshLayerSurface *window;
     GtkWidget *widget;
     guint hiding;
+    guint last_requested_height;
+    enum squeek_arrangement_kind last_type;
 
     gdouble size_constraint_landscape[2];
     gdouble size_constraint_portrait[2];
@@ -57,7 +60,7 @@ on_destroy (GtkWidget *widget, gpointer user_data)
 {
     ServerContextService *context = user_data;
 
-    g_assert (widget == context->window);
+    g_assert (widget == GTK_WIDGET(context->window));
 
     context->window = NULL;
     context->widget = NULL;
@@ -109,27 +112,84 @@ static void
 on_notify_unmap (GObject    *object,
                  ServerContextService *context)
 {
+    (void)object;
     g_object_set (context, "visible", FALSE, NULL);
 }
 
-#define KEYBOARD_HEIGHT 210
+static uint32_t
+calculate_height(int32_t width)
+{
+    uint32_t height = 180;
+    if (width < 360 && width > 0) {
+        height = ((unsigned)width * 7 / 12); // to match 360×210
+    } else if (width < 540) {
+        height = 180 + (540 - (unsigned)width) * 30 / 180; // smooth transition
+    }
+    return height;
+}
+
+enum squeek_arrangement_kind get_type(uint32_t width, uint32_t height) {
+    (void)height;
+    if (width < 540) {
+        return ARRANGEMENT_KIND_BASE;
+    }
+    return ARRANGEMENT_KIND_WIDE;
+}
+
+static void
+on_surface_configure(PhoshLayerSurface *surface, ServerContextService *context)
+{
+    gint width;
+    gint height;
+    g_object_get(G_OBJECT(surface),
+                 "configured-width", &width,
+                 "configured-height", &height,
+                 NULL);
+    // check if the change would switch types
+    enum squeek_arrangement_kind new_type = get_type((uint32_t)width, (uint32_t)height);
+    if (context->last_type != new_type) {
+        context->last_type = new_type;
+        eekboard_context_service_update_layout(EEKBOARD_CONTEXT_SERVICE(context), context->last_type);
+    }
+
+    guint desired_height = calculate_height(width);
+    guint configured_height = (guint)height;
+    // if height was already requested once but a different one was given
+    // (for the same set of surrounding properties),
+    // then it's probably not reasonable to ask for it again,
+    // as it's likely to create pointless loops
+    // of request->reject->request_again->...
+    if (desired_height != configured_height
+            && context->last_requested_height != desired_height) {
+        context->last_requested_height = desired_height;
+        phosh_layer_surface_set_size(surface, 0,
+                                     (gint)desired_height);
+        phosh_layer_surface_set_exclusive_zone(surface, (gint)desired_height);
+        phosh_layer_surface_wl_surface_commit (surface);
+    }
+}
+
 static void
 make_window (ServerContextService *context)
 {
     if (context->window)
         g_error("Window already present");
 
+    struct wl_output *output = squeek_outputs_get_current(squeek_wayland->outputs);
+    int32_t width = squeek_outputs_get_perceptual_width(squeek_wayland->outputs, output);
+    uint32_t height = calculate_height(width);
+
     context->window = g_object_new (
         PHOSH_TYPE_LAYER_SURFACE,
         "layer-shell", squeek_wayland->layer_shell,
-        "wl-output", g_ptr_array_index(squeek_wayland->outputs, 0), // TODO: select output as needed,
-        "height", KEYBOARD_HEIGHT,
+        "wl-output", output,
+        "height", height,
         "anchor", ZWLR_LAYER_SURFACE_V1_ANCHOR_BOTTOM
                   | ZWLR_LAYER_SURFACE_V1_ANCHOR_LEFT
                   | ZWLR_LAYER_SURFACE_V1_ANCHOR_RIGHT,
         "layer", ZWLR_LAYER_SHELL_V1_LAYER_TOP,
         "kbd-interactivity", FALSE,
-        "exclusive-zone", KEYBOARD_HEIGHT,
+        "exclusive-zone", height,
         "namespace", "osk",
         NULL
     );
@@ -138,6 +198,7 @@ make_window (ServerContextService *context)
                       "signal::destroy", G_CALLBACK(on_destroy), context,
                       "signal::map", G_CALLBACK(on_notify_map), context,
                       "signal::unmap", G_CALLBACK(on_notify_unmap), context,
+                      "signal::configured", G_CALLBACK(on_surface_configure), context,
                       NULL);
 
     // The properties below are just to make hacking easier.
@@ -145,7 +206,7 @@ make_window (ServerContextService *context)
     // and there's no space in the protocol for others.
     // Those may still be useful in the future,
     // or for hacks with regular windows.
-    gtk_widget_set_can_focus (context->window, FALSE);
+    gtk_widget_set_can_focus (GTK_WIDGET(context->window), FALSE);
     g_object_set (G_OBJECT(context->window), "accept_focus", FALSE, NULL);
     gtk_window_set_title (GTK_WINDOW(context->window),
                           _("Squeekboard"));
@@ -194,13 +255,13 @@ server_context_service_real_show_keyboard (EekboardContextService *_context)
 
     EEKBOARD_CONTEXT_SERVICE_CLASS (server_context_service_parent_class)->
         show_keyboard (_context);
-    gtk_widget_show (context->window);
+    gtk_widget_show (GTK_WIDGET(context->window));
 }
 
 static gboolean
 on_hide (ServerContextService *context)
 {
-    gtk_widget_hide (context->window);
+    gtk_widget_hide (GTK_WIDGET(context->window));
     context->hiding = 0;
 
     return G_SOURCE_REMOVE;
@@ -311,4 +372,9 @@ EekboardContextService *
 server_context_service_new ()
 {
     return EEKBOARD_CONTEXT_SERVICE(g_object_new (SERVER_TYPE_CONTEXT_SERVICE, NULL));
+}
+
+enum squeek_arrangement_kind server_context_service_get_layout_type(EekboardContextService *service)
+{
+    return SERVER_CONTEXT_SERVICE(service)->last_type;
 }

@@ -12,6 +12,7 @@ pub mod float_ord;
 pub mod imservice;
 mod keyboard;
 mod layout;
+mod outputs;
 mod resources;
 mod submission;
 mod util;

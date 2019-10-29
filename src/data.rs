@@ -17,6 +17,7 @@ use ::keyboard::{
     KeyState, PressType,
     generate_keymap, generate_keycodes, FormattingError
 };
+use ::layout::ArrangementKind;
 use ::resources;
 use ::util::c::as_str;
 use ::util::hash_map_map;
@@ -33,15 +34,24 @@ use serde::Deserialize;
 pub mod c {
     use super::*;
     use std::os::raw::c_char;
-    
+
     #[no_mangle]
     pub extern "C"
-    fn squeek_load_layout(name: *const c_char) -> *mut ::layout::Layout {
+    fn squeek_load_layout(
+        name: *const c_char,
+        type_: u32,
+    ) -> *mut ::layout::Layout {
+        let type_ = match type_ {
+            0 => ArrangementKind::Base,
+            1 => ArrangementKind::Wide,
+            _ => panic!("Bad enum value"),
+        };
         let name = as_str(&name)
             .expect("Bad layout name")
             .expect("Empty layout name");
 
-        let layout = load_layout_with_fallback(name);
+        let (kind, layout) = load_layout_data_with_fallback(&name, type_);
+        let layout = ::layout::Layout::new(layout, kind);
         Box::into_raw(Box::new(layout))
     }
 }
@@ -84,28 +94,66 @@ impl fmt::Display for DataSource {
 }
 
 /// Lists possible sources, with 0 as the most preferred one
+/// Trying order: native lang of the right kind, native base,
+/// fallback lang of the right kind, fallback base
 fn list_layout_sources(
     name: &str,
-    keyboards_path: Option<PathBuf>
-) -> Vec<DataSource> {
+    kind: ArrangementKind,
+    keyboards_path: Option<PathBuf>,
+) -> Vec<(ArrangementKind, DataSource)> {
     let mut ret = Vec::new();
-    if let Some(path) = keyboards_path.clone() {
-        ret.push(DataSource::File(path.join(name).with_extension("yaml")))
-    }
-    
-    ret.push(DataSource::Resource(name.to_owned()));
+    {
+        fn name_with_arrangement(name: String, kind: &ArrangementKind)
+            -> String
+        {
+            match kind {    
+                ArrangementKind::Base => name,
+                ArrangementKind::Wide => name + "_wide",
+            }
+        }
 
-    if let Some(path) = keyboards_path.clone() {
-        ret.push(DataSource::File(
-            path.join(FALLBACK_LAYOUT_NAME).with_extension("yaml")
-        ))
+        let mut add_by_name = |name: &str, kind: &ArrangementKind| {
+            if let Some(path) = keyboards_path.clone() {
+                ret.push((
+                    kind.clone(),
+                    DataSource::File(
+                        path.join(name.to_owned()).with_extension("yaml")
+                    )
+                ))
+            }
+            
+            ret.push((
+                kind.clone(),
+                DataSource::Resource(name.into())
+            ));
+        };
+
+        match &kind {
+            ArrangementKind::Base => {},
+            kind => add_by_name(
+                &name_with_arrangement(name.into(), &kind),
+                &kind,
+            ),
+        };
+
+        add_by_name(name, &ArrangementKind::Base);
+
+        match &kind {
+            ArrangementKind::Base => {},
+            kind => add_by_name(
+                &name_with_arrangement(FALLBACK_LAYOUT_NAME.into(), &kind),
+                &kind,
+            ),
+        };
+
+        add_by_name(FALLBACK_LAYOUT_NAME, &ArrangementKind::Base);
     }
-    
-    ret.push(DataSource::Resource(FALLBACK_LAYOUT_NAME.to_owned()));
     ret
 }
 
-fn load_layout(source: DataSource) -> Result<::layout::Layout, LoadError> {
+fn load_layout_data(source: DataSource)
+    -> Result<::layout::LayoutData, LoadError>
+{
     match source {
         DataSource::File(path) => {
             Layout::from_file(path.clone())
@@ -123,15 +171,16 @@ fn load_layout(source: DataSource) -> Result<::layout::Layout, LoadError> {
     }
 }
 
-fn load_layout_with_fallback(
-    name: &str
-) -> ::layout::Layout {
+fn load_layout_data_with_fallback(
+    name: &str,
+    kind: ArrangementKind,
+) -> (ArrangementKind, ::layout::LayoutData) {
     let path = env::var_os("SQUEEKBOARD_KEYBOARDSDIR")
         .map(PathBuf::from)
         .or_else(|| xdg::data_path("squeekboard/keyboards"));
     
-    for source in list_layout_sources(name, path) {
-        let layout = load_layout(source.clone());
+    for (kind, source) in list_layout_sources(name, kind, path) {
+        let layout = load_layout_data(source.clone());
         match layout {
             Err(e) => match (e, source) {
                 (
@@ -146,7 +195,7 @@ fn load_layout_with_fallback(
                     source, e
                 ),
             },
-            Ok(layout) => return layout,
+            Ok(layout) => return (kind, layout),
         }
     }
 
@@ -256,7 +305,9 @@ impl Layout {
         serde_yaml::from_reader(infile).map_err(Error::Yaml)
     }
 
-    pub fn build(self) -> Result<::layout::Layout, FormattingError> {
+    pub fn build(self)
+        -> Result<::layout::LayoutData, FormattingError>
+    {
         let button_names = self.views.values()
             .flat_map(|rows| {
                 rows.iter()
@@ -363,15 +414,12 @@ impl Layout {
             )})
         );
 
-        Ok(::layout::Layout {
-            current_view: "base".into(),
+        Ok(::layout::LayoutData {
             views: views,
             keymap_str: {
                 CString::new(keymap_str)
                     .expect("Invalid keymap string generated")
             },
-            locked_keys: HashSet::new(),
-            pressed_keys: HashSet::new(),
         })
     }
 }
@@ -665,13 +713,16 @@ mod tests {
     /// First fallback should be to builtin, not to FALLBACK_LAYOUT_NAME
     #[test]
     fn fallbacks_order() {
-        let sources = list_layout_sources("nb", None);
+        let sources = list_layout_sources("nb", ArrangementKind::Base, None);
         
         assert_eq!(
             sources,
             vec!(
-                DataSource::Resource("nb".into()),
-                DataSource::Resource(FALLBACK_LAYOUT_NAME.into()),
+                (ArrangementKind::Base, DataSource::Resource("nb".into())),
+                (
+                    ArrangementKind::Base,
+                    DataSource::Resource(FALLBACK_LAYOUT_NAME.into())
+                ),
             )
         );
     }

@@ -11,7 +11,6 @@ WARNING: this file is taken directly from phosh, with no modificaions apart from
 
 */
 
-
 #pragma once
 
 #include <gtk/gtk.h>
@@ -39,3 +38,16 @@ GtkWidget *phosh_layer_surface_new (gpointer layer_shell,
                                     gpointer wl_output);
 struct     zwlr_layer_surface_v1 *phosh_layer_surface_get_layer_surface(PhoshLayerSurface *self);
 struct     wl_surface            *phosh_layer_surface_get_wl_surface(PhoshLayerSurface *self);
+void                              phosh_layer_surface_set_size(PhoshLayerSurface *self,
+                                                               gint width,
+                                                               gint height);
+void                              phosh_layer_surface_set_margins(PhoshLayerSurface *self,
+                                                                  gint top,
+                                                                  gint right,
+                                                                  gint bottom,
+                                                                  gint left);
+void                              phosh_layer_surface_set_exclusive_zone(PhoshLayerSurface *self,
+                                                                         gint zone);
+void                              phosh_layer_surface_set_kbd_interactivity(PhoshLayerSurface *self,
+                                                                            gboolean interactivity);
+void                              phosh_layer_surface_wl_surface_commit (PhoshLayerSurface *self);

@@ -1,17 +1,17 @@
 ---
-bounds: { x: 0, y: 1, width: 360, height: 208 }
+bounds: { x: 0, y: 1, width: 540, height: 168 }
 
 outlines:
     default:
-        bounds: { x: 0, y: 0, width: 35.33, height: 52 }
+        bounds: { x: 0, y: 0, width: 54, height: 42 }
     altline:
-        bounds: { x: 0, y: 0, width: 52.67, height: 52 }
+        bounds: { x: 0, y: 0, width: 81, height: 42 }
     wide:
-        bounds: { x: 0, y: 0, width: 62, height: 52 }
+        bounds: { x: 0, y: 0, width: 108, height: 42 }
     spaceline:
-        bounds: { x: 0, y: 0, width: 142, height: 52 }
+        bounds: { x: 0, y: 0, width: 216, height: 42 }
     special:
-        bounds: { x: 0, y: 0, width: 44, height: 52 }
+        bounds: { x: 0, y: 0, width: 54, height: 42 }
 
 views:
     base:

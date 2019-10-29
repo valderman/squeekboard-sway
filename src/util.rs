@@ -62,6 +62,10 @@ pub mod c {
             assert_eq!(as_str(&ptr::null()), Ok(None))
         }
     }
+    
+    /// Marker trait for values that can be transferred to/received from C.
+    /// They must be either *const or *mut or repr(transparent).
+    pub trait COpaquePtr {}
 
     /// Wraps structures to pass them safely to/from C
     /// Since C doesn't respect borrowing rules,
@@ -79,6 +83,9 @@ pub mod c {
     // which is a bit too complex for now.
 
     impl<T> Wrapped<T> {
+        pub fn new(value: T) -> Wrapped<T> {
+            Wrapped::wrap(Rc::new(RefCell::new(value)))
+        }
         pub fn wrap(state: Rc<RefCell<T>>) -> Wrapped<T> {
             Wrapped(Rc::into_raw(state))
         }
@@ -116,6 +123,8 @@ pub mod c {
             r.to_owned()
         }
     }
+
+    impl<T> COpaquePtr for Wrapped<T> {}
 }
 
 pub trait CloneOwned {
