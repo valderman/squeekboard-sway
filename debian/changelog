@@ -1,3 +1,9 @@
+squeekboard (1.2.2) amber-phone; urgency=medium
+
+  * Landscape mode
+
+ -- Dorota Czaplejewicz <dorota.czaplejewicz@puri.sm>  Wed, 30 Oct 2019 12:38:39 +0000
+
 squeekboard (1.2.1) amber-phone; urgency=medium
 
   * Use different distribution
