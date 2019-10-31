@@ -3,6 +3,25 @@ Hacking
 
 This document describes the standards for modifying and maintaining the *squeekboard* project.
 
+Development environment
+-----------------------
+
+*Squeekboard* is regularly built and tested on [the develpment environment](https://developer.puri.sm/Librem5/Development_Environment.html).
+
+Recent Fedora releases are likely to be tested as well.
+
+### Dependencies
+
+On a Debian based system run
+
+```sh
+sudo apt-get -y install build-essential
+sudo apt-get -y build-dep .
+```
+
+For an explicit list of dependencies check the `Build-Depends` entry in the
+[debian/control][] file.
+
 Testing
 -------
 
@@ -28,8 +47,12 @@ $ busctl call --user sm.puri.OSK0 /sm/puri/OSK0 sm.puri.OSK0 SetVisible b false
 
 Testing layouts:
 
+Layouts can be selected using the GNOME Settings application.
+
 ```
+# define all available layouts
 $ gsettings set org.gnome.desktop.input-sources sources "[('xkb', 'us'), ('xkb', 'ua')]"
+# choose the active layout
 $ gsettings set org.gnome.desktop.input-sources current 1
 ```
 
