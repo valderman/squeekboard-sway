@@ -56,6 +56,55 @@ $ gsettings set org.gnome.desktop.input-sources sources "[('xkb', 'us'), ('xkb',
 $ gsettings set org.gnome.desktop.input-sources current 1
 ```
 
+Coding
+------
+
+Code submitted should roughly match the style of surrounding code. Things that will *not* be accepted are ones that often lead to errors:
+
+- skipping brackets `{}` after every `if()`, `else`, and similar
+
+Bad example:
+
+```
+if (foo)
+  bar();
+```
+
+Good example:
+
+```
+if (foo) {
+  bar();
+}
+```
+
+- mixing tabs and spaces in the same block of code (or config)
+
+Strongly encouraged:
+
+- don't make lines too long. If it's longer than ~80 characters, it's probably unreadable already, and the code needs to be clarified;
+- put operators in the beginning of a continuation line
+
+Bad example:
+
+```
+foobar = verylongexpression +
+    anotherverylongexpression + 
+    yetanotherexpression;
+```
+
+Good example:
+
+```
+foobar = verylongexpression
+    + anotherverylongexpression
+    + yetanotherexpression;
+```
+
+- use `///` for documentation comments in front of definitions and `/*! ... */` for documentation comments in the beginning of modules (see [Rust doc-comments](https://doc.rust-lang.org/reference/comments.html#doc-comments))
+
+If in doubt, check [PEP8](https://github.com/rust-dev-tools/fmt-rfcs/blob/master/guide/guide.md), the [kernel coding style](https://www.kernel.org/doc/html/v4.10/process/coding-style.html), or the [Rust style guide](https://github.com/rust-dev-tools/fmt-rfcs/blob/master/guide/guide.md).
+
 Maintenance
 -----------
 
