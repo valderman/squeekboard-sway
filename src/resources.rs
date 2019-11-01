@@ -12,7 +12,7 @@ const KEYBOARDS: &[(*const str, *const str)] = &[
     ("ja+kana", include_str!("../data/keyboards/ja+kana.yaml")),
     ("nb", include_str!("../data/keyboards/nb.yaml")),
     ("number", include_str!("../data/keyboards/number.yaml")),
-    ("sv", include_str!("../data/keyboards/sv.yaml")),
+    ("se", include_str!("../data/keyboards/se.yaml")),
 ];
 
 pub fn get_keyboard(needle: &str) -> Option<&'static str> {
