@@ -56,6 +56,7 @@ foreach layout : [
     'ja+kana',
     'nb',
     'number',
+    'se',
 ]
     test(
         'test_layout_' + layout,
