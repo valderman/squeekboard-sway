@@ -54,7 +54,7 @@ enum {
 typedef struct _EekGtkKeyboardPrivate
 {
     EekRenderer *renderer;
-    LevelKeyboard *keyboard;
+    LevelKeyboard *keyboard; // unowned reference; it's kept in server-context (FIXME)
 
     GdkEventSequence *sequence; // unowned reference
 } EekGtkKeyboardPrivate;
