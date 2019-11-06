@@ -52,10 +52,6 @@ typedef struct _EekRendererPrivate
 
     PangoFontDescription *ascii_font;
     PangoFontDescription *font;
-    // TODO: Drop those or transform into general button surface caches
-    GHashTable *outline_surface_cache;
-    GHashTable *active_outline_surface_cache;
-    GHashTable *icons;
     cairo_surface_t *keyboard_surface;
 
 } EekRendererPrivate;
@@ -539,8 +535,6 @@ eek_renderer_dispose (GObject *object)
         priv->pcontext = NULL;
     }
 
-    g_clear_pointer (&priv->icons, g_hash_table_destroy);
-
     /* this will release all allocated surfaces and font if any */
     invalidate (EEK_RENDERER(object));
 
@@ -553,8 +547,6 @@ eek_renderer_finalize (GObject *object)
     EekRenderer        *self = EEK_RENDERER(object);
     EekRendererPrivate *priv = eek_renderer_get_instance_private (self);
 
-    g_hash_table_destroy (priv->outline_surface_cache);
-    g_hash_table_destroy (priv->active_outline_surface_cache);
     pango_font_description_free (priv->ascii_font);
     pango_font_description_free (priv->font);
     G_OBJECT_CLASS (eek_renderer_parent_class)->finalize (object);
@@ -624,25 +616,11 @@ eek_renderer_init (EekRenderer *self)
     priv->scale = 1.0;
     priv->scale_factor = 1;
     priv->font = NULL;
-    priv->outline_surface_cache =
-        g_hash_table_new_full (g_direct_hash,
-                               g_direct_equal,
-                               NULL,
-                               (GDestroyNotify)cairo_surface_destroy);
-    priv->active_outline_surface_cache =
-        g_hash_table_new_full (g_direct_hash,
-                               g_direct_equal,
-                               NULL,
-                               (GDestroyNotify)cairo_surface_destroy);
     priv->keyboard_surface = NULL;
 
     GtkIconTheme *theme = gtk_icon_theme_get_default ();
 
     gtk_icon_theme_add_resource_path (theme, "/sm/puri/squeekboard/icons");
-    priv->icons = g_hash_table_new_full (g_str_hash,
-                                         g_str_equal,
-                                         g_free,
-                                         (GDestroyNotify)cairo_surface_destroy);
 
     /* Create a default CSS provider and load a style sheet */
     priv->css_provider = gtk_css_provider_new ();
@@ -654,12 +632,6 @@ static void
 invalidate (EekRenderer *renderer)
 {
     EekRendererPrivate *priv = eek_renderer_get_instance_private (renderer);
-
-    if (priv->outline_surface_cache)
-        g_hash_table_remove_all (priv->outline_surface_cache);
-
-    if (priv->active_outline_surface_cache)
-        g_hash_table_remove_all (priv->active_outline_surface_cache);
 
     if (priv->keyboard_surface) {
         cairo_surface_destroy (priv->keyboard_surface);
