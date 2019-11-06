@@ -35,10 +35,10 @@ enum {
 
 typedef struct _EekRendererPrivate
 {
-    LevelKeyboard *keyboard;
-    PangoContext *pcontext;
-    GtkCssProvider *css_provider;
-    GtkStyleContext *view_context;
+    LevelKeyboard *keyboard; // unowned
+    PangoContext *pcontext; // owned
+    GtkCssProvider *css_provider; // owned
+    GtkStyleContext *view_context; // owned
     GtkStyleContext *button_context; // TODO: maybe move a copy to each button
 
     gdouble border_width;
@@ -547,6 +547,9 @@ eek_renderer_finalize (GObject *object)
     EekRenderer        *self = EEK_RENDERER(object);
     EekRendererPrivate *priv = eek_renderer_get_instance_private (self);
 
+    g_object_unref(priv->css_provider);
+    g_object_unref(priv->view_context);
+    g_object_unref(priv->button_context);
     pango_font_description_free (priv->ascii_font);
     pango_font_description_free (priv->font);
     G_OBJECT_CLASS (eek_renderer_parent_class)->finalize (object);
@@ -662,7 +665,6 @@ eek_renderer_new (LevelKeyboard  *keyboard,
     gtk_style_context_add_provider (priv->view_context,
         GTK_STYLE_PROVIDER(priv->css_provider),
         GTK_STYLE_PROVIDER_PRIORITY_USER);
-    printf("view: %s\n", gtk_style_context_to_string(priv->view_context, GTK_STYLE_CONTEXT_PRINT_SHOW_STYLE));
 
     /* Create a style context for the buttons */
     path = gtk_widget_path_new();
@@ -799,16 +801,6 @@ eek_renderer_set_scale_factor (EekRenderer *renderer, gint scale)
 
     EekRendererPrivate *priv = eek_renderer_get_instance_private (renderer);
     priv->scale_factor = scale;
-}
-
-PangoLayout *
-eek_renderer_create_pango_layout (EekRenderer  *renderer)
-{
-    g_return_val_if_fail (EEK_IS_RENDERER(renderer), NULL);
-
-    EekRendererPrivate *priv = eek_renderer_get_instance_private (renderer);
-
-    return pango_layout_new (priv->pcontext);
 }
 
 cairo_surface_t *
