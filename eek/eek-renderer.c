@@ -59,8 +59,7 @@ typedef struct _EekRendererPrivate
 G_DEFINE_TYPE_WITH_PRIVATE (EekRenderer, eek_renderer, G_TYPE_OBJECT)
 
 /* eek-keyboard-drawing.c */
-static void eek_renderer_real_render_button_label (EekRenderer *self,
-                                                PangoLayout *layout,
+static void eek_renderer_render_button_label (EekRenderer *self, cairo_t *cr, GtkStyleContext *ctx,
                                                 const struct squeek_button *button);
 
 static void invalidate                         (EekRenderer *renderer);
@@ -125,9 +124,9 @@ static void
 render_keyboard_surface (EekRenderer *renderer, struct squeek_view *view)
 {
     EekRendererPrivate *priv = eek_renderer_get_instance_private (renderer);
-    EekColor foreground;
 
-    eek_renderer_get_foreground_color (priv->view_context, &foreground);
+    GdkRGBA color = {0};
+    gtk_style_context_get_color (priv->view_context, GTK_STATE_FLAG_NORMAL, &color);
 
     EekBounds bounds = squeek_view_get_bounds (level_keyboard_current(priv->keyboard));
 
@@ -152,15 +151,16 @@ render_keyboard_surface (EekRenderer *renderer, struct squeek_view *view)
     cairo_translate (data.cr, bounds.x, bounds.y);
 
     cairo_set_source_rgba (data.cr,
-                           foreground.red,
-                           foreground.green,
-                           foreground.blue,
-                           foreground.alpha);
+                           color.red,
+                           color.green,
+                           color.blue,
+                           color.alpha);
 
     /* draw rows */
     squeek_view_foreach(level_keyboard_current(priv->keyboard),
                         create_keyboard_surface_row_callback,
                         &data);
+
     cairo_restore (data.cr);
 
     cairo_destroy (data.cr);
@@ -198,9 +198,6 @@ static void render_button_in_context(EekRenderer *self,
                                      struct button_place *place,
                                      gboolean active) {
     cairo_surface_t *outline_surface = NULL;
-    PangoLayout *layout;
-    PangoRectangle extents = { 0, };
-    EekColor foreground;
 
     /* render outline */
     EekBounds bounds = squeek_button_get_bounds(place->button);
@@ -231,7 +228,6 @@ static void render_button_in_context(EekRenderer *self,
     cairo_surface_destroy(outline_surface);
     cairo_paint (cr);
 
-    eek_renderer_get_foreground_color (ctx, &foreground);
     /* render icon (if any) */
     const char *icon_name = squeek_button_get_icon_name(place->button);
 
@@ -249,10 +245,13 @@ static void render_button_in_context(EekRenderer *self,
             cairo_rectangle (cr, 0, 0, width, height);
             cairo_clip (cr);
             /* Draw the shape of the icon using the foreground color */
-            cairo_set_source_rgba (cr, foreground.red,
-                                       foreground.green,
-                                       foreground.blue,
-                                       foreground.alpha);
+            GdkRGBA color = {0};
+            gtk_style_context_get_color (ctx, GTK_STATE_FLAG_NORMAL, &color);
+
+            cairo_set_source_rgba (cr, color.red,
+                                       color.green,
+                                       color.blue,
+                                       color.alpha);
             cairo_mask_surface (cr, icon_surface, 0.0, 0.0);
             cairo_surface_destroy(icon_surface);
             cairo_fill (cr);
@@ -260,25 +259,7 @@ static void render_button_in_context(EekRenderer *self,
             return;
         }
     }
-    /* render label */
-    layout = pango_cairo_create_layout (cr);
-    eek_renderer_real_render_button_label (self, layout, place->button);
-    pango_layout_get_extents (layout, NULL, &extents);
-
-    cairo_save (cr);
-    cairo_move_to
-        (cr,
-         (bounds.width - (double)extents.width / PANGO_SCALE) / 2,
-         (bounds.height - (double)extents.height / PANGO_SCALE) / 2);
-
-    cairo_set_source_rgba (cr,
-                           foreground.red,
-                           foreground.green,
-                           foreground.blue,
-                           foreground.alpha);
-    pango_cairo_show_layout (cr, layout);
-    cairo_restore (cr);
-    g_object_unref (layout);
+    eek_renderer_render_button_label (self, cr, ctx, place->button);
 }
 
 static void
@@ -363,9 +344,10 @@ eek_renderer_apply_transformation_for_button (cairo_t     *cr,
 }
 
 static void
-eek_renderer_real_render_button_label (EekRenderer *self,
-                                    PangoLayout *layout,
-                                    const struct squeek_button *button)
+eek_renderer_render_button_label (EekRenderer *self,
+                                  cairo_t     *cr,
+                                  GtkStyleContext *ctx,
+                                  const struct squeek_button *button)
 {
     EekRendererPrivate *priv = eek_renderer_get_instance_private (self);
 
@@ -403,6 +385,8 @@ eek_renderer_real_render_button_label (EekRenderer *self,
     font = pango_font_description_copy (priv->font);
     pango_font_description_set_size (font,
                                      (gint)round(pango_font_description_get_size (font) * scale));
+
+    PangoLayout *layout = pango_cairo_create_layout (cr);
     pango_layout_set_font_description (layout, font);
     pango_font_description_free (font);
 
@@ -413,6 +397,27 @@ eek_renderer_real_render_button_label (EekRenderer *self,
     }
     pango_layout_set_width (layout,
                             PANGO_SCALE * bounds.width * scale);
+
+    PangoRectangle extents = { 0, };
+    pango_layout_get_extents (layout, NULL, &extents);
+
+    cairo_save (cr);
+    cairo_move_to
+        (cr,
+         (bounds.width - (double)extents.width / PANGO_SCALE) / 2,
+         (bounds.height - (double)extents.height / PANGO_SCALE) / 2);
+
+    GdkRGBA color = {0};
+    gtk_style_context_get_color (ctx, GTK_STATE_FLAG_NORMAL, &color);
+
+    cairo_set_source_rgba (cr,
+                           color.red,
+                           color.green,
+                           color.blue,
+                           color.alpha);
+    pango_cairo_show_layout (cr, layout);
+    cairo_restore (cr);
+    g_object_unref (layout);
 }
 
 /*
@@ -848,22 +853,6 @@ eek_renderer_render_keyboard (EekRenderer *renderer,
 {
     g_return_if_fail (EEK_IS_RENDERER(renderer));
     EEK_RENDERER_GET_CLASS(renderer)->render_keyboard (renderer, cr);
-}
-
-void
-eek_renderer_get_foreground_color (GtkStyleContext *context,
-                                   EekColor    *color)
-{
-    g_return_if_fail (color);
-
-    GtkStateFlags flags = GTK_STATE_FLAG_NORMAL;
-    GdkRGBA gcolor;
-
-    gtk_style_context_get_color (context, flags, &gcolor);
-    color->red = gcolor.red;
-    color->green = gcolor.green;
-    color->blue = gcolor.blue;
-    color->alpha = gcolor.alpha;
 }
 
 static gboolean
