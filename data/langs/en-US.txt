@@ -1,0 +1,8 @@
+us English (US)
+de German
+el Greek
+es Spanish
+it Italian
+jp+kana Japanese (kana)
+nb Norwegian
+

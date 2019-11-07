@@ -3,6 +3,9 @@
 use gio;
 use gtk;
 use ::layout::c::EekGtkKeyboard;
+use ::locale::compare_current_locale;
+use ::locale_config::system_locale;
+use ::resources;
 
 use gio::ActionExt;
 use gio::ActionMapExt;
@@ -48,7 +51,7 @@ mod variants {
     }
 }
 
-fn make_menu_builder(inputs: Vec<&str>) -> gtk::Builder {
+fn make_menu_builder(inputs: Vec<(&str, &str)>) -> gtk::Builder {
     let mut xml: Vec<u8> = Vec::new();
     writeln!(
         xml,
@@ -57,16 +60,17 @@ fn make_menu_builder(inputs: Vec<&str>) -> gtk::Builder {
   <menu id=\"app-menu\">
     <section>"
     ).unwrap();
-    for input in inputs {
+    for (input_name, human_name) in inputs {
         writeln!(
             xml,
             "
         <item>
             <attribute name=\"label\" translatable=\"yes\">{}</attribute>
             <attribute name=\"action\">layout</attribute>
-            <attribute name=\"target\">{0}</attribute>
+            <attribute name=\"target\">{}</attribute>
         </item>",
-            input,
+            human_name,
+            input_name,
         ).unwrap();
     }
     writeln!(
@@ -96,7 +100,7 @@ fn set_layout(kind: String, name: String) {
 pub fn show(window: EekGtkKeyboard, position: ::layout::c::Bounds) {
     unsafe { gtk::set_initialized() };
     let window = unsafe { gtk::Widget::from_glib_none(window.0) };
-    
+
     let settings = gio::Settings::new("org.gnome.desktop.input-sources");
     let inputs = settings.get_value("sources").unwrap();
     let current = settings.get_uint("current") as usize;
@@ -106,7 +110,35 @@ pub fn show(window: EekGtkKeyboard, position: ::layout::c::Bounds) {
         .map(|(_kind, name)| name.as_str())
         .collect();
 
-    let builder = make_menu_builder(input_names.clone());
+    let translations = system_locale()
+        .map(|locale|
+            locale.tags_for("messages")
+                .next().unwrap() // guaranteed to exist
+                .as_ref()
+                .to_owned()
+        )
+        .and_then(|lang| resources::get_layout_names(lang.as_str()));
+
+    // sorted collection of human and machine names
+    let mut human_names: Vec<(&str, &str)> = match translations {
+        Some(translations) => {
+            input_names.iter()
+                .map(|name| (*name, *translations.get(name).unwrap_or(name)))
+                .collect()
+        },
+        // display bare codes
+        None => {
+            input_names.iter()
+                .map(|n| (*n, *n)) // turns &&str into &str
+                .collect()
+        }
+    };
+
+    human_names.sort_unstable_by(|(_, human_label_a), (_, human_label_b)| {
+        compare_current_locale(human_label_a, human_label_b)
+    });
+
+    let builder = make_menu_builder(human_names);
     // Much more debuggable to populate the model & menu
     // from a string representation
     // than add items imperatively
