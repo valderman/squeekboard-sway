@@ -50,8 +50,7 @@ typedef struct _EekRendererPrivate
     gint origin_x;
     gint origin_y;
 
-    PangoFontDescription *ascii_font;
-    PangoFontDescription *font;
+    PangoFontDescription *font; // owned reference
     cairo_surface_t *keyboard_surface;
 
 } EekRendererPrivate;
@@ -363,16 +362,11 @@ eek_renderer_render_button_label (EekRenderer *self,
 
     if (!priv->font) {
         const PangoFontDescription *base_font;
-        gdouble ascii_size, size;
+        gdouble size;
 
         base_font = pango_context_get_font_description (priv->pcontext);
         // FIXME: Base font size on the same size unit used for button sizing,
         // and make the default about 1/3 of the current row height
-        ascii_size = 30000.0;
-        priv->ascii_font = pango_font_description_copy (base_font);
-        pango_font_description_set_size (priv->ascii_font,
-                                         (gint)round(ascii_size));
-
         size = 30000.0;
         priv->font = pango_font_description_copy (base_font);
         pango_font_description_set_size (priv->font, (gint)round(size * 0.6));
@@ -555,7 +549,6 @@ eek_renderer_finalize (GObject *object)
     g_object_unref(priv->css_provider);
     g_object_unref(priv->view_context);
     g_object_unref(priv->button_context);
-    pango_font_description_free (priv->ascii_font);
     pango_font_description_free (priv->font);
     G_OBJECT_CLASS (eek_renderer_parent_class)->finalize (object);
 }
