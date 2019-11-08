@@ -145,7 +145,7 @@ static void release(EekGtkKeyboard *self, guint32 time)
 {
     EekGtkKeyboardPrivate *priv = eek_gtk_keyboard_get_instance_private (self);
 
-    squeek_layout_release(priv->keyboard->layout, priv->keyboard->manager->virtual_keyboard, time, self);
+    squeek_layout_release(priv->keyboard->layout, priv->keyboard->manager->virtual_keyboard, eek_renderer_get_transformation(priv->renderer), time, self);
 }
 
 static gboolean
