@@ -1,0 +1,15 @@
+#!/bin/sh
+set -e
+
+# Override default theme but allow selecting the replacement
+export GTK_THEME="Adwaita:dark"
+CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
+DIRS="${CONFIG_HOME} $(set -f; IFS=:; printf '%s\n' $XDG_CONFIG_DIRS)"
+for DIR in ${DIRS}; do
+  if cat $DIR/squeekboard/gtk_theme 2> /dev/null; then
+    export GTK_THEME="$(cat $DIR/squeekboard/gtk_theme 2> /dev/null)"
+    break;
+  fi;
+done;
+
+exec $(which squeekboard)
