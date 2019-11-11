@@ -12,4 +12,4 @@ for DIR in ${DIRS}; do
   fi;
 done;
 
-exec $(which squeekboard)
+exec @bindir@/squeekboard-real
