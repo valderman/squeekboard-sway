@@ -53,9 +53,6 @@ buttons:
     BackSpace:
         outline: "altline"
         icon: "edit-clear-symbolic"
-    Delete:
-        outline: "altline"
-        icon: "edit-clear-symbolic"
     preferences:
         action: "show_prefs"
         outline: "default"
@@ -75,7 +72,7 @@ buttons:
             set_view: "symbols"
         outline: "altline"
         label: "*/="
-    show_symbols:
+    show_eschars:
         action:
             locking:
                 lock_view: "eschars"
