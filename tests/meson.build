@@ -52,6 +52,7 @@ foreach layout : [
     'de',
     'el',
     'es',
+    'fi',
     'it',
     'ja+kana',
     'nb',
