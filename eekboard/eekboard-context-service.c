@@ -130,7 +130,6 @@ eekboard_context_service_real_create_keyboard (EekboardContextService *self,
     }
     strncpy(ptr, keymap_str, keyboard->keymap_len);
     munmap(ptr, keyboard->keymap_len);
-
     return keyboard;
 }
 
@@ -252,23 +251,17 @@ eekboard_context_service_update_layout(EekboardContextService *context, enum squ
     }
 
     // generic part follows
-    static guint keyboard_id = 0;
-    LevelKeyboard *keyboard = g_hash_table_lookup(context->priv->keyboard_hash,
-                                                GUINT_TO_POINTER(keyboard_id));
-    // create a keyboard
-    if (!keyboard) {
-        keyboard = eekboard_context_service_real_create_keyboard(context, keyboard_layout, t);
-
-        g_hash_table_insert (context->priv->keyboard_hash,
-                             GUINT_TO_POINTER(keyboard_id),
-                             keyboard);
-        keyboard->id = keyboard_id;
-        keyboard_id++;
-    }
+    LevelKeyboard *keyboard = eekboard_context_service_real_create_keyboard(context, keyboard_layout, t);
     // set as current
+    LevelKeyboard *previous_keyboard = context->priv->keyboard;
     context->priv->keyboard = keyboard;
 
     g_object_notify (G_OBJECT(context), "keyboard");
+
+    // replacing the keyboard above will cause the previous keyboard to get destroyed from the UI side (eek_gtk_keyboard_dispose)
+    if (previous_keyboard) {
+        level_keyboard_free(previous_keyboard);
+    }
 }
 
 static void update_layout_and_type(EekboardContextService *context) {

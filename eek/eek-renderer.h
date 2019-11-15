@@ -74,8 +74,6 @@ gdouble          eek_renderer_get_scale        (EekRenderer     *renderer);
 void             eek_renderer_set_scale_factor (EekRenderer     *renderer,
                                                 gint             scale);
 
-PangoLayout     *eek_renderer_create_pango_layout
-                                               (EekRenderer     *renderer);
 void             eek_renderer_render_button       (EekRenderer     *renderer,
                                                 cairo_t         *cr,
                                                 struct button_place *place,

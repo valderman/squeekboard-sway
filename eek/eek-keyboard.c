@@ -39,6 +39,8 @@
 #include "eek-keyboard.h"
 
 void level_keyboard_deinit(LevelKeyboard *self) {
+    xkb_keymap_unref(self->keymap);
+    close(self->keymap_fd);
     squeek_layout_free(self->layout);
 }
 

@@ -36,7 +36,7 @@ G_BEGIN_DECLS
 /// Keyboard state holder
 struct _LevelKeyboard {
     struct squeek_layout *layout; // owned
-    struct xkb_keymap *keymap;
+    struct xkb_keymap *keymap; // owned
     int keymap_fd; // keymap formatted as XKB string
     size_t keymap_len; // length of the data inside keymap_fd
 
