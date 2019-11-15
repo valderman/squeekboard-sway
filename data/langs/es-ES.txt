@@ -1,0 +1,7 @@
+us Inglés (EE.UU.)
+de Alemán
+el Griego
+es Español
+it Italiano
+jp+kana Japonés (Kana)
+nb Noruego
