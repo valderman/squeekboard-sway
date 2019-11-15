@@ -1,8 +1,0 @@
-eekboard/eekboard-context-service.c
-eekboard/eekboard-service.c
-src/server-service.c
-src/server-context-service.c
-src/server-main.c
-src/client.c
-src/client-main.c
-[type: gettext/glade]src/preferences-dialog.ui
