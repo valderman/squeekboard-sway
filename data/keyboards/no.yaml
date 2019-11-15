@@ -15,25 +15,25 @@ outlines:
 
 views:
     base:
-        - "q w e r t y u i o p aring"
-        - "a s d f g h j k l oslash ae"
+        - "q w e r t y u i o p å"
+        - "a s d f g h j k l ø æ"
         - "Shift_L   z x c v b n m  BackSpace"
-        - "show_numbers preferences         space        period    Return"
+        - "show_numbers preferences         space        .    Return"
     upper:
-        - "Q W E R T Y U I O P Aring"
-        - "A S D F G H J K L Oslash AE"
+        - "Q W E R T Y U I O P Å"
+        - "A S D F G H J K L Ø Æ"
         - "Shift_L   Z X C V B N M  BackSpace"
-        - "show_numbers preferences         space        period    Return"
+        - "show_numbers preferences         space        .    Return"
     numbers:
         - "1 2 3 4 5 6 7 8 9 0"
         - "at numbersign dollar percent ampersand minus underscore plus parenleft parenright"
         - "show_symbols   comma quotedbl quoteright colon semicolon exclam question  BackSpace"
-        - "show_letters preferences         space        period    Return"
+        - "show_letters preferences         space        .    Return"
     symbols:
         - "asciitilde quoteleft bar U00B7 squareroot Greek_pi Greek_tau division multiply paragraph"
         - "copyright U00AE U00A3 EuroSign U00A5 asciicircum degree asterisk braceleft braceright"
         - "show_numbers   backslash slash less greater equal bracketleft bracketright  BackSpace"
-        - "show_letters preferences         space        period    Return"
+        - "show_letters preferences         space        .    Return"
 
 buttons:
     Shift_L:
@@ -65,9 +65,8 @@ buttons:
             set_view: "symbols"
         outline: "altline"
         label: "*/="
-    period:
+    ".":
         outline: altline
-        label: "."
     space:
         outline: spaceline
         label: " "
