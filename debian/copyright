@@ -8,6 +8,83 @@ Copyright: 2010-2011 Daiki Ueno <ueno@unixuser.org>
            2019 Purism SPC
 License: GPL-3+
 
+Files: cargo.sh
+Copyright: 2019 Bart Ribbers <bribbers@disroot.org>
+           2019 Purism SPC
+License: GPL-3+
+
+Files: data/style.css
+       data/squeekboard.gresources.xml
+       data/meson.build
+       src/meson.build
+       src/imservice.c
+Copyright: 2019 Purism SPC
+           2019 Squeekboard Contributors
+License: GPL-3+
+
+Files: data/keyboards/de.yaml
+Copyright: 2019 Mark Müller <markmueller86@gmail.com>
+License: GPL-3+
+
+Files: data/keyboards/el.yaml
+Copyright: 2019 Antonis Tsolomitis
+           2019 Purism SPC
+License: GPL-3+
+
+Files: data/keyboards/es.yaml
+Copyright: 2019 Purism SPC
+           2019 uzanto <miguejim@mailbox.org>
+License: GPL-3+
+
+Files: data/keyboards/fi.yaml
+Copyright: 2019 uzanto <miguejim@mailbox.org>
+License: GPL-3+
+
+Files: data/keyboards/it.yaml
+Copyright: 2019 Antonio Pandolfo <ant.pandolfo@gmail.com>
+           2019 Purism SPC
+License: GPL-3+
+
+Files: data/keyboards/ja+kana.yaml
+Copyright: 2019 Mark Müller <markmueller86@gmail.com>
+License: GPL-3+
+
+Files: data/keyboards/se.yaml
+Copyright: 2019 Andreas Rönnquist <andreas@ronnquist.net>
+           2019 Purism SPC
+License: GPL-3+
+
+Files: eek/eek-layout.h
+       eek/eek-layout.c
+       eek/eek-element.c
+       eek/eek-gtk-keyboard.c
+       eek/eek-gtk-keyboard.h
+       eek/eek.c
+       eek/eek-xml-layout.h
+       eek/eek-xml-layout.c
+       eek/eek-renderer.h
+       eek/eek-element.h
+       eek/eek-renderer.c
+       eekboard/eekboard-service.c
+       eekboard/eekboard-service.h
+Copyright: 2010-2011 Daiki Ueno <ueno@unixuser.org>
+           2010-2011 Red Hat, Inc.
+           2018-2019 Purism SPC
+           2019 Squeekboard Contributors
+License: GPL-3+
+
+Files: eek/eek-keyboard.c
+       eek/eek-types.h
+       eek/eek-types.c
+       eek/eek-keyboard.h
+       eek/eek.h
+       src/server-main.c
+       src/server-context-service.h
+Copyright: 2010-2011 Daiki Ueno <ueno@unixuser.org>
+           2010-2011 Red Hat, Inc.
+           2019 Purism SPC
+License: LGPL-2+
+
 Files: eek/layersurface.c
        src/wayland.c
        src/key-emitter.c
@@ -21,39 +98,51 @@ Files: eekboard/keymap.c
 Copyright: 2000 Red Hat, Inc.
            2019 Purism, SPC
 License: LGPL-2+
- This library is free software; you can redistribute it and/or
- modify it under the terms of the GNU Lesser General Public
- License as published by the Free Software Foundation; either
- version 2 of the License, or (at your option) any later version.
 
- This library is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.         See the GNU
- Lesser General Public License for more details.
+Files: eekboard/eekboard-context-service.c
+Copyright: 2010-2011 Daiki Ueno <ueno@unixuser.org>
+           2010-2011 Red Hat, Inc.
+           2019 Purism, SPC
+           2019 David Heidelberg <david@ixit.cz>
+           2019 Piotr Tworek <tworaz@tworaz.net>
+           2019 Squeekboard Contributors
+License: GPL-3+
 
- You should have received a copy of the GNU Lesser General Public
- License along with this library. If not, see <http://www.gnu.org/licenses/>.
+Files: eekboard/eekboard-context-service.h
+Copyright: 2010-2011 Daiki Ueno <ueno@unixuser.org>
+           2010-2011 Red Hat, Inc.
+License: GPL-3+
+
+Files: po/POTFILES.skip
+       po/LINGUAS
+       po/ja.po
+       po/POTFILES.in
+Copyright: 2010-2011 Daiki Ueno <ueno@unixuser.org>
+License: LGPL-2+
+Comment:
+ Only the po/ja.po file contains a license, but these are all grouped together.
 
 Files: protocols/wlr-layer-shell-unstable-v1.xml
-Copytight: Copyright © 2017 Drew DeVault
+Copyright: 2017 Drew DeVault
 License: X11
- Permission to use, copy, modify, distribute, and sell this software and
- its documentation for any purpose is hereby granted without fee, provided
- that the above copyright notice appear in all copies and fthat both that
- copyright notice and this permission notice appear in supporting
- documentation, and that the name of the copyright holders not be used in
- advertising or publicity pertaining to distribution of the software
- without specific, written prior permission.  The copyright holders make
- no representations about the suitability of this software for any
- purpose.  It is provided "as is" without express or implied warranty.
- .
- THE COPYRIGHT HOLDERS DISCLAIM ALL WARRANTIES WITH REGARD TO THIS
- SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND
- FITNESS, IN NO EVENT SHALL THE COPYRIGHT HOLDERS BE LIABLE FOR ANY
- SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER
- RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF
- CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
- CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+
+Files: src/resources.rs
+Copyright: 2019 Andreas Rönnquist <andreas@ronnquist.net>
+           2019 Mark Müller <markmueller86@gmail.com>
+           2019 Purism SPC
+License: GPL-3+
+
+Files: src/server-context-service.c
+Copyright: 2010-2011 Daiki Ueno <ueno@unixuser.org>
+           2010-2011 Red Hat, Inc.
+           2019 Purism SPC
+           2019 Squeekboard Contributors
+License: GPL-3+
+
+Files: tests/meson.build
+Copyright: 2019 Purism SPC
+           2019 Mark Müller <markmueller86@gmail.com>
+License: GPL-3+
 
 License: GPL-3+
  This package is free software; you can redistribute it and/or modify
@@ -71,3 +160,36 @@ License: GPL-3+
  .
  On Debian systems, the complete text of the GNU General
  Public License version 3 can be found in "/usr/share/common-licenses/GPL-3".
+
+License: LGPL-2+
+ This library is free software; you can redistribute it and/or
+ modify it under the terms of the GNU Lesser General Public
+ License as published by the Free Software Foundation; either
+ version 2 of the License, or (at your option) any later version.
+ .
+ This library is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.         See the GNU
+ Lesser General Public License for more details.
+ .
+ You should have received a copy of the GNU Lesser General Public
+ License along with this library. If not, see <http://www.gnu.org/licenses/>.
+
+License: X11
+ Permission to use, copy, modify, distribute, and sell this software and
+ its documentation for any purpose is hereby granted without fee, provided
+ that the above copyright notice appear in all copies and that both that
+ copyright notice and this permission notice appear in supporting
+ documentation, and that the name of the copyright holders not be used in
+ advertising or publicity pertaining to distribution of the software
+ without specific, written prior permission.  The copyright holders make
+ no representations about the suitability of this software for any
+ purpose.  It is provided "as is" without express or implied warranty.
+ .
+ THE COPYRIGHT HOLDERS DISCLAIM ALL WARRANTIES WITH REGARD TO THIS
+ SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND
+ FITNESS, IN NO EVENT SHALL THE COPYRIGHT HOLDERS BE LIABLE FOR ANY
+ SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER
+ RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF
+ CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+ CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
