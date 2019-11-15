@@ -16,7 +16,7 @@ outlines:
 views:
     base:
         - "q w e r t y u i o p aring"
-        - "a s d f g h j k l ouml auml"
+        - "a s d f g h j k l ö ä"
         - "Shift_L   z x c v b n m  BackSpace"
         - "show_numbers preferences         space        period    Return"
     upper:
@@ -78,13 +78,13 @@ buttons:
         label: "å"
     Aring:
         label: "Å"
-    ouml:
+    ö:
         label: "ö"
-    Ouml:
+    Ö:
         label: "Ö"
-    auml:
+    ä:
         label: "ä"
-    Auml:
+    Ä:
         label: "Ä"
     asterisk:
         label: "*"
