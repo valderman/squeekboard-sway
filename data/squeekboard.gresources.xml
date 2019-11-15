@@ -2,33 +2,6 @@
 <gresources>
   <gresource prefix="/sm/puri/squeekboard">
    <file compressed="true">style.css</file>
-   <file compressed="true" preprocess="xml-stripblanks">keyboards/symbols/ar.xml</file>
-   <file compressed="true" preprocess="xml-stripblanks">keyboards/symbols/as-inscript.xml</file>
-   <file compressed="true" preprocess="xml-stripblanks">keyboards/symbols/be.xml</file>
-   <file compressed="true" preprocess="xml-stripblanks">keyboards/symbols/bn-inscript.xml</file>
-   <file compressed="true" preprocess="xml-stripblanks">keyboards/symbols/fa.xml</file>
-   <file compressed="true" preprocess="xml-stripblanks">keyboards/symbols/gu-inscript.xml</file>
-   <file compressed="true" preprocess="xml-stripblanks">keyboards/symbols/he.xml</file>
-   <file compressed="true" preprocess="xml-stripblanks">keyboards/symbols/hi-inscript.xml</file>
-   <file compressed="true" preprocess="xml-stripblanks">keyboards/symbols/ja-kana.xml</file>
-   <file compressed="true" preprocess="xml-stripblanks">keyboards/symbols/kk.xml</file>
-   <file compressed="true" preprocess="xml-stripblanks">keyboards/symbols/kn-inscript.xml</file>
-   <file compressed="true" preprocess="xml-stripblanks">keyboards/symbols/ks-inscript.xml</file>
-   <file compressed="true" preprocess="xml-stripblanks">keyboards/symbols/ks.xml</file>
-   <file compressed="true" preprocess="xml-stripblanks">keyboards/symbols/mai-inscript.xml</file>
-   <file compressed="true" preprocess="xml-stripblanks">keyboards/symbols/ml-inscript.xml</file>
-   <file compressed="true" preprocess="xml-stripblanks">keyboards/symbols/mr-inscript.xml</file>
-   <file compressed="true" preprocess="xml-stripblanks">keyboards/symbols/my.xml</file>
-   <file compressed="true" preprocess="xml-stripblanks">keyboards/symbols/or-inscript.xml</file>
-   <file compressed="true" preprocess="xml-stripblanks">keyboards/symbols/pa-inscript.xml</file>
-   <file compressed="true" preprocess="xml-stripblanks">keyboards/symbols/ru.xml</file>
-   <file compressed="true" preprocess="xml-stripblanks">keyboards/symbols/sd-inscript.xml</file>
-   <file compressed="true" preprocess="xml-stripblanks">keyboards/symbols/ta-inscript.xml</file>
-   <file compressed="true" preprocess="xml-stripblanks">keyboards/symbols/te-inscript.xml</file>
-   <file compressed="true" preprocess="xml-stripblanks">keyboards/symbols/th.xml</file>
-   <file compressed="true" preprocess="xml-stripblanks">keyboards/symbols/ua.xml</file>
-   <file compressed="true" preprocess="xml-stripblanks">keyboards/symbols/ug.xml</file>
-   <file compressed="true" preprocess="xml-stripblanks">keyboards/symbols/zh-bopomofo.xml</file>
    <file compressed="true" preprocess="xml-stripblanks">popup.ui</file>
    <file>icons/key-enter.svg</file>
    <file>icons/key-shift.svg</file>
