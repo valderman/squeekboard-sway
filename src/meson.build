@@ -80,6 +80,8 @@ test(
     'rstest',
     cargo_script,
     args: ['', 'test'],
+    # this is a whole Carg-based test suite, let it run for a while
+    timeout: 900,
     depends: build_rstests,
 )
 
