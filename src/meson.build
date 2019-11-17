@@ -72,7 +72,7 @@ build_rstests = custom_target(
     output: ['src'],
     install: false,
     console: true,
-    command: [cargo_script, '', 'build', '--tests'],
+    command: [cargo_script, '', 'test', '--no-run'],
     depends: rslibs, # no point building tests if the code itself fails
 )
 
