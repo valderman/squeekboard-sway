@@ -72,7 +72,7 @@ build_rstests = custom_target(
     output: ['src'],
     install: false,
     console: true,
-    command: [cargo_script, '', 'build', '--tests'],
+    command: [cargo_script, '', 'test', '--no-run'],
     depends: rslibs, # no point building tests if the code itself fails
 )
 
@@ -80,6 +80,8 @@ test(
     'rstest',
     cargo_script,
     args: ['', 'test'],
+    # this is a whole Carg-based test suite, let it run for a while
+    timeout: 900,
     depends: build_rstests,
 )
 
