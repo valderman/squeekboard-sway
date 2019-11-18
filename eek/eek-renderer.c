@@ -26,6 +26,7 @@
 
 #include "eek-keyboard.h"
 #include "eek-renderer.h"
+#include "src/style.h"
 
 enum {
     PROP_0,
@@ -623,10 +624,7 @@ eek_renderer_init (EekRenderer *self)
 
     gtk_icon_theme_add_resource_path (theme, "/sm/puri/squeekboard/icons");
 
-    /* Create a default CSS provider and load a style sheet */
-    priv->css_provider = gtk_css_provider_new ();
-    gtk_css_provider_load_from_resource (priv->css_provider,
-        "/sm/puri/squeekboard/style.css");
+    priv->css_provider = squeek_load_style();
 }
 
 static void
