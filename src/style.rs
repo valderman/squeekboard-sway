@@ -21,6 +21,7 @@
 use std::env;
 
 use glib::object::ObjectExt;
+use util::Warn;
 
 /// Gathers stuff defined in C or called by C
 pub mod c {
@@ -60,22 +61,6 @@ pub mod c {
 
 // not Adwaita, but rather fall back to default
 const DEFAULT_THEME_NAME: &str = "";
-
-/// Sugar for logging errors in results
-trait Warn {
-    type Value;
-    fn ok_warn(self, msg: &str) -> Option<Self::Value>;
-}
-
-impl<T, E: std::error::Error> Warn for Result<T, E> {
-    type Value = T;
-    fn ok_warn(self, msg: &str) -> Option<T> {
-        self.map_err(|e| {
-            eprintln!("{}: {}", msg, e);
-            e
-        }).ok()
-    }
-}
 
 struct GtkTheme {
     name: String,
