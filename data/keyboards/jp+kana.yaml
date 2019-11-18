@@ -1,7 +1,7 @@
 # Japanese Kana layout by Mark Müller
-# Version 2019101900
+# Version 2019111800
 ---
-bounds: { x: 0, y: 1, width: 360, height: 210 }
+bounds: { x: 0, y: 1, width: 360, height: 208 }
 
 outlines:
     default:
@@ -199,25 +199,29 @@ views:
         - "\\ ´ ` · ¶" 
 
 buttons:
-    # following 4 buttons are keysyms from libxkbcommon
+    # following 4 buttons use the corresponding xkb name as keysym
     BackSpace:
         outline: "wide"
         icon: "edit-clear-symbolic"
+        keysym: "BackSpace"
     Return:
         outline: "wide"
         icon: "key-enter"
+        keysym: "Return"
     Left:
         outline: "wide"
         label: "←"
+        keysym: "Left"
     Right:
         outline: "wide"
         label: "→"
+        keysym: "Right"
     # special button "preferences" is handled in the code
     preferences:
         action: "show_prefs"
         outline: "special"
         icon: "keyboard-mode-symbolic"
-    # space button (unicode)
+    # space button with unicode keysym for ideographic space
     space:
         outline: "default-wide"
         label: "␣"
