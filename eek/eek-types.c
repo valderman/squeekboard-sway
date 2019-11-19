@@ -72,35 +72,3 @@ eek_bounds_free (EekBounds *bounds)
 {
     g_slice_free (EekBounds, bounds);
 }
-
-/* EekColor */
-G_DEFINE_BOXED_TYPE(EekColor, eek_color, eek_color_copy, eek_color_free);
-
-EekColor *
-eek_color_copy (const EekColor *color)
-{
-    return g_slice_dup (EekColor, color);
-}
-
-void
-eek_color_free (EekColor *color)
-{
-    g_slice_free (EekColor, color);
-}
-
-EekColor *
-eek_color_new (gdouble red,
-               gdouble green,
-               gdouble blue,
-               gdouble alpha)
-{
-    EekColor *color;
-
-    color = g_slice_new (EekColor);
-    color->red = red;
-    color->green = green;
-    color->blue = blue;
-    color->alpha = alpha;
-
-    return color;
-}

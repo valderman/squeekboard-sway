@@ -86,16 +86,6 @@ cairo_surface_t *eek_renderer_get_icon_surface(const gchar     *icon_name,
 
 void             eek_renderer_render_keyboard  (EekRenderer     *renderer,
                                                 cairo_t         *cr);
-
-void             eek_renderer_set_default_foreground_color
-                                               (EekRenderer     *renderer,
-                                                const EekColor  *color);
-void             eek_renderer_set_default_background_color
-                                               (EekRenderer     *renderer,
-                                                const EekColor  *color);
-void             eek_renderer_get_foreground_color
-                                               (GtkStyleContext *context,
-                                                EekColor        *color);
 void             eek_renderer_set_border_width (EekRenderer     *renderer,
                                                 gdouble          border_width);
 void             eek_renderer_apply_transformation_for_button

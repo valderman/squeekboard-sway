@@ -34,10 +34,8 @@ G_BEGIN_DECLS
 
 #define EEK_TYPE_POINT (eek_point_get_type ())
 #define EEK_TYPE_BOUNDS (eek_bounds_get_type ())
-#define EEK_TYPE_COLOR (eek_color_get_type ())
 
 typedef struct _EekBounds EekBounds;
-typedef struct _EekColor EekColor;
 
 typedef struct _EekboardContextService EekboardContextService;
 typedef struct _LevelKeyboard LevelKeyboard;
@@ -84,33 +82,6 @@ struct _EekBounds
 GType      eek_bounds_get_type (void) G_GNUC_CONST;
 EekBounds *eek_bounds_copy     (const EekBounds *bounds);
 void       eek_bounds_free     (EekBounds       *bounds);
-
-/**
- * EekColor:
- * @red: red component of color, between 0.0 and 1.0
- * @green: green component of color, between 0.0 and 1.0
- * @blue: blue component of color, between 0.0 and 1.0
- * @alpha: alpha component of color, between 0.0 and 1.0
- *
- * Color used for drawing.
- */
-struct _EekColor
-{
-    /*< public >*/
-    gdouble red;
-    gdouble green;
-    gdouble blue;
-    gdouble alpha;
-};
-
-GType     eek_color_get_type (void) G_GNUC_CONST;
-
-EekColor *eek_color_new      (gdouble         red,
-                              gdouble         green,
-                              gdouble         blue,
-                              gdouble         alpha);
-EekColor *eek_color_copy     (const EekColor *color);
-void      eek_color_free     (EekColor       *color);
 
 struct transformation {
     gdouble origin_x;
