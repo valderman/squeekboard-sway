@@ -305,7 +305,7 @@ impl Layout {
                     .map_err(LoadError::BadResource)
     }
 
-    fn from_file(path: PathBuf) -> Result<Layout, Error> {
+    pub fn from_file(path: PathBuf) -> Result<Layout, Error> {
         let infile = BufReader::new(
             fs::OpenOptions::new()
                 .read(true)

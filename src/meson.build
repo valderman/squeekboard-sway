@@ -58,7 +58,7 @@ rslibs = custom_target(
     output: ['librs.a'],
     install: false,
     console: true,
-    command: [cargo_script, '@OUTPUT@', 'build']
+    command: [cargo_script, '@OUTPUT@', 'build', '--lib']
 )
 
 build_rstests = custom_target(
@@ -123,4 +123,14 @@ squeekboard = executable('squeekboard-real',
     '-DKEYBOARDSDIR="' + pkgdatadir + '/keyboards"',
     '-DEEKBOARD_COMPILATION=1',
     '-DEEK_COMPILATION=1'],
+)
+
+test_layout = custom_target('squeekboard_test_layout',
+    build_by_default: true,
+    # meson doesn't track all inputs, cargo does
+    build_always_stale: true,
+    output: ['test_layout'],
+    console: true,
+    command: [cargo_script, '@OUTPUT@', 'build', '--bin', 'test_layout'],
+    install_dir: bindir,
 )
