@@ -20,5 +20,6 @@ shift
 cargo "$@"
 
 if [ -n "${OUT_PATH}" ]; then
-    cp "${CARGO_TARGET_DIR}"/debug/librs.a "${OUT_PATH}"
+    FILENAME="$(basename "${OUT_PATH}")"
+    cp -a "${CARGO_TARGET_DIR}"/debug/"${FILENAME}" "${OUT_PATH}"
 fi
