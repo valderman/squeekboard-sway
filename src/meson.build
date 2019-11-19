@@ -125,12 +125,13 @@ squeekboard = executable('squeekboard-real',
     '-DEEK_COMPILATION=1'],
 )
 
-test_layout = custom_target('squeekboard_test_layout',
+test_layout = custom_target('squeekboard-test-layout',
     build_by_default: true,
     # meson doesn't track all inputs, cargo does
     build_always_stale: true,
-    output: ['squeekboard_test_layout'],
+    output: ['squeekboard-test-layout'],
     console: true,
     command: [cargo_script, '--rename', 'test_layout', '@OUTPUT@', 'build', '--bin', 'test_layout'],
+    install: true,
     install_dir: bindir,
 )
