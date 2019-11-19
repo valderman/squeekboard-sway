@@ -58,7 +58,7 @@ rslibs = custom_target(
     output: ['librs.a'],
     install: false,
     console: true,
-    command: [cargo_script, '--output', '@OUTPUT@', 'build', '--lib']
+    command: [cargo_build] + cargo_build_flags + ['@OUTPUT@', '--lib']
 )
 
 build_rstests = custom_target(
@@ -72,14 +72,14 @@ build_rstests = custom_target(
     output: ['src'],
     install: false,
     console: true,
-    command: [cargo_script, '', 'test', '--no-run'],
+    command: [cargo_script, 'test', '--no-run'],
     depends: rslibs, # no point building tests if the code itself fails
 )
 
 test(
     'rstest',
     cargo_script,
-    args: ['', 'test'],
+    args: ['test'],
     # this is a whole Carg-based test suite, let it run for a while
     timeout: 900,
     depends: build_rstests,
@@ -131,7 +131,8 @@ test_layout = custom_target('squeekboard-test-layout',
     build_always_stale: true,
     output: ['squeekboard-test-layout'],
     console: true,
-    command: [cargo_script, '--rename', 'test_layout', '@OUTPUT@', 'build', '--bin', 'test_layout'],
+    command: [cargo_build] + cargo_build_flags
+        + ['--rename', 'test_layout', '@OUTPUT@', '--bin', 'test_layout'],
     install: true,
     install_dir: bindir,
 )
