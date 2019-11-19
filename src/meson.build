@@ -58,7 +58,7 @@ rslibs = custom_target(
     output: ['librs.a'],
     install: false,
     console: true,
-    command: [cargo_script, '@OUTPUT@', 'build', '--lib']
+    command: [cargo_script, '--output', '@OUTPUT@', 'build', '--lib']
 )
 
 build_rstests = custom_target(
@@ -129,8 +129,8 @@ test_layout = custom_target('squeekboard_test_layout',
     build_by_default: true,
     # meson doesn't track all inputs, cargo does
     build_always_stale: true,
-    output: ['test_layout'],
+    output: ['squeekboard_test_layout'],
     console: true,
-    command: [cargo_script, '@OUTPUT@', 'build', '--bin', 'test_layout'],
+    command: [cargo_script, '--rename', 'test_layout', '@OUTPUT@', 'build', '--bin', 'test_layout'],
     install_dir: bindir,
 )
