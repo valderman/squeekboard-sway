@@ -3,16 +3,37 @@ extern crate xkbcommon;
 
 use std::env;
 
-use rs::data::{ Layout, LoadError };
-
+use rs::data::Layout;
 use xkbcommon::xkb;
 
+use rs::util::WarningHandler;
+
+pub struct CountAndPrint(u32);
+
+impl WarningHandler for CountAndPrint {
+    fn handle(&mut self, warning: &str) {
+        self.0 = self.0 + 1;
+        println!("{}", warning);
+    }
+}
+
+impl CountAndPrint {
+    fn new() -> CountAndPrint {
+        CountAndPrint(0)
+    }
+}
 
 fn check_layout(name: &str) {
-    let layout = Layout::from_resource(name)
-        .and_then(|layout| layout.build().map_err(LoadError::BadKeyMap))
-        .expect("layout broken");
-    
+    let handler = CountAndPrint::new();
+    let layout = Layout::from_resource(name).expect("Invalid layout file");
+    let (layout, handler) = layout.build(handler);
+
+    if handler.0 > 0 {
+        println!("{} mistakes in layout", handler.0)
+    }
+
+    let layout = layout.expect("layout broken");
+
     let context = xkb::Context::new(xkb::CONTEXT_NO_FLAGS);
     
     let keymap_str = layout.keymap_str
@@ -44,6 +65,10 @@ fn check_layout(name: &str) {
                 }
             }
         }
+    }
+
+    if handler.0 > 0 {
+        panic!("Layout contains mistakes");
     }
 }
 
