@@ -51,6 +51,7 @@ buttons:
     BackSpace:
         outline: "altline"
         icon: "edit-clear-symbolic"
+        keysym: "BackSpace"
     preferences:
         action: "show_prefs"
         outline: "default"
@@ -80,14 +81,14 @@ buttons:
 
     period:
         outline: "default"
-        label: "."
+        text: "."
     space:
         outline: "spaceline"
-        label: " "
+        text: " "
     Return:
         outline: "altline"
         icon: "key-enter"
+        keysym: "Return"
     colon:
-        label: ":"
-    "\"":
-        keysym: "quotedbl"
+        text: ":"
+

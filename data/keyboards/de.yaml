@@ -25,22 +25,22 @@ views:
         - "Q W E R T Z U I O P"
         - "A S D F G H J K L"
         - "Shift_L   Y X C V B N M  BackSpace"
-        - "show_numbers show_eschars preferences         space        ! ? Return"
+        - "show_numbers show_dechars preferences         space        ! ? Return"
     numbers:
         - "1 2 3 4 5 6 7 8 9 0"
         - "@ # € % & - _ + ( )"
         - "show_symbols   , \" ' : = < >  BackSpace"
-        - "show_letters show_eschars preferences         space        , . Return"
+        - "show_letters show_dechars preferences         space        , . Return"
     symbols:
         - "~ ` ´ | · √ µ ÷ × ¶"
         - "© ® £ $ ¥ ^ ° * { }"
         - "show_numbers   \\ / § π τ [ ]  BackSpace"
-        - "show_letters show_eschars preferences         space        , . Return"
-    eschars:
+        - "show_letters show_dechars preferences         space        , . Return"
+    dechars:
         - "ä è é ö ü Ä È É Ö Ü"
         - "à â ê î ô À Â È Î Ô"
         - "show_numbers  « » ç Ç æ œ ß  BackSpace"
-        - "show_letters show_eschars preferences         space        „ “ Return"
+        - "show_letters show_dechars preferences         space        „ “ Return"
 
 buttons:
     Shift_L:
@@ -73,17 +73,16 @@ buttons:
             set_view: "symbols"
         outline: "altline"
         label: "*/="
-    show_eschars:
+    show_dechars:
         action:
             locking:
-                lock_view: "eschars"
+                lock_view: "dechars"
                 unlock_view: "base"
         outline: "altline"
         label: "äÄ"
     space:
         outline: "spaceline"
-        label: " "
-        keysym: "space"
+        text: " "
     Return:
         outline: "altline"
         icon: "key-enter"
