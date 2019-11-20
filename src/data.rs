@@ -466,7 +466,11 @@ fn create_action<H: WarningHandler>(
         Keysym(String),
     };
     
-    let submission = match (&symbol_meta.action, &symbol_meta.keysym, &symbol_meta.text) {
+    let submission = match (
+        &symbol_meta.action,
+        &symbol_meta.keysym,
+        &symbol_meta.text
+    ) {
         (Some(action), None, None) => SubmitData::Action(action.clone()),
         (None, Some(keysym), None) => SubmitData::Keysym(keysym.clone()),
         (None, None, Some(text)) => SubmitData::Text(text.clone()),
@@ -497,16 +501,16 @@ fn create_action<H: WarningHandler>(
         }
     }
 
-    type SD = SubmitData;
-
     match submission {
-        SD::Action(Action::SetView(view_name)) => ::action::Action::SetLevel(
+        SubmitData::Action(
+            Action::SetView(view_name)
+        ) => ::action::Action::SetLevel(
             filter_view_name(
                 name, view_name.clone(), &view_names,
                 warning_handler,
             )
         ),
-        SD::Action(Action::Locking {
+        SubmitData::Action(Action::Locking {
             lock_view, unlock_view
         }) => ::action::Action::LockLevel {
             lock: filter_view_name(
@@ -522,8 +526,10 @@ fn create_action<H: WarningHandler>(
                 warning_handler,
             ),
         },
-        SD::Action(Action::ShowPrefs) => ::action::Action::ShowPreferences,
-        SD::Keysym(keysym) => ::action::Action::Submit {
+        SubmitData::Action(
+            Action::ShowPrefs
+        ) => ::action::Action::ShowPreferences,
+        SubmitData::Keysym(keysym) => ::action::Action::Submit {
             text: None,
             keys: vec!(::action::KeySym(
                 match keysym_valid(keysym.as_str()) {
@@ -538,7 +544,7 @@ fn create_action<H: WarningHandler>(
                 }
             )),
         },
-        SD::Text(text) => ::action::Action::Submit {
+        SubmitData::Text(text) => ::action::Action::Submit {
             text: {
                 CString::new(text.clone())
                     .map_err(|e| {
