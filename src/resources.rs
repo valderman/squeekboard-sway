@@ -39,6 +39,7 @@ pub fn get_keyboard(needle: &str) -> Option<&'static str> {
 
 /// Translations of the layout identifier strings
 const LAYOUT_NAMES: &[(*const str, *const str)] = &[
+    ("de-DE", include_str!("../data/langs/de-DE.txt")),
     ("en-US", include_str!("../data/langs/en-US.txt")),
     ("pl-PL", include_str!("../data/langs/pl-PL.txt")),
 ];
