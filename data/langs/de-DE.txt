@@ -3,6 +3,6 @@ de Deutsch
 el Griechisch
 es Spanisch
 it Italienisch
-ja+kana Japanisch (Kana)
-nb Norwegisch
+jp+kana Japanisch (Kana)
+no Norwegisch
 
