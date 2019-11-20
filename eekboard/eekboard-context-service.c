@@ -207,22 +207,8 @@ static void
 settings_get_layout(GSettings *settings, char **type, char **layout)
 {
     GVariant *inputs = g_settings_get_value(settings, "sources");
-    guint32 index;
-    g_settings_get(settings, "current", "u", &index);
-
-    GVariantIter *iter;
-    g_variant_get(inputs, "a(ss)", &iter);
-
-    for (unsigned i = 0;
-         g_variant_iter_loop(iter, "(ss)", type, layout);
-         i++) {
-        if (i == index) {
-            //printf("Found layout %s %s\n", *type, *layout);
-            break;
-        }
-    }
-    g_variant_iter_free(iter);
-    g_variant_unref(inputs);
+    // current layout is always first
+    g_variant_get_child(inputs, 0, "(ss)", type, layout);
 }
 
 void
