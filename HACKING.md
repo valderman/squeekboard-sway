@@ -114,7 +114,7 @@ Use the `cargo.sh` script for maintaining the Cargo part of the build. The scrip
 
 ```
 cd build_dir
-sh /source_path/cargo.sh '' test
+sh /source_path/cargo.sh test
 ```
 
 ### Cargo dependencies
@@ -125,6 +125,6 @@ Dependencies must be specified in `Cargo.toml` with 2 numbers: "major.minor". Si
 
 ```
 cd build_dir
-sh /source_path/cargo.sh '' update
+sh /source_path/cargo.sh update
 ninja test
 ```
