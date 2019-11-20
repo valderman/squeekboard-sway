@@ -158,6 +158,8 @@ eek_gtk_keyboard_real_button_press_event (GtkWidget      *self,
     return TRUE;
 }
 
+
+
 // TODO: this belongs more in gtk_keyboard, with a way to find out which key to re-render
 static gboolean
 eek_gtk_keyboard_real_button_release_event (GtkWidget      *self,
@@ -169,6 +171,18 @@ eek_gtk_keyboard_real_button_release_event (GtkWidget      *self,
     }
     return TRUE;
 }
+
+static gboolean
+eek_gtk_keyboard_leave_event (GtkWidget      *self,
+                              GdkEventCrossing *event)
+{
+    if (event->type == GDK_LEAVE_NOTIFY) {
+        // TODO: can the event have different coords than the previous move event?
+        release(EEK_GTK_KEYBOARD(self), event->time);
+    }
+    return TRUE;
+}
+
 
 static gboolean
 eek_gtk_keyboard_real_motion_notify_event (GtkWidget      *self,
@@ -279,6 +293,9 @@ eek_gtk_keyboard_class_init (EekGtkKeyboardClass *klass)
         eek_gtk_keyboard_real_button_release_event;
     widget_class->motion_notify_event =
         eek_gtk_keyboard_real_motion_notify_event;
+    widget_class->leave_notify_event =
+        eek_gtk_keyboard_leave_event;
+
     widget_class->touch_event = handle_touch_event;
 
     gobject_class->set_property = eek_gtk_keyboard_set_property;
