@@ -18,8 +18,11 @@ use std::io::Write;
 
 mod variants {
     use glib;
+    use glib::Variant;
     use glib_sys;
+    use std::os::raw::c_char;
 
+    use glib::ToVariant;
     use glib::translate::FromGlibPtrFull;
     use glib::translate::ToGlibPtr;
 
@@ -48,6 +51,44 @@ mod variants {
                 )
             })
             .collect()
+    }
+
+    /// "a(ss)" variant
+    /// Rust doesn't allow implementing existing traits for existing types
+    pub struct ArrayPairString(pub Vec<(String, String)>);
+    
+    impl ToVariant for ArrayPairString {
+        fn to_variant(&self) -> Variant {
+            let tspec = "a(ss)".to_glib_none();
+            let builder = unsafe {
+                let vtype = glib_sys::g_variant_type_checked_(tspec.0);
+                glib_sys::g_variant_builder_new(vtype)
+            };
+            let ispec = "(ss)".to_glib_none();
+            for (a, b) in &self.0 {
+                let a = a.to_glib_none();
+                let b = b.to_glib_none();
+                // string pointers are weak references
+                // and will get silently invalidated
+                // as soon as the source is out of scope
+                {
+                    let a: *const c_char = a.0;
+                    let b: *const c_char = b.0;
+                    unsafe {
+                        glib_sys::g_variant_builder_add(
+                            builder,
+                            ispec.0,
+                            a, b
+                        );
+                    }
+                }
+            }
+            unsafe {
+                let ret = glib_sys::g_variant_builder_end(builder);
+                glib_sys::g_variant_builder_unref(builder);
+                glib::Variant::from_glib_full(ret)
+            }
+        }
     }
 }
 
@@ -88,12 +129,15 @@ fn make_menu_builder(inputs: Vec<(&str, &str)>) -> gtk::Builder {
 fn set_layout(kind: String, name: String) {
     let settings = gio::Settings::new("org.gnome.desktop.input-sources");
     let inputs = settings.get_value("sources").unwrap();
-    let inputs = variants::get_tuples(inputs).into_iter();
-    for (index, (ikind, iname)) in inputs.enumerate() {
-        if (&ikind, &iname) == (&kind, &name) {
-            settings.set_uint("current", index as u32);
-        }
-    }
+    let current = (kind.clone(), name.clone());
+    let inputs = variants::get_tuples(inputs).into_iter()
+        .filter(|t| t != &current);
+    let inputs = vec![(kind, name)].into_iter()
+        .chain(inputs).collect();
+    settings.set_value(
+        "sources",
+        &variants::ArrayPairString(inputs).to_variant()
+    );
     settings.apply();
 }
 
@@ -103,7 +147,6 @@ pub fn show(window: EekGtkKeyboard, position: ::layout::c::Bounds) {
 
     let settings = gio::Settings::new("org.gnome.desktop.input-sources");
     let inputs = settings.get_value("sources").unwrap();
-    let current = settings.get_uint("current") as usize;
     let inputs = variants::get_tuples(inputs);
     
     let input_names: Vec<&str> = inputs.iter()
@@ -152,38 +195,44 @@ pub fn show(window: EekGtkKeyboard, position: ::layout::c::Bounds) {
         height: position.width.floor() as i32,
     });
 
-    let initial_state = input_names[current].to_variant();
+    let action = input_names.get(0).map(|current_name| {
+        let current_name = current_name.to_variant();
 
-    let layout_action = gio::SimpleAction::new_stateful(
-        "layout",
-        Some(initial_state.type_()),
-        &initial_state,
-    );
+        let layout_action = gio::SimpleAction::new_stateful(
+            "layout",
+            Some(current_name.type_()),
+            &current_name,
+        );
 
-    let action_group = gio::SimpleActionGroup::new();
-    action_group.add_action(&layout_action);
+        let action_group = gio::SimpleActionGroup::new();
+        action_group.add_action(&layout_action);
 
-    menu.insert_action_group("popup", Some(&action_group));
+        menu.insert_action_group("popup", Some(&action_group));
+        layout_action
+    });
+
     menu.bind_model(Some(&model), Some("popup"));
 
     menu.connect_closed(move |_menu| {
-        let state = match layout_action.get_state() {
-            Some(v) => {
-                let s = v.get::<String>().or_else(|| {
-                    eprintln!("Variant is not string: {:?}", v);
+        if let Some(layout_action) = &action {
+            let state = match layout_action.get_state() {
+                Some(v) => {
+                    let s = v.get::<String>().or_else(|| {
+                        eprintln!("Variant is not string: {:?}", v);
+                        None
+                    });
+                    // FIXME: the `get_state` docs call for unrefing,
+                    // but the function is nowhere to be found
+                    // glib::Variant::unref(v);
+                    s
+                },
+                None => {
+                    eprintln!("No variant selected");
                     None
-                });
-                // FIXME: the `get_state` docs call for unrefing,
-                // but the function is nowhere to be found
-                // glib::Variant::unref(v);
-                s
-            },
-            None => {
-                eprintln!("No variant selected");
-                None
-            },
-        };
-        set_layout("xkb".into(), state.unwrap_or("us".into()));
+                },
+            };
+            set_layout("xkb".into(), state.unwrap_or("us".into()));
+        }
     });
 
     menu.popup();
