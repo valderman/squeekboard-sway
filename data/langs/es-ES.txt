@@ -4,4 +4,4 @@ el Griego
 es Español
 it Italiano
 jp+kana Japonés (Kana)
-nb Noruego
+no Noruego

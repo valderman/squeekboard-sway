@@ -4,5 +4,5 @@ el grecki
 es hiszpański
 it włoski
 jp+kana japoński (kana)
-nb norweski
+no norweski
 
