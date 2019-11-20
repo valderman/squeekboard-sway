@@ -2,7 +2,8 @@ us angielski (USA)
 de niemiecki
 el grecki
 es hiszpański
+fi fiński
 it włoski
 jp+kana japoński (kana)
 no norweski
-
+se szwedzki
