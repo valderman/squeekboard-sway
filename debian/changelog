@@ -1,3 +1,10 @@
+squeekboard (1.3.1) amber-phone; urgency=medium
+
+  * Update and fix layouts and languages
+  * Make tests less likely to fail
+
+ -- Dorota Czaplejewicz <dorota.czaplejewicz@puri.sm>  Wed, 20 Nov 2019 22:10:48 +0000
+
 squeekboard (1.3.0) amber-phone; urgency=medium
 
   * Language selection popup
