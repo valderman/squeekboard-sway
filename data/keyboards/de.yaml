@@ -1,7 +1,7 @@
 # German layout by Mark Müller
-# Version 2019101900
+# Version 2019111700
 ---
-bounds: { x: 0, y: 1, width: 360, height: 210 }
+bounds: { x: 0, y: 1, width: 360, height: 208 }
 
 outlines:
     default:
@@ -20,27 +20,27 @@ views:
         - "q w e r t z u i o p"
         - "a s d f g h j k l"
         - "Shift_L   y x c v b n m  BackSpace"
-        - "show_numbers show_dechars preferences         space        , period Return"
+        - "show_numbers show_eschars preferences         space        , . Return"
     upper:
         - "Q W E R T Z U I O P"
         - "A S D F G H J K L"
         - "Shift_L   Y X C V B N M  BackSpace"
-        - "show_numbers show_dechars preferences         space        ! ? Return"
+        - "show_numbers show_eschars preferences         space        ! ? Return"
     numbers:
         - "1 2 3 4 5 6 7 8 9 0"
         - "@ # € % & - _ + ( )"
-        - "show_symbols   , \" ' colon = < >  BackSpace"
-        - "show_letters show_dechars preferences         space        , period Return"
+        - "show_symbols   , \" ' : = < >  BackSpace"
+        - "show_letters show_eschars preferences         space        , . Return"
     symbols:
         - "~ ` ´ | · √ µ ÷ × ¶"
         - "© ® £ $ ¥ ^ ° * { }"
         - "show_numbers   \\ / § π τ [ ]  BackSpace"
-        - "show_letters show_dechars preferences         space        , period Return"
-    dechars:
+        - "show_letters show_eschars preferences         space        , . Return"
+    eschars:
         - "ä è é ö ü Ä È É Ö Ü"
         - "à â ê î ô À Â È Î Ô"
         - "show_numbers  « » ç Ç æ œ ß  BackSpace"
-        - "show_letters show_dechars preferences         space        „ “ Return"
+        - "show_letters show_eschars preferences         space        „ “ Return"
 
 buttons:
     Shift_L:
@@ -53,6 +53,7 @@ buttons:
     BackSpace:
         outline: "altline"
         icon: "edit-clear-symbolic"
+        keysym: "BackSpace"
     preferences:
         action: "show_prefs"
         outline: "special"
@@ -72,24 +73,18 @@ buttons:
             set_view: "symbols"
         outline: "altline"
         label: "*/="
-    show_dechars:
+    show_eschars:
         action:
             locking:
-                lock_view: "dechars"
+                lock_view: "eschars"
                 unlock_view: "base"
         outline: "altline"
         label: "äÄ"
-
-    period:
-        outline: "default"
-        label: "."
     space:
         outline: "spaceline"
         label: " "
+        keysym: "space"
     Return:
         outline: "altline"
         icon: "key-enter"
-    colon:
-        label: ":"
-    "\"":
-        keysym: "quotedbl"
+        keysym: "Return"
