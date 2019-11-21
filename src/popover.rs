@@ -7,9 +7,9 @@ use ::locale::compare_current_locale;
 use ::locale_config::system_locale;
 use ::resources;
 
-use gio::ActionExt;
 use gio::ActionMapExt;
 use gio::SettingsExt;
+use gio::SimpleActionExt;
 use glib::translate::FromGlibPtrNone;
 use glib::variant::ToVariant;
 use gtk::PopoverExt;
@@ -195,7 +195,7 @@ pub fn show(window: EekGtkKeyboard, position: ::layout::c::Bounds) {
         height: position.width.floor() as i32,
     });
 
-    let action = input_names.get(0).map(|current_name| {
+    if let Some(current_name) = input_names.get(0) {
         let current_name = current_name.to_variant();
 
         let layout_action = gio::SimpleAction::new_stateful(
@@ -204,36 +204,26 @@ pub fn show(window: EekGtkKeyboard, position: ::layout::c::Bounds) {
             &current_name,
         );
 
+        layout_action.connect_change_state(|_action, state| {
+            match state {
+                Some(v) => {
+                    v.get::<String>()
+                        .or_else(|| {
+                            eprintln!("Variant is not string: {:?}", v);
+                            None
+                        })
+                        .map(|state| set_layout("xkb".into(), state));
+                },
+                None => eprintln!("No variant selected"),
+            };
+        });
+
         let action_group = gio::SimpleActionGroup::new();
         action_group.add_action(&layout_action);
 
         menu.insert_action_group("popup", Some(&action_group));
-        layout_action
-    });
+    };
 
     menu.bind_model(Some(&model), Some("popup"));
-
-    menu.connect_closed(move |_menu| {
-        if let Some(layout_action) = &action {
-            let state = match layout_action.get_state() {
-                Some(v) => {
-                    let s = v.get::<String>().or_else(|| {
-                        eprintln!("Variant is not string: {:?}", v);
-                        None
-                    });
-                    // FIXME: the `get_state` docs call for unrefing,
-                    // but the function is nowhere to be found
-                    // glib::Variant::unref(v);
-                    s
-                },
-                None => {
-                    eprintln!("No variant selected");
-                    None
-                },
-            };
-            set_layout("xkb".into(), state.unwrap_or("us".into()));
-        }
-    });
-
     menu.popup();
 }
