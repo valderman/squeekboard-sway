@@ -1,3 +1,9 @@
+squeekboard (1.3.2) amber-phone; urgency=medium
+
+  * Make sure all key presses get accepted by the compositor
+
+ -- Dorota Czaplejewicz <dorota.czaplejewicz@puri.sm>  Tue, 26 Nov 2019 15:36:27 +0000
+
 squeekboard (1.3.1) amber-phone; urgency=medium
 
   * Update and fix layouts and languages

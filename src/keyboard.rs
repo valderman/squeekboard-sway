@@ -51,14 +51,16 @@ pub struct KeyState {
     pub action: Action,
 }
 
-/// Generates a mapping where each key gets a keycode, starting from 8
+/// Generates a mapping where each key gets a keycode, starting from ~~8~~
+/// HACK: starting from 9, because 8 results in keycode 0,
+/// which the compositor likes to discard
 pub fn generate_keycodes<'a, C: IntoIterator<Item=&'a str>>(
     key_names: C
 ) -> HashMap<String, u32> {
     HashMap::from_iter(
         key_names.into_iter()
             .map(|name| String::from(name))
-            .zip(8..)
+            .zip(9..)
     )
 }
 
