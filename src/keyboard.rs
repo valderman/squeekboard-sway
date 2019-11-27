@@ -51,6 +51,15 @@ pub struct KeyState {
     pub action: Action,
 }
 
+/// Sorts an iterator by converting it to a Vector and back
+fn sorted<'a, I: Iterator<Item=&'a str>>(
+    iter: I
+) -> impl Iterator<Item=&'a str> {
+    let mut v: Vec<&'a str> = iter.collect();
+    v.sort();
+    v.into_iter()
+}
+
 /// Generates a mapping where each key gets a keycode, starting from ~~8~~
 /// HACK: starting from 9, because 8 results in keycode 0,
 /// which the compositor likes to discard
@@ -58,7 +67,8 @@ pub fn generate_keycodes<'a, C: IntoIterator<Item=&'a str>>(
     key_names: C
 ) -> HashMap<String, u32> {
     HashMap::from_iter(
-        key_names.into_iter()
+        // sort to remove a source of indeterminism in keycode assignment
+        sorted(key_names.into_iter())
             .map(|name| String::from(name))
             .zip(9..)
     )
