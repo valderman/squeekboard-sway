@@ -26,8 +26,8 @@ use ::xdg;
 // traits, derives
 use std::io::BufReader;
 use std::iter::FromIterator;
-
 use serde::Deserialize;
+use util::WarningHandler;
 
 
 /// Gathers stuff defined in C or called by C
@@ -151,21 +151,30 @@ fn list_layout_sources(
     ret
 }
 
+struct PrintWarnings;
+
+impl WarningHandler for PrintWarnings {
+    fn handle(&mut self, warning: &str) {
+        println!("{}", warning);
+    }
+}
+
 fn load_layout_data(source: DataSource)
     -> Result<::layout::LayoutData, LoadError>
 {
+    let handler = PrintWarnings{};
     match source {
         DataSource::File(path) => {
             Layout::from_file(path.clone())
                 .map_err(LoadError::BadData)
                 .and_then(|layout|
-                    layout.build().map_err(LoadError::BadKeyMap)
+                    layout.build(handler).0.map_err(LoadError::BadKeyMap)
                 )
         },
         DataSource::Resource(name) => {
             Layout::from_resource(&name)
                 .and_then(|layout|
-                    layout.build().map_err(LoadError::BadKeyMap)
+                    layout.build(handler).0.map_err(LoadError::BadKeyMap)
                 )
         },
     }
@@ -296,7 +305,7 @@ impl Layout {
                     .map_err(LoadError::BadResource)
     }
 
-    fn from_file(path: PathBuf) -> Result<Layout, Error> {
+    pub fn from_file(path: PathBuf) -> Result<Layout, Error> {
         let infile = BufReader::new(
             fs::OpenOptions::new()
                 .read(true)
@@ -305,8 +314,8 @@ impl Layout {
         serde_yaml::from_reader(infile).map_err(Error::Yaml)
     }
 
-    pub fn build(self)
-        -> Result<::layout::LayoutData, FormattingError>
+    pub fn build<H: WarningHandler>(self, mut warning_handler: H)
+        -> (Result<::layout::LayoutData, FormattingError>, H)
     {
         let button_names = self.views.values()
             .flat_map(|rows| {
@@ -323,7 +332,8 @@ impl Layout {
                 create_action(
                     &self.buttons,
                     name,
-                    self.views.keys().collect()
+                    self.views.keys().collect(),
+                    &mut warning_handler,
                 )
             )}).collect();
 
@@ -368,13 +378,15 @@ impl Layout {
             )
         });
 
-        let button_states
-            = HashMap::<String, KeyState>::from_iter(
-                button_states
-            );
+        let button_states = HashMap::<String, KeyState>::from_iter(
+            button_states
+        );
 
         // TODO: generate from symbols
-        let keymap_str = generate_keymap(&button_states)?;
+        let keymap_str = match generate_keymap(&button_states) {
+            Err(e) => { return (Err(e), warning_handler) },
+            Ok(v) => v,
+        };
 
         let button_states_cache = hash_map_map(
             button_states,
@@ -405,7 +417,8 @@ impl Layout {
                                     name,
                                     button_states_cache.get(name.into())
                                         .expect("Button state not created")
-                                        .clone()
+                                        .clone(),
+                                    &mut warning_handler,
                                 ))
                             }).collect(),
                         })
@@ -414,42 +427,29 @@ impl Layout {
             )})
         );
 
-        Ok(::layout::LayoutData {
-            views: views,
-            keymap_str: {
-                CString::new(keymap_str)
-                    .expect("Invalid keymap string generated")
-            },
-        })
+        (
+            Ok(::layout::LayoutData {
+                views: views,
+                keymap_str: {
+                    CString::new(keymap_str)
+                        .expect("Invalid keymap string generated")
+                },
+            }),
+            warning_handler,
+        )
     }
 }
 
-fn create_action(
+fn create_action<H: WarningHandler>(
     button_info: &HashMap<String, ButtonMeta>,
     name: &str,
     view_names: Vec<&String>,
+    warning_handler: &mut H,
 ) -> ::action::Action {
     let default_meta = ButtonMeta::default();
     let symbol_meta = button_info.get(name)
         .unwrap_or(&default_meta);
-    
-    fn filter_view_name(
-        button_name: &str,
-        view_name: String,
-        view_names: &Vec<&String>
-    ) -> String {
-        if view_names.contains(&&view_name) {
-            view_name
-        } else {
-            eprintln!(
-                "Button {} switches to missing view {}",
-                button_name,
-                view_name
-            );
-            "base".into()
-        }
-    }
-    
+
     fn keysym_valid(name: &str) -> bool {
         xkb::keysym_from_name(name, xkb::KEYSYM_NO_FLAGS) != xkb::KEY_NoSymbol
     }
@@ -463,7 +463,10 @@ fn create_action(
             Some(keysym) => vec!(match keysym_valid(keysym.as_str()) {
                 true => keysym.clone(),
                 false => {
-                    eprintln!("Keysym name invalid: {}", keysym);
+                    warning_handler.handle(&format!(
+                        "Keysym name invalid: {}",
+                        keysym,
+                    ));
                     "space".into() // placeholder
                 },
             }),
@@ -479,7 +482,10 @@ fn create_action(
                     if name.chars().count() == 0 {
                         // A name read from yaml with no valid Unicode.
                         // Highly improbable, but let's be safe.
-                        eprintln!("Key {} doesn't have any characters", name);
+                        warning_handler.handle(&format!(
+                            "Key {} doesn't have any characters",
+                            name,
+                        ));
                         vec!("space".into()) // placeholder
                     } else {
                         name.chars().map(|codepoint| {
@@ -494,19 +500,45 @@ fn create_action(
             },
         },
     };
-    
+
+    fn filter_view_name<H: WarningHandler>(
+        button_name: &str,
+        view_name: String,
+        view_names: &Vec<&String>,
+        warning_handler: &mut H,
+    ) -> String {
+        if view_names.contains(&&view_name) {
+            view_name
+        } else {
+            warning_handler.handle(&format!("Button {} switches to missing view {}",
+                button_name,
+                view_name,
+            ));
+            "base".into()
+        }
+    }
+
     match &symbol_meta.action {
         Some(Action::SetView(view_name)) => ::action::Action::SetLevel(
-            filter_view_name(name, view_name.clone(), &view_names)
+            filter_view_name(
+                name, view_name.clone(), &view_names,
+                warning_handler,
+            )
         ),
         Some(Action::Locking {
             lock_view, unlock_view
         }) => ::action::Action::LockLevel {
-            lock: filter_view_name(name, lock_view.clone(), &view_names),
+            lock: filter_view_name(
+                name,
+                lock_view.clone(),
+                &view_names,
+                warning_handler,
+            ),
             unlock: filter_view_name(
                 name,
                 unlock_view.clone(),
-                &view_names
+                &view_names,
+                warning_handler,
             ),
         },
         Some(Action::ShowPrefs) => ::action::Action::ShowPreferences,
@@ -519,11 +551,12 @@ fn create_action(
 
 /// TODO: Since this will receive user-provided data,
 /// all .expect() on them should be turned into soft fails
-fn create_button(
+fn create_button<H: WarningHandler>(
     button_info: &HashMap<String, ButtonMeta>,
     outlines: &HashMap<String, Outline>,
     name: &str,
     state: Rc<RefCell<KeyState>>,
+    warning_handler: &mut H,
 ) -> ::layout::Button {
     let cname = CString::new(name.clone())
         .expect("Bad name");
@@ -548,7 +581,7 @@ fn create_button(
             if outlines.contains_key(outline) {
                 outline.clone()
             } else {
-                eprintln!("Outline named {} does not exist! Using default for button {}", outline, name);
+                warning_handler.handle(&format!("Outline named {} does not exist! Using default for button {}", outline, name));
                 "default".into()
             }
         }
@@ -558,7 +591,9 @@ fn create_button(
     let outline = outlines.get(&outline_name)
         .map(|outline| (*outline).clone())
         .unwrap_or_else(|| {
-            eprintln!("No default outline defied Using 1x1!");
+            warning_handler.handle(
+                &format!("No default outline defined! Using 1x1!")
+            );
             Outline {
                 bounds: Bounds { x: 0f64, y: 0f64, width: 1f64, height: 1f64 },
             }
@@ -584,6 +619,14 @@ mod tests {
     use super::*;
     
     use std::error::Error as ErrorTrait;
+
+    struct PanicWarn;
+    
+    impl WarningHandler for PanicWarn {
+        fn handle(&mut self, warning: &str) {
+            panic!("{}", warning);
+        }
+    }
 
     #[test]
     fn test_parse_path() {
@@ -656,7 +699,7 @@ mod tests {
     fn test_layout_punctuation() {
         let out = Layout::from_file(PathBuf::from("tests/layout_key1.yaml"))
             .unwrap()
-            .build()
+            .build(PanicWarn).0
             .unwrap();
         assert_eq!(
             out.views["base"]
@@ -671,7 +714,7 @@ mod tests {
     fn test_layout_unicode() {
         let out = Layout::from_file(PathBuf::from("tests/layout_key2.yaml"))
             .unwrap()
-            .build()
+            .build(PanicWarn).0
             .unwrap();
         assert_eq!(
             out.views["base"]
@@ -687,7 +730,7 @@ mod tests {
     fn test_layout_unicode_multi() {
         let out = Layout::from_file(PathBuf::from("tests/layout_key3.yaml"))
             .unwrap()
-            .build()
+            .build(PanicWarn).0
             .unwrap();
         assert_eq!(
             out.views["base"]
@@ -702,7 +745,7 @@ mod tests {
     #[test]
     fn parsing_fallback() {
         assert!(Layout::from_resource(FALLBACK_LAYOUT_NAME)
-            .and_then(|layout| layout.build().map_err(LoadError::BadKeyMap))
+            .map(|layout| layout.build(PanicWarn).0.unwrap())
             .is_ok()
         );
     }
@@ -748,12 +791,13 @@ mod tests {
                     }
                 },
                 ".",
-                Vec::new()
+                Vec::new(),
+                &mut PanicWarn,
             ),
             ::action::Action::Submit {
                 text: None,
                 keys: vec!(::action::KeySym("U002E".into())),
-            }
+            },
         );
     }
 }

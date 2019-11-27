@@ -40,3 +40,13 @@ Depends:
  ${misc:Depends}
 Description: On-screen keyboard for Wayland
  Virtual keyboard supporting Wayland, built primarily for the Librem 5 phone.
+
+Package: squeekboard-devel
+Architecture: linux-any
+Depends:
+ ${shlibs:Depends}
+ ${misc:Depends}
+Description: Resources for making Squeekboard layouts
+ Tools for creating Squeekboard layouts:
+ .
+  * squeekboard-test-layout

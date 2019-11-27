@@ -24,5 +24,6 @@ mod outputs;
 mod popover;
 mod resources;
 mod submission;
-mod util;
+pub mod tests;
+pub mod util;
 mod xdg;

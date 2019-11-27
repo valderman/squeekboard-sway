@@ -11,14 +11,21 @@ SOURCE_DIR="$(dirname "$SCRIPT_PATH")"
 
 CARGO_TARGET_DIR="$(pwd)"
 export CARGO_TARGET_DIR
-if [ -n "${1}" ]; then
-    OUT_PATH="$(realpath "$1")"
+if [ "${1}" = "--rename" ]; then
+    shift
+    FILENAME="${1}"
+    shift
+    OUT_PATH="$(realpath "${1}")"
+elif [ "${1}" = "--output" ]; then
+    shift
+    OUT_PATH="$(realpath "${1}")"
+    FILENAME="$(basename "${OUT_PATH}")"
 fi
+shift
 
 cd "$SOURCE_DIR"
-shift
 cargo "$@"
 
 if [ -n "${OUT_PATH}" ]; then
-    cp "${CARGO_TARGET_DIR}"/debug/librs.a "${OUT_PATH}"
+    cp -a "${CARGO_TARGET_DIR}"/debug/"${FILENAME}" "${OUT_PATH}"
 fi
