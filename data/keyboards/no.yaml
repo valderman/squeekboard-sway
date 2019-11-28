@@ -26,13 +26,13 @@ views:
         - "show_numbers preferences         space        .    Return"
     numbers:
         - "1 2 3 4 5 6 7 8 9 0"
-        - "at numbersign dollar percent ampersand minus underscore plus parenleft parenright"
-        - "show_symbols   comma quotedbl quoteright colon semicolon exclam question  BackSpace"
+        - "@ # $ % & - _ + ( )"
+        - "show_symbols   , \" ' : ; ! ?  BackSpace"
         - "show_letters preferences         space        .    Return"
     symbols:
-        - "asciitilde quoteleft bar U00B7 squareroot Greek_pi Greek_tau division multiply paragraph"
-        - "copyright U00AE U00A3 EuroSign U00A5 asciicircum degree asterisk braceleft braceright"
-        - "show_numbers   backslash slash less greater equal bracketleft bracketright  BackSpace"
+        - "~ ` | U00B7 squareroot Greek_pi Greek_tau division multiply paragraph"
+        - "copyright U00AE U00A3 EuroSign U00A5 asciicircum degree * { }"
+        - "show_numbers   \\ / < > = [ ]  BackSpace"
         - "show_letters preferences         space        .    Return"
 
 buttons:
@@ -46,6 +46,7 @@ buttons:
     BackSpace:
         outline: "altline"
         icon: "edit-clear-symbolic"
+        keysym: "BackSpace"
     preferences:
         action: "show_prefs"
         outline: "altline"
@@ -69,108 +70,37 @@ buttons:
         outline: altline
     space:
         outline: spaceline
-        label: " "
+        text: " "
     Return:
         outline: "wide"
         icon: "key-enter"
-    aring:
-        label: "å"
-    Aring:
-        label: "Å"
-    oslash:
-        label: "ø"
-    Oslash:
-        label: "Ø"
-    ae:
-        label: "æ"
-    AE:
-        label: "Æ"
-    asterisk:
-        label: "*"
-    asciitilde:
-        label: "~"
-    quoteleft:
-        label: "`"
-    bar:
-        label: "|"
+        keysym: "Return"
     U00B7:
-        label: "·"
+        text: "·"
     squareroot:
-        label: "√"
+        text: "√"
     Greek_pi:
-        label: "π"
+        text: "π"
     division:
-        label: "÷"
+        text: "÷"
     multiply:
-        label: "×"
+        text: "×"
     paragraph:
-        label: "¶"
+        text: "¶"
     Greek_tau:
-        label: "τ"
+        text: "τ"
     copyright:
-        label: "©"
-    numbersign:
-        label: "#"
+        text: "©"
     U00AE:
-        label: "®"
-    at:
-        label: "@"
-    dollar:
-        label: "$"
+        text: "®"
     U00A3:
-        label: "£"
-    percent:
-        label: "%"
+        text: "£"
     EuroSign:
-        label: "€"
-    ampersand:
-        label: "&"
+        text: "€"
     U00A5:
-        label: "¥"
-    minus:
-        label: "-"
+        text: "¥"
     asciicircum:
-        label: "^"
-    underscore:
-        label: "_"
+        text: "^"
     degree:
-        label: "°"
-    plus:
-        label: "+"
-    equal:
-        label: "="
-    parenleft:
-        label: "("
-    parenright:
-        label: ")"
-    braceleft:
-        label: "{"
-    braceright:
-        label: "}"
-    comma:
-        label: ","
-    backslash:
-        label: "\\"
-    slash:
-        label: "/"
-    quotedbl:
-        label: "\""
-    quoteright:
-        label: "'"
-    less:
-        label: "<"
-    greater:
-        label: ">"
-    colon:
-        label: ":"
-    semicolon:
-        label: ";"
-    exclam:
-        label: "!"
-    question:
-        label: "?"
-    bracketleft:
-        label: "["
-    bracketright:
-        label: "]"
+        text: "°"
 

@@ -22,22 +22,24 @@ buttons:
     BackSpace:
         outline: "altline"
         icon: "edit-clear-symbolic"
+        keysym: "BackSpace"
     space:
         outline: spaceline
-        label: " "
+        text: " "
     Return:
         outline: outline7
         icon: "key-enter"
+        keysym: "BackSpace"
     asterisk:
-        label: "*"
+        text: "*"
     numbersign:
-        label: "#"
+        text: "#"
     minus:
-        label: "-"
+        text: "-"
     plus:
-        label: "+"
+        text: "+"
     parenleft:
-        label: "("
+        text: "("
     parenright:
-        label: ")"
+        text: ")"
 

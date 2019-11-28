@@ -53,6 +53,7 @@ buttons:
     BackSpace:
         outline: "altline"
         icon: "edit-clear-symbolic"
+        keysym: "BackSpace"
     preferences:
         action: "show_prefs"
         outline: "altline"
@@ -86,111 +87,112 @@ buttons:
         label: "αι"
     period:
         outline: "altline"
-        label: "."
+        text: "."
     space:
         outline: spaceline
-        label: " "
+        text: " "
     Return:
         outline: "wide"
         icon: "key-enter"
+        keysym: "Return"
     aring:
-        label: "å"
+        text: "å"
     Aring:
-        label: "Å"
+        text: "Å"
     oslash:
-        label: "ø"
+        text: "ø"
     Oslash:
-        label: "Ø"
+        text: "Ø"
     ae:
-        label: "æ"
+        text: "æ"
     AE:
-        label: "Æ"
+        text: "Æ"
     asterisk:
-        label: "*"
+        text: "*"
     asciitilde:
-        label: "~"
+        text: "~"
     quoteleft:
-        label: "`"
+        text: "`"
     bar:
-        label: "|"
+        text: "|"
     U00B7:
-        label: "·"
+        text: "·"
     squareroot:
-        label: "√"
+        text: "√"
     Greek_pi:
-        label: "π"
+        text: "π"
     division:
-        label: "÷"
+        text: "÷"
     multiply:
-        label: "×"
+        text: "×"
     paragraph:
-        label: "¶"
+        text: "¶"
     Greek_tau:
-        label: "τ"
+        text: "τ"
     copyright:
-        label: "©"
+        text: "©"
     numbersign:
-        label: "#"
+        text: "#"
     U00AE:
-        label: "®"
+        text: "®"
     at:
-        label: "@"
+        text: "@"
     dollar:
-        label: "$"
+        text: "$"
     U00A3:
-        label: "£"
+        text: "£"
     percent:
-        label: "%"
+        text: "%"
     EuroSign:
-        label: "€"
+        text: "€"
     ampersand:
-        label: "&"
+        text: "&"
     U00A5:
-        label: "¥"
+        text: "¥"
     minus:
-        label: "-"
+        text: "-"
     asciicircum:
-        label: "^"
+        text: "^"
     underscore:
-        label: "_"
+        text: "_"
     degree:
-        label: "°"
+        text: "°"
     plus:
-        label: "+"
+        text: "+"
     equal:
-        label: "="
+        text: "="
     parenleft:
-        label: "("
+        text: "("
     parenright:
-        label: ")"
+        text: ")"
     braceleft:
-        label: "{"
+        text: "{"
     braceright:
-        label: "}"
+        text: "}"
     comma:
-        label: ","
+        text: ","
     backslash:
-        label: "\\"
+        text: "\\"
     slash:
-        label: "/"
+        text: "/"
     quotedbl:
-        label: "\""
+        text: "\""
     quoteright:
-        label: "'"
+        text: "'"
     less:
-        label: "<"
+        text: "<"
     greater:
-        label: ">"
+        text: ">"
     colon:
-        label: ":"
+        text: ":"
     semicolon:
-        label: ";"
+        text: ";"
     exclam:
-        label: "!"
+        text: "!"
     question:
-        label: "?"
+        text: "?"
     bracketleft:
-        label: "["
+        text: "["
     bracketright:
-        label: "]"
+        text: "]"
 

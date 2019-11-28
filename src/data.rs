@@ -234,22 +234,28 @@ struct Bounds {
 /// Buttons are embedded in a single string
 type ButtonIds = String;
 
+/// All info about a single button
+/// Buttons can have multiple instances though.
 #[derive(Debug, Default, Deserialize, PartialEq)]
 #[serde(deny_unknown_fields)]
 struct ButtonMeta {
-    /// Action other than keysym (conflicts with keysym)
+    /// Special action to perform on activation. Conflicts with keysym, text.
     action: Option<Action>,
-    /// The name of the outline. If not present, will be "default"
-    outline: Option<String>,
-    /// FIXME: start using it
+    /// The name of the XKB keysym to emit on activation.
+    /// Conflicts with action, text
     keysym: Option<String>,
-    /// If not present, will be derived from the button ID
+    /// The text to submit on activation. Will be derived from ID if not present
+    /// Conflicts with action, keysym
+    text: Option<String>,
+    /// If not present, will be derived from text or the button ID
     label: Option<String>,
     /// Conflicts with label
     icon: Option<String>,
+    /// The name of the outline. If not present, will be "default"
+    outline: Option<String>,
 }
 
-#[derive(Debug, Deserialize, PartialEq)]
+#[derive(Debug, Deserialize, PartialEq, Clone)]
 #[serde(deny_unknown_fields)]
 enum Action {
     #[serde(rename="locking")]
@@ -454,50 +460,27 @@ fn create_action<H: WarningHandler>(
         xkb::keysym_from_name(name, xkb::KEYSYM_NO_FLAGS) != xkb::KEY_NoSymbol
     }
     
-    let keysyms = match &symbol_meta.action {
-        // Non-submit action
-        Some(_) => Vec::new(),
-        // Submit action
-        None => match &symbol_meta.keysym {
-            // Keysym given explicitly
-            Some(keysym) => vec!(match keysym_valid(keysym.as_str()) {
-                true => keysym.clone(),
-                false => {
-                    warning_handler.handle(&format!(
-                        "Keysym name invalid: {}",
-                        keysym,
-                    ));
-                    "space".into() // placeholder
-                },
-            }),
-            // Keysyms left open to derive
-            // TODO: when button name is meant diretly as xkb keysym name,
-            // mark it so, e.g. with a "#"
-            None => match keysym_valid(name) {
-                // Button name is actually a valid xkb name
-                true => vec!(String::from(name)),
-                // Button name is not a valid xkb name,
-                // so assume it's a literal string to be submitted
-                false => {
-                    if name.chars().count() == 0 {
-                        // A name read from yaml with no valid Unicode.
-                        // Highly improbable, but let's be safe.
-                        warning_handler.handle(&format!(
-                            "Key {} doesn't have any characters",
-                            name,
-                        ));
-                        vec!("space".into()) // placeholder
-                    } else {
-                        name.chars().map(|codepoint| {
-                            let codepoint_string = codepoint.to_string();
-                            match keysym_valid(codepoint_string.as_str()) {
-                                true => codepoint_string,
-                                false => format!("U{:04X}", codepoint as u32),
-                            }
-                        }).collect()
-                    }
-                },
-            },
+    enum SubmitData {
+        Action(Action),
+        Text(String),
+        Keysym(String),
+    };
+    
+    let submission = match (
+        &symbol_meta.action,
+        &symbol_meta.keysym,
+        &symbol_meta.text
+    ) {
+        (Some(action), None, None) => SubmitData::Action(action.clone()),
+        (None, Some(keysym), None) => SubmitData::Keysym(keysym.clone()),
+        (None, None, Some(text)) => SubmitData::Text(text.clone()),
+        (None, None, None) => SubmitData::Text(name.into()),
+        _ => {
+            warning_handler.handle(&format!(
+                "Button {} has more than one of (action, keysym, text)",
+                name
+            ));
+            SubmitData::Text("".into())
         },
     };
 
@@ -518,14 +501,16 @@ fn create_action<H: WarningHandler>(
         }
     }
 
-    match &symbol_meta.action {
-        Some(Action::SetView(view_name)) => ::action::Action::SetLevel(
+    match submission {
+        SubmitData::Action(
+            Action::SetView(view_name)
+        ) => ::action::Action::SetLevel(
             filter_view_name(
                 name, view_name.clone(), &view_names,
                 warning_handler,
             )
         ),
-        Some(Action::Locking {
+        SubmitData::Action(Action::Locking {
             lock_view, unlock_view
         }) => ::action::Action::LockLevel {
             lock: filter_view_name(
@@ -541,11 +526,44 @@ fn create_action<H: WarningHandler>(
                 warning_handler,
             ),
         },
-        Some(Action::ShowPrefs) => ::action::Action::ShowPreferences,
-        None => ::action::Action::Submit {
+        SubmitData::Action(
+            Action::ShowPrefs
+        ) => ::action::Action::ShowPreferences,
+        SubmitData::Keysym(keysym) => ::action::Action::Submit {
             text: None,
-            keys: keysyms.into_iter().map(::action::KeySym).collect(),
+            keys: vec!(::action::KeySym(
+                match keysym_valid(keysym.as_str()) {
+                    true => keysym.clone(),
+                    false => {
+                        warning_handler.handle(&format!(
+                            "Keysym name invalid: {}",
+                            keysym,
+                        ));
+                        "space".into() // placeholder
+                    },
+                }
+            )),
         },
+        SubmitData::Text(text) => ::action::Action::Submit {
+            text: {
+                CString::new(text.clone())
+                    .map_err(|e| {
+                        warning_handler.handle(&format!(
+                            "Text {} contains problems: {:?}",
+                            text,
+                            e
+                        ));
+                        e
+                    }).ok()
+            },
+            keys: text.chars().map(|codepoint| {
+                let codepoint_string = codepoint.to_string();
+                ::action::KeySym(match keysym_valid(codepoint_string.as_str()) {
+                    true => codepoint_string,
+                    false => format!("U{:04X}", codepoint as u32),
+                })
+            }).collect(),
+        }
     }
 }
 
@@ -572,6 +590,18 @@ fn create_button<H: WarningHandler>(
     } else if let Some(icon) = &button_meta.icon {
         ::layout::Label::IconName(CString::new(icon.as_str())
             .expect("Bad icon"))
+    } else if let Some(text) = &button_meta.text {
+        ::layout::Label::Text(
+            CString::new(text.as_str())
+                .unwrap_or_else(|e| {
+                    warning_handler.handle(&format!(
+                        "Text {} is invalid: {}",
+                        text,
+                        e,
+                    ));
+                    CString::new("").unwrap()
+                })
+        )
     } else {
         ::layout::Label::Text(cname.clone())
     };
@@ -642,6 +672,7 @@ mod tests {
                         icon: None,
                         keysym: None,
                         action: None,
+                        text: None,
                         label: Some("test".into()),
                         outline: None,
                     }
@@ -785,6 +816,7 @@ mod tests {
                     ".".into() => ButtonMeta {
                         icon: None,
                         keysym: None,
+                        text: None,
                         action: None,
                         label: Some("test".into()),
                         outline: None,
@@ -795,7 +827,7 @@ mod tests {
                 &mut PanicWarn,
             ),
             ::action::Action::Submit {
-                text: None,
+                text: Some(CString::new(".").unwrap()),
                 keys: vec!(::action::KeySym("U002E".into())),
             },
         );

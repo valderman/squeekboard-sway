@@ -225,7 +225,7 @@ buttons:
     space:
         outline: "default-wide"
         label: "␣"
-        keysym: "U3000"
+        text: "　"
     # switch to number view
     numbers:
         action:
