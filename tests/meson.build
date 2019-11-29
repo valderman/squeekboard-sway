@@ -62,7 +62,7 @@ foreach layout : [
     test(
         'test_layout_' + layout,
         cargo_script,
-        args: ['', 'run', '--example', 'test_layout', layout]
+        args: ['run', '--example', 'test_layout', layout]
     )
 endforeach
 

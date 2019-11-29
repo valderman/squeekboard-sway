@@ -33,6 +33,11 @@ endif
 if get_option('buildtype') != 'plain'
     add_project_arguments('-fstack-protector-strong', language: 'c')
 endif
+if get_option('buildtype') == 'release'
+    cargo_build_flags = ['--release'] # for artifacts
+else
+    cargo_build_flags = []
+endif
 
 prefix = get_option('prefix')
 datadir = join_paths(prefix, get_option('datadir'))
@@ -54,8 +59,9 @@ summary = [
 ]
 message('\n'.join(summary))
 
-cargo = find_program('cargo')
+dep_cargo = find_program('cargo')
 cargo_script = find_program('cargo.sh')
+cargo_build = find_program('cargo_build.sh')
 
 subdir('data')
 subdir('protocols')
