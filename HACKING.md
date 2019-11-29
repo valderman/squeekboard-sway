@@ -30,7 +30,7 @@ Most common testing is done in CI. Occasionally, and for each release, do perfor
 - the application draws correctly
 - it shows when relevant
 - it changes layouts
-- it changes levels
+- it changes views
 
 Testing with an application:
 
@@ -50,10 +50,8 @@ Testing layouts:
 Layouts can be selected using the GNOME Settings application.
 
 ```
-# define all available layouts
-$ gsettings set org.gnome.desktop.input-sources sources "[('xkb', 'us'), ('xkb', 'ua')]"
-# choose the active layout
-$ gsettings set org.gnome.desktop.input-sources current 1
+# define all available layouts. First one is currently selected.
+$ gsettings set org.gnome.desktop.input-sources sources "[('xkb', 'us'), ('xkb', 'de')]"
 ```
 
 Coding
