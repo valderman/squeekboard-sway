@@ -1,5 +1,4 @@
-# Japanese Kana layout by Mark Müller
-# Version 2019111800
+# Maintained by: Mark Müller <markmueller86@gmail.com>
 ---
 bounds: { x: 0, y: 1, width: 360, height: 208 }
 
@@ -221,7 +220,7 @@ buttons:
         action: "show_prefs"
         outline: "special"
         icon: "keyboard-mode-symbolic"
-    # space button with unicode keysym for ideographic space
+    # space button using text tag for ideographic space
     space:
         outline: "default-wide"
         label: "␣"

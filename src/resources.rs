@@ -42,6 +42,7 @@ const LAYOUT_NAMES: &[(*const str, *const str)] = &[
     ("de-DE", include_str!("../data/langs/de-DE.txt")),
     ("en-US", include_str!("../data/langs/en-US.txt")),
     ("es-ES", include_str!("../data/langs/es-ES.txt")),
+    ("ja-JP", include_str!("../data/langs/ja-JP.txt")),
     ("pl-PL", include_str!("../data/langs/pl-PL.txt")),
 ];
 
