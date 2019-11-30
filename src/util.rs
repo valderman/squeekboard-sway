@@ -177,6 +177,22 @@ impl<T> Borrow<Rc<T>> for Pointer<T> {
     }
 }
 
+/// Sugar for logging errors in results
+pub trait Warn {
+    type Value;
+    fn ok_warn(self, msg: &str) -> Option<Self::Value>;
+}
+
+impl<T, E: std::error::Error> Warn for Result<T, E> {
+    type Value = T;
+    fn ok_warn(self, msg: &str) -> Option<T> {
+        self.map_err(|e| {
+            eprintln!("{}: {}", msg, e);
+            e
+        }).ok()
+    }
+}
+
 pub trait WarningHandler {
     /// Handle a warning
     fn handle(&mut self, warning: &str);

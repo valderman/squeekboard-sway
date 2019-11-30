@@ -97,20 +97,7 @@ libsqueekboard = static_library('libsqueekboard',
     '-DEEK_COMPILATION=1'],
 )
 
-# the straight binary needs to be demoted in favor of the wrapper script
-# due to styling being inconsistent
-bindir = join_paths(prefix, get_option('bindir'))
-wrapper_conf = configuration_data()
-wrapper_conf.set('bindir', bindir)
-configure_file(
-  input: '../tools/squeekboard.in',
-  output: 'squeekboard',
-  install_dir: bindir,
-  configuration: wrapper_conf,
-  install: true,
-)
-
-squeekboard = executable('squeekboard-real',
+squeekboard = executable('squeekboard',
   'server-main.c',
   wl_proto_sources,
   squeekboard_resources,
@@ -124,6 +111,8 @@ squeekboard = executable('squeekboard-real',
     '-DEEKBOARD_COMPILATION=1',
     '-DEEK_COMPILATION=1'],
 )
+
+bindir = join_paths(prefix, get_option('bindir'))
 
 test_layout = custom_target('squeekboard-test-layout',
     build_by_default: true,
