@@ -34,8 +34,6 @@
 #include "eekboard/eekboard-context-service.h"
 #include "eekboard/key-emitter.h"
 #include "keymap.h"
-#include "src/keyboard.h"
-
 #include "eek-keyboard.h"
 
 void level_keyboard_deinit(LevelKeyboard *self) {

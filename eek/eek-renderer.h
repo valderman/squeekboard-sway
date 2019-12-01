@@ -36,12 +36,6 @@ struct _EekRendererClass
 {
     GObjectClass parent_class;
 
-    void             (* render_button)         (EekRenderer *self,
-                                             cairo_t     *cr,
-                                             struct button_place *place,
-                                             gdouble      scale,
-                                             gboolean     rotate);
-
     void             (* render_keyboard)    (EekRenderer *self,
                                              cairo_t     *cr);
 
@@ -77,8 +71,7 @@ void             eek_renderer_set_scale_factor (EekRenderer     *renderer,
 void             eek_renderer_render_button       (EekRenderer     *renderer,
                                                 cairo_t         *cr,
                                                 struct button_place *place,
-                                                gdouble          scale,
-                                                gboolean         rotate);
+                                                gdouble          scale, gboolean is_pressed, gboolean is_locked);
 
 cairo_surface_t *eek_renderer_get_icon_surface(const gchar     *icon_name,
                                                 gint             size,

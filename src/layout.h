@@ -6,7 +6,6 @@
 #include "eek/eek-element.h"
 #include "eek/eek-gtk-keyboard.h"
 #include "eek/eek-types.h"
-#include "src/keyboard.h"
 #include "virtual-keyboard-unstable-v1-client-protocol.h"
 
 enum squeek_arrangement_kind {
@@ -40,9 +39,6 @@ const char *squeek_button_get_icon_name(const struct squeek_button*);
 const char *squeek_button_get_name(const struct squeek_button*);
 const char *squeek_button_get_outline_name(const struct squeek_button*);
 
-struct squeek_key *squeek_button_get_key(const struct squeek_button*);
-uint32_t *squeek_button_has_key(const struct squeek_button* button,
-                                const struct squeek_key *key);
 void squeek_button_print(const struct squeek_button* button);
 
 

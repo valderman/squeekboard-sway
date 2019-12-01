@@ -426,18 +426,23 @@ eek_renderer_render_button_label (EekRenderer *self,
  *
  *   Renders a key separately from the normal keyboard rendering.
 */
-static void
-eek_renderer_real_render_button (EekRenderer *self,
+void
+eek_renderer_render_button (EekRenderer *self,
                               cairo_t     *cr,
                               struct button_place *place,
                               gdouble      scale,
-                              gboolean     rotate)
+                            gboolean is_pressed,
+                            gboolean is_locked)
 {
+    g_return_if_fail (EEK_IS_RENDERER(self));
+    g_return_if_fail (place);
+    g_return_if_fail (scale >= 0.0);
+
     EekRendererPrivate *priv = eek_renderer_get_instance_private (self);
     EekBounds bounds;
 
     EekBounds view_bounds = squeek_view_get_bounds (level_keyboard_current(priv->keyboard));
-    eek_renderer_get_button_bounds (view_bounds, place, &bounds, rotate);
+    eek_renderer_get_button_bounds (view_bounds, place, &bounds, TRUE);
 
     cairo_save (cr);
     /* Because this function is called separately from the keyboard rendering
@@ -446,12 +451,11 @@ eek_renderer_real_render_button (EekRenderer *self,
     cairo_scale (cr, priv->scale, priv->scale);
     cairo_translate (cr, bounds.x, bounds.y);
 
-    eek_renderer_apply_transformation_for_button (cr, view_bounds, place, scale, rotate);
-    struct squeek_key *key = squeek_button_get_key(place->button);
+    eek_renderer_apply_transformation_for_button (cr, view_bounds, place, scale, TRUE);
     render_button (
                 self, cr, view_bounds, place,
-                squeek_key_is_pressed(key) != 0,
-                squeek_key_is_locked (key) != 0
+                is_pressed,
+                is_locked
     );
     cairo_restore (cr);
 }
@@ -560,7 +564,6 @@ eek_renderer_class_init (EekRendererClass *klass)
     GObjectClass      *gobject_class = G_OBJECT_CLASS (klass);
     GParamSpec        *pspec;
 
-    klass->render_button = eek_renderer_real_render_button;
     klass->render_keyboard = eek_renderer_real_render_keyboard;
 
     gobject_class->set_property = eek_renderer_set_property;
@@ -821,21 +824,6 @@ eek_renderer_get_icon_surface (const gchar *icon_name,
         return NULL;
     }
     return surface;
-}
-
-void
-eek_renderer_render_button (EekRenderer *renderer,
-                         cairo_t     *cr,
-                         struct button_place *place,
-                         gdouble      scale,
-                         gboolean     rotate)
-{
-    g_return_if_fail (EEK_IS_RENDERER(renderer));
-    g_return_if_fail (place);
-    g_return_if_fail (scale >= 0.0);
-
-    EEK_RENDERER_GET_CLASS(renderer)->
-        render_button (renderer, cr, place, scale, rotate);
 }
 
 void

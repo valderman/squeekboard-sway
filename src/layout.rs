@@ -129,16 +129,6 @@ pub mod c {
         button.bounds.clone()
     }
 
-    /// Borrow a new reference to key state. Doesn't need freeing
-    #[no_mangle]
-    pub extern "C"
-    fn squeek_button_get_key(
-        button: *const ::layout::Button
-    ) -> ::keyboard::c::CKeyState {
-        let button = unsafe { &*button };
-        ::keyboard::c::CKeyState::wrap(button.state.clone())
-    }
-
     #[no_mangle]
     pub extern "C"
     fn squeek_button_get_label(

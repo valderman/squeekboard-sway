@@ -10,30 +10,6 @@ use ::action::Action;
 
 use std::io::Write;
 use std::iter::{ FromIterator, IntoIterator };
-use ::util::CloneOwned;
-
-/// Gathers stuff defined in C or called by C
-pub mod c {
-    use super::*;
-    use ::util::c;
-
-    pub type CKeyState = c::Wrapped<KeyState>;
-
-    // The following defined in Rust. TODO: wrap naked pointers to Rust data inside RefCells to prevent multiple writers
-
-    #[no_mangle]
-    pub extern "C"
-    fn squeek_key_is_pressed(key: CKeyState) -> u32 {
-        //let key = unsafe { Rc::from_raw(key.0) };
-        return key.clone_owned().pressed as u32;
-    }
-
-    #[no_mangle]
-    pub extern "C"
-    fn squeek_key_is_locked(key: CKeyState) -> u32 {
-        return key.clone_owned().locked as u32;
-    }
-}
 
 #[derive(Debug, Clone, Copy)]
 pub enum PressType {

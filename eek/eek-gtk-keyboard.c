@@ -334,7 +334,7 @@ render_pressed_button (GtkWidget *widget,
     GdkDrawingContext *context = gdk_window_begin_draw_frame (window, region);
     cairo_t           *cr      = gdk_drawing_context_get_cairo_context (context);
 
-    eek_renderer_render_button (priv->renderer, cr, place, 1.0, TRUE);
+    eek_renderer_render_button (priv->renderer, cr, place, 1.0, TRUE, FALSE);
 /*
     eek_renderer_render_key (priv->renderer, cr, key, 1.5, TRUE);
 */
@@ -353,7 +353,7 @@ eek_gtk_render_locked_button (EekGtkKeyboard *self, struct button_place place)
     GdkDrawingContext *context = gdk_window_begin_draw_frame (window, region);
     cairo_t           *cr      = gdk_drawing_context_get_cairo_context (context);
 
-    eek_renderer_render_button (priv->renderer, cr, &place, 1.0, TRUE);
+    eek_renderer_render_button (priv->renderer, cr, &place, 1.0, FALSE, TRUE);
 
     gdk_window_end_draw_frame (window, context);
 
