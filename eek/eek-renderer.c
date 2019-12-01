@@ -64,7 +64,7 @@ static void eek_renderer_render_button_label (EekRenderer *self, cairo_t *cr, Gt
 
 static void invalidate                         (EekRenderer *renderer);
 static void render_button                         (EekRenderer *self,
-                                                cairo_t     *cr, EekBounds view_bounds, struct button_place *place,
+                                                cairo_t     *cr, struct button_place *place,
                                                 gboolean     pressed, gboolean locked);
 
 struct _CreateKeyboardSurfaceCallbackData {
@@ -95,7 +95,7 @@ create_keyboard_surface_button_callback (struct squeek_button *button,
         .row = data->row,
         .button = button,
     };
-    render_button (data->renderer, data->cr, squeek_view_get_bounds(data->view), &place, FALSE, FALSE);
+    render_button (data->renderer, data->cr, &place, FALSE, FALSE);
 
     cairo_restore (data->cr);
 }
@@ -125,11 +125,6 @@ render_keyboard_surface (EekRenderer *renderer, struct squeek_view *view)
 {
     EekRendererPrivate *priv = eek_renderer_get_instance_private (renderer);
 
-    GdkRGBA color = {0};
-    gtk_style_context_get_color (priv->view_context, GTK_STATE_FLAG_NORMAL, &color);
-
-    EekBounds bounds = squeek_view_get_bounds (level_keyboard_current(priv->keyboard));
-
     CreateKeyboardSurfaceCallbackData data = {
         .cr = cairo_create (priv->keyboard_surface),
         .renderer = renderer,
@@ -148,8 +143,12 @@ render_keyboard_surface (EekRenderer *renderer, struct squeek_view *view)
 
     cairo_save (data.cr);
     cairo_scale (data.cr, priv->scale, priv->scale);
+
+    EekBounds bounds = squeek_view_get_bounds (level_keyboard_current(priv->keyboard));
     cairo_translate (data.cr, bounds.x, bounds.y);
 
+    GdkRGBA color = {0};
+    gtk_style_context_get_color (priv->view_context, GTK_STATE_FLAG_NORMAL, &color);
     cairo_set_source_rgba (data.cr,
                            color.red,
                            color.green,
@@ -194,7 +193,6 @@ static void render_button_in_context(EekRenderer *self,
                                      gint scale_factor,
                                      cairo_t     *cr,
                                      GtkStyleContext *ctx,
-                                     EekBounds view_bounds,
                                      struct button_place *place,
                                      gboolean active) {
     cairo_surface_t *outline_surface = NULL;
@@ -218,7 +216,7 @@ static void render_button_in_context(EekRenderer *self,
         cairo_paint (cr);
 
         cairo_save (cr);
-        eek_renderer_apply_transformation_for_button (cr, view_bounds, place, 1.0, FALSE);
+        eek_renderer_apply_transformation_for_button (cr, place, 1.0, FALSE);
         render_outline (cr, ctx, bounds);
         cairo_restore (cr);
 
@@ -265,7 +263,6 @@ static void render_button_in_context(EekRenderer *self,
 static void
 render_button (EekRenderer *self,
             cairo_t     *cr,
-               EekBounds view_bounds,
             struct button_place *place,
                gboolean     pressed,
                gboolean     locked)
@@ -292,7 +289,7 @@ render_button (EekRenderer *self,
     }
     gtk_style_context_add_class(ctx, outline_name);
 
-    render_button_in_context(self, priv->scale, priv->scale_factor, cr, ctx, view_bounds, place, pressed);
+    render_button_in_context(self, priv->scale, priv->scale_factor, cr, ctx, place, pressed);
 
     // Save and restore functions don't work if gtk_render_* was used in between
     gtk_style_context_set_state(ctx, GTK_STATE_FLAG_NORMAL);
@@ -319,16 +316,12 @@ render_button (EekRenderer *self,
 */
 void
 eek_renderer_apply_transformation_for_button (cairo_t     *cr,
-                                              EekBounds view_bounds,
                                            struct button_place *place,
                                            gdouble      scale,
                                            gboolean     rotate)
 {
-    EekBounds bounds, rotated_bounds;
+    EekBounds bounds = squeek_button_get_bounds(place->button);
     gdouble s;
-
-    eek_renderer_get_button_bounds (view_bounds, place, &bounds, FALSE);
-    eek_renderer_get_button_bounds (view_bounds, place, &rotated_bounds, TRUE);
 
     gint angle = squeek_row_get_angle (place->row);
 
@@ -451,9 +444,9 @@ eek_renderer_render_button (EekRenderer *self,
     cairo_scale (cr, priv->scale, priv->scale);
     cairo_translate (cr, bounds.x, bounds.y);
 
-    eek_renderer_apply_transformation_for_button (cr, view_bounds, place, scale, TRUE);
+    eek_renderer_apply_transformation_for_button (cr, place, scale, TRUE);
     render_button (
-                self, cr, view_bounds, place,
+                self, cr, place,
                 is_pressed,
                 is_locked
     );

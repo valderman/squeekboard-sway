@@ -83,7 +83,6 @@ void             eek_renderer_set_border_width (EekRenderer     *renderer,
                                                 gdouble          border_width);
 void             eek_renderer_apply_transformation_for_button
                                                (cairo_t         *cr,
-                                                EekBounds view_bounds,
                                                 struct button_place *place,
                                                 gdouble          scale,
                                                 gboolean         rotate);
