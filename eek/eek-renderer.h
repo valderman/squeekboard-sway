@@ -61,8 +61,7 @@ void             eek_renderer_get_size         (EekRenderer     *renderer,
                                                 gdouble         *height);
 void             eek_renderer_get_button_bounds   (EekBounds view_bounds,
                                                 struct button_place *button,
-                                                EekBounds       *bounds,
-                                                gboolean         rotate);
+                                                EekBounds       *bounds);
 
 gdouble          eek_renderer_get_scale        (EekRenderer     *renderer);
 void             eek_renderer_set_scale_factor (EekRenderer     *renderer,
@@ -84,8 +83,7 @@ void             eek_renderer_set_border_width (EekRenderer     *renderer,
 void             eek_renderer_apply_transformation_for_button
                                                (cairo_t         *cr,
                                                 struct button_place *place,
-                                                gdouble          scale,
-                                                gboolean         rotate);
+                                                gdouble          scale);
 
 struct transformation
 eek_renderer_get_transformation (EekRenderer *renderer);

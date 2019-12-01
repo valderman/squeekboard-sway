@@ -291,8 +291,7 @@ render_button (EekRenderer *self,
 void
 eek_renderer_apply_transformation_for_button (cairo_t     *cr,
                                            struct button_place *place,
-                                           gdouble      scale,
-                                           gboolean     rotate)
+                                           gdouble      scale)
 {
     EekBounds bounds = squeek_button_get_bounds(place->button);
     gdouble s;
@@ -300,14 +299,13 @@ eek_renderer_apply_transformation_for_button (cairo_t     *cr,
     gint angle = squeek_row_get_angle (place->row);
 
     cairo_scale (cr, scale, scale);
-    if (rotate) {
-        s = sin (angle * G_PI / 180);
-        if (s < 0)
-            cairo_translate (cr, 0, - bounds.width * s);
-        else
-            cairo_translate (cr, bounds.height * s, 0);
-        cairo_rotate (cr, angle * G_PI / 180);
-    }
+
+    s = sin (angle * G_PI / 180);
+    if (s < 0)
+        cairo_translate (cr, 0, - bounds.width * s);
+    else
+        cairo_translate (cr, bounds.height * s, 0);
+    cairo_rotate (cr, angle * G_PI / 180);
 }
 
 static void
@@ -409,7 +407,7 @@ eek_renderer_render_button (EekRenderer *self,
     EekBounds bounds;
 
     EekBounds view_bounds = squeek_view_get_bounds (level_keyboard_current(priv->keyboard));
-    eek_renderer_get_button_bounds (view_bounds, place, &bounds, TRUE);
+    eek_renderer_get_button_bounds (view_bounds, place, &bounds);
 
     cairo_save (cr);
     /* Because this function is called separately from the keyboard rendering
@@ -418,7 +416,7 @@ eek_renderer_render_button (EekRenderer *self,
     cairo_scale (cr, priv->scale, priv->scale);
     cairo_translate (cr, bounds.x, bounds.y);
 
-    eek_renderer_apply_transformation_for_button (cr, place, scale, TRUE);
+    eek_renderer_apply_transformation_for_button (cr, place, scale);
     render_button (
                 self, cr, place->button,
                 is_pressed,
@@ -700,8 +698,7 @@ eek_renderer_get_size (EekRenderer *renderer,
 void
 eek_renderer_get_button_bounds (EekBounds view_bounds,
                                 struct button_place *place,
-                             EekBounds   *bounds,
-                             gboolean     rotate)
+                             EekBounds   *bounds)
 {
     gint angle = 0;
     EekPoint points[4], min, max;
@@ -712,12 +709,6 @@ eek_renderer_get_button_bounds (EekBounds view_bounds,
     EekBounds button_bounds = squeek_button_get_bounds(place->button);
     EekBounds row_bounds = squeek_row_get_bounds (place->row);
 
-    if (!rotate) {
-        button_bounds.x += view_bounds.x + row_bounds.x;
-        button_bounds.y += view_bounds.y + row_bounds.y;
-        *bounds = button_bounds;
-        return;
-    }
     points[0].x = button_bounds.x;
     points[0].y = button_bounds.y;
     points[1].x = points[0].x + button_bounds.width;
@@ -727,9 +718,8 @@ eek_renderer_get_button_bounds (EekBounds view_bounds,
     points[3].x = points[0].x;
     points[3].y = points[2].y;
 
-    if (rotate) {
-        angle = squeek_row_get_angle (place->row);
-    }
+
+    angle = squeek_row_get_angle (place->row);
 
     min = points[2];
     max = points[0];
