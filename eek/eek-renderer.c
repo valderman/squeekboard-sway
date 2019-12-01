@@ -64,7 +64,7 @@ static void eek_renderer_render_button_label (EekRenderer *self, cairo_t *cr, Gt
 
 static void invalidate                         (EekRenderer *renderer);
 static void render_button                         (EekRenderer *self,
-                                                cairo_t     *cr, struct button_place *place,
+                                                cairo_t     *cr, const struct squeek_button *button,
                                                 gboolean     pressed, gboolean locked);
 
 struct _CreateKeyboardSurfaceCallbackData {
@@ -91,11 +91,8 @@ create_keyboard_surface_button_callback (struct squeek_button *button,
                      bounds.width + 100,
                      bounds.height + 100);
     cairo_clip (data->cr);
-    struct button_place place = {
-        .row = data->row,
-        .button = button,
-    };
-    render_button (data->renderer, data->cr, &place, FALSE, FALSE);
+
+    render_button (data->renderer, data->cr, button, FALSE, FALSE);
 
     cairo_restore (data->cr);
 }
@@ -193,18 +190,18 @@ static void render_button_in_context(EekRenderer *self,
                                      gint scale_factor,
                                      cairo_t     *cr,
                                      GtkStyleContext *ctx,
-                                     struct button_place *place,
+                                     const struct squeek_button *button,
                                      gboolean active) {
     /* blank background */
     cairo_set_source_rgba (cr, 0.0, 0.0, 0.0, 0.0);
     cairo_paint (cr);
 
-    EekBounds bounds = squeek_button_get_bounds(place->button);
+    EekBounds bounds = squeek_button_get_bounds(button);
     render_outline (cr, ctx, bounds);
     cairo_paint (cr);
 
     /* render icon (if any) */
-    const char *icon_name = squeek_button_get_icon_name(place->button);
+    const char *icon_name = squeek_button_get_icon_name(button);
 
     if (icon_name) {
         cairo_surface_t *icon_surface =
@@ -234,13 +231,13 @@ static void render_button_in_context(EekRenderer *self,
             return;
         }
     }
-    eek_renderer_render_button_label (self, cr, ctx, place->button);
+    eek_renderer_render_button_label (self, cr, ctx, button);
 }
 
 static void
 render_button (EekRenderer *self,
             cairo_t     *cr,
-            struct button_place *place,
+            const struct squeek_button *button,
                gboolean     pressed,
                gboolean     locked)
 {
@@ -251,7 +248,7 @@ render_button (EekRenderer *self,
        from the button's symbol. */
     g_autoptr (GtkWidgetPath) path = NULL;
     path = gtk_widget_path_copy (gtk_style_context_get_path (ctx));
-    const char *name = squeek_button_get_name(place->button);
+    const char *name = squeek_button_get_name(button);
     gtk_widget_path_iter_set_name (path, -1, name);
 
     /* Update the style context with the updated widget path. */
@@ -260,13 +257,13 @@ render_button (EekRenderer *self,
        (pressed) or normal. */
     gtk_style_context_set_state(ctx,
         pressed ? GTK_STATE_FLAG_ACTIVE : GTK_STATE_FLAG_NORMAL);
-    const char *outline_name = squeek_button_get_outline_name(place->button);
+    const char *outline_name = squeek_button_get_outline_name(button);
     if (locked) {
         gtk_style_context_add_class(ctx, "locked");
     }
     gtk_style_context_add_class(ctx, outline_name);
 
-    render_button_in_context(self, priv->scale, priv->scale_factor, cr, ctx, place, pressed);
+    render_button_in_context(self, priv->scale, priv->scale_factor, cr, ctx, button, pressed);
 
     // Save and restore functions don't work if gtk_render_* was used in between
     gtk_style_context_set_state(ctx, GTK_STATE_FLAG_NORMAL);
@@ -423,7 +420,7 @@ eek_renderer_render_button (EekRenderer *self,
 
     eek_renderer_apply_transformation_for_button (cr, place, scale, TRUE);
     render_button (
-                self, cr, place,
+                self, cr, place->button,
                 is_pressed,
                 is_locked
     );
