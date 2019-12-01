@@ -195,35 +195,12 @@ static void render_button_in_context(EekRenderer *self,
                                      GtkStyleContext *ctx,
                                      struct button_place *place,
                                      gboolean active) {
-    cairo_surface_t *outline_surface = NULL;
+    /* blank background */
+    cairo_set_source_rgba (cr, 0.0, 0.0, 0.0, 0.0);
+    cairo_paint (cr);
 
-    /* render outline */
     EekBounds bounds = squeek_button_get_bounds(place->button);
-
-    {
-        cairo_t *cr;
-
-        // Outline will be drawn on the outside of the button, so the
-        // surface needs to be bigger than the button
-        outline_surface =
-            cairo_image_surface_create (CAIRO_FORMAT_ARGB32,
-                                        (int)ceil(bounds.width) + 10,
-                                        (int)ceil(bounds.height) + 10);
-        cr = cairo_create (outline_surface);
-
-        /* blank background */
-        cairo_set_source_rgba (cr, 0.0, 0.0, 0.0, 0.0);
-        cairo_paint (cr);
-
-        cairo_save (cr);
-        eek_renderer_apply_transformation_for_button (cr, place, 1.0, FALSE);
-        render_outline (cr, ctx, bounds);
-        cairo_restore (cr);
-
-        cairo_destroy (cr);
-    }
-    cairo_set_source_surface (cr, outline_surface, 0.0, 0.0);
-    cairo_surface_destroy(outline_surface);
+    render_outline (cr, ctx, bounds);
     cairo_paint (cr);
 
     /* render icon (if any) */
