@@ -88,8 +88,8 @@ create_keyboard_surface_button_callback (struct squeek_button *button,
     cairo_rectangle (data->cr,
                      0.0,
                      0.0,
-                     bounds.width + 100,
-                     bounds.height + 100);
+                     bounds.width,
+                     bounds.height);
     cairo_clip (data->cr);
 
     render_button (data->renderer, data->cr, button, FALSE, FALSE);
@@ -125,7 +125,6 @@ render_keyboard_surface (EekRenderer *renderer, struct squeek_view *view)
     CreateKeyboardSurfaceCallbackData data = {
         .cr = cairo_create (priv->keyboard_surface),
         .renderer = renderer,
-        .view = view,
     };
 
     /* Paint the background covering the entire widget area */
@@ -138,12 +137,6 @@ render_keyboard_surface (EekRenderer *renderer, struct squeek_view *view)
                       0, 0,
                       priv->allocation_width, priv->allocation_height);
 
-    cairo_save (data.cr);
-    cairo_scale (data.cr, priv->scale, priv->scale);
-
-    EekBounds bounds = squeek_view_get_bounds (level_keyboard_current(priv->keyboard));
-    cairo_translate (data.cr, bounds.x, bounds.y);
-
     GdkRGBA color = {0};
     gtk_style_context_get_color (priv->view_context, GTK_STATE_FLAG_NORMAL, &color);
     cairo_set_source_rgba (data.cr,
@@ -152,8 +145,15 @@ render_keyboard_surface (EekRenderer *renderer, struct squeek_view *view)
                            color.blue,
                            color.alpha);
 
+    cairo_save (data.cr);
+
+    cairo_scale (data.cr, priv->scale, priv->scale);
+
+    EekBounds bounds = squeek_view_get_bounds (view);
+    cairo_translate (data.cr, bounds.x, bounds.y);
+
     /* draw rows */
-    squeek_view_foreach(level_keyboard_current(priv->keyboard),
+    squeek_view_foreach(view,
                         create_keyboard_surface_row_callback,
                         &data);
 
