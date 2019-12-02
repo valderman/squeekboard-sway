@@ -25,7 +25,6 @@
 #include <pango/pangocairo.h>
 
 #include "eek-types.h"
-#include "src/layout.h"
 
 G_BEGIN_DECLS
 
@@ -35,9 +34,6 @@ G_DECLARE_DERIVABLE_TYPE (EekRenderer, eek_renderer, EEK, RENDERER, GObject)
 struct _EekRendererClass
 {
     GObjectClass parent_class;
-
-    void             (* render_keyboard)    (EekRenderer *self,
-                                             cairo_t     *cr);
 
     cairo_surface_t *(* get_icon_surface)   (EekRenderer *self,
                                              const gchar *icon_name,

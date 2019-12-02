@@ -63,7 +63,7 @@ static void eek_renderer_render_button_label (EekRenderer *self, cairo_t *cr, Gt
                                                 const struct squeek_button *button);
 
 static void invalidate                         (EekRenderer *renderer);
-static void render_button                         (EekRenderer *self,
+void eek_render_button                         (EekRenderer *self,
                                                 cairo_t     *cr, const struct squeek_button *button,
                                                 gboolean     pressed, gboolean locked);
 
@@ -92,7 +92,7 @@ create_keyboard_surface_button_callback (struct squeek_button *button,
                      bounds.height);
     cairo_clip (data->cr);
 
-    render_button (data->renderer, data->cr, button, FALSE, FALSE);
+    eek_render_button (data->renderer, data->cr, button, FALSE, FALSE);
 
     cairo_restore (data->cr);
 }
@@ -147,8 +147,6 @@ render_keyboard_surface (EekRenderer *renderer, struct squeek_view *view)
 
     cairo_save (data.cr);
 
-    cairo_scale (data.cr, priv->scale, priv->scale);
-
     EekBounds bounds = squeek_view_get_bounds (view);
     cairo_translate (data.cr, bounds.x, bounds.y);
 
@@ -186,12 +184,10 @@ render_outline (cairo_t     *cr,
 }
 
 static void render_button_in_context(EekRenderer *self,
-                                     gdouble scale,
                                      gint scale_factor,
                                      cairo_t     *cr,
                                      GtkStyleContext *ctx,
-                                     const struct squeek_button *button,
-                                     gboolean active) {
+                                     const struct squeek_button *button) {
     /* blank background */
     cairo_set_source_rgba (cr, 0.0, 0.0, 0.0, 0.0);
     cairo_paint (cr);
@@ -234,8 +230,8 @@ static void render_button_in_context(EekRenderer *self,
     eek_renderer_render_button_label (self, cr, ctx, button);
 }
 
-static void
-render_button (EekRenderer *self,
+void
+eek_render_button (EekRenderer *self,
             cairo_t     *cr,
             const struct squeek_button *button,
                gboolean     pressed,
@@ -263,7 +259,7 @@ render_button (EekRenderer *self,
     }
     gtk_style_context_add_class(ctx, outline_name);
 
-    render_button_in_context(self, priv->scale, priv->scale_factor, cr, ctx, button, pressed);
+    render_button_in_context(self, priv->scale_factor, cr, ctx, button);
 
     // Save and restore functions don't work if gtk_render_* was used in between
     gtk_style_context_set_state(ctx, GTK_STATE_FLAG_NORMAL);
@@ -417,7 +413,7 @@ eek_renderer_render_button (EekRenderer *self,
     cairo_translate (cr, bounds.x, bounds.y);
 
     eek_renderer_apply_transformation_for_button (cr, place, scale);
-    render_button (
+    eek_render_button (
                 self, cr, place->button,
                 is_pressed,
                 is_locked
@@ -425,21 +421,19 @@ eek_renderer_render_button (EekRenderer *self,
     cairo_restore (cr);
 }
 
-static void
-eek_renderer_real_render_keyboard (EekRenderer *self,
+void
+eek_renderer_render_keyboard (EekRenderer *self,
                                    cairo_t     *cr)
 {
     EekRendererPrivate *priv = eek_renderer_get_instance_private (self);
-    cairo_pattern_t *source;
 
     g_return_if_fail (priv->keyboard);
     g_return_if_fail (priv->allocation_width > 0.0);
     g_return_if_fail (priv->allocation_height > 0.0);
 
-    cairo_save (cr);
-
+    cairo_save(cr);
     cairo_translate (cr, priv->origin_x, priv->origin_y);
-
+    cairo_scale (cr, priv->scale, priv->scale);
     if (priv->keyboard_surface)
         cairo_surface_destroy (priv->keyboard_surface);
 
@@ -450,10 +444,11 @@ eek_renderer_real_render_keyboard (EekRenderer *self,
     render_keyboard_surface (self, squeek_layout_get_current_view(priv->keyboard->layout));
 
     cairo_set_source_surface (cr, priv->keyboard_surface, 0.0, 0.0);
-    source = cairo_get_source (cr);
+    cairo_pattern_t *source = cairo_get_source (cr);
     cairo_pattern_set_extend (source, CAIRO_EXTEND_PAD);
     cairo_paint (cr);
 
+    squeek_layout_draw_all_changed(priv->keyboard->layout, self, cr);
     cairo_restore (cr);
 }
 
@@ -528,8 +523,6 @@ eek_renderer_class_init (EekRendererClass *klass)
 {
     GObjectClass      *gobject_class = G_OBJECT_CLASS (klass);
     GParamSpec        *pspec;
-
-    klass->render_keyboard = eek_renderer_real_render_keyboard;
 
     gobject_class->set_property = eek_renderer_set_property;
     gobject_class->get_property = eek_renderer_get_property;
@@ -781,14 +774,6 @@ eek_renderer_get_icon_surface (const gchar *icon_name,
         return NULL;
     }
     return surface;
-}
-
-void
-eek_renderer_render_keyboard (EekRenderer *renderer,
-                              cairo_t     *cr)
-{
-    g_return_if_fail (EEK_IS_RENDERER(renderer));
-    EEK_RENDERER_GET_CLASS(renderer)->render_keyboard (renderer, cr);
 }
 
 static gboolean

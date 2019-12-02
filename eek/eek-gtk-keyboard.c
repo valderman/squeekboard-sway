@@ -85,7 +85,7 @@ eek_gtk_keyboard_real_draw (GtkWidget *self,
                             cairo_t   *cr)
 {
     EekGtkKeyboardPrivate *priv =
-	    eek_gtk_keyboard_get_instance_private (EEK_GTK_KEYBOARD (self));
+        eek_gtk_keyboard_get_instance_private (EEK_GTK_KEYBOARD (self));
     GtkAllocation allocation;
     gtk_widget_get_allocation (self, &allocation);
 
@@ -101,10 +101,7 @@ eek_gtk_keyboard_real_draw (GtkWidget *self,
                                        gtk_widget_get_scale_factor (self));
     }
 
-    // render the keyboard without any key activity (TODO: from a cached buffer)
     eek_renderer_render_keyboard (priv->renderer, cr);
-    // render only a few remaining changes
-    squeek_layout_draw_all_changed(priv->keyboard->layout, EEK_GTK_KEYBOARD(self));
     return FALSE;
 }
 
@@ -113,7 +110,7 @@ eek_gtk_keyboard_real_size_allocate (GtkWidget     *self,
                                      GtkAllocation *allocation)
 {
     EekGtkKeyboardPrivate *priv =
-	    eek_gtk_keyboard_get_instance_private (EEK_GTK_KEYBOARD (self));
+        eek_gtk_keyboard_get_instance_private (EEK_GTK_KEYBOARD (self));
 
     if (priv->renderer)
         eek_renderer_set_allocation_size (priv->renderer,
@@ -231,7 +228,7 @@ static void
 eek_gtk_keyboard_real_unmap (GtkWidget *self)
 {
     EekGtkKeyboardPrivate *priv =
-	    eek_gtk_keyboard_get_instance_private (EEK_GTK_KEYBOARD (self));
+        eek_gtk_keyboard_get_instance_private (EEK_GTK_KEYBOARD (self));
 
     if (priv->keyboard) {
         squeek_layout_release_all_only(
@@ -322,25 +319,9 @@ eek_gtk_keyboard_new (LevelKeyboard *keyboard)
     return GTK_WIDGET(ret);
 }
 
-static void
-render_pressed_button (GtkWidget *widget,
-                       struct button_place *place)
-{
-    EekGtkKeyboard        *self = EEK_GTK_KEYBOARD (widget);
+EekRenderer *eek_gtk_keyboard_get_renderer(EekGtkKeyboard *self) {
     EekGtkKeyboardPrivate *priv = eek_gtk_keyboard_get_instance_private (self);
-
-    GdkWindow         *window  = gtk_widget_get_window (widget);
-    cairo_region_t    *region  = gdk_window_get_clip_region (window);
-    GdkDrawingContext *context = gdk_window_begin_draw_frame (window, region);
-    cairo_t           *cr      = gdk_drawing_context_get_cairo_context (context);
-
-    eek_renderer_render_button (priv->renderer, cr, place, 1.0, TRUE, FALSE);
-/*
-    eek_renderer_render_key (priv->renderer, cr, key, 1.5, TRUE);
-*/
-    gdk_window_end_draw_frame (window, context);
-
-    cairo_region_destroy (region);
+    return priv->renderer;
 }
 
 void
@@ -379,31 +360,6 @@ render_released_button (GtkWidget *widget,
     gdk_window_end_draw_frame (window, context);
 
     cairo_region_destroy (region);
-}
-
-void
-eek_gtk_on_button_pressed (struct button_place place,
-                   EekGtkKeyboard *self)
-{
-    EekGtkKeyboardPrivate *priv = eek_gtk_keyboard_get_instance_private (self);
-
-    /* renderer may have not been set yet if the widget is a popup */
-    if (!priv->renderer)
-        return;
-
-    if (!place.row) {
-        return;
-    }
-    render_pressed_button (GTK_WIDGET(self), &place);
-    gtk_widget_queue_draw (GTK_WIDGET(self));
-
-#if HAVE_LIBCANBERRA
-    ca_gtk_play_for_widget (widget, 0,
-                            CA_PROP_EVENT_ID, "button-pressed",
-                            CA_PROP_EVENT_DESCRIPTION, "virtual key pressed",
-                            CA_PROP_APPLICATION_ID, "org.fedorahosted.Eekboard",
-                            NULL);
-#endif
 }
 
 void

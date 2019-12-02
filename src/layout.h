@@ -5,6 +5,7 @@
 #include <glib.h>
 #include "eek/eek-element.h"
 #include "eek/eek-gtk-keyboard.h"
+#include "eek/eek-renderer.h"
 #include "eek/eek-types.h"
 #include "virtual-keyboard-unstable-v1-client-protocol.h"
 
@@ -13,16 +14,8 @@ enum squeek_arrangement_kind {
     ARRANGEMENT_KIND_WIDE = 1,
 };
 
-struct squeek_button;
-struct squeek_row;
 struct squeek_view;
 struct squeek_layout;
-
-/// Represents the path to the button within a view
-struct button_place {
-    const struct squeek_row *row;
-    const struct squeek_button *button;
-};
 
 int32_t squeek_row_get_angle(const struct squeek_row*);
 
@@ -71,5 +64,5 @@ void squeek_layout_drag(struct squeek_layout *layout, struct zwp_virtual_keyboar
                         double x_widget, double y_widget,
                         struct transformation widget_to_layout,
                         uint32_t timestamp, EekGtkKeyboard *ui_keyboard);
-void squeek_layout_draw_all_changed(struct squeek_layout *layout, EekGtkKeyboard *ui_keyboard);
+void squeek_layout_draw_all_changed(struct squeek_layout *layout, EekRenderer* renderer, cairo_t     *cr);
 #endif

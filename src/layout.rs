@@ -24,6 +24,7 @@ use std::rc::Rc;
 use std::vec::Vec;
 
 use ::action::Action;
+use ::drawing;
 use ::float_ord::FloatOrd;
 use ::keyboard::{ KeyState, PressType };
 use ::submission::{ Timestamp, VirtualKeyboard };
@@ -34,10 +35,12 @@ use std::borrow::Borrow;
 pub mod c {
     use super::*;
 
+    use gtk_sys;
     use std::ffi::CStr;
     use std::os::raw::{ c_char, c_void };
     use std::ptr;
-    use gtk_sys;
+
+    use std::ops::Add;
 
     // The following defined in C
 
@@ -55,6 +58,23 @@ pub mod c {
         pub x: f64,
         pub y: f64,
     }
+    
+    impl Add for Point {
+        type Output = Self;
+        fn add(self, other: Self) -> Self {
+            &self + other
+        }
+    }
+
+    impl Add<Point> for &Point {
+        type Output = Point;
+        fn add(self, other: Point) -> Point {
+            Point {
+                x: self.x + other.x,
+                y: self.y + other.y,
+            }
+        }
+    }
 
     /// Defined in eek-types.h
     #[repr(C)]
@@ -64,6 +84,51 @@ pub mod c {
         pub y: f64,
         pub width: f64,
         pub height: f64
+    }
+    
+    impl Bounds {
+        pub fn get_position(&self) -> Point {
+            Point {
+                x: self.x,
+                y: self.y,
+            }
+        }
+    }
+
+    /// Scale + translate
+    #[repr(C)]
+    pub struct Transformation {
+        pub origin_x: f64,
+        pub origin_y: f64,
+        pub scale: f64,
+    }
+
+    impl Transformation {
+        fn forward(&self, p: Point) -> Point {
+            Point {
+                x: (p.x - self.origin_x) / self.scale,
+                y: (p.y - self.origin_y) / self.scale,
+            }
+        }
+        fn reverse(&self, p: Point) -> Point {
+            Point {
+                x: p.x * self.scale + self.origin_x,
+                y: p.y * self.scale + self.origin_y,
+            }
+        }
+        pub fn reverse_bounds(&self, b: Bounds) -> Bounds {
+            let start = self.reverse(Point { x: b.x, y: b.y });
+            let end = self.reverse(Point {
+                x: b.x + b.width,
+                y: b.y + b.height,
+            });
+            Bounds {
+                x: start.x,
+                y: start.y,
+                width: end.x - start.x,
+                height: end.y - start.y,
+            }
+        }
     }
     
     type ButtonCallback = unsafe extern "C" fn(button: *mut ::layout::Button, data: *mut UserData);
@@ -212,7 +277,7 @@ pub mod c {
         use super::*;
 
         use ::submission::c::ZwpVirtualKeyboardV1;
-
+        
         #[repr(C)]
         #[derive(PartialEq, Debug)]
         pub struct CButtonPlace {
@@ -225,42 +290,6 @@ pub mod c {
                 CButtonPlace {
                     row: value.row as *const Row,
                     button: value.button as *const Button,
-                }
-            }
-        }
-        
-        /// Scale + translate
-        #[repr(C)]
-        pub struct Transformation {
-            origin_x: f64,
-            origin_y: f64,
-            scale: f64,
-        }
-
-        impl Transformation {
-            fn forward(&self, p: Point) -> Point {
-                Point {
-                    x: (p.x - self.origin_x) / self.scale,
-                    y: (p.y - self.origin_y) / self.scale,
-                }
-            }
-            fn reverse(&self, p: Point) -> Point {
-                Point {
-                    x: p.x * self.scale + self.origin_x,
-                    y: p.y * self.scale + self.origin_y,
-                }
-            }
-            pub fn reverse_bounds(&self, b: Bounds) -> Bounds {
-                let start = self.reverse(Point { x: b.x, y: b.y });
-                let end = self.reverse(Point {
-                    x: b.x + b.width,
-                    y: b.y + b.height,
-                });
-                Bounds {
-                    x: start.x,
-                    y: start.y,
-                    width: end.x - start.x,
-                    height: end.y - start.y,
                 }
             }
         }
@@ -288,24 +317,6 @@ pub mod c {
                 button: *const Button,
                 view: *const View,
                 keyboard: EekGtkKeyboard,
-            );
-
-            // Button and View inside CButtonPlace are safe to pass to C
-            // as long as they don't outlive the call
-            // and nothing dereferences them
-            #[allow(improper_ctypes)]
-            pub fn eek_gtk_on_button_pressed(
-                place: CButtonPlace,
-                keyboard: EekGtkKeyboard,
-            );
-            
-            // Button and View inside CButtonPlace are safe to pass to C
-            // as long as they don't outlive the call
-            // and nothing dereferences them
-            #[allow(improper_ctypes)]
-            pub fn eek_gtk_render_locked_button(
-                keyboard: EekGtkKeyboard,
-                place: CButtonPlace,
             );
         }
 
@@ -346,15 +357,16 @@ pub mod c {
             // because it will be mutated in the loop
             for key in layout.pressed_keys.clone() {
                 let key: &Rc<RefCell<KeyState>> = key.borrow();
-                ui::release_key(
+                seat::handle_release_key(
                     layout,
                     &virtual_keyboard,
                     &widget_to_layout,
                     time,
                     ui_keyboard,
-                    key
+                    key,
                 );
             }
+            drawing::queue_redraw(ui_keyboard);
         }
 
         /// Release all buittons but don't redraw
@@ -393,27 +405,16 @@ pub mod c {
             let point = widget_to_layout.forward(
                 Point { x: x_widget, y: y_widget }
             );
-            
-            // the immutable reference to `layout` through `view`
-            // must be dropped
-            // before `layout.press_key` borrows it mutably again
-            let state_place = {
-                let view = layout.get_current_view();
-                let place = view.find_button_by_position(point);
-                place.map(|place| {(
-                    place.button.state.clone(),
-                    place.into(),
-                )})
-            };
-            
-            if let Some((mut state, c_place)) = state_place {
+
+            if let Some(position) = layout.get_button_at_point(point) {
+                let mut state = position.button.state.clone();
                 layout.press_key(
                     &VirtualKeyboard(virtual_keyboard),
                     &mut state,
                     Timestamp(time),
                 );
-
-                unsafe { eek_gtk_on_button_pressed(c_place, ui_keyboard) };
+                // maybe TODO: draw on the display buffer here
+                drawing::queue_redraw(ui_keyboard);
             }
         }
 
@@ -439,23 +440,26 @@ pub mod c {
             );
             
             let pressed = layout.pressed_keys.clone();
-            let state_place = {
+            let button_info = {
                 let view = layout.get_current_view();
                 let place = view.find_button_by_position(point);
                 place.map(|place| {(
                     place.button.state.clone(),
-                    place.into(),
+                    place.button.clone(),
+                    view.bounds.get_position()
+                        + place.row.bounds.clone().unwrap().get_position()
+                        + place.button.bounds.get_position(),
                 )})
             };
 
-            if let Some((mut state, c_place)) = state_place {
+            if let Some((mut state, _button, _view_position)) = button_info {
                 let mut found = false;
                 for wrapped_key in pressed {
                     let key: &Rc<RefCell<KeyState>> = wrapped_key.borrow();
                     if Rc::ptr_eq(&state, &wrapped_key.0) {
                         found = true;
                     } else {
-                        ui::release_key(
+                        seat::handle_release_key(
                             layout,
                             &virtual_keyboard,
                             &widget_to_layout,
@@ -467,12 +471,12 @@ pub mod c {
                 }
                 if !found {
                     layout.press_key(&virtual_keyboard, &mut state, time);
-                    unsafe { eek_gtk_on_button_pressed(c_place, ui_keyboard) };
+                    // maybe TODO: draw on the display buffer here
                 }
             } else {
                 for wrapped_key in pressed {
                     let key: &Rc<RefCell<KeyState>> = wrapped_key.borrow();
-                    ui::release_key(
+                    seat::handle_release_key(
                         layout,
                         &virtual_keyboard,
                         &widget_to_layout,
@@ -482,33 +486,7 @@ pub mod c {
                     );
                 }
             }
-        }
-
-        #[no_mangle]
-        pub extern "C"
-        fn squeek_layout_draw_all_changed(
-            layout: *mut Layout,
-            ui_keyboard: EekGtkKeyboard,
-        ) {
-            let layout = unsafe { &mut *layout };
-            
-            for row in &layout.get_current_view().rows {
-                for button in &row.buttons {
-                    let c_place = CButtonPlace::from(
-                        ButtonPlace { row, button }
-                    );
-                    let state = RefCell::borrow(&button.state);
-                    match (state.pressed, state.locked) {
-                        (PressType::Released, false) => {}
-                        (PressType::Pressed, _) => unsafe {
-                            eek_gtk_on_button_pressed(c_place, ui_keyboard)
-                        },
-                        (_, true) => unsafe {
-                            eek_gtk_render_locked_button(ui_keyboard, c_place)
-                        },
-                    }
-                }
-            }
+            drawing::queue_redraw(ui_keyboard);
         }
 
         #[cfg(test)]
@@ -533,6 +511,12 @@ pub mod c {
             }
         }
     }
+}
+
+/// Relative to `View`
+struct ButtonPosition {
+    view_position: c::Point,
+    button: Button,
 }
 
 pub struct ButtonPlace<'a> {
@@ -779,7 +763,8 @@ impl Layout {
             locked_keys: HashSet::new(),
         }
     }
-    fn get_current_view(&self) -> &Box<View> {
+
+    pub fn get_current_view(&self) -> &Box<View> {
         self.views.get(&self.current_view).expect("Selected nonexistent view")
     }
 
@@ -870,6 +855,18 @@ impl Layout {
                 eprintln!("No such view: {}, ignoring switch", view_name)
             };
         };
+    }
+
+    fn get_button_at_point(&self, point: c::Point) -> Option<ButtonPosition> {
+        let view = self.get_current_view();
+        let place = view.find_button_by_position(point);
+        place.map(|place| ButtonPosition {
+            button: place.button.clone(),
+            // Rows have no business being inside a view
+            // if they have no valid bounds.
+            view_position: place.row.bounds.clone().unwrap().get_position()
+                + place.button.bounds.get_position(),
+        })
     }
 }
 
@@ -1002,15 +999,15 @@ mod procedures {
     }
 }
 
-/// Top level UI procedures
-mod ui {
+/// Top level procedures, dispatching to everything
+mod seat {
     use super::*;
 
     // TODO: turn into release_button
-    pub fn release_key(
+    pub fn handle_release_key(
         layout: &mut Layout,
         virtual_keyboard: &VirtualKeyboard,
-        widget_to_layout: &c::procedures::Transformation,
+        widget_to_layout: &c::Transformation,
         time: Timestamp,
         ui_keyboard: c::EekGtkKeyboard,
         key: &Rc<RefCell<KeyState>>,
@@ -1040,6 +1037,7 @@ mod ui {
             }
         }
         
+        // TODO: move one level up; multiple buttons might have been released
         procedures::release_ui_buttons(view, key, ui_keyboard);
     }
 }

@@ -1,5 +1,8 @@
 #[macro_use]
 extern crate bitflags;
+extern crate cairo;
+extern crate cairo_sys;
+extern crate gdk;
 extern crate gio;
 extern crate glib;
 extern crate glib_sys;
@@ -14,6 +17,7 @@ extern crate xkbcommon;
 
 mod action;
 pub mod data;
+mod drawing;
 pub mod float_ord;
 pub mod imservice;
 mod keyboard;

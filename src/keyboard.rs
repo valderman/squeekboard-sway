@@ -11,7 +11,7 @@ use ::action::Action;
 use std::io::Write;
 use std::iter::{ FromIterator, IntoIterator };
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum PressType {
     Released = 0,
     Pressed = 1,
