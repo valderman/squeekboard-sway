@@ -1,0 +1,88 @@
+# Maintained by: Mark Müller <markmueller86@gmail.com>
+---
+bounds: { x: 0, y: 1, width: 540, height: 168 }
+
+outlines:
+    default:
+        bounds: { x: 0, y: 0, width: 48, height: 42 }
+    altline:
+        bounds: { x: 0, y: 0, width: 81, height: 42 }
+    wide:
+        bounds: { x: 0, y: 0, width: 108, height: 42 }
+    spaceline:
+        bounds: { x: 0, y: 0, width: 216, height: 42 }
+    special:
+        bounds: { x: 0, y: 0, width: 48, height: 42 }
+
+views:
+    base:
+        - "q w e r t z u i o p ü"
+        - "a s d f g h j k l ö ä"
+        - "Shift_L   y x c v b n m  BackSpace"
+        - "show_numbers preferences         space        , . Return"
+    upper:
+        - "Q W E R T Z U I O P Ü"
+        - "A S D F G H J K L Ö Ä"
+        - "Shift_L   Y X C V B N M  BackSpace"
+        - "show_numbers preferences         space        ! ? Return"
+    numbers:
+        - "1 2 3 4 5 6 7 8 9 0"
+        - "@ # % & - _ + ( ) ß"
+        - "show_symbols   , \" ' : = < >  BackSpace"
+        - "show_letters preferences         space        , . Return"
+    symbols:
+        - "~ ` ´  · © ® ÷ × ¶"
+        - "€ £ $ ¥ ^ ° * { } |"
+        - "show_numbers   \\ / § π τ [ ]  BackSpace"
+        - "show_letters preferences         space        , . Return"
+    eschars:
+        - "ä è é ö ü Ä È É Ö Ü"
+        - "à â ê î ô À Â È Î Ô"
+        - "show_numbers  « » ç Ç æ œ ß  BackSpace"
+        - "show_letters preferences         space        „ “ Return"
+
+buttons:
+    Shift_L:
+        action:
+            locking:
+                lock_view: "upper"
+                unlock_view: "base"
+        outline: "altline"
+        icon: "key-shift"
+    BackSpace:
+        outline: "altline"
+        icon: "edit-clear-symbolic"
+        keysym: "BackSpace"
+    preferences:
+        action: "show_prefs"
+        outline: "special"
+        icon: "keyboard-mode-symbolic"
+    show_numbers:
+        action:
+            set_view: "numbers"
+        outline: "altline"
+        label: "123"
+    show_letters:
+        action:
+            set_view: "base"
+        outline: "altline"
+        label: "abc"
+    show_symbols:
+        action:
+            set_view: "symbols"
+        outline: "altline"
+        label: "*/="
+    show_eschars:
+        action:
+            locking:
+                lock_view: "eschars"
+                unlock_view: "base"
+        outline: "altline"
+        label: "äÄ"
+    space:
+        outline: "spaceline"
+        text: " "
+    Return:
+        outline: "altline"
+        icon: "key-enter"
+        keysym: "Return"
