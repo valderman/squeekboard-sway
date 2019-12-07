@@ -13,6 +13,7 @@ const KEYBOARDS: &[(*const str, *const str)] = &[
     ("us", include_str!("../data/keyboards/us.yaml")),
     ("us_wide", include_str!("../data/keyboards/us_wide.yaml")),
     ("de", include_str!("../data/keyboards/de.yaml")),
+    ("de_wide", include_str!("../data/keyboards/de_wide.yaml")),
     ("el", include_str!("../data/keyboards/el.yaml")),
     ("es", include_str!("../data/keyboards/es.yaml")),
     ("fi", include_str!("../data/keyboards/fi.yaml")),

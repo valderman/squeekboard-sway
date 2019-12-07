@@ -49,7 +49,7 @@ endforeach
 # and the need to call it manually
 foreach layout : [
     'us', 'us_wide',
-    'de',
+    'de', 'de_wide',
     'el',
     'es',
     'fi',
