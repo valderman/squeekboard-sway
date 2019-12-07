@@ -405,7 +405,7 @@ impl Layout {
         let views = HashMap::from_iter(
             self.views.iter().map(|(name, view)| {(
                 name.clone(),
-                Box::new(::layout::View {
+                ::layout::View {
                     bounds: ::layout::c::Bounds {
                         x: self.bounds.x,
                         y: self.bounds.y,
@@ -413,7 +413,7 @@ impl Layout {
                         height: self.bounds.height,
                     },
                     rows: view.iter().map(|row| {
-                        Box::new(::layout::Row {
+                        ::layout::Row {
                             angle: 0,
                             bounds: None,
                             buttons: row.split_ascii_whitespace().map(|name| {
@@ -427,9 +427,9 @@ impl Layout {
                                     &mut warning_handler,
                                 ))
                             }).collect(),
-                        })
+                        }
                     }).collect(),
-                })
+                }
             )})
         );
 

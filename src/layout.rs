@@ -74,7 +74,7 @@ pub mod c {
 
     /// Defined in eek-types.h
     #[repr(C)]
-    #[derive(Clone, Debug)]
+    #[derive(Clone, Debug, PartialEq)]
     pub struct Bounds {
         pub x: f64,
         pub y: f64,
@@ -570,7 +570,7 @@ pub struct Spacing {
 pub struct View {
     /// Position relative to keyboard origin
     pub bounds: c::Bounds,
-    pub rows: Vec<Box<Row>>,
+    pub rows: Vec<Row>,
 }
 
 impl View {
@@ -665,7 +665,7 @@ pub struct Layout {
     // Views own the actual buttons which have state
     // Maybe they should own UI only,
     // and keys should be owned by a dedicated non-UI-State?
-    pub views: HashMap<String, Box<View>>,
+    pub views: HashMap<String, View>,
 
     // Non-UI stuff
     /// xkb keymap applicable to the contained keys. Unchangeable
@@ -684,7 +684,7 @@ pub struct Layout {
 
 /// A builder structure for picking up layout data from storage
 pub struct LayoutData {
-    pub views: HashMap<String, Box<View>>,
+    pub views: HashMap<String, View>,
     pub keymap_str: CString,
 }
 
@@ -706,7 +706,7 @@ impl Layout {
         }
     }
 
-    pub fn get_current_view(&self) -> &Box<View> {
+    pub fn get_current_view(&self) -> &View {
         self.views.get(&self.current_view).expect("Selected nonexistent view")
     }
 
@@ -815,7 +815,7 @@ impl Layout {
 mod procedures {
     use super::*;
 
-    type Path<'v> = (&'v Box<Row>, &'v Box<Button>);
+    type Path<'v> = (&'v Row, &'v Box<Button>);
 
     /// Finds all `(row, button)` paths that refer to the specified key `state`
     pub fn find_key_paths<'v, 's>(
@@ -868,12 +868,15 @@ mod procedures {
             let button = make_button_with_state("1".into(), state);
             let button_ptr = as_ptr(&button);
             
-            let row = Box::new(Row {
+            let row_bounds = Some(c::Bounds {
+                x: 0.1, y: 2.3,
+                width: 4.5, height: 6.7,
+            });
+            let row = Row {
                 buttons: vec!(button),
                 angle: 0,
-                bounds: None
-            });
-            let row_ptr = as_ptr(&row);
+                bounds: row_bounds.clone(),
+            };
 
             let view = View {
                 bounds: c::Bounds {
@@ -885,10 +888,10 @@ mod procedures {
 
             assert_eq!(
                 find_key_paths(&view, &state_clone.clone()).iter()
-                    .map(|(row, button)| { (as_ptr(row), as_ptr(button)) })
+                    .map(|(row, button)| { (row.bounds.clone(), as_ptr(button)) })
                     .collect::<Vec<_>>(),
                 vec!(
-                    (row_ptr, button_ptr)
+                    (row_bounds, button_ptr)
                 )
             );
 
