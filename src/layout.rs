@@ -28,6 +28,7 @@ use ::drawing;
 use ::float_ord::FloatOrd;
 use ::keyboard::{ KeyState, PressType };
 use ::submission::{ Timestamp, VirtualKeyboard };
+use ::util::find_max_double;
 
 use std::borrow::Borrow;
 
@@ -40,7 +41,7 @@ pub mod c {
     use std::os::raw::{ c_char, c_void };
     use std::ptr;
 
-    use std::ops::Add;
+    use std::ops::{ Add, Sub };
 
     // The following defined in C
     #[repr(transparent)]
@@ -49,7 +50,7 @@ pub mod c {
 
     /// Defined in eek-types.h
     #[repr(C)]
-    #[derive(Clone, Debug)]
+    #[derive(Clone, Debug, PartialEq)]
     pub struct Point {
         pub x: f64,
         pub y: f64,
@@ -71,6 +72,16 @@ pub mod c {
             }
         }
     }
+    
+    impl Sub<&Point> for Point {
+        type Output = Point;
+        fn sub(self, other: &Point) -> Point {
+            Point {
+                x: self.x - other.x,
+                y: self.y - other.y,
+            }
+        }
+    }
 
     /// Defined in eek-types.h
     #[repr(C)]
@@ -81,13 +92,11 @@ pub mod c {
         pub width: f64,
         pub height: f64
     }
-    
+
     impl Bounds {
-        pub fn get_position(&self) -> Point {
-            Point {
-                x: self.x,
-                y: self.y,
-            }
+        pub fn contains(&self, point: &Point) -> bool {
+            (point.x > self.x && point.x < self.x + self.width
+                && point.y > self.y && point.y < self.y + self.height)
         }
     }
 
@@ -133,7 +142,10 @@ pub mod c {
     pub extern "C"
     fn squeek_button_get_bounds(button: *const ::layout::Button) -> Bounds {
         let button = unsafe { &*button };
-        button.bounds.clone()
+        Bounds {
+            x: 0.0, y: 0.0,
+            width: button.size.width, height: button.size.height
+        }
     }
 
     #[no_mangle]
@@ -193,13 +205,13 @@ pub mod c {
         allocation_height: f64,
     ) -> Transformation {
         let layout = unsafe { &*layout };
-        let bounds = &layout.get_current_view().bounds;
-        let h_scale = allocation_width / bounds.width;
-        let v_scale = allocation_height / bounds.height;
-        let scale = if h_scale > v_scale { h_scale } else { v_scale };
+        let size = layout.calculate_size();
+        let h_scale = allocation_width / size.width;
+        let v_scale = allocation_height / size.height;
+        let scale = if h_scale < v_scale { h_scale } else { v_scale };
         Transformation {
-            origin_x: allocation_width - (scale * bounds.width) / 2.0,
-            origin_y: allocation_height - (scale * bounds.height) / 2.0,
+            origin_x: (allocation_width - (scale * size.width)) / 2.0,
+            origin_y: (allocation_height - (scale * size.height)) / 2.0,
             scale: scale,
         }
     }
@@ -250,37 +262,6 @@ pub mod c {
         #[allow(dead_code)]
         #[repr(transparent)]
         pub struct LevelKeyboard(*const c_void);
-
-        #[no_mangle]
-        extern "C" {
-            /// Checks if point falls within bounds,
-            /// which are relative to origin and rotated by angle (I think)
-            pub fn eek_are_bounds_inside (bounds: Bounds,
-                point: Point,
-                origin: Point,
-                angle: i32
-            ) -> u32;
-        }
-
-        /// Places each button in order, starting from 0 on the left,
-        /// keeping the spacing.
-        /// Sizes each button according to outline dimensions.
-        /// Places each row in order, starting from 0 on the top,
-        /// keeping the spacing.
-        /// Sets button and row sizes according to their contents.
-        #[no_mangle]
-        pub extern "C"
-        fn squeek_layout_place_contents(layout: *mut Layout) {
-            let layout = unsafe { &mut *layout };
-            for view in layout.views.values_mut() {
-                let sizes: Vec<Vec<Bounds>> = view.rows.iter().map(|row| {
-                    row.buttons.iter()
-                        .map(|button| button.bounds.clone())
-                        .collect()
-                }).collect();
-                view.place_buttons_with_sizes(sizes);
-            }
-        }
 
         /// Release pointer in the specified position
         #[no_mangle]
@@ -388,9 +369,7 @@ pub mod c {
                 place.map(|place| {(
                     place.button.state.clone(),
                     place.button.clone(),
-                    view.bounds.get_position()
-                        + place.row.bounds.clone().unwrap().get_position()
-                        + place.button.bounds.get_position(),
+                    place.offset,
                 )})
             };
 
@@ -464,9 +443,10 @@ struct ButtonPosition {
 pub struct ButtonPlace<'a> {
     button: &'a Button,
     row: &'a Row,
+    offset: c::Point,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Size {
     pub width: f64,
     pub height: f64,
@@ -487,9 +467,7 @@ pub struct Button {
     pub name: CString,
     /// Label to display to the user
     pub label: Label,
-    /// TODO: position the buttons before they get initial bounds
-    /// Position relative to some origin (i.e. parent/row)
-    pub bounds: c::Bounds,
+    pub size: Size,
     /// The name of the visual class applied
     pub outline_name: CString,
     /// current state, shared with other buttons
@@ -498,11 +476,10 @@ pub struct Button {
 
 /// The graphical representation of a row of buttons
 pub struct Row {
-    pub buttons: Vec<Box<Button>>,
+    /// Buttons together with their offset from the left
+    pub buttons: Vec<(f64, Box<Button>)>,
     /// Angle is not really used anywhere...
     pub angle: i32,
-    /// Position relative to some origin (i.e. parent/view origin)
-    pub bounds: Option<c::Bounds>,
 }
 
 impl Row {
@@ -527,6 +504,19 @@ impl Row {
         }).collect()
     }
     
+    pub fn get_height(&self) -> f64 {
+        find_max_double(
+            self.buttons.iter(),
+            |(_offset, button)| button.size.height,
+        )
+    }
+
+    fn get_width(&self) -> f64 {
+        self.buttons.iter().next_back()
+            .map(|(x_offset, button)| button.size.width + x_offset)
+            .unwrap_or(0.0)
+    }
+    
     fn calculate_row_size(positions: &Vec<c::Bounds>) -> Size {
         let max_height = positions.iter().map(
             |bounds| FloatOrd(bounds.height)
@@ -544,20 +534,16 @@ impl Row {
     /// Finds the first button that covers the specified point
     /// relative to row's position's origin
     fn find_button_by_position(&self, point: c::Point)
-        -> Option<&Box<Button>>
+        -> Option<(f64, &Box<Button>)>
     {
-        let row_bounds = self.bounds.as_ref().expect("Missing bounds on row");
-        let origin = c::Point {
-            x: row_bounds.x,
-            y: row_bounds.y,
-        };
-        let angle = self.angle;
-        self.buttons.iter().find(|button| {
-            let bounds = button.bounds.clone();
-            let point = point.clone();
-            let origin = origin.clone();
-            procedures::is_point_inside(bounds, point, origin, angle)
+        self.buttons.iter().find(|(x_offset, button)| {
+            c::Bounds {
+                x: *x_offset, y: 0.0,
+                width: button.size.width,
+                height: button.size.height,
+            }.contains(&point)
         })
+            .map(|(x_offset, button)| (*x_offset, button))
     }
 }
 
@@ -568,84 +554,57 @@ pub struct Spacing {
 }
 
 pub struct View {
-    /// Position relative to keyboard origin
-    pub bounds: c::Bounds,
-    pub rows: Vec<Row>,
+    /// Rows together with their offsets from the top
+    rows: Vec<(f64, Row)>,
 }
 
 impl View {
-    /// Determines the positions of rows based on their sizes
-    /// Each row will be centered horizontally
-    /// The collection of rows will not be altered vertically
-    /// (TODO: maybe make view bounds a constraint,
-    /// and derive a scaling factor that lets contents fit into view)
-    /// (or TODO: blow up view bounds to match contents
-    /// and then scale the entire thing)
-    fn calculate_row_positions(&self, sizes: Vec<Size>) -> Vec<c::Bounds> {
-        let mut y_offset = self.bounds.y;
-        sizes.into_iter().map(|size| {
-            let position = c::Bounds {
-                x: (self.bounds.width - size.width) / 2f64,
-                y: y_offset,
-                width: size.width,
-                height: size.height,
-            };
-            y_offset += size.height;
-            position
-        }).collect()
+    pub fn new(rows: Vec<(f64, Row)>) -> View {
+        View { rows }
     }
-
-    /// Uses button outline information to place all buttons and rows inside.
-    /// The view itself will not be affected by the sizes
-    fn place_buttons_with_sizes(
-        &mut self,
-        button_outlines: Vec<Vec<c::Bounds>>,
-    ) {
-        // Determine all positions
-        let button_positions: Vec<_>
-            = button_outlines.into_iter()
-                .map(|outlines| {
-                    Row::calculate_button_positions(outlines)
-                })
-                .collect();
-        
-        let row_sizes = button_positions.iter()
-            .map(Row::calculate_row_size)
-            .collect();
-
-        let row_positions
-            = self.calculate_row_positions(row_sizes);
-
-        // Apply all positions
-        for ((mut row, row_position), button_positions)
-            in self.rows.iter_mut()
-                .zip(row_positions)
-                .zip(button_positions) {
-            row.bounds = Some(row_position);
-            for (mut button, button_position)
-                in row.buttons.iter_mut()
-                    .zip(button_positions) {
-                button.bounds = button_position;
-            }
-        }
-    }
-
     /// Finds the first button that covers the specified point
     /// relative to view's position's origin
     fn find_button_by_position(&self, point: c::Point)
         -> Option<ButtonPlace>
     {
-        // make point relative to the inside of the view,
-        // which is the origin of all rows
-        let point = c::Point {
-            x: point.x - self.bounds.x,
-            y: point.y - self.bounds.y,
-        };
-
-        self.rows.iter().find_map(|row| {
-            row.find_button_by_position(point.clone())
-                .map(|button| ButtonPlace {row, button})
+        self.get_rows().iter().find_map(|(row_offset, row)| {
+            // make point relative to the inside of the row
+            row.find_button_by_position({
+                c::Point { x: point.x, y: point.y } - row_offset
+            }).map(|(button_x_offset, button)| ButtonPlace {
+                row,
+                button,
+                offset: row_offset + c::Point {
+                    x: button_x_offset,
+                    y: 0.0,
+                },
+            })
         })
+    }
+    
+    fn get_width(&self) -> f64 {
+        // No need to call `get_rows()`,
+        // as the biggest row is the most far reaching in both directions
+        // because they are all centered.
+        find_max_double(self.rows.iter(), |(_offset, row)| row.get_width())
+    }
+    
+    fn get_height(&self) -> f64 {
+        self.rows.iter().next_back()
+            .map(|(y_offset, row)| row.get_height() + y_offset)
+            .unwrap_or(0.0)
+    }
+    
+    /// Returns positioned rows, with appropriate x offsets (centered)
+    pub fn get_rows(&self) -> Vec<(c::Point, &Row)> {
+        let available_width = self.get_width();
+        self.rows.iter().map(|(y_offset, row)| {(
+            c::Point {
+                x: (available_width - row.get_width()) / 2.0,
+                y: *y_offset,
+            },
+            row,
+        )}).collect()
     }
 }
 
@@ -656,10 +615,18 @@ pub enum ArrangementKind {
     Wide = 1,
 }
 
+pub struct Margins {
+    pub top: f64,
+    pub bottom: f64,
+    pub left: f64,
+    pub right: f64,
+}
+
 // TODO: split into sth like
 // Arrangement (views) + details (keymap) + State (keys)
 /// State of the UI, contains the backend as well
 pub struct Layout {
+    pub margins: Margins,
     pub kind: ArrangementKind,
     pub current_view: String,
     // Views own the actual buttons which have state
@@ -686,6 +653,7 @@ pub struct Layout {
 pub struct LayoutData {
     pub views: HashMap<String, View>,
     pub keymap_str: CString,
+    pub margins: Margins,
 }
 
 struct NoSuchView;
@@ -703,6 +671,7 @@ impl Layout {
             keymap_str: data.keymap_str,
             pressed_keys: HashSet::new(),
             locked_keys: HashSet::new(),
+            margins: data.margins,
         }
     }
 
@@ -804,47 +773,48 @@ impl Layout {
         let place = view.find_button_by_position(point);
         place.map(|place| ButtonPosition {
             button: place.button.clone(),
-            // Rows have no business being inside a view
-            // if they have no valid bounds.
-            view_position: place.row.bounds.clone().unwrap().get_position()
-                + place.button.bounds.get_position(),
+            view_position: place.offset,
         })
+    }
+    
+    fn calculate_size(&self) -> Size {
+        Size {
+            height: find_max_double(
+                self.views.iter(),
+                |(_name, view)| view.get_height(),
+            ),
+            width: find_max_double(
+                self.views.iter(),
+                |(_name, view)| view.get_width(),
+            ),
+        }
     }
 }
 
 mod procedures {
     use super::*;
 
-    type Path<'v> = (&'v Row, &'v Box<Button>);
+    type Place<'v> = (c::Point, &'v Box<Button>);
 
-    /// Finds all `(row, button)` paths that refer to the specified key `state`
-    pub fn find_key_paths<'v, 's>(
+    /// Finds all buttons referring to the key in `state`,
+    /// together with their offsets within the view.
+    pub fn find_key_places<'v, 's>(
         view: &'v View,
         state: &'s Rc<RefCell<KeyState>>
-    ) -> Vec<Path<'v>> {
-        view.rows.iter().flat_map(|row| {
-            let row_paths: Vec<Path> = row.buttons.iter().filter_map(|button| {
-                if Rc::ptr_eq(&button.state, state) {
-                    Some((row, button))
-                } else {
-                    None
-                }
-            }).collect(); // collecting not to let row references outlive the function
-            row_paths.into_iter()
+    ) -> Vec<Place<'v>> {
+        view.get_rows().iter().flat_map(|(row_offset, row)| {
+            row.buttons.iter()
+                .filter_map(move |(x_offset, button)| {
+                    if Rc::ptr_eq(&button.state, state) {
+                        Some((
+                            row_offset + c::Point { x: *x_offset, y: 0.0 },
+                            button,
+                        ))
+                    } else {
+                        None
+                    }
+                })
         }).collect()
-    }
-    
-    /// Checks if point is inside bounds which are rotated by angle.
-    /// FIXME: what's origin about?
-    pub fn is_point_inside(
-        bounds: c::Bounds,
-        point: c::Point,
-        origin: c::Point,
-        angle: i32
-    ) -> bool {
-        (unsafe {
-            c::procedures::eek_are_bounds_inside(bounds, point, origin, angle)
-        }) == 1
     }
     
     #[cfg(test)]
@@ -867,61 +837,32 @@ mod procedures {
 
             let button = make_button_with_state("1".into(), state);
             let button_ptr = as_ptr(&button);
-            
-            let row_bounds = Some(c::Bounds {
-                x: 0.1, y: 2.3,
-                width: 4.5, height: 6.7,
-            });
+
             let row = Row {
-                buttons: vec!(button),
+                buttons: vec!((0.1, button)),
                 angle: 0,
-                bounds: row_bounds.clone(),
             };
 
             let view = View {
-                bounds: c::Bounds {
-                    x: 0f64, y: 0f64,
-                    width: 0f64, height: 0f64
-                },
-                rows: vec!(row),
+                rows: vec!((1.2, row)),
             };
 
             assert_eq!(
-                find_key_paths(&view, &state_clone.clone()).iter()
-                    .map(|(row, button)| { (row.bounds.clone(), as_ptr(button)) })
+                find_key_places(&view, &state_clone.clone()).into_iter()
+                    .map(|(place, button)| { (place, as_ptr(button)) })
                     .collect::<Vec<_>>(),
                 vec!(
-                    (row_bounds, button_ptr)
+                    (c::Point { x: 0.1, y: 1.2 }, button_ptr)
                 )
             );
 
             let view = View {
-                bounds: c::Bounds {
-                    x: 0f64, y: 0f64,
-                    width: 0f64, height: 0f64
-                },
                 rows: Vec::new(),
             };
             assert_eq!(
-                find_key_paths(&view, &state_clone.clone()).is_empty(),
+                find_key_places(&view, &state_clone.clone()).is_empty(),
                 true
             );
-        }
-    }
-    
-    pub fn get_button_bounds(
-        view: &View,
-        row: &Row,
-        button: &Button
-    ) -> Option<c::Bounds> {
-        match &row.bounds {
-            Some(row) => Some(c::Bounds {
-                x: view.bounds.x + row.x + button.bounds.x,
-                y: view.bounds.y + row.y + button.bounds.y,
-                width: button.bounds.width,
-                height: button.bounds.height,
-            }),
-            _ => None,
         }
     }
 }
@@ -944,19 +885,18 @@ mod seat {
         let view = layout.get_current_view();
         let action = RefCell::borrow(key).action.clone();
         if let Action::ShowPreferences = action {
-            let paths = ::layout::procedures::find_key_paths(
+            let places = ::layout::procedures::find_key_places(
                 view, key
             );
             // getting first item will cause mispositioning
             // with more than one button with the same key
             // on the keyboard
-            if let Some((row, button)) = paths.get(0) {
-                let bounds = ::layout::procedures::get_button_bounds(
-                    view, row, button
-                ).unwrap_or_else(|| {
-                    eprintln!("BUG: Clicked button has no position?");
-                    c::Bounds { x: 0f64, y: 0f64, width: 0f64, height: 0f64 }
-                });
+            if let Some((offset, button)) = places.get(0) {
+                let bounds = c::Bounds {
+                    x: offset.x, y: offset.y,
+                    width: button.size.width,
+                    height: button.size.height,
+                };
                 ::popover::show(
                     ui_keyboard,
                     widget_to_layout.reverse_bounds(bounds)
@@ -987,12 +927,48 @@ mod test {
     ) -> Box<Button> {
         Box::new(Button {
             name: CString::new(name.clone()).unwrap(),
-            bounds: c::Bounds {
-                x: 0f64, y: 0f64, width: 0f64, height: 0f64
-            },
+            size: Size { width: 0f64, height: 0f64 },
             outline_name: CString::new("test").unwrap(),
             label: Label::Text(CString::new(name).unwrap()),
             state: state,
         })
+    }
+    
+    #[test]
+    fn check_centering() {
+        //    foo
+        // ---bar---
+        let view = View::new(vec![
+            (
+                0.0,
+                Row {
+                    angle: 0,
+                    buttons: vec![(
+                        0.0,
+                        Box::new(Button {
+                            size: Size { width: 10.0, height: 10.0 },
+                            ..*make_button_with_state("foo".into(), make_state())
+                        }),
+                    )]
+                },
+            ),
+            (
+                10.0,
+                Row {
+                    angle: 0,
+                    buttons: vec![(
+                        0.0,
+                        Box::new(Button {
+                            size: Size { width: 30.0, height: 10.0 },
+                            ..*make_button_with_state("bar".into(), make_state())
+                        }),
+                    )]
+                },
+            )
+        ]);
+        assert!(
+            view.find_button_by_position(c::Point { x: 5.0, y: 5.0 })
+                .is_none()
+        );
     }
 }

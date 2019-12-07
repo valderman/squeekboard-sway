@@ -28,9 +28,6 @@ struct transformation squeek_layout_calculate_transformation(
         const struct squeek_layout *layout,
         double allocation_width, double allocation_size);
 
-void
-squeek_layout_place_contents(struct squeek_layout*);
-
 struct squeek_layout *squeek_load_layout(const char *name, uint32_t type);
 const char *squeek_layout_get_keymap(const struct squeek_layout*);
 enum squeek_arrangement_kind squeek_layout_get_kind(const struct squeek_layout *);

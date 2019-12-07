@@ -498,53 +498,6 @@ eek_renderer_get_icon_surface (const gchar *icon_name,
     return surface;
 }
 
-static gboolean
-sign (EekPoint *p1, EekPoint *p2, EekPoint *p3)
-{
-    // FIXME: what is this actually checking?
-    return (p1->x - p3->x) * (p2->y - p3->y) -
-        (p2->x - p3->x) * (p1->y - p3->y);
-}
-
-uint32_t
-eek_are_bounds_inside (EekBounds bounds, EekPoint point, EekPoint origin, int32_t angle)
-{
-    EekPoint points[4];
-    gboolean b1, b2, b3;
-
-    points[0].x = bounds.x;
-    points[0].y = bounds.y;
-    points[1].x = points[0].x + bounds.width;
-    points[1].y = points[0].y;
-    points[2].x = points[1].x;
-    points[2].y = points[1].y + bounds.height;
-    points[3].x = points[0].x;
-    points[3].y = points[2].y;
-
-    for (unsigned i = 0; i < G_N_ELEMENTS(points); i++) {
-        eek_point_rotate (&points[i], angle);
-        points[i].x += origin.x;
-        points[i].y += origin.y;
-    }
-
-    b1 = sign (&point, &points[0], &points[1]) < 0.0;
-    b2 = sign (&point, &points[1], &points[2]) < 0.0;
-    b3 = sign (&point, &points[2], &points[0]) < 0.0;
-
-    if (b1 == b2 && b2 == b3) {
-        return 1;
-    }
-
-    b1 = sign (&point, &points[2], &points[3]) < 0.0;
-    b2 = sign (&point, &points[3], &points[0]) < 0.0;
-    b3 = sign (&point, &points[0], &points[2]) < 0.0;
-
-    if (b1 == b2 && b2 == b3) {
-        return 1;
-    }
-    return 0;
-}
-
 struct transformation
 eek_renderer_get_transformation (EekRenderer *renderer) {
     struct transformation failed = {0};

@@ -56,8 +56,8 @@ fn check_layout(layout: Layout) {
     
     // "Press" each button with keysyms
     for view in layout.views.values() {
-        for row in &view.rows {
-            for button in &row.buttons {
+        for (_y, row) in &view.get_rows() {
+            for (_x, button) in &row.buttons {
                 let keystate = button.state.borrow();
                 for keycode in &keystate.keycodes {
                     match state.key_get_one_sym(*keycode) {

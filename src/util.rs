@@ -2,6 +2,8 @@
 use std::collections::HashMap;
 use std::rc::Rc;
 
+use ::float_ord::FloatOrd;
+
 use std::borrow::Borrow;
 use std::hash::{ Hash, Hasher };
 use std::iter::FromIterator;
@@ -140,6 +142,16 @@ pub fn hash_map_map<K, V, F, K1, V1>(map: HashMap<K, V>, mut f: F)
     HashMap::from_iter(
         map.into_iter().map(|(key, value)| f(key, value))
     )
+}
+
+pub fn find_max_double<T, I, F>(iterator: I, get: F)
+    -> f64
+    where I: Iterator<Item=T>,
+        F: Fn(&T) -> f64
+{
+    iterator.map(|value| FloatOrd(get(&value)))
+        .max().unwrap_or(FloatOrd(0f64))
+        .0
 }
 
 /// Compares pointers but not internal values of Rc

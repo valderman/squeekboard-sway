@@ -17,6 +17,7 @@ use ::keyboard::{
     KeyState, PressType,
     generate_keymap, generate_keycodes, FormattingError
 };
+use ::layout;
 use ::layout::ArrangementKind;
 use ::resources;
 use ::util::c::as_str;
@@ -215,6 +216,7 @@ fn load_layout_data_with_fallback(
 #[derive(Debug, Deserialize, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct Layout {
+    /// FIXME: deprecate in favor of margins
     bounds: Bounds,
     views: HashMap<String, Vec<ButtonIds>>,
     #[serde(default)] 
@@ -269,6 +271,7 @@ enum Action {
 #[derive(Debug, Clone, Deserialize, PartialEq)]
 #[serde(deny_unknown_fields)]
 struct Outline {
+    /// FIXME: replace with Size
     bounds: Bounds,
 }
 
@@ -301,6 +304,20 @@ impl From<io::Error> for Error {
             _ => Error::Io(e),
         }
     }
+}
+
+pub fn add_offsets<'a, I: 'a, T, F: 'a>(iterator: I, get_size: F)
+    -> impl Iterator<Item=(f64, T)> + 'a
+    where I: Iterator<Item=T>,
+        F: Fn(&T) -> f64,
+{
+    let mut offset = 0.0;
+    iterator.map(move |item| {
+        let size = get_size(&item);
+        let value = (offset, item);
+        offset += size;
+        value
+    })
 }
 
 impl Layout {
@@ -403,34 +420,35 @@ impl Layout {
         );
 
         let views = HashMap::from_iter(
-            self.views.iter().map(|(name, view)| {(
-                name.clone(),
-                ::layout::View {
-                    bounds: ::layout::c::Bounds {
-                        x: self.bounds.x,
-                        y: self.bounds.y,
-                        width: self.bounds.width,
-                        height: self.bounds.height,
-                    },
-                    rows: view.iter().map(|row| {
-                        ::layout::Row {
-                            angle: 0,
-                            bounds: None,
-                            buttons: row.split_ascii_whitespace().map(|name| {
-                                Box::new(create_button(
-                                    &self.buttons,
-                                    &self.outlines,
-                                    name,
-                                    button_states_cache.get(name.into())
-                                        .expect("Button state not created")
-                                        .clone(),
-                                    &mut warning_handler,
-                                ))
-                            }).collect(),
-                        }
-                    }).collect(),
-                }
-            )})
+            self.views.iter().map(|(name, view)| {
+                let rows = view.iter().map(|row| {
+                    let buttons = row.split_ascii_whitespace()
+                        .map(|name| {
+                            Box::new(create_button(
+                                &self.buttons,
+                                &self.outlines,
+                                name,
+                                button_states_cache.get(name.into())
+                                    .expect("Button state not created")
+                                    .clone(),
+                                &mut warning_handler,
+                            ))
+                        });
+                    ::layout::Row {
+                        angle: 0,
+                        buttons: add_offsets(
+                            buttons,
+                            |button| button.size.width,
+                        ).collect()
+                    }
+                });
+                let rows = add_offsets(rows, |row| row.get_height())
+                    .collect();
+                (
+                    name.clone(),
+                    layout::View::new(rows)
+                )
+            })
         );
 
         (
@@ -439,6 +457,13 @@ impl Layout {
                 keymap_str: {
                     CString::new(keymap_str)
                         .expect("Invalid keymap string generated")
+                },
+                // FIXME: use a dedicated field
+                margins: layout::Margins {
+                    top: self.bounds.x,
+                    left: self.bounds.y,
+                    bottom: 0.0,
+                    right: self.bounds.y,
                 },
             }),
             warning_handler,
@@ -629,13 +654,11 @@ fn create_button<H: WarningHandler>(
             }
         });
 
-    ::layout::Button {
+    layout::Button {
         name: cname,
         outline_name: CString::new(outline_name).expect("Bad outline"),
         // TODO: do layout before creating buttons
-        bounds: ::layout::c::Bounds {
-            x: outline.bounds.x,
-            y: outline.bounds.y,
+        size: layout::Size {
             width: outline.bounds.width,
             height: outline.bounds.height,
         },
@@ -734,8 +757,8 @@ mod tests {
             .unwrap();
         assert_eq!(
             out.views["base"]
-                .rows[0]
-                .buttons[0]
+                .get_rows()[0].1
+                .buttons[0].1
                 .label,
             ::layout::Label::Text(CString::new("test").unwrap())
         );
@@ -749,8 +772,8 @@ mod tests {
             .unwrap();
         assert_eq!(
             out.views["base"]
-                .rows[0]
-                .buttons[0]
+                .get_rows()[0].1
+                .buttons[0].1
                 .label,
             ::layout::Label::Text(CString::new("test").unwrap())
         );
@@ -765,8 +788,8 @@ mod tests {
             .unwrap();
         assert_eq!(
             out.views["base"]
-                .rows[0]
-                .buttons[0]
+                .get_rows()[0].1
+                .buttons[0].1
                 .state.borrow()
                 .keycodes.len(),
             2
