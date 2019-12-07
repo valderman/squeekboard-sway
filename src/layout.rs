@@ -43,10 +43,6 @@ pub mod c {
     use std::ops::Add;
 
     // The following defined in C
-
-    #[repr(transparent)]
-    pub struct UserData(*const c_void);
-
     #[repr(transparent)]
     #[derive(Copy, Clone)]
     pub struct EekGtkKeyboard(pub *const gtk_sys::GtkWidget);
@@ -130,9 +126,6 @@ pub mod c {
             }
         }
     }
-    
-    type ButtonCallback = unsafe extern "C" fn(button: *mut ::layout::Button, data: *mut UserData);
-    type RowCallback = unsafe extern "C" fn(row: *mut ::layout::Row, data: *mut UserData);
 
     // The following defined in Rust. TODO: wrap naked pointers to Rust data inside RefCells to prevent multiple writers
 
@@ -142,20 +135,6 @@ pub mod c {
         unsafe { &*view }.bounds.clone()
     }
 
-    #[no_mangle]
-    pub extern "C"
-    fn squeek_view_foreach(
-        view: *mut ::layout::View,
-        callback: RowCallback,
-        data: *mut UserData,
-    ) {
-        let view = unsafe { &mut *view };
-        for row in view.rows.iter_mut() {
-            let row = row.as_mut() as *mut ::layout::Row;
-            unsafe { callback(row, data) };
-        }
-    }
-    
     #[no_mangle]
     pub extern "C"
     fn squeek_row_get_angle(row: *const ::layout::Row) -> i32 {
@@ -170,20 +149,6 @@ pub mod c {
         match &row.bounds {
             Some(bounds) => bounds.clone(),
             None => panic!("Row doesn't have any bounds yet"),
-        }
-    }
-    
-    #[no_mangle]
-    pub extern "C"
-    fn squeek_row_foreach(
-        row: *mut ::layout::Row,
-        callback: ButtonCallback,
-        data: *mut UserData,
-    ) {
-        let row = unsafe { &mut *row };
-        for button in row.buttons.iter_mut() {
-            let button = button.as_mut() as *mut ::layout::Button;
-            unsafe { callback(button, data) };
         }
     }
 

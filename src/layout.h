@@ -21,11 +21,6 @@ int32_t squeek_row_get_angle(const struct squeek_row*);
 
 EekBounds squeek_row_get_bounds(const struct squeek_row*);
 
-typedef void (*ButtonCallback) (struct squeek_button *button, gpointer user_data);
-void squeek_row_foreach(struct squeek_row*,
-                            ButtonCallback   callback,
-                            gpointer      user_data);
-
 EekBounds squeek_button_get_bounds(const struct squeek_button*);
 const char *squeek_button_get_label(const struct squeek_button*);
 const char *squeek_button_get_icon_name(const struct squeek_button*);
@@ -36,11 +31,6 @@ void squeek_button_print(const struct squeek_button* button);
 
 
 EekBounds squeek_view_get_bounds(const struct squeek_view*);
-
-typedef void (*RowCallback) (struct squeek_row *row, gpointer user_data);
-void squeek_view_foreach(struct squeek_view*,
-                            RowCallback   callback,
-                            gpointer      user_data);
 
 void
 squeek_layout_place_contents(struct squeek_layout*);
@@ -65,4 +55,5 @@ void squeek_layout_drag(struct squeek_layout *layout, struct zwp_virtual_keyboar
                         struct transformation widget_to_layout,
                         uint32_t timestamp, EekGtkKeyboard *ui_keyboard);
 void squeek_layout_draw_all_changed(struct squeek_layout *layout, EekRenderer* renderer, cairo_t     *cr);
+void squeek_draw_layout_base_view(struct squeek_layout *layout, EekRenderer* renderer, cairo_t     *cr);
 #endif

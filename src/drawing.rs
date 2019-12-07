@@ -75,6 +75,31 @@ mod c {
             }
         }
     }
+    
+    #[no_mangle]
+    pub extern "C"
+    fn squeek_draw_layout_base_view(
+        layout: *mut Layout,
+        renderer: EekRenderer,
+        cr: *mut cairo_sys::cairo_t,
+    ) {
+        let layout = unsafe { &mut *layout };
+        let cr = unsafe { cairo::Context::from_raw_none(cr) };
+        let view = layout.get_current_view();
+        let view_position = view.bounds.get_position();
+        for row in &view.rows {
+            for button in &row.buttons {
+                let position = &view_position
+                    + row.bounds.clone().unwrap().get_position()
+                    + button.bounds.get_position();
+                render_button_at_position(
+                    renderer, &cr,
+                    position, button.as_ref(),
+                    keyboard::PressType::Released, false,
+                );
+            }
+        }
+    }
 }
 
 /// Renders a button at a position (button's own bounds ignored)
