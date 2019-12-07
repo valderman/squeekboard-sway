@@ -25,7 +25,6 @@ use std::vec::Vec;
 
 use ::action::Action;
 use ::drawing;
-use ::float_ord::FloatOrd;
 use ::keyboard::{ KeyState, PressType };
 use ::submission::{ Timestamp, VirtualKeyboard };
 use ::util::find_max_double;
@@ -241,22 +240,6 @@ pub mod c {
         use super::*;
 
         use ::submission::c::ZwpVirtualKeyboardV1;
-        
-        #[repr(C)]
-        #[derive(PartialEq, Debug)]
-        pub struct CButtonPlace {
-            row: *const Row,
-            button: *const Button,
-        }
-
-        impl<'a> From<ButtonPlace<'a>> for CButtonPlace {
-            fn from(value: ButtonPlace<'a>) -> CButtonPlace {
-                CButtonPlace {
-                    row: value.row as *const Row,
-                    button: value.button as *const Button,
-                }
-            }
-        }
 
         // This is constructed only in C, no need for warnings
         #[allow(dead_code)]
@@ -329,8 +312,9 @@ pub mod c {
                 Point { x: x_widget, y: y_widget }
             );
 
-            if let Some(position) = layout.get_button_at_point(point) {
-                let mut state = position.button.state.clone();
+            let view = layout.get_current_view();
+            if let Some(place) = view.find_button_by_position(point) {
+                let mut state = place.button.state.clone();
                 layout.press_key(
                     &VirtualKeyboard(virtual_keyboard),
                     &mut state,
@@ -434,15 +418,8 @@ pub mod c {
     }
 }
 
-/// Relative to `View`
-struct ButtonPosition {
-    view_position: c::Point,
-    button: Button,
-}
-
 pub struct ButtonPlace<'a> {
     button: &'a Button,
-    row: &'a Row,
     offset: c::Point,
 }
 
@@ -482,28 +459,7 @@ pub struct Row {
     pub angle: i32,
 }
 
-impl Row {
-    fn last(positions: &Vec<c::Bounds>) -> Option<&c::Bounds> {
-        let len = positions.len();
-        match len {
-            0 => None,
-            l => Some(&positions[l - 1])
-        }
-    }
-    
-    fn calculate_button_positions(outlines: Vec<c::Bounds>) -> Vec<c::Bounds> {
-        let mut x_offset = 0f64;
-        outlines.iter().map(|outline| {
-            x_offset += outline.x; // account for offset outlines
-            let position = c::Bounds {
-                x: x_offset,
-                ..outline.clone()
-            };
-            x_offset += outline.width;
-            position
-        }).collect()
-    }
-    
+impl Row {    
     pub fn get_height(&self) -> f64 {
         find_max_double(
             self.buttons.iter(),
@@ -515,20 +471,6 @@ impl Row {
         self.buttons.iter().next_back()
             .map(|(x_offset, button)| button.size.width + x_offset)
             .unwrap_or(0.0)
-    }
-    
-    fn calculate_row_size(positions: &Vec<c::Bounds>) -> Size {
-        let max_height = positions.iter().map(
-            |bounds| FloatOrd(bounds.height)
-        ).max()
-            .unwrap_or(FloatOrd(0f64))
-            .0;
-        
-        let total_width = match Row::last(positions) {
-            Some(position) => position.x + position.width,
-            None => 0f64,
-        };
-        Size { width: total_width, height: max_height }
     }
 
     /// Finds the first button that covers the specified point
@@ -572,7 +514,6 @@ impl View {
             row.find_button_by_position({
                 c::Point { x: point.x, y: point.y } - row_offset
             }).map(|(button_x_offset, button)| ButtonPlace {
-                row,
                 button,
                 offset: row_offset + c::Point {
                     x: button_x_offset,
@@ -768,15 +709,6 @@ impl Layout {
         };
     }
 
-    fn get_button_at_point(&self, point: c::Point) -> Option<ButtonPosition> {
-        let view = self.get_current_view();
-        let place = view.find_button_by_position(point);
-        place.map(|place| ButtonPosition {
-            button: place.button.clone(),
-            view_position: place.offset,
-        })
-    }
-    
     fn calculate_size(&self) -> Size {
         Size {
             height: find_max_double(
