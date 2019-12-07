@@ -151,8 +151,6 @@ eek_gtk_keyboard_real_button_press_event (GtkWidget      *self,
     return TRUE;
 }
 
-
-
 // TODO: this belongs more in gtk_keyboard, with a way to find out which key to re-render
 static gboolean
 eek_gtk_keyboard_real_button_release_event (GtkWidget      *self,
@@ -319,21 +317,3 @@ EekRenderer *eek_gtk_keyboard_get_renderer(EekGtkKeyboard *self) {
     EekGtkKeyboardPrivate *priv = eek_gtk_keyboard_get_instance_private (self);
     return priv->renderer;
 }
-
-void
-eek_gtk_render_locked_button (EekGtkKeyboard *self, struct button_place place)
-{
-    EekGtkKeyboardPrivate *priv = eek_gtk_keyboard_get_instance_private (self);
-
-    GdkWindow         *window  = gtk_widget_get_window (GTK_WIDGET(self));
-    cairo_region_t    *region  = gdk_window_get_clip_region (window);
-    GdkDrawingContext *context = gdk_window_begin_draw_frame (window, region);
-    cairo_t           *cr      = gdk_drawing_context_get_cairo_context (context);
-
-    eek_renderer_render_button (priv->renderer, cr, &place, 1.0, FALSE, TRUE);
-
-    gdk_window_end_draw_frame (window, context);
-
-    cairo_region_destroy (region);
-}
-
