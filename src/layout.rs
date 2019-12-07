@@ -308,16 +308,6 @@ pub mod c {
                 origin: Point,
                 angle: i32
             ) -> u32;
-
-            // Button and View are safe to pass to C
-            // as long as they don't outlive the call
-            // and nothing dereferences them
-            #[allow(improper_ctypes)]
-            pub fn eek_gtk_on_button_released(
-                button: *const Button,
-                view: *const View,
-                keyboard: EekGtkKeyboard,
-            );
         }
 
         /// Places each button in order, starting from 0 on the left,
@@ -904,24 +894,6 @@ mod procedures {
             c::procedures::eek_are_bounds_inside(bounds, point, origin, angle)
         }) == 1
     }
-
-    /// Switch off all UI buttons associated with the (state) key
-    pub fn release_ui_buttons(
-        view: &Box<View>,
-        key: &Rc<RefCell<KeyState>>,
-        ui_keyboard: c::EekGtkKeyboard,
-    ) {
-        let paths = ::layout::procedures::find_key_paths(&view, key);
-        for (_row, button) in paths {
-            unsafe {
-                c::procedures::eek_gtk_on_button_released(
-                    button.as_ref() as *const Button,
-                    view.as_ref() as *const View,
-                    ui_keyboard,
-                );
-            };
-        }
-    }
     
     #[cfg(test)]
     mod test {
@@ -1036,9 +1008,6 @@ mod seat {
                 );
             }
         }
-        
-        // TODO: move one level up; multiple buttons might have been released
-        procedures::release_ui_buttons(view, key, ui_keyboard);
     }
 }
 

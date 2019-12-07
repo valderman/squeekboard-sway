@@ -61,10 +61,6 @@ typedef struct _EekGtkKeyboardPrivate
 
 G_DEFINE_TYPE_WITH_PRIVATE (EekGtkKeyboard, eek_gtk_keyboard, GTK_TYPE_DRAWING_AREA)
 
-static void       render_pressed_button      (GtkWidget *widget, struct button_place *place);
-static void       render_released_button     (GtkWidget *widget,
-                                              const struct squeek_button *button);
-
 static void
 eek_gtk_keyboard_real_realize (GtkWidget      *self)
 {
@@ -341,47 +337,3 @@ eek_gtk_render_locked_button (EekGtkKeyboard *self, struct button_place place)
     cairo_region_destroy (region);
 }
 
-// TODO: does it really redraw the entire keyboard?
-static void
-render_released_button (GtkWidget *widget,
-                        const struct squeek_button *button)
-{
-    (void)button;
-    EekGtkKeyboard        *self = EEK_GTK_KEYBOARD (widget);
-    EekGtkKeyboardPrivate *priv = eek_gtk_keyboard_get_instance_private (self);
-
-    GdkWindow         *window  = gtk_widget_get_window (widget);
-    cairo_region_t    *region  = gdk_window_get_clip_region (window);
-    GdkDrawingContext *context = gdk_window_begin_draw_frame (window, region);
-    cairo_t           *cr      = gdk_drawing_context_get_cairo_context (context);
-
-    eek_renderer_render_keyboard (priv->renderer, cr);
-
-    gdk_window_end_draw_frame (window, context);
-
-    cairo_region_destroy (region);
-}
-
-void
-eek_gtk_on_button_released (const struct squeek_button *button,
-                    struct squeek_view *view,
-                    EekGtkKeyboard *self)
-{
-    (void)view;
-    EekGtkKeyboardPrivate *priv = eek_gtk_keyboard_get_instance_private (self);
-
-    /* renderer may have not been set yet if the widget is a popup */
-    if (!priv->renderer)
-        return;
-
-    render_released_button (GTK_WIDGET(self), button);
-    gtk_widget_queue_draw (GTK_WIDGET(self));
-
-#if HAVE_LIBCANBERRA
-    ca_gtk_play_for_widget (widget, 0,
-                            CA_PROP_EVENT_ID, "button-released",
-                            CA_PROP_EVENT_DESCRIPTION, "virtual key pressed",
-                            CA_PROP_APPLICATION_ID, "org.fedorahosted.Eekboard",
-                            NULL);
-#endif
-}
