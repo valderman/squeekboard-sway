@@ -52,21 +52,8 @@ void             eek_renderer_set_allocation_size
                                                (EekRenderer     *renderer,
                                                 gdouble          width,
                                                 gdouble          height);
-void             eek_renderer_get_size         (EekRenderer     *renderer,
-                                                gdouble         *width,
-                                                gdouble         *height);
-void             eek_renderer_get_button_bounds   (EekBounds view_bounds,
-                                                struct button_place *button,
-                                                EekBounds       *bounds);
-
-gdouble          eek_renderer_get_scale        (EekRenderer     *renderer);
 void             eek_renderer_set_scale_factor (EekRenderer     *renderer,
                                                 gint             scale);
-
-void             eek_renderer_render_button       (EekRenderer     *renderer,
-                                                cairo_t         *cr,
-                                                struct button_place *place,
-                                                gdouble          scale, gboolean is_pressed, gboolean is_locked);
 
 cairo_surface_t *eek_renderer_get_icon_surface(const gchar     *icon_name,
                                                 gint             size,
@@ -74,12 +61,6 @@ cairo_surface_t *eek_renderer_get_icon_surface(const gchar     *icon_name,
 
 void             eek_renderer_render_keyboard  (EekRenderer     *renderer,
                                                 cairo_t         *cr);
-void             eek_renderer_set_border_width (EekRenderer     *renderer,
-                                                gdouble          border_width);
-void             eek_renderer_apply_transformation_for_button
-                                               (cairo_t         *cr,
-                                                struct button_place *place,
-                                                gdouble          scale);
 
 struct transformation
 eek_renderer_get_transformation (EekRenderer *renderer);

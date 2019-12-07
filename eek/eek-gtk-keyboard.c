@@ -239,6 +239,7 @@ eek_gtk_keyboard_set_property (GObject      *object,
                                const GValue *value,
                                GParamSpec   *pspec)
 {
+    (void)value;
     switch (prop_id) {
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -295,7 +296,9 @@ eek_gtk_keyboard_class_init (EekGtkKeyboardClass *klass)
 
 static void
 eek_gtk_keyboard_init (EekGtkKeyboard *self)
-{}
+{
+    (void)self;
+}
 
 /**
  * eek_gtk_keyboard_new:

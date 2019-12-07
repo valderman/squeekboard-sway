@@ -182,41 +182,6 @@ eek_render_button (EekRenderer *self,
     }
 }
 
-/**
- * eek_renderer_apply_transformation_for_key:
- * @self: The renderer used to render the key
- * @cr: The Cairo rendering context used for rendering
- * @key: The key to be transformed
- * @scale: The factor used to scale the key bounds before rendering
- * @rotate: Whether to rotate the key by the angle defined for the key's
- *   in its section definition
- *
- *  Applies a transformation, consisting of scaling and rotation, to the
- *  current rendering context using the bounds for the given key. The scale
- *  factor is separate to the normal scale factor for the keyboard as a whole
- *  and is applied cumulatively. It is typically used to render larger than
- *  normal keys for popups.
-*/
-void
-eek_renderer_apply_transformation_for_button (cairo_t     *cr,
-                                           struct button_place *place,
-                                           gdouble      scale)
-{
-    EekBounds bounds = squeek_button_get_bounds(place->button);
-    gdouble s;
-
-    gint angle = squeek_row_get_angle (place->row);
-
-    cairo_scale (cr, scale, scale);
-
-    s = sin (angle * G_PI / 180);
-    if (s < 0)
-        cairo_translate (cr, 0, - bounds.width * s);
-    else
-        cairo_translate (cr, bounds.height * s, 0);
-    cairo_rotate (cr, angle * G_PI / 180);
-}
-
 static void
 eek_renderer_render_button_label (EekRenderer *self,
                                   cairo_t     *cr,
@@ -287,51 +252,6 @@ eek_renderer_render_button_label (EekRenderer *self,
     pango_cairo_show_layout (cr, layout);
     cairo_restore (cr);
     g_object_unref (layout);
-}
-
-/*
- * eek_renderer_real_render_key:
- * @self: The renderer used to render the key
- * @cr: The Cairo rendering context used for rendering
- * @key: The key to be transformed
- * @scale: The factor used to scale the key bounds before rendering
- * @rotate: Whether to rotate the key by the angle defined for the key's
- *   in its section definition
- *
- *   Renders a key separately from the normal keyboard rendering.
-*/
-void
-eek_renderer_render_button (EekRenderer *self,
-                              cairo_t     *cr,
-                              struct button_place *place,
-                              gdouble      scale,
-                            gboolean is_pressed,
-                            gboolean is_locked)
-{
-    g_return_if_fail (EEK_IS_RENDERER(self));
-    g_return_if_fail (place);
-    g_return_if_fail (scale >= 0.0);
-
-    EekRendererPrivate *priv = eek_renderer_get_instance_private (self);
-    EekBounds bounds;
-
-    EekBounds view_bounds = squeek_view_get_bounds (level_keyboard_current(priv->keyboard));
-    eek_renderer_get_button_bounds (view_bounds, place, &bounds);
-
-    cairo_save (cr);
-    /* Because this function is called separately from the keyboard rendering
-       function, the transformation for the context needs to be set up */
-    cairo_translate (cr, priv->origin_x, priv->origin_y);
-    cairo_scale (cr, priv->scale, priv->scale);
-    cairo_translate (cr, bounds.x, bounds.y);
-
-    eek_renderer_apply_transformation_for_button (cr, place, scale);
-    eek_render_button (
-                self, cr, place->button,
-                is_pressed,
-                is_locked
-    );
-    cairo_restore (cr);
 }
 
 void
@@ -566,77 +486,6 @@ eek_renderer_set_allocation_size (EekRenderer *renderer,
     priv->origin_y = (gint)floor((height - (scale * h)) / 2);
 
     // This is where size-dependent surfaces would be released
-}
-
-void
-eek_renderer_get_size (EekRenderer *renderer,
-                       gdouble     *width,
-                       gdouble     *height)
-{
-    g_return_if_fail (EEK_IS_RENDERER(renderer));
-
-    EekRendererPrivate *priv = eek_renderer_get_instance_private (renderer);
-
-    EekBounds bounds = squeek_view_get_bounds (level_keyboard_current(priv->keyboard));
-    if (width)
-        *width = bounds.width;
-    if (height)
-        *height = bounds.height;
-}
-
-void
-eek_renderer_get_button_bounds (EekBounds view_bounds,
-                                struct button_place *place,
-                             EekBounds   *bounds)
-{
-    gint angle = 0;
-    EekPoint points[4], min, max;
-
-    g_return_if_fail (place);
-    g_return_if_fail (bounds != NULL);
-
-    EekBounds button_bounds = squeek_button_get_bounds(place->button);
-    EekBounds row_bounds = squeek_row_get_bounds (place->row);
-
-    points[0].x = button_bounds.x;
-    points[0].y = button_bounds.y;
-    points[1].x = points[0].x + button_bounds.width;
-    points[1].y = points[0].y;
-    points[2].x = points[1].x;
-    points[2].y = points[1].y + button_bounds.height;
-    points[3].x = points[0].x;
-    points[3].y = points[2].y;
-
-
-    angle = squeek_row_get_angle (place->row);
-
-    min = points[2];
-    max = points[0];
-    for (unsigned i = 0; i < G_N_ELEMENTS(points); i++) {
-        eek_point_rotate (&points[i], angle);
-        if (points[i].x < min.x)
-            min.x = points[i].x;
-        if (points[i].x > max.x)
-            max.x = points[i].x;
-        if (points[i].y < min.y)
-            min.y = points[i].y;
-        if (points[i].y > max.y)
-            max.y = points[i].y;
-    }
-    bounds->x = view_bounds.x + row_bounds.x + min.x;
-    bounds->y = view_bounds.y + row_bounds.y + min.y;
-    bounds->width = (max.x - min.x);
-    bounds->height = (max.y - min.y);
-}
-
-gdouble
-eek_renderer_get_scale (EekRenderer *renderer)
-{
-    g_return_val_if_fail (EEK_IS_RENDERER(renderer), 0);
-
-    EekRendererPrivate *priv = eek_renderer_get_instance_private (renderer);
-
-    return priv->scale;
 }
 
 void
