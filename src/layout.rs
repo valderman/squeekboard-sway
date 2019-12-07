@@ -312,9 +312,13 @@ pub mod c {
                 Point { x: x_widget, y: y_widget }
             );
 
-            let view = layout.get_current_view();
-            if let Some(place) = view.find_button_by_position(point) {
-                let mut state = place.button.state.clone();
+            let state = {
+                let view = layout.get_current_view();
+                view.find_button_by_position(point)
+                    .map(|place| place.button.state.clone())
+            };
+            
+            if let Some(mut state) = state {
                 layout.press_key(
                     &VirtualKeyboard(virtual_keyboard),
                     &mut state,
@@ -322,7 +326,7 @@ pub mod c {
                 );
                 // maybe TODO: draw on the display buffer here
                 drawing::queue_redraw(ui_keyboard);
-            }
+            };
         }
 
         // FIXME: this will work funny
