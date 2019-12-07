@@ -4,11 +4,9 @@ use cairo;
 use std::cell::RefCell;
 
 use ::keyboard;
-use ::layout;
 use ::layout::{ Button, Layout };
 use ::layout::c::{ EekGtkKeyboard, Point };
 
-use gdk::{ WindowExt, DrawingContextExt };
 use glib::translate::FromGlibPtrNone;
 use gtk::WidgetExt;
 
@@ -37,14 +35,6 @@ mod c {
             pressed: u64,
             locked: u64,
         );
-        
-        pub fn eek_gtk_keyboard_get_renderer(
-            keyboard: EekGtkKeyboard,
-        ) -> EekRenderer;
-        
-        pub fn eek_renderer_get_transformation(
-            renderer: EekRenderer,
-        ) -> layout::c::Transformation;
     }
 
     #[no_mangle]
@@ -133,47 +123,4 @@ pub fn render_button_at_position(
 pub fn queue_redraw(keyboard: EekGtkKeyboard) {
     let widget = unsafe { gtk::Widget::from_glib_none(keyboard.0) };
     widget.queue_draw();
-}
-
-/// Renders a single frame
-/// Opens a frame on `keyboard`'s `GdkWindow`, attempt to get a drawing context,
-/// calls `f`, closes the frame.
-/// If the drawing context was successfully retrieved, returns `f` call result.
-pub fn render_as_frame<F, T>(keyboard: EekGtkKeyboard, mut f: F) -> Option<T>
-    where F: FnMut(c::EekRenderer, &cairo::Context) -> T
-{
-    let renderer = unsafe { c::eek_gtk_keyboard_get_renderer(keyboard) };
-    
-    let widget = unsafe { gtk::Widget::from_glib_none(keyboard.0) };
-    widget.get_window()
-        .and_then(|window| {
-            // Need to split the `.and_then` chain here
-            // because `window` needs to be in scope
-            // for the references deeper inside.
-            window.get_clip_region()
-                // contrary to the docs, `Region` gets destroyed automatically
-                .and_then(|region| window.begin_draw_frame(&region))
-                .and_then(|drawctx| {
-                    let ret: Option<T> = drawctx.get_cairo_context()
-                        .map(|cr| {
-                            let transformation = unsafe {
-                                c::eek_renderer_get_transformation(renderer)
-                            };
-                            cr.translate(
-                                transformation.origin_x,
-                                transformation.origin_y,
-                            );
-                            cr.scale(
-                                transformation.scale,
-                                transformation.scale,
-                            );
-                            queue_redraw(keyboard);
-                            f(renderer, &cr) // finally!
-                        });
-                    // This must always happen after `begin_draw_frame`,
-                    // enven if `get_cairo_context` fails.
-                    window.end_draw_frame(&drawctx);
-                    ret
-                })
-        })
 }
