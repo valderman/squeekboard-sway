@@ -131,29 +131,6 @@ pub mod c {
 
     #[no_mangle]
     pub extern "C"
-    fn squeek_view_get_bounds(view: *const ::layout::View) -> Bounds {
-        unsafe { &*view }.bounds.clone()
-    }
-
-    #[no_mangle]
-    pub extern "C"
-    fn squeek_row_get_angle(row: *const ::layout::Row) -> i32 {
-        let row = unsafe { &*row };
-        row.angle
-    }
-    
-    #[no_mangle]
-    pub extern "C"
-    fn squeek_row_get_bounds(row: *const ::layout::Row) -> Bounds {
-        let row = unsafe { &*row };
-        match &row.bounds {
-            Some(bounds) => bounds.clone(),
-            None => panic!("Row doesn't have any bounds yet"),
-        }
-    }
-
-    #[no_mangle]
-    pub extern "C"
     fn squeek_button_get_bounds(button: *const ::layout::Button) -> Bounds {
         let button = unsafe { &*button };
         button.bounds.clone()
@@ -207,16 +184,26 @@ pub mod c {
         println!("{:?}", button);
     }
     
+    /// Positions the layout within the available space
     #[no_mangle]
     pub extern "C"
-    fn squeek_layout_get_current_view(layout: *const Layout) -> *const View {
+    fn squeek_layout_calculate_transformation(
+        layout: *const Layout,
+        allocation_width: f64,
+        allocation_height: f64,
+    ) -> Transformation {
         let layout = unsafe { &*layout };
-        let view_name = layout.current_view.clone();
-        layout.views.get(&view_name)
-            .expect("Current view doesn't exist")
-            .as_ref() as *const View
+        let bounds = &layout.get_current_view().bounds;
+        let h_scale = allocation_width / bounds.width;
+        let v_scale = allocation_height / bounds.height;
+        let scale = if h_scale > v_scale { h_scale } else { v_scale };
+        Transformation {
+            origin_x: allocation_width - (scale * bounds.width) / 2.0,
+            origin_y: allocation_height - (scale * bounds.height) / 2.0,
+            scale: scale,
+        }
     }
-
+    
     #[no_mangle]
     pub extern "C"
     fn squeek_layout_get_keymap(layout: *const Layout) -> *const c_char {

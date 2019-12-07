@@ -42,14 +42,12 @@ typedef struct _EekRendererPrivate
     GtkStyleContext *view_context; // owned
     GtkStyleContext *button_context; // TODO: maybe move a copy to each button
 
-    gdouble border_width;
+    gdouble border_width; // FIXME: border of what?
 
     gdouble allocation_width;
     gdouble allocation_height;
-    gdouble scale;
     gint scale_factor; /* the outputs scale factor */
-    gint origin_x;
-    gint origin_y;
+    struct transformation widget_to_layout;
 
     PangoFontDescription *font; // owned reference
 
@@ -64,14 +62,6 @@ static void eek_renderer_render_button_label (EekRenderer *self, cairo_t *cr, Gt
 void eek_render_button                         (EekRenderer *self,
                                                 cairo_t     *cr, const struct squeek_button *button,
                                                 gboolean     pressed, gboolean locked);
-
-struct _CreateKeyboardSurfaceCallbackData {
-    cairo_t *cr;
-    EekRenderer *renderer;
-    struct squeek_view *view;
-    struct squeek_row *row;
-};
-typedef struct _CreateKeyboardSurfaceCallbackData CreateKeyboardSurfaceCallbackData;
 
 static void
 render_outline (cairo_t     *cr,
@@ -271,8 +261,8 @@ eek_renderer_render_keyboard (EekRenderer *self,
                            priv->allocation_width, priv->allocation_height);
 
     cairo_save(cr);
-    cairo_translate (cr, priv->origin_x, priv->origin_y);
-    cairo_scale (cr, priv->scale, priv->scale);
+    cairo_translate (cr, priv->widget_to_layout.origin_x, priv->widget_to_layout.origin_y);
+    cairo_scale (cr, priv->widget_to_layout.scale, priv->widget_to_layout.scale);
 
     squeek_draw_layout_base_view(priv->keyboard->layout, self, cr);
     squeek_layout_draw_all_changed(priv->keyboard->layout, self, cr);
@@ -403,7 +393,6 @@ eek_renderer_init (EekRenderer *self)
     priv->border_width = 1.0;
     priv->allocation_width = 0.0;
     priv->allocation_height = 0.0;
-    priv->scale = 1.0;
     priv->scale_factor = 1;
     priv->font = NULL;
 
@@ -461,8 +450,6 @@ eek_renderer_set_allocation_size (EekRenderer *renderer,
                                   gdouble      width,
                                   gdouble      height)
 {
-    gdouble scale;
-
     g_return_if_fail (EEK_IS_RENDERER(renderer));
     g_return_if_fail (width > 0.0 && height > 0.0);
 
@@ -471,19 +458,9 @@ eek_renderer_set_allocation_size (EekRenderer *renderer,
     priv->allocation_width = width;
     priv->allocation_height = height;
 
-    /* Calculate a scale factor to use when rendering the keyboard into the
-       available space. */
-    EekBounds bounds = squeek_view_get_bounds (level_keyboard_current(priv->keyboard));
-
-    gdouble w = (bounds.x * 2) + bounds.width;
-    gdouble h = (bounds.y * 2) + bounds.height;
-
-    scale = MIN(width / w, height / h);
-
-    priv->scale = scale;
-    /* Set the rendering offset in widget coordinates to center the keyboard */
-    priv->origin_x = (gint)floor((width - (scale * w)) / 2);
-    priv->origin_y = (gint)floor((height - (scale * h)) / 2);
+    priv->widget_to_layout = squeek_layout_calculate_transformation(
+                priv->keyboard->layout,
+                priv->allocation_width, priv->allocation_height);
 
     // This is where size-dependent surfaces would be released
 }
@@ -574,10 +551,5 @@ eek_renderer_get_transformation (EekRenderer *renderer) {
     g_return_val_if_fail (EEK_IS_RENDERER(renderer), failed);
 
     EekRendererPrivate *priv = eek_renderer_get_instance_private (renderer);
-    struct transformation ret = {
-        .origin_x = priv->origin_x,
-        .origin_y = priv->origin_y,
-        .scale = priv->scale,
-    };
-    return ret;
+    return priv->widget_to_layout;
 }

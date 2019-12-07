@@ -49,7 +49,6 @@ typedef struct _LevelKeyboard LevelKeyboard;
 gchar *             eek_keyboard_get_keymap
                                      (LevelKeyboard *keyboard);
 
-struct squeek_view *level_keyboard_current(LevelKeyboard *keyboard);
 LevelKeyboard *level_keyboard_new(EekboardContextService *manager, struct squeek_layout *layout);
 void level_keyboard_deinit(LevelKeyboard *self);
 void level_keyboard_free(LevelKeyboard *self);

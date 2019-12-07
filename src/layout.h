@@ -14,12 +14,7 @@ enum squeek_arrangement_kind {
     ARRANGEMENT_KIND_WIDE = 1,
 };
 
-struct squeek_view;
 struct squeek_layout;
-
-int32_t squeek_row_get_angle(const struct squeek_row*);
-
-EekBounds squeek_row_get_bounds(const struct squeek_row*);
 
 EekBounds squeek_button_get_bounds(const struct squeek_button*);
 const char *squeek_button_get_label(const struct squeek_button*);
@@ -29,12 +24,12 @@ const char *squeek_button_get_outline_name(const struct squeek_button*);
 
 void squeek_button_print(const struct squeek_button* button);
 
-
-EekBounds squeek_view_get_bounds(const struct squeek_view*);
+struct transformation squeek_layout_calculate_transformation(
+        const struct squeek_layout *layout,
+        double allocation_width, double allocation_size);
 
 void
 squeek_layout_place_contents(struct squeek_layout*);
-struct squeek_view *squeek_layout_get_current_view(struct squeek_layout*);
 
 struct squeek_layout *squeek_load_layout(const char *name, uint32_t type);
 const char *squeek_layout_get_keymap(const struct squeek_layout*);

@@ -57,8 +57,3 @@ LevelKeyboard *level_keyboard_new(EekboardContextService *manager, struct squeek
     keyboard->manager = manager;
     return keyboard;
 }
-
-struct squeek_view *level_keyboard_current(LevelKeyboard *keyboard)
-{
-    return squeek_layout_get_current_view(keyboard->layout);
-}
