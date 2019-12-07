@@ -444,8 +444,6 @@ eek_renderer_render_keyboard (EekRenderer *self,
     render_keyboard_surface (self, squeek_layout_get_current_view(priv->keyboard->layout));
 
     cairo_set_source_surface (cr, priv->keyboard_surface, 0.0, 0.0);
-    cairo_pattern_t *source = cairo_get_source (cr);
-    cairo_pattern_set_extend (source, CAIRO_EXTEND_PAD);
     cairo_paint (cr);
 
     squeek_layout_draw_all_changed(priv->keyboard->layout, self, cr);
