@@ -513,3 +513,8 @@ eekboard_context_service_set_overlay(EekboardContextService *context, const char
     context->priv->overlay = strdup(name);
     update_layout_and_type(context);
 }
+
+const char*
+eekboard_context_service_get_overlay(EekboardContextService *context) {
+    return context->priv->overlay;
+}

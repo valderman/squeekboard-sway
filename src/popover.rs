@@ -152,14 +152,14 @@ enum LayoutId {
         name: String,
     },
     /// Only affects what this input method presents
-    Local(&'static str),
+    Local(String),
 }
 
 impl LayoutId {
     fn get_name(&self) -> &str {
         match &self {
             LayoutId::System { kind: _, name } => name.as_str(),
-            LayoutId::Local(name) => name,
+            LayoutId::Local(name) => name.as_str(),
         }
     }
 }
@@ -171,7 +171,7 @@ fn set_visible_layout(
     match layout_id {
         LayoutId::System { kind, name } => set_layout(kind, name),
         LayoutId::Local(name) => {
-            let name = CString::new(name).unwrap();
+            let name = CString::new(name.as_str()).unwrap();
             let name_ptr = name.as_ptr();
             unsafe {
                 manager::c::eekboard_context_service_set_overlay(
@@ -180,6 +180,17 @@ fn set_visible_layout(
                 )
             }
         },
+    }
+}
+
+/// Takes into account first any overlays, then system layouts from the list
+fn get_current_layout(
+    manager: manager::c::Manager,
+    system_layouts: &Vec<LayoutId>,
+) -> Option<LayoutId> {
+    match manager::get_overlay(manager) {
+        Some(name) => Some(LayoutId::Local(name)),
+        None => system_layouts.get(0).map(LayoutId::clone),
     }
 }
 
@@ -192,7 +203,7 @@ pub fn show(
     let window = unsafe { gtk::Widget::from_glib_none(window.0) };
 
     let overlay_layouts = resources::get_overlays().into_iter()
-        .map(|name| LayoutId::Local(name));
+        .map(|name| LayoutId::Local(name.to_string()));
 
     let settings = gio::Settings::new("org.gnome.desktop.input-sources");
     let inputs = settings.get_value("sources").unwrap();
@@ -279,10 +290,10 @@ pub fn show(
         height: position.width.floor() as i32,
     });
 
-    if let Some(current_layout) = system_layouts.get(0) {
+    if let Some(current_layout) = get_current_layout(manager, &system_layouts) {
         let current_name_variant = choices.iter()
             .find(
-                |(_id, layout)| layout == current_layout
+                |(_id, layout)| layout == &current_layout
             ).unwrap()
             .0.to_variant();
 
