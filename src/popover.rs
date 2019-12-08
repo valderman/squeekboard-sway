@@ -227,27 +227,27 @@ pub fn show(
         )
         .and_then(|lang| resources::get_layout_names(lang.as_str()));
 
-    let use_codes: Box<dyn FnMut(&str) -> Translation>
-        = Box::new(|name| Translation(name));
-
     let translated_names = all_layouts.iter()
-        .map(LayoutId::get_name)
-        // use a different closure depending on whether we have translations
-        .map(match translations {
-            Some(translations) => {
-                let use_translations: Box<dyn FnMut(&str) -> Translation>
-                     = Box::new(move |name| {
-                        translations.get(name)
-                            .map(|translation| translation.clone())
-                            .unwrap_or(Translation(name))
-                    });
-                use_translations
-            },
-            None => use_codes,
-        });
+        .map(LayoutId::get_name);
+    let translated_names: Vec<Translation> = match translations {
+        Some(translations) => {
+            translated_names
+                .map(move |name| {
+                    translations.get(name)
+                        .map(|translation| translation.clone())
+                        .unwrap_or(Translation(name))
+                })
+                .collect()
+        },
+        None => {
+            translated_names.map(|name| Translation(name))
+                .collect()
+        },
+    };
 
     // sorted collection of human and machine names
     let mut human_names: Vec<(Translation, LayoutId)> = translated_names
+        .into_iter()
         .zip(all_layouts.clone().into_iter())
         .collect();
 
