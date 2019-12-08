@@ -1,0 +1,15 @@
+---
+outlines:
+    default: { width: 37.46341, height: 52 }
+    altline: { width: 48.39024, height: 52 }
+
+views:
+    base:
+        - "☺"
+        - "☹"
+        - preferences
+buttons:
+    preferences:
+        action: "show_prefs"
+        outline: "altline"
+        icon: "keyboard-mode-symbolic"

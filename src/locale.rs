@@ -16,6 +16,9 @@ mod c {
     }
 }
 
+#[derive(Clone, Debug, PartialEq)]
+pub struct Translation<'a>(pub &'a str);
+
 fn cstring_safe(s: &str) -> CString {
     CString::new(s)
         .unwrap_or(CString::new("").unwrap())

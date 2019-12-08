@@ -36,6 +36,7 @@ void squeek_layout_free(struct squeek_layout*);
 void squeek_layout_release(struct squeek_layout *layout, struct zwp_virtual_keyboard_v1 *virtual_keyboard,
                            struct transformation widget_to_layout,
                            uint32_t timestamp,
+                           EekboardContextService *manager,
                            EekGtkKeyboard *ui_keyboard);
 void squeek_layout_release_all_only(struct squeek_layout *layout, struct zwp_virtual_keyboard_v1 *virtual_keyboard, uint32_t timestamp);
 void squeek_layout_depress(struct squeek_layout *layout, struct zwp_virtual_keyboard_v1 *virtual_keyboard,
@@ -45,7 +46,8 @@ void squeek_layout_depress(struct squeek_layout *layout, struct zwp_virtual_keyb
 void squeek_layout_drag(struct squeek_layout *layout, struct zwp_virtual_keyboard_v1 *virtual_keyboard,
                         double x_widget, double y_widget,
                         struct transformation widget_to_layout,
-                        uint32_t timestamp, EekGtkKeyboard *ui_keyboard);
+                        uint32_t timestamp, EekboardContextService *manager,
+                        EekGtkKeyboard *ui_keyboard);
 void squeek_layout_draw_all_changed(struct squeek_layout *layout, EekRenderer* renderer, cairo_t     *cr);
 void squeek_draw_layout_base_view(struct squeek_layout *layout, EekRenderer* renderer, cairo_t     *cr);
 #endif

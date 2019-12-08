@@ -3,6 +3,7 @@
  */
 
 use std::collections::HashMap;
+use ::locale::Translation;
 
 use std::iter::FromIterator;
 
@@ -23,6 +24,8 @@ const KEYBOARDS: &[(*const str, *const str)] = &[
     ("no", include_str!("../data/keyboards/no.yaml")),
     ("number", include_str!("../data/keyboards/number.yaml")),
     ("se", include_str!("../data/keyboards/se.yaml")),
+    // Overlays
+    ("emoji", include_str!("../data/keyboards/emoji.yaml")),
 ];
 
 pub fn get_keyboard(needle: &str) -> Option<&'static str> {
@@ -39,6 +42,18 @@ pub fn get_keyboard(needle: &str) -> Option<&'static str> {
         })
 }
 
+const OVERLAY_NAMES: &[*const str] = &[
+    "emoji"
+];
+
+pub fn get_overlays() -> Vec<&'static str> {
+    OVERLAY_NAMES.iter()
+        .map(|name| {
+            let name: *const str = *name;
+            unsafe { &*name }
+        }).collect()
+}
+
 /// Translations of the layout identifier strings
 const LAYOUT_NAMES: &[(*const str, *const str)] = &[
     ("de-DE", include_str!("../data/langs/de-DE.txt")),
@@ -49,7 +64,7 @@ const LAYOUT_NAMES: &[(*const str, *const str)] = &[
 ];
 
 pub fn get_layout_names(lang: &str)
-    -> Option<HashMap<&'static str, &'static str>>
+    -> Option<HashMap<&'static str, Translation<'static>>>
 {
     let translations = LAYOUT_NAMES.iter()
         .find(|(name, _data)| {
@@ -63,7 +78,7 @@ pub fn get_layout_names(lang: &str)
     translations.map(make_mapping)
 }
 
-fn parse_line(line: &str) -> Option<(&str, &str)> {
+fn parse_line(line: &str) -> Option<(&str, Translation)> {
     let comment = line.trim().starts_with("#");
     if comment {
         None
@@ -71,11 +86,11 @@ fn parse_line(line: &str) -> Option<(&str, &str)> {
         let mut iter = line.splitn(2, " ");
         let name = iter.next().unwrap();
         // will skip empty and unfinished lines
-        iter.next().map(|tr| (name, tr.trim()))
+        iter.next().map(|tr| (name, Translation(tr.trim())))
     }
 }
 
-fn make_mapping(data: &str) -> HashMap<&str, &str> {
+fn make_mapping(data: &str) -> HashMap<&str, Translation> {
     HashMap::from_iter(
         data.split("\n")
             .filter_map(parse_line)
@@ -87,9 +102,16 @@ mod test {
     use super::*;
 
     #[test]
+    fn check_overlays_present() {
+        for name in get_overlays() {
+            assert!(get_keyboard(name).is_some());
+        }
+    }
+
+    #[test]
     fn mapping_line() {
         assert_eq!(
-            Some(("name", "translation")),
+            Some(("name", Translation("translation"))),
             parse_line("name translation")
         );
     }
