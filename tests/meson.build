@@ -54,7 +54,7 @@ foreach layout : [
     'es',
     'fi',
     'it',
-    'jp+kana',
+    'jp+kana','jp+kana_wide',
     'no',
     'number',
     'se',
