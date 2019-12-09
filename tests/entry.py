@@ -6,6 +6,12 @@ gi.require_version('Gtk', '3.0')
 
 from gi.repository import Gtk
 
+try:
+    terminal = [("Terminal", Gtk.InputPurpose.TERMINAL)]
+except AttributeError:
+    print("Terminal purpose not available on this GTK version", file=sys.stderr)
+    terminal = []
+
 class App(Gtk.Application):
 
     purposes = [
@@ -18,8 +24,8 @@ class App(Gtk.Application):
         ("E-mail", Gtk.InputPurpose.EMAIL),
         ("Name", Gtk.InputPurpose.NAME),
         ("Password", Gtk.InputPurpose.PASSWORD),
-        ("PIN", Gtk.InputPurpose.PIN)
-    ]
+        ("PIN", Gtk.InputPurpose.PIN),
+    ] + terminal
 
     def do_activate(self):
         w = Gtk.ApplicationWindow(application=self)
