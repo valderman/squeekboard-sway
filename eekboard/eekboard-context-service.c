@@ -236,6 +236,9 @@ eekboard_context_service_update_layout(EekboardContextService *context, enum squ
     case ZWP_TEXT_INPUT_V3_CONTENT_PURPOSE_PHONE:
         keyboard_layout = g_strdup("number");
         break;
+    case ZWP_TEXT_INPUT_V3_CONTENT_PURPOSE_TERMINAL:
+        keyboard_layout = g_strdup("terminal");
+        break;
     default:
         ;
     }

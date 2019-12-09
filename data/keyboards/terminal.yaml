@@ -1,0 +1,34 @@
+---
+bounds: { x: 0, y: 0.33, width: 360, height: 210 }
+
+outlines:
+    default:
+        bounds: { x: 0, y: 0, width: 37.46341, height: 52 }
+    altline:
+        bounds: { x: 0, y: 0, width: 48.39024, height: 52 }
+
+views:
+    base:
+        - "PgUp ↑ PgDn"
+        - "← ↓ →"
+
+buttons:
+    PgUp:
+        outline: "altline"
+        keysym: "Page_Up"
+    PgDn:
+        outline: "altline"
+        keysym: "Page_Down"
+    "↑":
+        outline: "altline"
+        keysym: "Up"
+    "↓":
+        outline: "altline"
+        keysym: "Down"
+    "←":
+        outline: "altline"
+        keysym: "Left"
+    "→":
+        outline: "altline"
+        keysym: "Right"
+
