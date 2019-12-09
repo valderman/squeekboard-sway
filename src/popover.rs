@@ -4,7 +4,8 @@ use gio;
 use gtk;
 use std::ffi::CString;
 use ::layout::c::{ Bounds, EekGtkKeyboard };
-use ::locale::{ Translation, compare_current_locale };
+use ::locale;
+use ::locale::{ OwnedTranslation, Translation, compare_current_locale };
 use ::locale_config::system_locale;
 use ::manager;
 use ::resources;
@@ -94,7 +95,7 @@ mod variants {
     }
 }
 
-fn make_menu_builder(inputs: Vec<(&str, Translation)>) -> gtk::Builder {
+fn make_menu_builder(inputs: Vec<(&str, OwnedTranslation)>) -> gtk::Builder {
     let mut xml: Vec<u8> = Vec::new();
     writeln!(
         xml,
@@ -227,37 +228,73 @@ pub fn show(
         )
         .and_then(|lang| resources::get_layout_names(lang.as_str()));
 
+    // The actual translation procedure attempts to take all xkb names
+    // from gnome-desktop's xkb info.
+    // Remaining names are translated using the internal database,
+    // which is only available if the locale is set.
+    // The result is a rather ugly and verbose translation procedure...
+    enum Status {
+        /// xkb names should get all translated here
+        Translated(OwnedTranslation),
+        /// Builtin names need builtin translations
+        Remaining(String),
+    }
+    
+    let xkb_translator = locale::XkbInfo::new();
+
     let translated_names = all_layouts.iter()
-        .map(LayoutId::get_name);
-    let translated_names: Vec<Translation> = match translations {
+        .map(|id| match id {
+            LayoutId::System { name, kind: _ } => {
+                xkb_translator.get_display_name(name)
+                    .map(|s| Status::Translated(OwnedTranslation(s)))
+                    .unwrap_or_else(|e| {
+                        eprintln!(
+                            "No display name for xkb layout {}: {:?}",
+                            name,
+                            e,
+                        );
+                        Status::Remaining(name.clone())
+                    })
+            },
+            LayoutId::Local(name) => Status::Remaining(name.clone()),
+        });
+
+    let translated_names: Vec<OwnedTranslation> = match translations {
         Some(translations) => {
             translated_names
-                .map(move |name| {
-                    translations.get(name)
-                        .map(|translation| translation.clone())
-                        .unwrap_or(Translation(name))
+                .map(|status| match status {
+                    Status::Remaining(name) => {
+                        translations.get(name.as_str())
+                            .unwrap_or(&Translation(name.as_str()))
+                            .to_owned()
+                    },
+                    Status::Translated(t) => t,
                 })
                 .collect()
         },
         None => {
-            translated_names.map(|name| Translation(name))
+            translated_names
+                .map(|status| match status {
+                    Status::Remaining(name) => OwnedTranslation(name),
+                    Status::Translated(t) => t,
+                })
                 .collect()
         },
     };
 
     // sorted collection of human and machine names
-    let mut human_names: Vec<(Translation, LayoutId)> = translated_names
+    let mut human_names: Vec<(OwnedTranslation, LayoutId)> = translated_names
         .into_iter()
         .zip(all_layouts.clone().into_iter())
         .collect();
 
     human_names.sort_unstable_by(|(tr_a, _), (tr_b, _)| {
-        compare_current_locale(tr_a.0, tr_b.0)
+        compare_current_locale(&tr_a.0, &tr_b.0)
     });
 
     // GVariant doesn't natively support `enum`s,
     // so the `choices` vector will serve as a lookup table.
-    let choices_with_translations: Vec<(String, (Translation, LayoutId))>
+    let choices_with_translations: Vec<(String, (OwnedTranslation, LayoutId))>
         = human_names.into_iter()
             .enumerate()
                 .map(|(i, human_entry)| {(
@@ -268,7 +305,7 @@ pub fn show(
 
     let builder = make_menu_builder(
         choices_with_translations.iter()
-            .map(|(id, (translation, _))| (id.as_str(), translation.clone()))
+            .map(|(id, (translation, _))| (id.as_str(), (*translation).clone()))
             .collect()
     );
 
