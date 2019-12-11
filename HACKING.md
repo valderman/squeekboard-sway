@@ -20,7 +20,7 @@ sudo apt-get -y build-dep .
 ```
 
 For an explicit list of dependencies check the `Build-Depends` entry in the
-[debian/control][] file.
+[`debian/control`](./debian/control) file.
 
 Testing
 -------
