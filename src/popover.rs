@@ -18,6 +18,7 @@ use glib::variant::ToVariant;
 use gtk::PopoverExt;
 use gtk::WidgetExt;
 use std::io::Write;
+use ::logging::Warn;
 
 mod variants {
     use glib;
@@ -195,6 +196,82 @@ fn get_current_layout(
     }
 }
 
+/// Translates all provided layout names according to current locale,
+/// for the purpose of display (i.e. errors will be caught and reported)
+fn translate_layout_names(layouts: &Vec<LayoutId>) -> Vec<OwnedTranslation> {
+    // This procedure is rather ugly...
+    // Xkb lookup *must not* be applied to non-system layouts,
+    // so both translators can't be merged into one lookup table,
+    // therefore must be done in two steps.
+    // `XkbInfo` being temporary also means
+    // that its return values must be copied,
+    // forcing the use of `OwnedTranslation`.
+    enum Status {
+        /// xkb names should get all translated here
+        Translated(OwnedTranslation),
+        /// Builtin names need builtin translations
+        Remaining(String),
+    }
+
+    // Attempt to take all xkb names from gnome-desktop's xkb info.
+    let xkb_translator = locale::XkbInfo::new();
+
+    let translated_names = layouts.iter()
+        .map(|id| match id {
+            LayoutId::System { name, kind: _ } => {
+                xkb_translator.get_display_name(name)
+                    .map(|s| Status::Translated(OwnedTranslation(s)))
+                    .unwrap_or_else(|e| {
+                        eprintln!(
+                            "No display name for xkb layout {}: {:?}",
+                            name,
+                            e,
+                        );
+                        Status::Remaining(name.clone())
+                    })
+            },
+            LayoutId::Local(name) => Status::Remaining(name.clone()),
+        });
+
+    // Non-xkb layouts and weird xkb layouts
+    // still need to be looked up in the internal database.
+    let builtin_translations = system_locale()
+        .map(|locale|
+            locale.tags_for("messages")
+                .next().unwrap() // guaranteed to exist
+                .as_ref()
+                .to_owned()
+        )
+        .or_warn("No locale detected")
+        .and_then(|lang| {
+            resources::get_layout_names(lang.as_str())
+                .or_warn(&format!("No translations for locale {}", lang))
+        });
+
+    match builtin_translations {
+        Some(translations) => {
+            translated_names
+                .map(|status| match status {
+                    Status::Remaining(name) => {
+                        translations.get(name.as_str())
+                            .unwrap_or(&Translation(name.as_str()))
+                            .to_owned()
+                    },
+                    Status::Translated(t) => t,
+                })
+                .collect()
+        },
+        None => {
+            translated_names
+                .map(|status| match status {
+                    Status::Remaining(name) => OwnedTranslation(name),
+                    Status::Translated(t) => t,
+                })
+                .collect()
+        },
+    }
+}
+
 pub fn show(
     window: EekGtkKeyboard,
     position: Bounds,
@@ -219,69 +296,8 @@ pub fn show(
         .chain(overlay_layouts)
         .collect();
 
-    let translations = system_locale()
-        .map(|locale|
-            locale.tags_for("messages")
-                .next().unwrap() // guaranteed to exist
-                .as_ref()
-                .to_owned()
-        )
-        .and_then(|lang| resources::get_layout_names(lang.as_str()));
-
-    // The actual translation procedure attempts to take all xkb names
-    // from gnome-desktop's xkb info.
-    // Remaining names are translated using the internal database,
-    // which is only available if the locale is set.
-    // The result is a rather ugly and verbose translation procedure...
-    enum Status {
-        /// xkb names should get all translated here
-        Translated(OwnedTranslation),
-        /// Builtin names need builtin translations
-        Remaining(String),
-    }
+    let translated_names = translate_layout_names(&all_layouts);
     
-    let xkb_translator = locale::XkbInfo::new();
-
-    let translated_names = all_layouts.iter()
-        .map(|id| match id {
-            LayoutId::System { name, kind: _ } => {
-                xkb_translator.get_display_name(name)
-                    .map(|s| Status::Translated(OwnedTranslation(s)))
-                    .unwrap_or_else(|e| {
-                        eprintln!(
-                            "No display name for xkb layout {}: {:?}",
-                            name,
-                            e,
-                        );
-                        Status::Remaining(name.clone())
-                    })
-            },
-            LayoutId::Local(name) => Status::Remaining(name.clone()),
-        });
-
-    let translated_names: Vec<OwnedTranslation> = match translations {
-        Some(translations) => {
-            translated_names
-                .map(|status| match status {
-                    Status::Remaining(name) => {
-                        translations.get(name.as_str())
-                            .unwrap_or(&Translation(name.as_str()))
-                            .to_owned()
-                    },
-                    Status::Translated(t) => t,
-                })
-                .collect()
-        },
-        None => {
-            translated_names
-                .map(|status| match status {
-                    Status::Remaining(name) => OwnedTranslation(name),
-                    Status::Translated(t) => t,
-                })
-                .collect()
-        },
-    };
-
     // sorted collection of human and machine names
     let mut human_names: Vec<(OwnedTranslation, LayoutId)> = translated_names
         .into_iter()

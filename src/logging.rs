@@ -70,16 +70,26 @@ pub enum Level {
 /// Approach 2.
 pub trait Warn {
     type Value;
-    fn ok_warn(self, msg: &str) -> Option<Self::Value>;
+    fn or_warn(self, msg: &str) -> Option<Self::Value>;
 }
 
 impl<T, E: Error> Warn for Result<T, E> {
     type Value = T;
-    fn ok_warn(self, msg: &str) -> Option<T> {
+    fn or_warn(self, msg: &str) -> Option<T> {
         self.map_err(|e| {
             eprintln!("{}: {}", msg, e);
             e
         }).ok()
+    }
+}
+
+impl<T> Warn for Option<T> {
+    type Value = T;
+    fn or_warn(self, msg: &str) -> Option<T> {
+        self.or_else(|| {
+            eprintln!("{}", msg);
+            None
+        })
     }
 }
 

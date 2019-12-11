@@ -16,7 +16,7 @@
  * License along with this library. If not, see <http://www.gnu.org/licenses/>.Free
  */
 
-/*! CSS data loading */
+/*! CSS data loading. */
 
 use std::env;
 
@@ -83,6 +83,7 @@ fn get_theme_name(settings: &gtk::Settings) -> GtkTheme {
         .map_err(|e| {
             match &e {
                 env::VarError::NotPresent => {},
+                // maybe TODO: forward this warning?
                 e => eprintln!("GTK_THEME variable invalid: {}", e),
             };
             e
@@ -93,13 +94,15 @@ fn get_theme_name(settings: &gtk::Settings) -> GtkTheme {
         None => GtkTheme {
             name: {
                 settings.get_property("gtk-theme-name")
-                    .ok_warn("No theme name")
+                    // maybe TODO: is this worth a warning?
+                    .or_warn("No theme name")
                     .and_then(|value| value.get::<String>())
                     .unwrap_or(DEFAULT_THEME_NAME.into())
             },
             variant: {
                 settings.get_property("gtk-application-prefer-dark-theme")
-                    .ok_warn("No settings key")
+                    // maybe TODO: is this worth a warning?
+                    .or_warn("No settings key")
                     .and_then(|value| value.get::<bool>())
                     .and_then(|dark_preferred| match dark_preferred {
                         true => Some("dark".into()),

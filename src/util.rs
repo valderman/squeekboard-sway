@@ -190,6 +190,11 @@ impl<T> Borrow<Rc<T>> for Pointer<T> {
     }
 }
 
+pub trait WarningHandler {
+    /// Handle a warning
+    fn handle(&mut self, warning: &str);
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

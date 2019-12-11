@@ -1,4 +1,10 @@
-/*! Locale-specific functions. */
+/*! Locale-specific functions. 
+ * 
+ * This file is intended as a library:
+ * it must pass errors upwards
+ * and panicking is allowed only when
+ * this code encounters an internal inconsistency.
+ */
 
 use std::cmp;
 use std::ffi::{ CStr, CString };
