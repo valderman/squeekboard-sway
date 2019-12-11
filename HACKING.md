@@ -57,6 +57,24 @@ $ gsettings set org.gnome.desktop.input-sources sources "[('xkb', 'us'), ('xkb',
 Coding
 ------
 
+### Project structure
+
+Rust modules should be split into 2 categories: libraries, and user interface. They differ in the way they do error handling.
+
+Libraries should:
+
+- not panic due to external surprises, only due to internal inconsistencies
+- pass errors and surprises they can't handle to the callers instead
+- not silence errors and surprises
+
+User interface modules should:
+
+- try to provide safe values whenever they encounter an error
+- do the logging
+- give libraries the ability to report errors and surprises (e.g. via giving them loggers)
+
+### Style
+
 Code submitted should roughly match the style of surrounding code. Things that will *not* be accepted are ones that often lead to errors:
 
 - skipping brackets `{}` after every `if()`, `else`, and similar
