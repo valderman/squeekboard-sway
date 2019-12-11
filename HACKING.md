@@ -117,6 +117,8 @@ sh /source_path/cargo.sh test
 
 ### Cargo dependencies
 
+All Cargo dependencies must be selected in the version available in PureOS, and added to the file `debian/control`. Please check with https://software.pureos.net/search_pkg?term=librust .
+
 Dependencies must be specified in `Cargo.toml` with 2 numbers: "major.minor". Since bugfix version number is meant to not affect the interface, this allows for safe updates.
 
 `Cargo.lock` is used for remembering the revisions of all Rust dependencies. It should be updated often, preferably with each bugfix revision, and in a commit on its own:
