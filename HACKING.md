@@ -3,6 +3,11 @@ Hacking
 
 This document describes the standards for modifying and maintaining the *squeekboard* project.
 
+Sending patches
+---------------
+
+By submitting a change to this project, you agree to license it under the [GPL license version 3](./COPYING), or any later version. You also certify that your contribution fulfills the [Developer's Certificate of Origin 1.1](./dco.txt).
+
 Development environment
 -----------------------
 
