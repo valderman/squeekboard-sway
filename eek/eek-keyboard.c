@@ -34,8 +34,6 @@
 #include "eekboard/eekboard-context-service.h"
 #include "eekboard/key-emitter.h"
 #include "keymap.h"
-#include "src/keyboard.h"
-
 #include "eek-keyboard.h"
 
 void level_keyboard_deinit(LevelKeyboard *self) {
@@ -58,9 +56,4 @@ LevelKeyboard *level_keyboard_new(EekboardContextService *manager, struct squeek
     level_keyboard_init(keyboard, layout);
     keyboard->manager = manager;
     return keyboard;
-}
-
-struct squeek_view *level_keyboard_current(LevelKeyboard *keyboard)
-{
-    return squeek_layout_get_current_view(keyboard->layout);
 }

@@ -24,7 +24,6 @@
 #include "config.h"
 
 #include "eek-keyboard.h"
-#include "src/keyboard.h"
 #include "src/layout.h"
 
 #include "eek-xml-layout.h"
