@@ -48,17 +48,14 @@ mod c {
         let cr = unsafe { cairo::Context::from_raw_none(cr) };
 
         let view = layout.get_current_view();
-        let view_position = view.bounds.get_position();
-        for row in &view.rows {
-            for button in &row.buttons {
+        for (row_offset, row) in &view.get_rows() {
+            for (x_offset, button) in &row.buttons {
                 let state = RefCell::borrow(&button.state).clone();
                 if state.pressed == keyboard::PressType::Pressed || state.locked {
-                    let position = &view_position
-                        + row.bounds.clone().unwrap().get_position()
-                        + button.bounds.get_position();
                     render_button_at_position(
                         renderer, &cr,
-                        position, button.as_ref(),
+                        row_offset + Point { x: *x_offset, y: 0.0 },
+                        button.as_ref(),
                         state.pressed, state.locked,
                     );
                 }
@@ -76,15 +73,12 @@ mod c {
         let layout = unsafe { &mut *layout };
         let cr = unsafe { cairo::Context::from_raw_none(cr) };
         let view = layout.get_current_view();
-        let view_position = view.bounds.get_position();
-        for row in &view.rows {
-            for button in &row.buttons {
-                let position = &view_position
-                    + row.bounds.clone().unwrap().get_position()
-                    + button.bounds.get_position();
+        for (row_offset, row) in &view.get_rows() {
+            for (x_offset, button) in &row.buttons {
                 render_button_at_position(
                     renderer, &cr,
-                    position, button.as_ref(),
+                    row_offset + Point { x: *x_offset, y: 0.0 },
+                    button.as_ref(),
                     keyboard::PressType::Released, false,
                 );
             }
@@ -105,7 +99,7 @@ pub fn render_button_at_position(
     cr.translate(position.x, position.y);
     cr.rectangle(
         0.0, 0.0,
-        button.bounds.width, button.bounds.height
+        button.size.width, button.size.height
     );
     cr.clip();
     unsafe {
