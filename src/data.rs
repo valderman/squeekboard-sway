@@ -850,4 +850,21 @@ mod tests {
             },
         );
     }
+
+    #[test]
+    fn test_layout_margins() {
+        let out = Layout::from_file(PathBuf::from("tests/layout_margins.yaml"))
+            .unwrap()
+            .build(PanicWarn).0
+            .unwrap();
+        assert_eq!(
+            out.margins,
+            layout::Margins {
+                top: 1.0,
+                bottom: 3.0,
+                left: 2.0,
+                right: 2.0,
+            }
+        );
+    }
 }
