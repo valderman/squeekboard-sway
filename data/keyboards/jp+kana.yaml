@@ -1,18 +1,11 @@
 # Maintained by: Mark Müller <markmueller86@gmail.com>
 ---
-bounds: { x: 0, y: 1, width: 360, height: 208 }
-
 outlines:
-    default:
-        bounds: { x: 0, y: 0, width: 62, height: 52 }
-    default-wide:
-        bounds: { x: 0, y: 0, width: 62, height: 52 }
-    altline:
-        bounds: { x: 0, y: 0, width: 62, height: 52 }
-    wide:
-        bounds: { x: 0, y: 0, width: 62, height: 52 }
-    special:
-        bounds: { x: 0, y: 0, width: 62, height: 52 }
+    default: { width: 62, height: 52 }
+    default-wide: { width: 62, height: 52 }
+    altline: { width: 62, height: 52 }
+    wide: { width: 62, height: 52 }
+    special: { width: 62, height: 52 }
 
 views:
     base: # hiragana

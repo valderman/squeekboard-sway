@@ -1,17 +1,10 @@
 ---
-bounds: { x: 0, y: 0.33, width: 360, height: 210 }
-
 outlines:
-    default:
-        bounds: { x: 0, y: 0, width: 32, height: 52 }
-    altline:
-        bounds: { x: 0, y: 0, width: 48.39024, height: 52 }
-    wide:
-        bounds: { x: 0, y: 0, width: 62, height: 52 }
-    outline7:
-        bounds: { x: 0, y: 0, width: 88.97561, height: 52 }
-    spaceline:
-        bounds: { x: 0, y: 0, width: 150.5853, height: 52 }
+    default: { width: 32, height: 52 }
+    altline: { width: 48.39024, height: 52 }
+    wide: { width: 62, height: 52 }
+    outline7: { width: 88.97561, height: 52 }
+    spaceline: { width: 150.5853, height: 52 }
 
 views:
     base:
