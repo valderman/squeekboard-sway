@@ -40,7 +40,7 @@ Most common testing is done in CI. Occasionally, and for each release, do perfor
 Testing with an application:
 
 ```
-python3 tests/entry.py
+python3 tools/entry.py
 ```
 
 Testing visibility:
