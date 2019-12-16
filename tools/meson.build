@@ -1,3 +1,11 @@
+entry = configure_file(
+    copy: true,
+    input: 'entry.py',
+    output: 'squeekboard-entry',
+    install: true,
+    install_dir: bindir,
+)
+
 test_layout = custom_target('squeekboard-test-layout',
     build_by_default: true,
     # meson doesn't track all inputs, cargo does
