@@ -40,6 +40,7 @@ else
 endif
 
 prefix = get_option('prefix')
+bindir = join_paths(prefix, get_option('bindir'))
 datadir = join_paths(prefix, get_option('datadir'))
 pkgdatadir = join_paths(datadir, meson.project_name())
 if get_option('depdatadir') == ''
@@ -67,4 +68,5 @@ subdir('data')
 subdir('protocols')
 subdir('eek')
 subdir('src')
+subdir('tools')
 subdir('tests')
