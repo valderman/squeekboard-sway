@@ -65,6 +65,5 @@ cargo_build = find_program('cargo_build.sh')
 
 subdir('data')
 subdir('protocols')
-subdir('eek')
 subdir('src')
 subdir('tests')
