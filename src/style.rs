@@ -21,7 +21,7 @@
 use std::env;
 
 use glib::object::ObjectExt;
-use util::Warn;
+use logging::Warn;
 
 /// Gathers stuff defined in C or called by C
 pub mod c {

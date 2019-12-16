@@ -3,7 +3,7 @@
 use ::data::Layout;
 use xkbcommon::xkb;
 
-use ::util::WarningHandler;
+use ::logging::WarningHandler;
 
 
 pub struct CountAndPrint(u32);
