@@ -34,6 +34,38 @@
 
 use std::error::Error;
 
+/// Levels are not in order.
+pub enum Level {
+    // Levels for reporting violated constraints
+    /// The program violated a self-imposed constraint,
+    /// ended up in an inconsistent state, and cannot recover.
+    /// Handlers must not actually panic. (should they?)
+    Panic,
+    /// The program violated a self-imposed constraint,
+    /// ended up in an inconsistent state, but some state can be recovered.
+    Bug,
+    /// Invalid data given by an external source,
+    /// some state of the program must be dropped.
+    Error,
+    // Still violated constraints, but harmless
+    /// Invalid data given by an external source, parts of data are ignored.
+    /// No previous program state needs to be dropped.
+    Warning,
+    /// External source not in an expected state,
+    /// but not violating any protocols (including no relevant protocol).
+    Surprise,
+    // Informational
+    /// A change in internal state that results in a change of behaviour
+    /// that a user can observe, and a tinkerer might find useful.
+    /// E.g. selection of external sources, like loading user's UI files,
+    /// language switch, overrides.
+    Info,
+    /// Information useful for application developer only.
+    /// Should be limited to information gotten from external sources,
+    /// and more tricky parts of internal state.
+    Debug,
+}
+
 /// Sugar for logging errors in results.
 /// Approach 2.
 pub trait Warn {
