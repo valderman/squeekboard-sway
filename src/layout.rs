@@ -698,10 +698,10 @@ impl Layout {
         // if used like key.borrow() :(
         let action = RefCell::borrow(key).action.clone();
         let view_name = match action {
-            Action::SetLevel(name) => {
+            Action::SetView(name) => {
                 Some(name.clone())
             },
-            Action::LockLevel { lock, unlock } => {
+            Action::LockView { lock, unlock } => {
                 let locked = {
                     let mut key = key.borrow_mut();
                     key.locked ^= true;
@@ -900,7 +900,7 @@ mod test {
             pressed: PressType::Released,
             locked: false,
             keycodes: Vec::new(),
-            action: Action::SetLevel("default".into()),
+            action: Action::SetView("default".into()),
         }))
     }
 
