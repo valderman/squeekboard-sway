@@ -29,6 +29,27 @@ pub struct KeyState {
     pub action: Action,
 }
 
+impl KeyState {
+    #[must_use]
+    pub fn into_activated(self) -> KeyState {
+        match self.action {
+            Action::LockView { lock: _, unlock: _ } => KeyState {
+                locked: self.locked ^ true,
+                ..self
+            },
+            _ => self,
+        }
+    }
+
+    #[must_use]
+    pub fn into_released(self) -> KeyState {
+        KeyState {
+            pressed: PressType::Released,
+            ..self
+        }
+    }
+}
+
 /// Sorts an iterator by converting it to a Vector and back
 fn sorted<'a, I: Iterator<Item=&'a str>>(
     iter: I
