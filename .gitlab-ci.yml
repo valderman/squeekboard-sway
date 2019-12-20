@@ -28,7 +28,22 @@ build_meson:
     - ninja -C _build install
 
 build_deb:
-    <<: *tags
+    tags:
+        - librem5
+    stage: build
+    artifacts:
+      paths:
+        - "*.deb"
+    script:
+        - apt-get -y install devscripts
+        - debuild -i -us -uc -b
+        - cp ../*.deb .
+
+build_deb_aarch64:
+    image: multiarch/debian-debootstrap:arm64-buster
+    tags:
+        - ARM64
+    allow_failure: true
     stage: build
     artifacts:
       paths:
