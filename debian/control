@@ -45,9 +45,12 @@ Description: On-screen keyboard for Wayland
 Package: squeekboard-devel
 Architecture: linux-any
 Depends:
+ python3,
+ python3-gi,
  ${shlibs:Depends}
  ${misc:Depends}
 Description: Resources for making Squeekboard layouts
- Tools for creating Squeekboard layouts:
+ Tools for creating and testing Squeekboard layouts:
  .
+  * squeekboard-entry
   * squeekboard-test-layout
