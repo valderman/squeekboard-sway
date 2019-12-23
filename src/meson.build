@@ -25,7 +25,6 @@ sources = [
   '../eek/eek-xml-layout.c',
   '../eek/layersurface.c',
   dbus_src,
-  enums,
   '../eekboard/key-emitter.c',
   '../eekboard/eekboard-context-service.c',
   '../eekboard/eekboard-service.c',

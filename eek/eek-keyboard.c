@@ -30,7 +30,6 @@
 #include "config.h"
 #include <glib/gprintf.h>
 
-#include "eek-enumtypes.h"
 #include "eekboard/eekboard-context-service.h"
 #include "eekboard/key-emitter.h"
 #include "keymap.h"
