@@ -1,3 +1,53 @@
+squeekboard (1.5.0) amber-phone; urgency=medium
+
+  [ Dorota Czaplejewicz ]
+  * keycodes: Sort to eliminate runtime indeterminism
+  * switcher: Switch layout on menu item click
+  * Drop squeek_key
+  * renderer: Remove some unneeded vars
+  * renderer: Simplified outline rendering
+  * renderer: Drop row from button rendering
+  * renderer: Drop unused params
+  * renderer: Simplify surface rendering
+  * rendering: Simplify Cairo context usage, remove unneeded calls.
+  * rendering: Remove unneeded redraw after button release
+  * renderer: Remove unused locked key render function
+  * renderer: Simply cut off when painting outside bounds
+  * renderer: Render whole keyboard the same way as pressed buttons
+
+  [ Mark Müller ]
+  * layout: add German wide layout
+
+  [ Dorota Czaplejewicz ]
+  * renderer: Remove unused functions
+  * cleanup: Remove references to squeek_view
+  * cleanup: Unbox View and Row
+  * cleanup: Remove unused single frame draw
+  * positioning: Calculate sizes instead of storing, move position out of widgets
+  * positioning: Clean up unused code
+  * Fix old Rust woes
+
+  [ Mark Müller ]
+  * layout: add Japanese Kana wide layout
+
+  [ Dorota Czaplejewicz ]
+  * Entry test: Add Terminal input purpose
+  * readme: Add note about Cargo dependencies
+  * Create a library/UI module separation
+  * hacking: Add DCO and licensing requirement
+  * Fix internal .md link
+
+  [ Mark Müller ]
+  * squeekboard-test-layout: add argument parsing and some more output
+
+  [ Dorota Czaplejewicz ]
+  * Use clap in the lockfile
+  * parsing: Remove bounds which weren't used anyway
+  * layout: Respect margins
+  * CI: Build arm64 .deb
+
+ -- Dorota Czaplejewicz <dorota.czaplejewicz@puri.sm>  Mon, 23 Dec 2019 11:58:57 +0000
+
 squeekboard (1.4.0) amber-phone; urgency=medium
 
   * "text" property in layouts
