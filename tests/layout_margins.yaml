@@ -1,0 +1,9 @@
+---
+# Margins present
+margins: { top: 1, side: 2, bottom: 3 }
+views:
+    base:
+        - "test"
+outlines:
+    default: { width: 1, height: 1 }
+

@@ -99,7 +99,7 @@ pub mod c {
         }
     }
 
-    /// Scale + translate
+    /// Translate and then scale
     #[repr(C)]
     pub struct Transformation {
         pub origin_x: f64,
@@ -108,6 +108,14 @@ pub mod c {
     }
 
     impl Transformation {
+        /// Applies the new transformation after this one
+        pub fn chain(self, next: Transformation) -> Transformation {
+            Transformation {
+                origin_x: self.origin_x + self.scale * next.origin_x,
+                origin_y: self.origin_y + self.scale * next.origin_y,
+                scale: self.scale * next.scale,
+            }
+        }
         fn forward(&self, p: Point) -> Point {
             Point {
                 x: (p.x - self.origin_x) / self.scale,
@@ -195,7 +203,8 @@ pub mod c {
         println!("{:?}", button);
     }
     
-    /// Positions the layout within the available space
+    /// Positions the layout contents within the available space.
+    /// The origin of the transformation is the point inside the margins.
     #[no_mangle]
     pub extern "C"
     fn squeek_layout_calculate_transformation(
@@ -204,15 +213,10 @@ pub mod c {
         allocation_height: f64,
     ) -> Transformation {
         let layout = unsafe { &*layout };
-        let size = layout.calculate_size();
-        let h_scale = allocation_width / size.width;
-        let v_scale = allocation_height / size.height;
-        let scale = if h_scale < v_scale { h_scale } else { v_scale };
-        Transformation {
-            origin_x: (allocation_width - (scale * size.width)) / 2.0,
-            origin_y: (allocation_height - (scale * size.height)) / 2.0,
-            scale: scale,
-        }
+        layout.calculate_transformation(Size {
+            width: allocation_width,
+            height: allocation_height,
+        })
     }
     
     #[no_mangle]
@@ -427,7 +431,7 @@ pub struct ButtonPlace<'a> {
     offset: c::Point,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Size {
     pub width: f64,
     pub height: f64,
@@ -560,6 +564,7 @@ pub enum ArrangementKind {
     Wide = 1,
 }
 
+#[derive(Debug, PartialEq)]
 pub struct Margins {
     pub top: f64,
     pub bottom: f64,
@@ -713,7 +718,8 @@ impl Layout {
         };
     }
 
-    fn calculate_size(&self) -> Size {
+    /// Calculates size without margins
+    fn calculate_inner_size(&self) -> Size {
         Size {
             height: find_max_double(
                 self.views.iter(),
@@ -724,6 +730,39 @@ impl Layout {
                 |(_name, view)| view.get_width(),
             ),
         }
+    }
+
+    /// Size including margins
+    fn calculate_size(&self) -> Size {
+        let inner_size = self.calculate_inner_size();
+        Size {
+            width: self.margins.left + inner_size.width + self.margins.right,
+            height: (
+                self.margins.top
+                + inner_size.height
+                + self.margins.bottom
+            ),
+        }
+    }
+    
+    pub fn calculate_transformation(
+        &self,
+        available: Size,
+    ) -> c::Transformation {
+        let size = self.calculate_size();
+        let h_scale = available.width / size.width;
+        let v_scale = available.height / size.height;
+        let scale = if h_scale < v_scale { h_scale } else { v_scale };
+        let outside_margins = c::Transformation {
+            origin_x: (available.width - (scale * size.width)) / 2.0,
+            origin_y: (available.height - (scale * size.height)) / 2.0,
+            scale: scale,
+        };
+        outside_margins.chain(c::Transformation {
+            origin_x: self.margins.left,
+            origin_y: self.margins.top,
+            scale: 1.0,
+        })
     }
 }
 
@@ -906,5 +945,59 @@ mod test {
             view.find_button_by_position(c::Point { x: 5.0, y: 5.0 })
                 .is_none()
         );
+    }
+
+    #[test]
+    fn check_bottom_margin() {
+        // just one button
+        let view = View::new(vec![
+            (
+                0.0,
+                Row {
+                    angle: 0,
+                    buttons: vec![(
+                        0.0,
+                        Box::new(Button {
+                            size: Size { width: 1.0, height: 1.0 },
+                            ..*make_button_with_state("foo".into(), make_state())
+                        }),
+                    )]
+                },
+            ),
+        ]);
+        let layout = Layout {
+            current_view: String::new(),
+            keymap_str: CString::new("").unwrap(),
+            kind: ArrangementKind::Base,
+            locked_keys: HashSet::new(),
+            pressed_keys: HashSet::new(),
+            // Lots of bottom margin
+            margins: Margins {
+                top: 0.0,
+                left: 0.0,
+                right: 0.0,
+                bottom: 1.0,
+            },
+            views: hashmap! {
+                String::new() => view,
+            },
+        };
+        assert_eq!(
+            layout.calculate_inner_size(),
+            Size { width: 1.0, height: 1.0 }
+        );
+        assert_eq!(
+            layout.calculate_size(),
+            Size { width: 1.0, height: 2.0 }
+        );
+        // Don't change those values randomly!
+        // They take advantage of incidental precise float representation
+        // to even be comparable.
+        let transformation = layout.calculate_transformation(
+            Size { width: 2.0, height: 2.0 }
+        );
+        assert_eq!(transformation.scale, 1.0);
+        assert_eq!(transformation.origin_x, 0.5);
+        assert_eq!(transformation.origin_y, 0.0);
     }
 }

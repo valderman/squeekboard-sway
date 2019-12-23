@@ -1,15 +1,9 @@
 ---
 # extra field
-bounds:
-    x: 0
-    y: 0
-    width: 0
-    height: 0
 views:
     base:
         - "test"
 outlines:
-    default:
-        bounds: { x: 0, y: 0, width: 0, height: 0 }
+    default: { width: 0, height: 0 }
 
 bad_field: false

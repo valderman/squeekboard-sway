@@ -1,5 +1,7 @@
 /**! The parsing of the data files for layouts */
 
+// TODO: find a nice way to make sure non-positive sizes don't break layouts
+
 use std::cell::RefCell;
 use std::collections::{ HashMap, HashSet };
 use std::env;
@@ -216,21 +218,20 @@ fn load_layout_data_with_fallback(
 #[derive(Debug, Deserialize, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct Layout {
-    /// FIXME: deprecate in favor of margins
-    bounds: Bounds,
+    #[serde(default)]
+    margins: Margins,
     views: HashMap<String, Vec<ButtonIds>>,
     #[serde(default)] 
     buttons: HashMap<String, ButtonMeta>,
     outlines: HashMap<String, Outline>
 }
 
-#[derive(Debug, Clone, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Deserialize, PartialEq, Default)]
 #[serde(deny_unknown_fields)]
-struct Bounds {
-    x: f64,
-    y: f64,
-    width: f64,
-    height: f64,
+struct Margins {
+    top: f64,
+    bottom: f64,
+    side: f64,
 }
 
 /// Buttons are embedded in a single string
@@ -271,8 +272,8 @@ enum Action {
 #[derive(Debug, Clone, Deserialize, PartialEq)]
 #[serde(deny_unknown_fields)]
 struct Outline {
-    /// FIXME: replace with Size
-    bounds: Bounds,
+    width: f64,
+    height: f64,
 }
 
 /// Errors encountered loading the layout into yaml
@@ -460,10 +461,10 @@ impl Layout {
                 },
                 // FIXME: use a dedicated field
                 margins: layout::Margins {
-                    top: self.bounds.x,
-                    left: self.bounds.y,
-                    bottom: 0.0,
-                    right: self.bounds.y,
+                    top: self.margins.top,
+                    left: self.margins.side,
+                    bottom: self.margins.bottom,
+                    right: self.margins.side,
                 },
             }),
             warning_handler,
@@ -649,9 +650,7 @@ fn create_button<H: WarningHandler>(
             warning_handler.handle(
                 &format!("No default outline defined! Using 1x1!")
             );
-            Outline {
-                bounds: Bounds { x: 0f64, y: 0f64, width: 1f64, height: 1f64 },
-            }
+            Outline { width: 1f64, height: 1f64 }
         });
 
     layout::Button {
@@ -659,8 +658,8 @@ fn create_button<H: WarningHandler>(
         outline_name: CString::new(outline_name).expect("Bad outline"),
         // TODO: do layout before creating buttons
         size: layout::Size {
-            width: outline.bounds.width,
-            height: outline.bounds.height,
+            width: outline.width,
+            height: outline.height,
         },
         label: label,
         state: state,
@@ -686,7 +685,7 @@ mod tests {
         assert_eq!(
             Layout::from_file(PathBuf::from("tests/layout.yaml")).unwrap(),
             Layout {
-                bounds: Bounds { x: 0f64, y: 0f64, width: 0f64, height: 0f64 },
+                margins: Margins { top: 0f64, bottom: 0f64, side: 0f64 },
                 views: hashmap!(
                     "base".into() => vec!("test".into()),
                 ),
@@ -701,11 +700,7 @@ mod tests {
                     }
                 },
                 outlines: hashmap!{
-                    "default".into() => Outline {
-                        bounds: Bounds {
-                            x: 0f64, y: 0f64, width: 0f64, height: 0f64
-                        }, 
-                    }
+                    "default".into() => Outline { width: 0f64, height: 0f64 }, 
                 },
             }
         );
@@ -853,6 +848,23 @@ mod tests {
                 text: Some(CString::new(".").unwrap()),
                 keys: vec!(::action::KeySym("U002E".into())),
             },
+        );
+    }
+
+    #[test]
+    fn test_layout_margins() {
+        let out = Layout::from_file(PathBuf::from("tests/layout_margins.yaml"))
+            .unwrap()
+            .build(PanicWarn).0
+            .unwrap();
+        assert_eq!(
+            out.margins,
+            layout::Margins {
+                top: 1.0,
+                bottom: 3.0,
+                left: 2.0,
+                right: 2.0,
+            }
         );
     }
 }
