@@ -1,13 +1,14 @@
 ---
 outlines:
-    default: { width: 37.46341, height: 52 }
-    altline: { width: 48.39024, height: 52 }
+    default: { width: 52, height: 52 }
+    altline: { width: 52, height: 52 }
 
 views:
     base:
-        - "☺"
-        - "☹"
-        - preferences
+        - "😀 😁 😅 😂 😊 😇 🙃"
+        - "😍 😘 😋 😜 😎 🥳 😔"
+        - "😢 😭 😡 😱 🤔 😬 🙄"
+        - "preferences 🤨 🤓 😴 🤢 🤮 😈"
 buttons:
     preferences:
         action: "show_prefs"
