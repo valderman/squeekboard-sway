@@ -266,7 +266,7 @@ settings_handle_layout_changed(GSettings *s,
     (void)keys;
     (void)n_keys;
     EekboardContextService *context = user_data;
-    free(context->priv->overlay);
+    g_free(context->priv->overlay);
     context->priv->overlay = NULL;
     update_layout_and_type(context);
     return TRUE;
@@ -471,7 +471,7 @@ eekboard_context_service_destroy (EekboardContextService *context)
     if (context->priv->enabled) {
         eekboard_context_service_disable (context);
     }
-    free(context->priv->overlay);
+    g_free(context->priv->overlay);
     g_signal_emit (context, signals[DESTROYED], 0);
 }
 
@@ -510,7 +510,7 @@ void eekboard_context_service_set_hint_purpose(EekboardContextService *context,
 
 void
 eekboard_context_service_set_overlay(EekboardContextService *context, const char* name) {
-    context->priv->overlay = strdup(name);
+    context->priv->overlay = g_strdup(name);
     update_layout_and_type(context);
 }
 
