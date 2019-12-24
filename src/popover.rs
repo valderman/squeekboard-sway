@@ -2,9 +2,11 @@
 
 use gio;
 use gtk;
-use ::layout::c::EekGtkKeyboard;
-use ::locale::compare_current_locale;
+use std::ffi::CString;
+use ::layout::c::{ Bounds, EekGtkKeyboard };
+use ::locale::{ Translation, compare_current_locale };
 use ::locale_config::system_locale;
+use ::manager;
 use ::resources;
 
 use gio::ActionMapExt;
@@ -92,7 +94,7 @@ mod variants {
     }
 }
 
-fn make_menu_builder(inputs: Vec<(&str, &str)>) -> gtk::Builder {
+fn make_menu_builder(inputs: Vec<(&str, Translation)>) -> gtk::Builder {
     let mut xml: Vec<u8> = Vec::new();
     writeln!(
         xml,
@@ -101,7 +103,7 @@ fn make_menu_builder(inputs: Vec<(&str, &str)>) -> gtk::Builder {
   <menu id=\"app-menu\">
     <section>"
     ).unwrap();
-    for (input_name, human_name) in inputs {
+    for (input_name, translation) in inputs {
         writeln!(
             xml,
             "
@@ -110,7 +112,7 @@ fn make_menu_builder(inputs: Vec<(&str, &str)>) -> gtk::Builder {
             <attribute name=\"action\">layout</attribute>
             <attribute name=\"target\">{}</attribute>
         </item>",
-            human_name,
+            translation.0,
             input_name,
         ).unwrap();
     }
@@ -141,16 +143,79 @@ fn set_layout(kind: String, name: String) {
     settings.apply();
 }
 
-pub fn show(window: EekGtkKeyboard, position: ::layout::c::Bounds) {
+/// A reference to what the user wants to see
+#[derive(PartialEq, Clone, Debug)]
+enum LayoutId {
+    /// Affects the layout in system settings
+    System {
+        kind: String,
+        name: String,
+    },
+    /// Only affects what this input method presents
+    Local(String),
+}
+
+impl LayoutId {
+    fn get_name(&self) -> &str {
+        match &self {
+            LayoutId::System { kind: _, name } => name.as_str(),
+            LayoutId::Local(name) => name.as_str(),
+        }
+    }
+}
+
+fn set_visible_layout(
+    manager: manager::c::Manager,
+    layout_id: LayoutId,
+) {
+    match layout_id {
+        LayoutId::System { kind, name } => set_layout(kind, name),
+        LayoutId::Local(name) => {
+            let name = CString::new(name.as_str()).unwrap();
+            let name_ptr = name.as_ptr();
+            unsafe {
+                manager::c::eekboard_context_service_set_overlay(
+                    manager,
+                    name_ptr,
+                )
+            }
+        },
+    }
+}
+
+/// Takes into account first any overlays, then system layouts from the list
+fn get_current_layout(
+    manager: manager::c::Manager,
+    system_layouts: &Vec<LayoutId>,
+) -> Option<LayoutId> {
+    match manager::get_overlay(manager) {
+        Some(name) => Some(LayoutId::Local(name)),
+        None => system_layouts.get(0).map(LayoutId::clone),
+    }
+}
+
+pub fn show(
+    window: EekGtkKeyboard,
+    position: Bounds,
+    manager: manager::c::Manager,
+) {
     unsafe { gtk::set_initialized() };
     let window = unsafe { gtk::Widget::from_glib_none(window.0) };
+
+    let overlay_layouts = resources::get_overlays().into_iter()
+        .map(|name| LayoutId::Local(name.to_string()));
 
     let settings = gio::Settings::new("org.gnome.desktop.input-sources");
     let inputs = settings.get_value("sources").unwrap();
     let inputs = variants::get_tuples(inputs);
     
-    let input_names: Vec<&str> = inputs.iter()
-        .map(|(_kind, name)| name.as_str())
+    let system_layouts: Vec<LayoutId> = inputs.into_iter()
+        .map(|(kind, name)| LayoutId::System { kind, name })
+        .collect();
+
+    let all_layouts: Vec<LayoutId> = system_layouts.clone()
+        .into_iter()
+        .chain(overlay_layouts)
         .collect();
 
     let translations = system_locale()
@@ -162,26 +227,56 @@ pub fn show(window: EekGtkKeyboard, position: ::layout::c::Bounds) {
         )
         .and_then(|lang| resources::get_layout_names(lang.as_str()));
 
-    // sorted collection of human and machine names
-    let mut human_names: Vec<(&str, &str)> = match translations {
+    let translated_names = all_layouts.iter()
+        .map(LayoutId::get_name);
+    let translated_names: Vec<Translation> = match translations {
         Some(translations) => {
-            input_names.iter()
-                .map(|name| (*name, *translations.get(name).unwrap_or(name)))
+            translated_names
+                .map(move |name| {
+                    translations.get(name)
+                        .map(|translation| translation.clone())
+                        .unwrap_or(Translation(name))
+                })
                 .collect()
         },
-        // display bare codes
         None => {
-            input_names.iter()
-                .map(|n| (*n, *n)) // turns &&str into &str
+            translated_names.map(|name| Translation(name))
                 .collect()
-        }
+        },
     };
 
-    human_names.sort_unstable_by(|(_, human_label_a), (_, human_label_b)| {
-        compare_current_locale(human_label_a, human_label_b)
+    // sorted collection of human and machine names
+    let mut human_names: Vec<(Translation, LayoutId)> = translated_names
+        .into_iter()
+        .zip(all_layouts.clone().into_iter())
+        .collect();
+
+    human_names.sort_unstable_by(|(tr_a, _), (tr_b, _)| {
+        compare_current_locale(tr_a.0, tr_b.0)
     });
 
-    let builder = make_menu_builder(human_names);
+    // GVariant doesn't natively support `enum`s,
+    // so the `choices` vector will serve as a lookup table.
+    let choices_with_translations: Vec<(String, (Translation, LayoutId))>
+        = human_names.into_iter()
+            .enumerate()
+                .map(|(i, human_entry)| {(
+                    format!("{}_{}", i, human_entry.1.get_name()),
+                    human_entry,
+                )}).collect();
+
+
+    let builder = make_menu_builder(
+        choices_with_translations.iter()
+            .map(|(id, (translation, _))| (id.as_str(), translation.clone()))
+            .collect()
+    );
+
+    let choices: Vec<(String, LayoutId)>
+        = choices_with_translations.into_iter()
+            .map(|(id, (_tr, layout))| (id, layout))
+            .collect();
+
     // Much more debuggable to populate the model & menu
     // from a string representation
     // than add items imperatively
@@ -195,16 +290,21 @@ pub fn show(window: EekGtkKeyboard, position: ::layout::c::Bounds) {
         height: position.width.floor() as i32,
     });
 
-    if let Some(current_name) = input_names.get(0) {
-        let current_name = current_name.to_variant();
+    if let Some(current_layout) = get_current_layout(manager, &system_layouts) {
+        let current_name_variant = choices.iter()
+            .find(
+                |(_id, layout)| layout == &current_layout
+            ).unwrap()
+            .0.to_variant();
 
         let layout_action = gio::SimpleAction::new_stateful(
             "layout",
-            Some(current_name.type_()),
-            &current_name,
+            Some(current_name_variant.type_()),
+            &current_name_variant,
         );
 
-        layout_action.connect_change_state(|_action, state| {
+        let menu_inner = menu.clone();
+        layout_action.connect_change_state(move |_action, state| {
             match state {
                 Some(v) => {
                     v.get::<String>()
@@ -212,10 +312,20 @@ pub fn show(window: EekGtkKeyboard, position: ::layout::c::Bounds) {
                             eprintln!("Variant is not string: {:?}", v);
                             None
                         })
-                        .map(|state| set_layout("xkb".into(), state));
+                        .map(|state| {
+                            let (_id, layout) = choices.iter()
+                                .find(
+                                    |choices| state == choices.0
+                                ).unwrap();
+                            set_visible_layout(
+                                manager,
+                                layout.clone(),
+                            )
+                        });
                 },
                 None => eprintln!("No variant selected"),
             };
+            menu_inner.popdown();
         });
 
         let action_group = gio::SimpleActionGroup::new();

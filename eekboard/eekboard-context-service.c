@@ -71,6 +71,8 @@ struct _EekboardContextServicePrivate {
     LevelKeyboard *keyboard; // currently used keyboard
     GHashTable *keyboard_hash; // a table of available keyboards, per layout
 
+    char *overlay;
+
     GSettings *settings;
     uint32_t hint;
     uint32_t purpose;
@@ -214,15 +216,17 @@ settings_get_layout(GSettings *settings, char **type, char **layout)
 void
 eekboard_context_service_update_layout(EekboardContextService *context, enum squeek_arrangement_kind t)
 {
-    g_autofree gchar *keyboard_type = NULL;
     g_autofree gchar *keyboard_layout = NULL;
-    settings_get_layout(context->priv->settings, &keyboard_type, &keyboard_layout);
-
-    if (!keyboard_type) {
-        keyboard_type = g_strdup("us");
+    if (context->priv->overlay) {
+        keyboard_layout = g_strdup(context->priv->overlay);
+    } else {
+        g_autofree gchar *keyboard_type = NULL;
+        settings_get_layout(context->priv->settings,
+                            &keyboard_type, &keyboard_layout);
     }
+
     if (!keyboard_layout) {
-        keyboard_layout = g_strdup("undefined");
+        keyboard_layout = g_strdup("us");
     }
 
     EekboardContextServicePrivate *priv = EEKBOARD_CONTEXT_SERVICE_GET_PRIVATE(context);
@@ -262,6 +266,8 @@ settings_handle_layout_changed(GSettings *s,
     (void)keys;
     (void)n_keys;
     EekboardContextService *context = user_data;
+    free(context->priv->overlay);
+    context->priv->overlay = NULL;
     update_layout_and_type(context);
     return TRUE;
 }
@@ -391,6 +397,8 @@ eekboard_context_service_init (EekboardContextService *self)
         g_warning ("Could not connect to gsettings updates, layout"
                    " changing unavailable");
     }
+
+    self->priv->overlay = NULL;
 }
 
 /**
@@ -463,6 +471,7 @@ eekboard_context_service_destroy (EekboardContextService *context)
     if (context->priv->enabled) {
         eekboard_context_service_disable (context);
     }
+    free(context->priv->overlay);
     g_signal_emit (context, signals[DESTROYED], 0);
 }
 
@@ -497,4 +506,15 @@ void eekboard_context_service_set_hint_purpose(EekboardContextService *context,
         priv->purpose = purpose;
         update_layout_and_type(context);
     }
+}
+
+void
+eekboard_context_service_set_overlay(EekboardContextService *context, const char* name) {
+    context->priv->overlay = strdup(name);
+    update_layout_and_type(context);
+}
+
+const char*
+eekboard_context_service_get_overlay(EekboardContextService *context) {
+    return context->priv->overlay;
 }

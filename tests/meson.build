@@ -58,6 +58,8 @@ foreach layout : [
     'no',
     'number',
     'se',
+    
+    'emoji',
 ]
     test(
         'test_layout_' + layout,

@@ -131,14 +131,17 @@ static void drag(EekGtkKeyboard *self,
 {
     EekGtkKeyboardPrivate *priv = eek_gtk_keyboard_get_instance_private (self);
     squeek_layout_drag(priv->keyboard->layout, priv->keyboard->manager->virtual_keyboard,
-                       x, y, eek_renderer_get_transformation(priv->renderer), time, self);
+                       x, y, eek_renderer_get_transformation(priv->renderer), time,
+                       priv->keyboard->manager, self);
 }
 
 static void release(EekGtkKeyboard *self, guint32 time)
 {
     EekGtkKeyboardPrivate *priv = eek_gtk_keyboard_get_instance_private (self);
 
-    squeek_layout_release(priv->keyboard->layout, priv->keyboard->manager->virtual_keyboard, eek_renderer_get_transformation(priv->renderer), time, self);
+    squeek_layout_release(priv->keyboard->layout, priv->keyboard->manager->virtual_keyboard,
+                          eek_renderer_get_transformation(priv->renderer), time,
+                          priv->keyboard->manager, self);
 }
 
 static gboolean

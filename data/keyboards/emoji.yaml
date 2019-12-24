@@ -1,0 +1,16 @@
+---
+outlines:
+    default: { width: 52, height: 52 }
+    altline: { width: 52, height: 52 }
+
+views:
+    base:
+        - "😀 😁 😅 😂 😊 😇 🙃"
+        - "😍 😘 😋 😜 😎 🥳 😔"
+        - "😢 😭 😡 😱 🤔 😬 🙄"
+        - "preferences 🤨 🤓 😴 🤢 🤮 😈"
+buttons:
+    preferences:
+        action: "show_prefs"
+        outline: "altline"
+        icon: "keyboard-mode-symbolic"

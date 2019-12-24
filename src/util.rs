@@ -21,6 +21,7 @@ pub mod c {
     
     use std::borrow::ToOwned;
     
+    // The lifetime on input limits the existence of the result
     pub fn as_str(s: &*const c_char) -> Result<Option<&str>, Utf8Error> {
         if s.is_null() {
             Ok(None)

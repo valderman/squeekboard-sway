@@ -26,6 +26,7 @@ use std::vec::Vec;
 use ::action::Action;
 use ::drawing;
 use ::keyboard::{ KeyState, PressType };
+use ::manager;
 use ::submission::{ Timestamp, VirtualKeyboard };
 use ::util::find_max_double;
 
@@ -258,6 +259,7 @@ pub mod c {
             virtual_keyboard: ZwpVirtualKeyboardV1, // TODO: receive a reference to the backend
             widget_to_layout: Transformation,
             time: u32,
+            manager: manager::c::Manager,
             ui_keyboard: EekGtkKeyboard,
         ) {
             let time = Timestamp(time);
@@ -273,6 +275,7 @@ pub mod c {
                     &widget_to_layout,
                     time,
                     ui_keyboard,
+                    manager,
                     key,
                 );
             }
@@ -344,6 +347,7 @@ pub mod c {
             x_widget: f64, y_widget: f64,
             widget_to_layout: Transformation,
             time: u32,
+            manager: manager::c::Manager,
             ui_keyboard: EekGtkKeyboard,
         ) {
             let time = Timestamp(time);
@@ -378,6 +382,7 @@ pub mod c {
                             &widget_to_layout,
                             time,
                             ui_keyboard,
+                            manager,
                             key,
                         );
                     }
@@ -395,6 +400,7 @@ pub mod c {
                         &widget_to_layout,
                         time,
                         ui_keyboard,
+                        manager,
                         key,
                     );
                 }
@@ -853,6 +859,7 @@ mod seat {
         widget_to_layout: &c::Transformation,
         time: Timestamp,
         ui_keyboard: c::EekGtkKeyboard,
+        manager: manager::c::Manager,
         key: &Rc<RefCell<KeyState>>,
     ) {
         layout.release_key(virtual_keyboard, &mut key.clone(), time);
@@ -874,7 +881,8 @@ mod seat {
                 };
                 ::popover::show(
                     ui_keyboard,
-                    widget_to_layout.reverse_bounds(bounds)
+                    widget_to_layout.reverse_bounds(bounds),
+                    manager,
                 );
             }
         }
