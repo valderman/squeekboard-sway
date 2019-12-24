@@ -24,6 +24,7 @@ mod keyboard;
 mod layout;
 mod locale;
 mod locale_config;
+mod logging;
 mod outputs;
 mod popover;
 mod resources;

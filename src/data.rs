@@ -21,17 +21,17 @@ use ::keyboard::{
 };
 use ::layout;
 use ::layout::ArrangementKind;
+use ::logging::PrintWarnings;
 use ::resources;
 use ::util::c::as_str;
 use ::util::hash_map_map;
 use ::xdg;
 
 // traits, derives
+use serde::Deserialize;
 use std::io::BufReader;
 use std::iter::FromIterator;
-use serde::Deserialize;
-use util::WarningHandler;
-
+use ::logging::WarningHandler;
 
 /// Gathers stuff defined in C or called by C
 pub mod c {
@@ -152,14 +152,6 @@ fn list_layout_sources(
         add_by_name(FALLBACK_LAYOUT_NAME, &ArrangementKind::Base);
     }
     ret
-}
-
-struct PrintWarnings;
-
-impl WarningHandler for PrintWarnings {
-    fn handle(&mut self, warning: &str) {
-        println!("{}", warning);
-    }
 }
 
 fn load_layout_data(source: DataSource)
@@ -671,14 +663,7 @@ mod tests {
     use super::*;
     
     use std::error::Error as ErrorTrait;
-
-    struct PanicWarn;
-    
-    impl WarningHandler for PanicWarn {
-        fn handle(&mut self, warning: &str) {
-            panic!("{}", warning);
-        }
-    }
+    use ::logging::PanicWarn;
 
     #[test]
     fn test_parse_path() {
