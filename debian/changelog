@@ -1,3 +1,22 @@
+squeekboard (1.6.0) UNRELEASED; urgency=medium
+
+  [ Dorota Czaplejewicz ]
+  * tools: Move entry.py
+  * build: Move building of squeekboard-test-layout to tools
+  * packaging: Install entty.py as squeekboard-entry
+  * Remove unused build dependencies
+  * Remove unused header generator
+  * logging: Move all facilities to one file
+  * logging: Described the design
+  * logging: Add described log levels
+  * popover: Install emoji layout
+  * popover: Show overlays as selected
+  * Fix old Rust woes
+  * emoji: Add a passable layout
+  * Fix g_ and stdlib allocation/free mismatches
+
+ -- Dorota Czaplejewicz <dorota.czaplejewicz@puri.sm>  Thu, 02 Jan 2020 12:02:50 +0000
+ 
 squeekboard (1.5.0) amber-phone; urgency=medium
 
   [ Dorota Czaplejewicz ]
