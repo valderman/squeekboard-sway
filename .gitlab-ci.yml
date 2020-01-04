@@ -14,7 +14,16 @@ before_script:
   - echo "deb http://ci.puri.sm/ scratch librem5" > /etc/apt/sources.list.d/ci.list
   - wget -O- https://ci.puri.sm/ci-repo.key | apt-key add -
   - apt-get -y update
-  - apt-get -y build-dep .
+
+build_docs:
+  <<: *tags
+  stage: build
+  artifacts:
+    paths:
+      - _build
+  script:
+      - apt-get -y install python3-recommonmark python3-sphinx
+      - ./doc/build.sh _build
 
 build_meson:
   <<: *tags
@@ -24,6 +33,7 @@ build_meson:
       - _build
     expire_in: 3h
   script:
+    - apt-get -y build-dep .
     - meson . _build/ -Ddepdatadir=/usr/share
     - ninja -C _build install
 
@@ -49,6 +59,7 @@ build_deb_aarch64:
       paths:
         - "*.deb"
     script:
+        - apt-get -y build-dep .
         - apt-get -y install devscripts
         - debuild -i -us -uc -b
         - cp ../*.deb .
@@ -68,4 +79,5 @@ test:
   needs:
     - build_meson
   script:
+    - apt-get -y build-dep .
     - ninja -C _build test
