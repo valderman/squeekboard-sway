@@ -45,6 +45,7 @@ build_deb:
       paths:
         - "*.deb"
     script:
+        - apt-get -y build-dep .
         - apt-get -y install devscripts
         - debuild -i -us -uc -b
         - cp ../*.deb .
