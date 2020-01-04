@@ -12,6 +12,19 @@ except AttributeError:
     print("Terminal purpose not available on this GTK version", file=sys.stderr)
     terminal = []
 
+def new_grid(items, set_type):
+    grid = Gtk.Grid(orientation='vertical', column_spacing=8, row_spacing=8)
+    i = 0
+    for text, value in items:
+        l = Gtk.Label(label=text)
+        e = Gtk.Entry(hexpand=True)
+        set_type(e, value)
+        grid.attach(l, 0, i, 1, 1)
+        grid.attach(e, 1, i, 1, 1)
+        i += 1
+    return grid
+
+
 class App(Gtk.Application):
 
     purposes = [
@@ -27,20 +40,23 @@ class App(Gtk.Application):
         ("PIN", Gtk.InputPurpose.PIN),
     ] + terminal
 
+    hints = [
+        ("OSK provided", Gtk.InputHints.INHIBIT_OSK)
+    ]
+
     def do_activate(self):
         w = Gtk.ApplicationWindow(application=self)
-        grid = Gtk.Grid(orientation='vertical', column_spacing=8, row_spacing=8)
-        i = 0
-        for text, purpose in self.purposes:
+        notebook = Gtk.Notebook()
+        def add_purpose(entry, purpose):
+            entry.set_input_purpose(purpose)
+        def add_hint(entry, hint):
+            entry.set_input_hints(hint)
+        purpose_grid = new_grid(self.purposes, add_purpose)
+        hint_grid = new_grid(self.hints, add_hint)
 
-            l = Gtk.Label(label=text)
-            e = Gtk.Entry(hexpand=True)
-            e.set_input_purpose(purpose)
-            grid.attach(l, 0, i, 1, 1)
-            grid.attach(e, 1, i, 1, 1)
-            i += 1
-
-        w.add(grid)
+        notebook.append_page(purpose_grid, Gtk.Label(label="Purposes"))
+        notebook.append_page(hint_grid, Gtk.Label(label="Hints"))
+        w.add(notebook)
         w.show_all()
 
 app = App()
