@@ -58,6 +58,7 @@ foreach layout : [
     'no',
     'number',
     'se',
+    'terminal',
     
     'emoji',
 ]

@@ -24,6 +24,7 @@ const KEYBOARDS: &[(*const str, *const str)] = &[
     ("no", include_str!("../data/keyboards/no.yaml")),
     ("number", include_str!("../data/keyboards/number.yaml")),
     ("se", include_str!("../data/keyboards/se.yaml")),
+    ("terminal", include_str!("../data/keyboards/terminal.yaml")),
     // Overlays
     ("emoji", include_str!("../data/keyboards/emoji.yaml")),
 ];
