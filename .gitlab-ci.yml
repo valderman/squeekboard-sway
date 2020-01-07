@@ -50,10 +50,9 @@ build_deb:
         - debuild -i -us -uc -b
         - cp ../*.deb .
 
-build_deb_aarch64:
-    image: multiarch/debian-debootstrap:arm64-buster
+build_deb:arm64:
     tags:
-        - ARM64
+        - librem5:arm64
     allow_failure: true
     stage: build
     artifacts:
