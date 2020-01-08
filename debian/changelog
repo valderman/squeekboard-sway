@@ -1,3 +1,9 @@
+squeekboard (1.7.0) amber-phone; urgency=medium
+
+  * New terminal layout appearing on terminal input hint
+
+ -- Dorota Czaplejewicz <dorota.czaplejewicz@puri.sm>  Wed, 08 Jan 2020 11:53:07 +0000
+
 squeekboard (1.6.0) amber-phone; urgency=medium
 
   [ Dorota Czaplejewicz ]
