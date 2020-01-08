@@ -1,4 +1,4 @@
-squeekboard (1.6.0) UNRELEASED; urgency=medium
+squeekboard (1.6.0) amber-phone; urgency=medium
 
   [ Dorota Czaplejewicz ]
   * tools: Move entry.py
