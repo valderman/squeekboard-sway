@@ -39,7 +39,9 @@
 /// Global application state
 struct squeekboard {
     struct squeek_wayland wayland;
-    ServerContextService *context;
+    DBusHandler *dbus_handler;
+    EekboardContextService *settings_context;
+    ServerContextService *ui_context;
     struct imservice *imservice;
 };
 
@@ -69,14 +71,6 @@ on_name_lost (GDBusConnection *connection,
     (void)name;
     (void)user_data;
     exit (1);
-}
-
-static ServerContextService *create_context() {
-    ServerContextService *context = server_context_service_new ();
-    g_object_set_data_full (G_OBJECT(context),
-                            "owner", g_strdup ("sender"),
-                            (GDestroyNotify)g_free);
-    return context;
 }
 
 // Wayland
@@ -199,7 +193,7 @@ main (int argc, char **argv)
         exit(1);
     }
 
-    instance.context = create_context();
+    instance.settings_context = eekboard_context_service_new();
 
     // set up dbus
 
@@ -252,9 +246,8 @@ main (int argc, char **argv)
     if (service == NULL) {
         g_printerr ("Can't create dbus server\n");
         exit (1);
-    } else {
-        dbus_handler_set_context(service, instance.context);
     }
+    instance.dbus_handler = service;
 
     guint owner_id = g_bus_own_name_on_connection (connection,
                                              DBUS_SERVICE_INTERFACE,
@@ -270,14 +263,27 @@ main (int argc, char **argv)
 
     struct imservice *imservice = NULL;
     if (instance.wayland.input_method_manager) {
-        imservice = get_imservice(instance.context,
-                                  instance.wayland.input_method_manager,
-                                  instance.wayland.seat);
+        imservice = get_imservice(instance.wayland.input_method_manager,
+                                  instance.wayland.seat,
+                                  instance.settings_context);
         if (imservice) {
             instance.imservice = imservice;
         } else {
             g_warning("Failed to register as an input method");
         }
+    }
+
+    ServerContextService *ui_context = server_context_service_new(instance.settings_context);
+    if (!ui_context) {
+        g_error("Could not initialize GUI");
+        exit(1);
+    }
+    instance.ui_context = ui_context;
+    if (instance.imservice) {
+        imservice_set_ui(instance.imservice, instance.ui_context);
+    }
+    if (instance.dbus_handler) {
+        dbus_handler_set_ui_context(instance.dbus_handler, instance.ui_context);
     }
 
     session_register();

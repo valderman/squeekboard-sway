@@ -110,7 +110,7 @@ dbus_handler_new (GDBusConnection *connection,
 }
 
 void
-dbus_handler_set_context(DBusHandler *service,
+dbus_handler_set_ui_context(DBusHandler *service,
                              ServerContextService *context)
 {
     g_return_if_fail (!service->context);

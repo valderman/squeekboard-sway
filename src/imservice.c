@@ -12,11 +12,11 @@ static const struct zwp_input_method_v2_listener input_method_listener = {
     .unavailable = imservice_handle_unavailable,
 };
 
-struct imservice* get_imservice(ServerContextService *context,
-                                struct zwp_input_method_manager_v2 *manager,
-                                struct wl_seat *seat) {
+struct imservice* get_imservice(struct zwp_input_method_manager_v2 *manager,
+                                struct wl_seat *seat,
+                                EekboardContextService *state) {
     struct zwp_input_method_v2 *im = zwp_input_method_manager_v2_get_input_method(manager, seat);
-    struct imservice *imservice = imservice_new(im, context);
+    struct imservice *imservice = imservice_new(im, state);
 
     /* Add a listener, passing the imservice instance to make it available to
        callbacks. */

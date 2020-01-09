@@ -77,8 +77,6 @@ struct _EekboardContextServiceClass {
                                         const gchar            *keyboard_type);
 
     /* signals */
-    void         (*enabled)            (EekboardContextService *self);
-    void         (*disabled)           (EekboardContextService *self);
     void         (*destroyed)          (EekboardContextService *self);
 
     /*< private >*/
@@ -86,8 +84,10 @@ struct _EekboardContextServiceClass {
     gpointer pdummy[24];
 };
 
+EekboardContextService *eekboard_context_service_new();
 GType         eekboard_context_service_get_type
                                               (void) G_GNUC_CONST;
+EekboardContextService *eekboard_context_service_new(void);
 void          eekboard_context_service_destroy (EekboardContextService *context);
 LevelKeyboard *eekboard_context_service_get_keyboard(EekboardContextService *context);
 

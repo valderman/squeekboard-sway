@@ -69,6 +69,10 @@ struct _EekboardContextServicePrivate {
     GSettings *settings; // Owned reference
     uint32_t hint;
     uint32_t purpose;
+
+    // Maybe TODO: it's used only for fetching layout type.
+    // Maybe let UI push the type to this structure?
+    ServerContextService *ui; // unowned reference
 };
 
 G_DEFINE_TYPE_WITH_PRIVATE (EekboardContextService, eekboard_context_service, G_TYPE_OBJECT);
@@ -218,12 +222,12 @@ eekboard_context_service_update_layout(EekboardContextService *context, enum squ
     LevelKeyboard *previous_keyboard = context->priv->keyboard;
     context->priv->keyboard = keyboard;
 
-    g_object_notify (G_OBJECT(context), "keyboard");
-
     // The keymap will get set even if the window is hidden.
     // It's not perfect,
     // but simpler than adding a check in the window showing procedure
     eekboard_context_service_set_keymap(context, keyboard);
+
+    g_object_notify (G_OBJECT(context), "keyboard");
 
     // replacing the keyboard above will cause the previous keyboard to get destroyed from the UI side (eek_gtk_keyboard_dispose)
     if (previous_keyboard) {
@@ -232,7 +236,12 @@ eekboard_context_service_update_layout(EekboardContextService *context, enum squ
 }
 
 static void update_layout_and_type(EekboardContextService *context) {
-    eekboard_context_service_update_layout(context, server_context_service_get_layout_type(context));
+    EekboardContextServicePrivate *priv = EEKBOARD_CONTEXT_SERVICE_GET_PRIVATE(context);
+    enum squeek_arrangement_kind layout_kind = ARRANGEMENT_KIND_BASE;
+    if (priv->ui) {
+        layout_kind = server_context_service_get_layout_type(priv->ui);
+    }
+    eekboard_context_service_update_layout(context, layout_kind);
 }
 
 static gboolean
@@ -383,4 +392,9 @@ eekboard_context_service_set_overlay(EekboardContextService *context, const char
 const char*
 eekboard_context_service_get_overlay(EekboardContextService *context) {
     return context->priv->overlay;
+}
+
+EekboardContextService *eekboard_context_service_new()
+{
+    return g_object_new (EEKBOARD_TYPE_CONTEXT_SERVICE, NULL);
 }

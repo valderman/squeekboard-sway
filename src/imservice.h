@@ -7,13 +7,14 @@
 
 struct imservice;
 
-struct imservice* get_imservice(ServerContextService *context,
-                                struct zwp_input_method_manager_v2 *manager,
-                                struct wl_seat *seat);
+struct imservice* get_imservice(struct zwp_input_method_manager_v2 *manager,
+                                struct wl_seat *seat,
+                                EekboardContextService *state);
 
 // Defined in Rust
-struct imservice* imservice_new(struct zwp_input_method_v2 *im,
-                                ServerContextService *context);
+struct imservice* imservice_new(struct zwp_input_method_v2 *im, EekboardContextService *state);
+void imservice_set_ui(struct imservice *self, ServerContextService *ui_context);
+
 void imservice_handle_input_method_activate(void *data, struct zwp_input_method_v2 *input_method);
 void imservice_handle_input_method_deactivate(void *data, struct zwp_input_method_v2 *input_method);
 void imservice_handle_surrounding_text(void *data, struct zwp_input_method_v2 *input_method,

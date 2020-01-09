@@ -38,7 +38,9 @@ enum {
 typedef struct _ServerContextServiceClass ServerContextServiceClass;
 
 struct _ServerContextService {
-    EekboardContextService parent;
+    GObject parent;
+
+    EekboardContextService *state; // unowned
 
     gboolean visible;
     PhoshLayerSurface *window;
@@ -52,10 +54,10 @@ struct _ServerContextService {
 };
 
 struct _ServerContextServiceClass {
-    EekboardContextServiceClass parent_class;
+    GObjectClass parent_class;
 };
 
-G_DEFINE_TYPE (ServerContextService, server_context_service, EEKBOARD_TYPE_CONTEXT_SERVICE);
+G_DEFINE_TYPE(ServerContextService, server_context_service, G_TYPE_OBJECT);
 
 static void
 on_destroy (GtkWidget *widget, gpointer user_data)
@@ -67,7 +69,7 @@ on_destroy (GtkWidget *widget, gpointer user_data)
     context->window = NULL;
     context->widget = NULL;
 
-    eekboard_context_service_destroy (EEKBOARD_CONTEXT_SERVICE (context));
+    //eekboard_context_service_destroy (EEKBOARD_CONTEXT_SERVICE (context));
 }
 
 static void
@@ -220,7 +222,7 @@ make_widget (ServerContextService *context)
         context->widget = NULL;
     }
 
-    LevelKeyboard *keyboard = eekboard_context_service_get_keyboard (EEKBOARD_CONTEXT_SERVICE(context));
+    LevelKeyboard *keyboard = eekboard_context_service_get_keyboard (context->state);
 
     context->widget = eek_gtk_keyboard_new (keyboard);
 
@@ -282,11 +284,6 @@ server_context_service_hide_keyboard (ServerContextService *context)
     if (context->visible) {
         server_context_service_real_hide_keyboard (context);
     }
-}
-
-static void
-server_context_service_real_destroyed (EekboardContextService *_context)
-{
 }
 
 static void
@@ -352,11 +349,8 @@ server_context_service_dispose (GObject *object)
 static void
 server_context_service_class_init (ServerContextServiceClass *klass)
 {
-    EekboardContextServiceClass *context_class = EEKBOARD_CONTEXT_SERVICE_CLASS(klass);
     GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
     GParamSpec *pspec;
-
-    context_class->destroyed = server_context_service_real_destroyed;
 
     gobject_class->set_property = server_context_service_set_property;
     gobject_class->get_property = server_context_service_get_property;
@@ -396,21 +390,23 @@ server_context_service_class_init (ServerContextServiceClass *klass)
 }
 
 static void
-server_context_service_init (ServerContextService *context)
-{
-    g_signal_connect (context,
-                      "notify::keyboard",
-                      G_CALLBACK(on_notify_keyboard),
-                      context);
+server_context_service_init (ServerContextService *state) {
+    (void)state;
 }
 
 ServerContextService *
-server_context_service_new ()
+server_context_service_new (EekboardContextService *state)
 {
-    return g_object_new (SERVER_TYPE_CONTEXT_SERVICE, NULL);
+    ServerContextService *ui = g_object_new (SERVER_TYPE_CONTEXT_SERVICE, NULL);
+    ui->state = state;
+    g_signal_connect (state,
+                      "notify::keyboard",
+                      G_CALLBACK(on_notify_keyboard),
+                      ui);
+    return ui;
 }
 
-enum squeek_arrangement_kind server_context_service_get_layout_type(EekboardContextService *service)
+enum squeek_arrangement_kind server_context_service_get_layout_type(ServerContextService *service)
 {
-    return SERVER_CONTEXT_SERVICE(service)->last_type;
+    return service->last_type;
 }

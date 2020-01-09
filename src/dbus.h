@@ -41,7 +41,7 @@ typedef struct _DBusHandler
 
 DBusHandler * dbus_handler_new      (GDBusConnection *connection,
                                              const gchar     *object_path);
-void              dbus_handler_set_context(DBusHandler *service,
+void              dbus_handler_set_ui_context(DBusHandler *service,
                                                ServerContextService *context);
 void dbus_handler_destroy(DBusHandler*);
 G_END_DECLS
