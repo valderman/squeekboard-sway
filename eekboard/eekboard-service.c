@@ -175,6 +175,7 @@ static void on_visible(EekboardService *service,
                        GParamSpec *pspec,
                        ServerContextService *context)
 {
+    (void)pspec;
     gboolean visible;
     EekboardServicePrivate *priv;
 
@@ -215,8 +216,6 @@ eekboard_service_class_init (EekboardServiceClass *klass)
 {
     GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
     GParamSpec *pspec;
-
-    klass->create_context = NULL;
 
     gobject_class->constructed = eekboard_service_constructed;
     gobject_class->set_property = eekboard_service_set_property;

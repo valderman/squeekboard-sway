@@ -37,10 +37,6 @@ G_DECLARE_DERIVABLE_TYPE (EekboardService, eekboard_service, EEKBOARD, SERVICE, 
 struct _EekboardServiceClass {
     /*< private >*/
     GObjectClass parent_class;
-
-    /*< public >*/
-    EekboardContextService *(*create_context) (EekboardService *self);
-
     /*< private >*/
     /* padding */
     gpointer pdummy[24];
