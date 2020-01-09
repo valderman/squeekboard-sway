@@ -139,14 +139,8 @@ eekboard_context_service_set_property (GObject      *object,
                                        const GValue *value,
                                        GParamSpec   *pspec)
 {
-    EekboardContextService *context = EEKBOARD_CONTEXT_SERVICE(object);
-
+    (void)value;
     switch (prop_id) {
-    case PROP_KEYBOARD:
-        if (context->priv->keyboard)
-            g_object_unref (context->priv->keyboard);
-        context->priv->keyboard = g_value_get_object (value);
-        break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
         break;
@@ -230,6 +224,11 @@ eekboard_context_service_update_layout(EekboardContextService *context, enum squ
     context->priv->keyboard = keyboard;
 
     g_object_notify (G_OBJECT(context), "keyboard");
+
+    // The keymap will get set even if the window is hidden.
+    // It's not perfect,
+    // but simpler than adding a check in the window showing procedure
+    eekboard_context_service_set_keymap(context, keyboard);
 
     // replacing the keyboard above will cause the previous keyboard to get destroyed from the UI side (eek_gtk_keyboard_dispose)
     if (previous_keyboard) {
@@ -338,7 +337,7 @@ eekboard_context_service_class_init (EekboardContextServiceClass *klass)
     pspec = g_param_spec_pointer("keyboard",
                                  "Keyboard",
                                  "Keyboard",
-                                 G_PARAM_READWRITE);
+                                 G_PARAM_READABLE);
     g_object_class_install_property (gobject_class,
                                      PROP_KEYBOARD,
                                      pspec);

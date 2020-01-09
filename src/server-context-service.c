@@ -78,17 +78,6 @@ on_notify_keyboard (GObject              *object,
                     GParamSpec           *spec,
                     ServerContextService *context)
 {
-    const LevelKeyboard *keyboard = eekboard_context_service_get_keyboard (EEKBOARD_CONTEXT_SERVICE(context));
-
-    if (!keyboard)
-        g_error("Programmer error: keyboard layout was unset!");
-
-    // The keymap will get set even if the window is hidden.
-    // It's not perfect,
-    // but simpler than adding a check in the window showing procedure
-    eekboard_context_service_set_keymap(EEKBOARD_CONTEXT_SERVICE(context),
-                                        keyboard);
-
     /* Recreate the keyboard widget to keep in sync with the keymap. */
     if (context->window)
         make_widget(context);
