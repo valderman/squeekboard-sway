@@ -71,16 +71,6 @@ on_name_lost (GDBusConnection *connection,
     exit (1);
 }
 
-static void
-on_destroyed (EekboardService *service,
-              gpointer      user_data)
-{
-    (void)service;
-    GMainLoop *loop = user_data;
-
-    g_main_loop_quit (loop);
-}
-
 static ServerContextService *create_context() {
     ServerContextService *context = server_context_service_new ();
     g_object_set_data_full (G_OBJECT(context),
@@ -294,8 +284,6 @@ main (int argc, char **argv)
     session_register();
 
     GMainLoop *loop = g_main_loop_new (NULL, FALSE);
-
-    g_signal_connect (service, "destroyed", G_CALLBACK(on_destroyed), loop);
 
     g_main_loop_run (loop);
 
