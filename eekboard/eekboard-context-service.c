@@ -51,8 +51,6 @@ enum {
 };
 
 enum {
-    ENABLED,
-    DISABLED,
     DESTROYED,
     LAST_SIGNAL
 };
@@ -63,8 +61,6 @@ static guint signals[LAST_SIGNAL] = { 0, };
     (G_TYPE_INSTANCE_GET_PRIVATE ((obj), EEKBOARD_TYPE_CONTEXT_SERVICE, EekboardContextServicePrivate))
 
 struct _EekboardContextServicePrivate {
-    gboolean enabled;
-
     LevelKeyboard *keyboard; // currently used keyboard
     GHashTable *keyboard_hash; // a table of available keyboards, per layout
 
@@ -276,41 +272,6 @@ eekboard_context_service_class_init (EekboardContextServiceClass *klass)
     gobject_class->set_property = eekboard_context_service_set_property;
     gobject_class->get_property = eekboard_context_service_get_property;
     gobject_class->dispose = eekboard_context_service_dispose;
-
-    /**
-     * EekboardContextService::enabled:
-     * @context: an #EekboardContextService
-     *
-     * Emitted when @context is enabled.
-     */
-    signals[ENABLED] =
-        g_signal_new (I_("enabled"),
-                      G_TYPE_FROM_CLASS(gobject_class),
-                      G_SIGNAL_RUN_LAST,
-                      G_STRUCT_OFFSET(EekboardContextServiceClass, enabled),
-                      NULL,
-                      NULL,
-                      g_cclosure_marshal_VOID__VOID,
-                      G_TYPE_NONE,
-                      0);
-
-    /**
-     * EekboardContextService::disabled:
-     * @context: an #EekboardContextService
-     *
-     * Emitted when @context is enabled.
-     */
-    signals[DISABLED] =
-        g_signal_new (I_("disabled"),
-                      G_TYPE_FROM_CLASS(gobject_class),
-                      G_SIGNAL_RUN_LAST,
-                      G_STRUCT_OFFSET(EekboardContextServiceClass, disabled),
-                      NULL,
-                      NULL,
-                      g_cclosure_marshal_VOID__VOID,
-                      G_TYPE_NONE,
-                      0);
-
     /**
      * EekboardContextService::destroyed:
      * @context: an #EekboardContextService
@@ -366,42 +327,6 @@ eekboard_context_service_init (EekboardContextService *self)
 }
 
 /**
- * eekboard_context_service_enable:
- * @context: an #EekboardContextService
- *
- * Enable @context.  This function is called when @context is pushed
- * by eekboard_service_push_context().
- */
-void
-eekboard_context_service_enable (EekboardContextService *context)
-{
-    g_return_if_fail (EEKBOARD_IS_CONTEXT_SERVICE(context));
-
-    if (!context->priv->enabled) {
-        context->priv->enabled = TRUE;
-        g_signal_emit (context, signals[ENABLED], 0);
-    }
-}
-
-/**
- * eekboard_context_service_disable:
- * @context: an #EekboardContextService
- *
- * Disable @context.  This function is called when @context is pushed
- * by eekboard_service_pop_context().
- */
-void
-eekboard_context_service_disable (EekboardContextService *context)
-{
-    g_return_if_fail (EEKBOARD_IS_CONTEXT_SERVICE(context));
-
-    if (context->priv->enabled) {
-        context->priv->enabled = FALSE;
-        g_signal_emit (context, signals[DISABLED], 0);
-    }
-}
-
-/**
  * eekboard_context_service_destroy:
  * @context: an #EekboardContextService
  *
@@ -412,9 +337,6 @@ eekboard_context_service_destroy (EekboardContextService *context)
 {
     g_return_if_fail (EEKBOARD_IS_CONTEXT_SERVICE(context));
 
-    if (context->priv->enabled) {
-        eekboard_context_service_disable (context);
-    }
     g_free(context->priv->overlay);
     g_signal_emit (context, signals[DESTROYED], 0);
 }

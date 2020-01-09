@@ -76,7 +76,6 @@ static ServerContextService *create_context() {
     g_object_set_data_full (G_OBJECT(context),
                             "owner", g_strdup ("sender"),
                             (GDestroyNotify)g_free);
-    eekboard_context_service_enable (EEKBOARD_CONTEXT_SERVICE(context));
     return context;
 }
 
