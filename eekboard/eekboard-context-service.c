@@ -37,7 +37,6 @@
 
 #include <gio/gio.h>
 
-#include "eekboard/key-emitter.h"
 #include "wayland.h"
 
 #include "eek/eek-xml-layout.h"
@@ -71,7 +70,7 @@ struct _EekboardContextServicePrivate {
 
     char *overlay;
 
-    GSettings *settings;
+    GSettings *settings; // Owned reference
     uint32_t hint;
     uint32_t purpose;
 };

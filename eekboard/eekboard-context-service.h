@@ -46,6 +46,8 @@ typedef struct _EekboardContextServicePrivate EekboardContextServicePrivate;
 /**
  * EekboardContextService:
  *
+ * Handles layout state, gsettings, and virtual-keyboard.
+ *
  * TODO: Restrict to managing keyboard layouts, and maybe button repeats,
  * and the virtual keyboard protocol.
  *

@@ -26,7 +26,6 @@ sources = [
   '../eek/eek-xml-layout.c',
   '../eek/layersurface.c',
   dbus_src,
-  '../eekboard/key-emitter.c',
   '../eekboard/eekboard-context-service.c',
   #  '../eekboard/eekboard-xklutil.c',
   squeekboard_resources,
