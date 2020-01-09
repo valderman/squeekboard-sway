@@ -16,27 +16,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/**
- * SECTION:eekboard-service
- * @short_description: base implementation of eekboard service
- *
- * Provides a dbus object, and contains the context.
- *
- * The #EekboardService class provides a base server side
- * implementation of eekboard service.
- */
-
 #include "config.h"
 
+#include "dbus.h"
 
 #include <stdio.h>
-
 #include <gio/gio.h>
 
-#include "eekboard/eekboard-service.h"
-
 void
-eekboard_service_destroy(EekboardService *service)
+dbus_handler_destroy(DBusHandler *service)
 {
     g_free (service->object_path);
 
@@ -67,7 +55,7 @@ eekboard_service_destroy(EekboardService *service)
 static gboolean
 handle_set_visible(SmPuriOSK0 *object, GDBusMethodInvocation *invocation,
                    gboolean arg_visible, gpointer user_data) {
-    EekboardService *service = user_data;
+    DBusHandler *service = user_data;
 
     if (service->context) {
         if (arg_visible) {
@@ -80,7 +68,7 @@ handle_set_visible(SmPuriOSK0 *object, GDBusMethodInvocation *invocation,
     return TRUE;
 }
 
-static void on_visible(EekboardService *service,
+static void on_visible(DBusHandler *service,
                        GParamSpec *pspec,
                        ServerContextService *context)
 {
@@ -94,16 +82,11 @@ static void on_visible(EekboardService *service,
     sm_puri_osk0_set_visible(service->dbus_interface, visible);
 }
 
-/**
- * eekboard_service_new:
- * @connection: a #GDBusConnection
- * @object_path: object path
- */
-EekboardService *
-eekboard_service_new (GDBusConnection *connection,
+DBusHandler *
+dbus_handler_new (GDBusConnection *connection,
                       const gchar     *object_path)
 {
-    EekboardService *self = calloc(1, sizeof(EekboardService));
+    DBusHandler *self = calloc(1, sizeof(DBusHandler));
     self->object_path = g_strdup(object_path);
     self->connection = connection;
 
@@ -127,7 +110,7 @@ eekboard_service_new (GDBusConnection *connection,
 }
 
 void
-eekboard_service_set_context(EekboardService *service,
+dbus_handler_set_context(DBusHandler *service,
                              ServerContextService *context)
 {
     g_return_if_fail (!service->context);

@@ -25,9 +25,9 @@
 
 #include "config.h"
 
-#include "eekboard/eekboard-service.h"
 #include "eek/eek.h"
 #include "eekboard/eekboard-context-service.h"
+#include "dbus.h"
 #include "imservice.h"
 #include "outputs.h"
 #include "server-context-service.h"
@@ -248,17 +248,17 @@ main (int argc, char **argv)
         break;
     }
 
-    EekboardService *service = eekboard_service_new (connection, EEKBOARD_SERVICE_PATH);
+    DBusHandler *service = dbus_handler_new(connection, DBUS_SERVICE_PATH);
 
     if (service == NULL) {
         g_printerr ("Can't create dbus server\n");
         exit (1);
     } else {
-        eekboard_service_set_context(service, instance.context);
+        dbus_handler_set_context(service, instance.context);
     }
 
     guint owner_id = g_bus_own_name_on_connection (connection,
-                                             EEKBOARD_SERVICE_INTERFACE,
+                                             DBUS_SERVICE_INTERFACE,
                                              G_BUS_NAME_OWNER_FLAGS_NONE,
                                              on_name_acquired,
                                              on_name_lost,
