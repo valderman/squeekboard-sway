@@ -29,8 +29,8 @@ pub mod c {
     extern "C" {
         fn imservice_destroy_im(im: *mut c::InputMethod);
         fn eekboard_context_service_set_hint_purpose(imservice: *const UIManager, hint: u32, purpose: u32);
-        fn eekboard_context_service_show_keyboard(imservice: *const UIManager);
-        fn eekboard_context_service_hide_keyboard(imservice: *const UIManager);
+        fn server_context_service_show_keyboard(imservice: *const UIManager);
+        fn server_context_service_hide_keyboard(imservice: *const UIManager);
     }
     
     // The following defined in Rust. TODO: wrap naked pointers to Rust data inside RefCells to prevent multiple writers
@@ -150,13 +150,13 @@ pub mod c {
         };
         if active_changed {
             if imservice.current.active {
-                eekboard_context_service_show_keyboard(imservice.ui_manager);
+                server_context_service_show_keyboard(imservice.ui_manager);
                 eekboard_context_service_set_hint_purpose(
                     imservice.ui_manager,
                     imservice.current.content_hint.bits(),
                     imservice.current.content_purpose.clone() as u32);
             } else {
-                eekboard_context_service_hide_keyboard(imservice.ui_manager);
+                server_context_service_hide_keyboard(imservice.ui_manager);
             }
         }
     }
@@ -173,7 +173,7 @@ pub mod c {
         // the keyboard is already decommissioned
         imservice.current.active = false;
 
-        eekboard_context_service_hide_keyboard(imservice.ui_manager);
+        server_context_service_hide_keyboard(imservice.ui_manager);
     }
 
     // FIXME: destroy and deallocate

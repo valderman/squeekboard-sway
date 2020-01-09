@@ -2,9 +2,6 @@
 
 #include <glib.h>
 
-#include "eekboard/eekboard-context-service.h"
-
-
 static const struct zwp_input_method_v2_listener input_method_listener = {
     .activate = imservice_handle_input_method_activate,
     .deactivate = imservice_handle_input_method_deactivate,
@@ -15,7 +12,7 @@ static const struct zwp_input_method_v2_listener input_method_listener = {
     .unavailable = imservice_handle_unavailable,
 };
 
-struct imservice* get_imservice(EekboardContextService *context,
+struct imservice* get_imservice(ServerContextService *context,
                                 struct zwp_input_method_manager_v2 *manager,
                                 struct wl_seat *seat) {
     struct zwp_input_method_v2 *im = zwp_input_method_manager_v2_get_input_method(manager, seat);
@@ -26,14 +23,6 @@ struct imservice* get_imservice(EekboardContextService *context,
     zwp_input_method_v2_add_listener(im, &input_method_listener, imservice);
 
     return imservice;
-}
-
-void imservice_make_visible(EekboardContextService *context) {
-    eekboard_context_service_show_keyboard (context);
-}
-
-void imservice_try_hide(EekboardContextService *context) {
-    eekboard_context_service_hide_keyboard (context);
 }
 
 /// Declared explicitly because _destroy is inline,

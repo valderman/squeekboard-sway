@@ -20,7 +20,7 @@
 
 #define __EEKBOARD_SERVICE_H_INSIDE__ 1
 
-#include "eekboard/eekboard-context-service.h"
+#include "server-context-service.h"
 
 G_BEGIN_DECLS
 
@@ -50,6 +50,6 @@ GType             eekboard_service_get_type (void) G_GNUC_CONST;
 EekboardService * eekboard_service_new      (GDBusConnection *connection,
                                              const gchar     *object_path);
 void              eekboard_service_set_context(EekboardService *service,
-                                               EekboardContextService *context);
+                                               ServerContextService *context);
 G_END_DECLS
 #endif  /* EEKBOARD_SERVICE_H */

@@ -58,7 +58,7 @@ typedef struct _EekboardServicePrivate
     guint registration_id;
     char *object_path;
 
-    EekboardContextService *context; // unowned reference
+    ServerContextService *context; // unowned reference
 } EekboardServicePrivate;
 
 G_DEFINE_TYPE_WITH_PRIVATE (EekboardService, eekboard_service, G_TYPE_OBJECT)
@@ -162,9 +162,9 @@ handle_set_visible(SmPuriOSK0 *object, GDBusMethodInvocation *invocation,
 
     if (priv->context) {
         if (arg_visible) {
-            eekboard_context_service_show_keyboard (priv->context);
+            server_context_service_show_keyboard (priv->context);
         } else {
-            eekboard_context_service_hide_keyboard (priv->context);
+            server_context_service_hide_keyboard (priv->context);
         }
     }
     sm_puri_osk0_complete_set_visible(object, invocation);
@@ -173,13 +173,13 @@ handle_set_visible(SmPuriOSK0 *object, GDBusMethodInvocation *invocation,
 
 static void on_visible(EekboardService *service,
                        GParamSpec *pspec,
-                       EekboardContextService *context)
+                       ServerContextService *context)
 {
     gboolean visible;
     EekboardServicePrivate *priv;
 
     g_return_if_fail (EEKBOARD_IS_SERVICE (service));
-    g_return_if_fail (EEKBOARD_IS_CONTEXT_SERVICE (context));
+    g_return_if_fail (SERVER_IS_CONTEXT_SERVICE (context));
 
     priv = eekboard_service_get_instance_private (service);
     g_object_get (context, "visible", &visible, NULL);
@@ -295,7 +295,7 @@ eekboard_service_new (GDBusConnection *connection,
 
 void
 eekboard_service_set_context(EekboardService *service,
-                             EekboardContextService *context)
+                             ServerContextService *context)
 {
     EekboardServicePrivate *priv = eekboard_service_get_instance_private (service);
 

@@ -18,7 +18,6 @@
 #ifndef SERVER_CONTEXT_SERVICE_H
 #define SERVER_CONTEXT_SERVICE_H 1
 
-#include "eekboard/eekboard-service.h"
 #include "src/layout.h"
 
 G_BEGIN_DECLS
@@ -33,10 +32,13 @@ G_BEGIN_DECLS
 /** Manages the liecycle of the window displaying layouts. */
 typedef struct _ServerContextService ServerContextService;
 
-EekboardContextService *server_context_service_new ();
+GType         server_context_service_get_type
+                                              (void) G_GNUC_CONST;
+
+ServerContextService *server_context_service_new();
 enum squeek_arrangement_kind server_context_service_get_layout_type(EekboardContextService*);
-void server_context_service_real_show_keyboard (EekboardContextService *context);
-void server_context_service_real_hide_keyboard (EekboardContextService *context);
+void server_context_service_show_keyboard (ServerContextService *context);
+void server_context_service_hide_keyboard (ServerContextService *context);
 G_END_DECLS
 #endif  /* SERVER_CONTEXT_SERVICE_H */
 

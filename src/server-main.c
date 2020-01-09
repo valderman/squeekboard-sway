@@ -27,6 +27,7 @@
 
 #include "eekboard/eekboard-service.h"
 #include "eek/eek.h"
+#include "eekboard/eekboard-context-service.h"
 #include "imservice.h"
 #include "outputs.h"
 #include "server-context-service.h"
@@ -38,7 +39,7 @@
 /// Global application state
 struct squeekboard {
     struct squeek_wayland wayland;
-    EekboardContextService *context;
+    ServerContextService *context;
     struct imservice *imservice;
 };
 
@@ -80,12 +81,12 @@ on_destroyed (EekboardService *service,
     g_main_loop_quit (loop);
 }
 
-static EekboardContextService *create_context() {
-    EekboardContextService *context = server_context_service_new ();
+static ServerContextService *create_context() {
+    ServerContextService *context = server_context_service_new ();
     g_object_set_data_full (G_OBJECT(context),
                             "owner", g_strdup ("sender"),
                             (GDestroyNotify)g_free);
-    eekboard_context_service_enable (context);
+    eekboard_context_service_enable (EEKBOARD_CONTEXT_SERVICE(context));
     return context;
 }
 

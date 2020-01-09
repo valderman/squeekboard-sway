@@ -88,14 +88,6 @@ GType         eekboard_context_service_get_type
                                               (void) G_GNUC_CONST;
 void          eekboard_context_service_enable (EekboardContextService *context);
 void          eekboard_context_service_disable (EekboardContextService *context);
-void          eekboard_context_service_show_keyboard
-                                              (EekboardContextService *context);
-void
-eekboard_context_service_real_show_keyboard (EekboardContextService *self);
-void
-eekboard_context_service_real_hide_keyboard (EekboardContextService *self);
-void          eekboard_context_service_hide_keyboard
-                                              (EekboardContextService *context);
 void          eekboard_context_service_destroy (EekboardContextService *context);
 LevelKeyboard *eekboard_context_service_get_keyboard(EekboardContextService *context);
 

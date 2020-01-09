@@ -48,7 +48,6 @@
 enum {
     PROP_0, // Magic: without this, keyboard is not useable in g_object_notify
     PROP_KEYBOARD,
-    PROP_VISIBLE,
     PROP_LAST
 };
 
@@ -66,7 +65,6 @@ static guint signals[LAST_SIGNAL] = { 0, };
 
 struct _EekboardContextServicePrivate {
     gboolean enabled;
-    gboolean visible;
 
     LevelKeyboard *keyboard; // currently used keyboard
     GHashTable *keyboard_hash; // a table of available keyboards, per layout
@@ -135,18 +133,6 @@ eekboard_context_service_real_create_keyboard (EekboardContextService *self,
     return keyboard;
 }
 
-void
-eekboard_context_service_real_show_keyboard (EekboardContextService *self)
-{
-    self->priv->visible = TRUE;
-}
-
-void
-eekboard_context_service_real_hide_keyboard (EekboardContextService *self)
-{
-    self->priv->visible = FALSE;
-}
-
 static void
 eekboard_context_service_set_property (GObject      *object,
                                        guint         prop_id,
@@ -160,9 +146,6 @@ eekboard_context_service_set_property (GObject      *object,
         if (context->priv->keyboard)
             g_object_unref (context->priv->keyboard);
         context->priv->keyboard = g_value_get_object (value);
-        break;
-    case PROP_VISIBLE:
-        context->priv->visible = g_value_get_boolean (value);
         break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -181,9 +164,6 @@ eekboard_context_service_get_property (GObject    *object,
     switch (prop_id) {
     case PROP_KEYBOARD:
         g_value_set_object (value, context->priv->keyboard);
-        break;
-    case PROP_VISIBLE:
-        g_value_set_boolean (value, context->priv->visible);
         break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -362,20 +342,6 @@ eekboard_context_service_class_init (EekboardContextServiceClass *klass)
     g_object_class_install_property (gobject_class,
                                      PROP_KEYBOARD,
                                      pspec);
-
-    /**
-     * EekboardContextService:visible:
-     *
-     * Flag to indicate if keyboard is visible or not.
-     */
-    pspec = g_param_spec_boolean ("visible",
-                                  "Visible",
-                                  "Visible",
-                                  FALSE,
-                                  G_PARAM_READWRITE);
-    g_object_class_install_property (gobject_class,
-                                     PROP_VISIBLE,
-                                     pspec);
 }
 
 static void
@@ -434,26 +400,6 @@ eekboard_context_service_disable (EekboardContextService *context)
     if (context->priv->enabled) {
         context->priv->enabled = FALSE;
         g_signal_emit (context, signals[DISABLED], 0);
-    }
-}
-
-void
-eekboard_context_service_show_keyboard (EekboardContextService *context)
-{
-    g_return_if_fail (EEKBOARD_IS_CONTEXT_SERVICE(context));
-
-    if (!context->priv->visible) {
-        server_context_service_real_show_keyboard (context);
-    }
-}
-
-void
-eekboard_context_service_hide_keyboard (EekboardContextService *context)
-{
-    g_return_if_fail (EEKBOARD_IS_CONTEXT_SERVICE(context));
-
-    if (context->priv->visible) {
-        server_context_service_real_hide_keyboard (context);
     }
 }
 

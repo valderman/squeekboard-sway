@@ -23,14 +23,15 @@
 #include "eek/eek.h"
 #include "eek/eek-gtk-keyboard.h"
 #include "eek/layersurface.h"
-#include "wayland.h"
 #include "eekboard/eekboard-context-service.h"
+#include "wayland.h"
 #include "server-context-service.h"
 
 enum {
     PROP_0,
     PROP_SIZE_CONSTRAINT_LANDSCAPE,
     PROP_SIZE_CONSTRAINT_PORTRAIT,
+    PROP_VISIBLE,
     PROP_LAST
 };
 
@@ -39,6 +40,7 @@ typedef struct _ServerContextServiceClass ServerContextServiceClass;
 struct _ServerContextService {
     EekboardContextService parent;
 
+    gboolean visible;
     PhoshLayerSurface *window;
     GtkWidget *widget;
     guint hiding;
@@ -95,8 +97,8 @@ on_notify_keyboard (GObject              *object,
     g_object_get (context, "visible", &visible, NULL);
 
     if (visible) {
-        eekboard_context_service_hide_keyboard(EEKBOARD_CONTEXT_SERVICE(context));
-        eekboard_context_service_show_keyboard(EEKBOARD_CONTEXT_SERVICE(context));
+        server_context_service_hide_keyboard(context);
+        server_context_service_show_keyboard(context);
     }
 }
 
@@ -238,11 +240,18 @@ make_widget (ServerContextService *context)
     gtk_widget_show (context->widget);
 }
 
-void
-server_context_service_real_show_keyboard (EekboardContextService *_context)
+static gboolean
+on_hide (ServerContextService *context)
 {
-    ServerContextService *context = SERVER_CONTEXT_SERVICE(_context);
+    gtk_widget_hide (GTK_WIDGET(context->window));
+    context->hiding = 0;
 
+    return G_SOURCE_REMOVE;
+}
+
+static void
+server_context_service_real_show_keyboard (ServerContextService *context)
+{
     if (context->hiding) {
 	    g_source_remove (context->hiding);
 	    context->hiding = 0;
@@ -253,28 +262,37 @@ server_context_service_real_show_keyboard (EekboardContextService *_context)
     if (!context->widget)
         make_widget (context);
 
-    eekboard_context_service_real_show_keyboard (_context);
+    context->visible = TRUE;
     gtk_widget_show (GTK_WIDGET(context->window));
 }
 
-static gboolean
-on_hide (ServerContextService *context)
+static void
+server_context_service_real_hide_keyboard (ServerContextService *context)
 {
-    gtk_widget_hide (GTK_WIDGET(context->window));
-    context->hiding = 0;
+    if (!context->hiding)
+        context->hiding = g_timeout_add (200, (GSourceFunc) on_hide, context);
 
-    return G_SOURCE_REMOVE;
+    context->visible = FALSE;
 }
 
 void
-server_context_service_real_hide_keyboard (EekboardContextService *_context)
+server_context_service_show_keyboard (ServerContextService *context)
 {
-    ServerContextService *context = SERVER_CONTEXT_SERVICE(_context);
+    g_return_if_fail (SERVER_IS_CONTEXT_SERVICE(context));
 
-    if (!context->hiding)
-	context->hiding = g_timeout_add (200, (GSourceFunc) on_hide, context);
+    if (!context->visible) {
+        server_context_service_real_show_keyboard (context);
+    }
+}
 
-    eekboard_context_service_real_hide_keyboard (_context);
+void
+server_context_service_hide_keyboard (ServerContextService *context)
+{
+    g_return_if_fail (SERVER_IS_CONTEXT_SERVICE(context));
+
+    if (context->visible) {
+        server_context_service_real_hide_keyboard (context);
+    }
 }
 
 static void
@@ -304,7 +322,27 @@ server_context_service_set_property (GObject      *object,
                        &context->size_constraint_portrait[0],
                        &context->size_constraint_portrait[1]);
         break;
+    case PROP_VISIBLE:
+        context->visible = g_value_get_boolean (value);
+        break;
 
+    default:
+        G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+        break;
+    }
+}
+
+static void
+server_context_service_get_property (GObject    *object,
+                                       guint       prop_id,
+                                       GValue     *value,
+                                       GParamSpec *pspec)
+{
+    ServerContextService *context = SERVER_CONTEXT_SERVICE(object);
+    switch (prop_id) {
+    case PROP_VISIBLE:
+        g_value_set_boolean (value, context->visible);
+        break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
         break;
@@ -332,6 +370,7 @@ server_context_service_class_init (ServerContextServiceClass *klass)
     context_class->destroyed = server_context_service_real_destroyed;
 
     gobject_class->set_property = server_context_service_set_property;
+    gobject_class->get_property = server_context_service_get_property;
     gobject_class->dispose = server_context_service_dispose;
 
     pspec = g_param_spec_variant ("size-constraint-landscape",
@@ -353,6 +392,18 @@ server_context_service_class_init (ServerContextServiceClass *klass)
     g_object_class_install_property (gobject_class,
                                      PROP_SIZE_CONSTRAINT_PORTRAIT,
                                      pspec);
+
+    /**
+     * Flag to indicate if keyboard is visible or not.
+     */
+    pspec = g_param_spec_boolean ("visible",
+                                  "Visible",
+                                  "Visible",
+                                  FALSE,
+                                  G_PARAM_READWRITE);
+    g_object_class_install_property (gobject_class,
+                                     PROP_VISIBLE,
+                                     pspec);
 }
 
 static void
@@ -364,10 +415,10 @@ server_context_service_init (ServerContextService *context)
                       context);
 }
 
-EekboardContextService *
+ServerContextService *
 server_context_service_new ()
 {
-    return EEKBOARD_CONTEXT_SERVICE(g_object_new (SERVER_TYPE_CONTEXT_SERVICE, NULL));
+    return g_object_new (SERVER_TYPE_CONTEXT_SERVICE, NULL);
 }
 
 enum squeek_arrangement_kind server_context_service_get_layout_type(EekboardContextService *service)
