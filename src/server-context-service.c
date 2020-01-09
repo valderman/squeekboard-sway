@@ -24,7 +24,7 @@
 #include "eek/eek-gtk-keyboard.h"
 #include "eek/layersurface.h"
 #include "wayland.h"
-
+#include "eekboard/eekboard-context-service.h"
 #include "server-context-service.h"
 
 enum {
@@ -238,7 +238,7 @@ make_widget (ServerContextService *context)
     gtk_widget_show (context->widget);
 }
 
-static void
+void
 server_context_service_real_show_keyboard (EekboardContextService *_context)
 {
     ServerContextService *context = SERVER_CONTEXT_SERVICE(_context);
@@ -253,8 +253,7 @@ server_context_service_real_show_keyboard (EekboardContextService *_context)
     if (!context->widget)
         make_widget (context);
 
-    EEKBOARD_CONTEXT_SERVICE_CLASS (server_context_service_parent_class)->
-        show_keyboard (_context);
+    eekboard_context_service_real_show_keyboard (_context);
     gtk_widget_show (GTK_WIDGET(context->window));
 }
 
@@ -267,7 +266,7 @@ on_hide (ServerContextService *context)
     return G_SOURCE_REMOVE;
 }
 
-static void
+void
 server_context_service_real_hide_keyboard (EekboardContextService *_context)
 {
     ServerContextService *context = SERVER_CONTEXT_SERVICE(_context);
@@ -275,8 +274,7 @@ server_context_service_real_hide_keyboard (EekboardContextService *_context)
     if (!context->hiding)
 	context->hiding = g_timeout_add (200, (GSourceFunc) on_hide, context);
 
-    EEKBOARD_CONTEXT_SERVICE_CLASS (server_context_service_parent_class)->
-        hide_keyboard (_context);
+    eekboard_context_service_real_hide_keyboard (_context);
 }
 
 static void
@@ -331,8 +329,6 @@ server_context_service_class_init (ServerContextServiceClass *klass)
     GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
     GParamSpec *pspec;
 
-    context_class->show_keyboard = server_context_service_real_show_keyboard;
-    context_class->hide_keyboard = server_context_service_real_hide_keyboard;
     context_class->destroyed = server_context_service_real_destroyed;
 
     gobject_class->set_property = server_context_service_set_property;

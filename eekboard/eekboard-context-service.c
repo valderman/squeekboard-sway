@@ -135,13 +135,13 @@ eekboard_context_service_real_create_keyboard (EekboardContextService *self,
     return keyboard;
 }
 
-static void
+void
 eekboard_context_service_real_show_keyboard (EekboardContextService *self)
 {
     self->priv->visible = TRUE;
 }
 
-static void
+void
 eekboard_context_service_real_hide_keyboard (EekboardContextService *self)
 {
     self->priv->visible = FALSE;
@@ -294,9 +294,6 @@ eekboard_context_service_class_init (EekboardContextServiceClass *klass)
     GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
     GParamSpec *pspec;
 
-    klass->show_keyboard = eekboard_context_service_real_show_keyboard;
-    klass->hide_keyboard = eekboard_context_service_real_hide_keyboard;
-
     gobject_class->constructed = eekboard_context_service_constructed;
     gobject_class->set_property = eekboard_context_service_set_property;
     gobject_class->get_property = eekboard_context_service_get_property;
@@ -446,7 +443,7 @@ eekboard_context_service_show_keyboard (EekboardContextService *context)
     g_return_if_fail (EEKBOARD_IS_CONTEXT_SERVICE(context));
 
     if (!context->priv->visible) {
-        EEKBOARD_CONTEXT_SERVICE_GET_CLASS(context)->show_keyboard (context);
+        server_context_service_real_show_keyboard (context);
     }
 }
 
@@ -456,7 +453,7 @@ eekboard_context_service_hide_keyboard (EekboardContextService *context)
     g_return_if_fail (EEKBOARD_IS_CONTEXT_SERVICE(context));
 
     if (context->priv->visible) {
-        EEKBOARD_CONTEXT_SERVICE_GET_CLASS(context)->hide_keyboard (context);
+        server_context_service_real_hide_keyboard (context);
     }
 }
 

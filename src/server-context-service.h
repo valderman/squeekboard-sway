@@ -35,7 +35,8 @@ typedef struct _ServerContextService ServerContextService;
 
 EekboardContextService *server_context_service_new ();
 enum squeek_arrangement_kind server_context_service_get_layout_type(EekboardContextService*);
-
+void server_context_service_real_show_keyboard (EekboardContextService *context);
+void server_context_service_real_hide_keyboard (EekboardContextService *context);
 G_END_DECLS
 #endif  /* SERVER_CONTEXT_SERVICE_H */
 
