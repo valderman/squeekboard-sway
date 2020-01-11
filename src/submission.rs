@@ -1,67 +1,22 @@
-/*! Managing the events belonging to virtual-keyboard interface. */
+/*! Managing the state of text input in the application.
+ * 
+ * This is a library module.
+ * 
+ * It needs to combine text-input and virtual-keyboard protocols
+ * to achieve a consistent view of the text-input state,
+ * and to submit exactly what the user wanted.
+ * 
+ * It must also not get tripped up by sudden disappearances of interfaces.
+ * 
+ * The virtual-keyboard interface is always present.
+ * 
+ * The text-input interface may not be presented,
+ * and, for simplicity, no further attempt to claim it is made.
+ * 
+ * The text-input interface may be enabled and disabled at arbitrary times,
+ * and those events SHOULD NOT cause any lost events.
+ * */
 
-use ::keyboard::{ KeyCode, PressType };
-
-/// Gathers stuff defined in C or called by C
-pub mod c {
-    use std::os::raw::c_void;
-
-    #[repr(transparent)]
-    #[derive(Clone, Copy)]
-    pub struct ZwpVirtualKeyboardV1(*const c_void);
-
-    #[no_mangle]
-    extern "C" {
-        /// Checks if point falls within bounds,
-        /// which are relative to origin and rotated by angle (I think)
-        pub fn eek_virtual_keyboard_v1_key(
-            virtual_keyboard: ZwpVirtualKeyboardV1,
-            timestamp: u32,
-            keycode: u32,
-            press: u32,
-        );
-    }
-}
-
-#[derive(Clone, Copy)]
-pub struct Timestamp(pub u32);
-
-/// Layout-independent backend. TODO: Have one instance per program or seat
-pub struct VirtualKeyboard(pub c::ZwpVirtualKeyboardV1);
-
-impl VirtualKeyboard {
-    // TODO: split out keyboard state management
-    pub fn switch(
-        &self,
-        keycodes: &Vec<KeyCode>,
-        action: PressType,
-        timestamp: Timestamp,
-    ) {
-        let keycodes_count = keycodes.len();
-        for keycode in keycodes.iter() {
-            let keycode = keycode - 8;
-            match (action, keycodes_count) {
-                // Pressing a key made out of a single keycode is simple:
-                // press on press, release on release.
-                (_, 1) => unsafe {
-                    c::eek_virtual_keyboard_v1_key(
-                        self.0, timestamp.0, keycode, action.clone() as u32
-                    );
-                },
-                // A key made of multiple keycodes
-                // has to submit them one after the other
-                (PressType::Pressed, _) => unsafe {
-                    c::eek_virtual_keyboard_v1_key(
-                        self.0, timestamp.0, keycode, PressType::Pressed as u32
-                    );
-                    c::eek_virtual_keyboard_v1_key(
-                        self.0, timestamp.0, keycode, PressType::Released as u32
-                    );
-                },
-                // Design choice here: submit multiple all at press time
-                // and do nothing at release time
-                (PressType::Released, _) => {},
-            }
-        }
-    }
-}
+/// Temporary reexport to keep stuff based directly on virtual-keyboard working
+/// until a unified handler appears and prompts a rework.
+pub use vkeyboard::*;
