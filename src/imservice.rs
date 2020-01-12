@@ -38,7 +38,7 @@ pub mod c {
     
     // TODO: is unsafe needed here?
     #[no_mangle]
-    pub unsafe extern "C"
+    pub extern "C"
     fn imservice_handle_input_method_activate(imservice: *mut IMService,
         im: *const InputMethod)
     {
@@ -51,7 +51,7 @@ pub mod c {
     }
     
     #[no_mangle]
-    pub unsafe extern "C"
+    pub extern "C"
     fn imservice_handle_input_method_deactivate(imservice: *mut IMService,
         im: *const InputMethod)
     {
@@ -63,7 +63,7 @@ pub mod c {
     }
     
     #[no_mangle]
-    pub unsafe extern "C"
+    pub extern "C"
     fn imservice_handle_surrounding_text(imservice: *mut IMService,
         im: *const InputMethod,
         text: *const c_char, cursor: u32, _anchor: u32)
@@ -79,7 +79,7 @@ pub mod c {
     }
     
     #[no_mangle]
-    pub unsafe extern "C"
+    pub extern "C"
     fn imservice_handle_content_type(imservice: *mut IMService,
         im: *const InputMethod,
         hint: u32, purpose: u32)
@@ -103,7 +103,7 @@ pub mod c {
     }
     
     #[no_mangle]
-    pub unsafe extern "C"
+    pub extern "C"
     fn imservice_handle_text_change_cause(imservice: *mut IMService,
         im: *const InputMethod,
         cause: u32)
@@ -121,7 +121,7 @@ pub mod c {
     }
     
     #[no_mangle]
-    pub unsafe extern "C"
+    pub extern "C"
     fn imservice_handle_commit_state(imservice: *mut IMService,
         im: *const InputMethod)
     {
@@ -138,34 +138,38 @@ pub mod c {
         if active_changed {
             if imservice.current.active {
                 if let Some(ui) = imservice.ui_manager {
-                    server_context_service_show_keyboard(ui);
+                    unsafe { server_context_service_show_keyboard(ui); }
                 }
-                eekboard_context_service_set_hint_purpose(
-                    imservice.state_manager,
-                    imservice.current.content_hint.bits(),
-                    imservice.current.content_purpose.clone() as u32);
+                unsafe {
+                    eekboard_context_service_set_hint_purpose(
+                        imservice.state_manager,
+                        imservice.current.content_hint.bits(),
+                        imservice.current.content_purpose.clone() as u32,
+                    );
+                }
             } else {
                 if let Some(ui) = imservice.ui_manager {
-                    server_context_service_hide_keyboard(ui);
+                    unsafe { server_context_service_hide_keyboard(ui); }
                 }
             }
         }
     }
     
+    // TODO: this is really untested
     #[no_mangle]
-    pub unsafe extern "C"
+    pub extern "C"
     fn imservice_handle_unavailable(imservice: *mut IMService,
         im: *mut InputMethod)
     {
         let imservice = check_imservice(imservice, im).unwrap();
-        imservice_destroy_im(im);
+        unsafe { imservice_destroy_im(im); }
 
         // no need to care about proper double-buffering,
         // the keyboard is already decommissioned
         imservice.current.active = false;
 
         if let Some(ui) = imservice.ui_manager {
-            server_context_service_hide_keyboard(ui);
+            unsafe { server_context_service_hide_keyboard(ui); }
         }
     }    
 
