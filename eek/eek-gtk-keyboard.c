@@ -54,6 +54,7 @@ enum {
 typedef struct _EekGtkKeyboardPrivate
 {
     EekRenderer *renderer;
+    EekboardContextService *eekboard_context; // unowned reference
     LevelKeyboard *keyboard; // unowned reference; it's kept in server-context (FIXME)
 
     GdkEventSequence *sequence; // unowned reference
@@ -122,7 +123,7 @@ static void depress(EekGtkKeyboard *self,
 {
     EekGtkKeyboardPrivate *priv = eek_gtk_keyboard_get_instance_private (self);
 
-    squeek_layout_depress(priv->keyboard->layout, priv->keyboard->manager->virtual_keyboard,
+    squeek_layout_depress(priv->keyboard->layout, priv->eekboard_context->virtual_keyboard,
                           x, y, eek_renderer_get_transformation(priv->renderer), time, self);
 }
 
@@ -130,18 +131,18 @@ static void drag(EekGtkKeyboard *self,
                  gdouble x, gdouble y, guint32 time)
 {
     EekGtkKeyboardPrivate *priv = eek_gtk_keyboard_get_instance_private (self);
-    squeek_layout_drag(priv->keyboard->layout, priv->keyboard->manager->virtual_keyboard,
+    squeek_layout_drag(priv->keyboard->layout, priv->eekboard_context->virtual_keyboard,
                        x, y, eek_renderer_get_transformation(priv->renderer), time,
-                       priv->keyboard->manager, self);
+                       priv->eekboard_context, self);
 }
 
 static void release(EekGtkKeyboard *self, guint32 time)
 {
     EekGtkKeyboardPrivate *priv = eek_gtk_keyboard_get_instance_private (self);
 
-    squeek_layout_release(priv->keyboard->layout, priv->keyboard->manager->virtual_keyboard,
+    squeek_layout_release(priv->keyboard->layout, priv->eekboard_context->virtual_keyboard,
                           eek_renderer_get_transformation(priv->renderer), time,
-                          priv->keyboard->manager, self);
+                          priv->eekboard_context, self);
 }
 
 static gboolean
@@ -229,7 +230,7 @@ eek_gtk_keyboard_real_unmap (GtkWidget *self)
 
     if (priv->keyboard) {
         squeek_layout_release_all_only(
-            priv->keyboard->layout, priv->keyboard->manager->virtual_keyboard,
+            priv->keyboard->layout, priv->eekboard_context->virtual_keyboard,
             gdk_event_get_time(NULL));
     }
 
@@ -264,7 +265,7 @@ eek_gtk_keyboard_dispose (GObject *object)
 
     if (priv->keyboard) {
         squeek_layout_release_all_only(
-            priv->keyboard->layout, priv->keyboard->manager->virtual_keyboard,
+            priv->keyboard->layout, priv->eekboard_context->virtual_keyboard,
             gdk_event_get_time(NULL));
         priv->keyboard = NULL;
     }
@@ -311,11 +312,12 @@ eek_gtk_keyboard_init (EekGtkKeyboard *self)
  * Returns: a #GtkWidget
  */
 GtkWidget *
-eek_gtk_keyboard_new (LevelKeyboard *keyboard)
+eek_gtk_keyboard_new (LevelKeyboard *keyboard, EekboardContextService *eekservice)
 {
     EekGtkKeyboard *ret = EEK_GTK_KEYBOARD(g_object_new (EEK_TYPE_GTK_KEYBOARD, NULL));
     EekGtkKeyboardPrivate *priv = (EekGtkKeyboardPrivate*)eek_gtk_keyboard_get_instance_private (ret);
     priv->keyboard = keyboard;
+    priv->eekboard_context = eekservice;
     return GTK_WIDGET(ret);
 }
 

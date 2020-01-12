@@ -52,6 +52,5 @@ void level_keyboard_init(LevelKeyboard *self, struct squeek_layout *layout) {
 LevelKeyboard *level_keyboard_new(EekboardContextService *manager, struct squeek_layout *layout) {
     LevelKeyboard *keyboard = g_new0(LevelKeyboard, 1);
     level_keyboard_init(keyboard, layout);
-    keyboard->manager = manager;
     return keyboard;
 }

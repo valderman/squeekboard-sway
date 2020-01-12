@@ -41,8 +41,6 @@ struct _LevelKeyboard {
     size_t keymap_len; // length of the data inside keymap_fd
 
     guint id; // as a key to layout choices
-
-    EekboardContextService *manager; // unowned reference
 };
 typedef struct _LevelKeyboard LevelKeyboard;
 

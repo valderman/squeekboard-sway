@@ -224,7 +224,7 @@ make_widget (ServerContextService *context)
 
     LevelKeyboard *keyboard = eekboard_context_service_get_keyboard (context->state);
 
-    context->widget = eek_gtk_keyboard_new (keyboard);
+    context->widget = eek_gtk_keyboard_new (keyboard, context->state);
 
     gtk_widget_set_has_tooltip (context->widget, TRUE);
     gtk_container_add (GTK_CONTAINER(context->window), context->widget);
