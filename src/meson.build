@@ -19,7 +19,6 @@ sources = [
   '../eek/eek-element.c',
   '../eek/eek-gtk-keyboard.c',
   '../eek/eek-keyboard.c',
-  '../eek/eek-layout.c',
   '../eek/eek-renderer.c',
   '../eek/eek-types.c',
   '../eek/eek-xml-layout.c',
