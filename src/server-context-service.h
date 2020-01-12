@@ -19,6 +19,7 @@
 #define SERVER_CONTEXT_SERVICE_H 1
 
 #include "src/layout.h"
+#include "src/submission.h"
 
 G_BEGIN_DECLS
 
@@ -35,7 +36,7 @@ typedef struct _ServerContextService ServerContextService;
 GType         server_context_service_get_type
                                               (void) G_GNUC_CONST;
 
-ServerContextService *server_context_service_new(EekboardContextService *state);
+ServerContextService *server_context_service_new(EekboardContextService *state, struct submission *submission);
 enum squeek_arrangement_kind server_context_service_get_layout_type(ServerContextService *);
 void server_context_service_show_keyboard (ServerContextService *context);
 void server_context_service_hide_keyboard (ServerContextService *context);

@@ -193,6 +193,10 @@ main (int argc, char **argv)
         exit(1);
     }
 
+    if (!instance.wayland.input_method_manager) {
+        g_warning("Wayland input method interface not available");
+    }
+
     instance.settings_context = eekboard_context_service_new();
 
     // set up dbus
@@ -261,14 +265,16 @@ main (int argc, char **argv)
         exit (1);
     }
 
-    if (instance.wayland.input_method_manager) {
-        // Cannot fail
-        instance.submission = get_submission(instance.wayland.input_method_manager,
-                                             instance.wayland.seat,
-                                             instance.settings_context);
-    }
+    instance.submission = get_submission(instance.wayland.input_method_manager,
+                                         instance.wayland.virtual_keyboard_manager,
+                                         instance.wayland.seat,
+                                         instance.settings_context);
 
-    ServerContextService *ui_context = server_context_service_new(instance.settings_context);
+    eekboard_context_service_set_submission(instance.settings_context, instance.submission);
+
+    ServerContextService *ui_context = server_context_service_new(
+                instance.settings_context,
+                instance.submission);
     if (!ui_context) {
         g_error("Could not initialize GUI");
         exit(1);

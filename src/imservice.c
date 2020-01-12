@@ -23,11 +23,19 @@ static const struct zwp_input_method_v2_listener input_method_listener = {
     .unavailable = imservice_handle_unavailable,
 };
 
-struct submission* get_submission(struct zwp_input_method_manager_v2 *manager,
+struct submission* get_submission(struct zwp_input_method_manager_v2 *immanager,
+                                  struct zwp_virtual_keyboard_manager_v1 *vkmanager,
                                   struct wl_seat *seat,
                                   EekboardContextService *state) {
-    struct zwp_input_method_v2 *im = zwp_input_method_manager_v2_get_input_method(manager, seat);
-    return submission_new(im, state);
+    struct zwp_input_method_v2 *im = NULL;
+    if (immanager) {
+        im = zwp_input_method_manager_v2_get_input_method(immanager, seat);
+    }
+    struct zwp_virtual_keyboard_v1 *vk = NULL;
+    if (vkmanager) {
+        vk = zwp_virtual_keyboard_manager_v1_create_virtual_keyboard(vkmanager, seat);
+    }
+    return submission_new(im, vk, state);
 }
 
 /// Un-inlined

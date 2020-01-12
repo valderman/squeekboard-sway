@@ -1,9 +1,11 @@
 /*! Managing the events belonging to virtual-keyboard interface. */
 
 use ::keyboard::{ KeyCode, PressType };
+use ::layout::c::LevelKeyboard;
 
 /// Gathers stuff defined in C or called by C
 pub mod c {
+    use super::*;
     use std::os::raw::c_void;
 
     #[repr(transparent)]
@@ -12,13 +14,16 @@ pub mod c {
 
     #[no_mangle]
     extern "C" {
-        /// Checks if point falls within bounds,
-        /// which are relative to origin and rotated by angle (I think)
         pub fn eek_virtual_keyboard_v1_key(
             virtual_keyboard: ZwpVirtualKeyboardV1,
             timestamp: u32,
             keycode: u32,
             press: u32,
+        );
+
+        pub fn eek_virtual_keyboard_update_keymap(
+            virtual_keyboard: ZwpVirtualKeyboardV1,
+            keyboard: LevelKeyboard,
         );
     }
 }
@@ -62,6 +67,15 @@ impl VirtualKeyboard {
                 // and do nothing at release time
                 (PressType::Released, _) => {},
             }
+        }
+    }
+    
+    pub fn update_keymap(&self, keyboard: LevelKeyboard) {
+        unsafe {
+            c::eek_virtual_keyboard_update_keymap(
+                self.0,
+                keyboard,
+            );
         }
     }
 }
