@@ -12,65 +12,29 @@ use std::convert::TryFrom;
 /// Gathers stuff defined in C or called by C
 pub mod c {
     use super::*;
-    
+
     use std::os::raw::{c_char, c_void};
+
+    pub use ::submission::c::UIManager;
+    pub use ::submission::c::StateManager;
 
     // The following defined in C
         
     /// struct zwp_input_method_v2*
     #[repr(transparent)]
     pub struct InputMethod(*const c_void);
-    
-    /// ServerContextService*
-    #[repr(transparent)]
-    pub struct UIManager(*const c_void);
-
-    /// EekboardContextService*
-    #[repr(transparent)]
-    pub struct StateManager(*const c_void);
 
     #[no_mangle]
     extern "C" {
         fn imservice_destroy_im(im: *mut c::InputMethod);
+        #[allow(improper_ctypes)] // IMService will never be dereferenced in C
+        pub fn imservice_connect_listeners(im: *mut InputMethod, imservice: *const IMService);
         fn eekboard_context_service_set_hint_purpose(state: *const StateManager, hint: u32, purpose: u32);
         fn server_context_service_show_keyboard(imservice: *const UIManager);
         fn server_context_service_hide_keyboard(imservice: *const UIManager);
     }
     
     // The following defined in Rust. TODO: wrap naked pointers to Rust data inside RefCells to prevent multiple writers
-    
-    #[no_mangle]
-    pub extern "C"
-    fn imservice_new(
-        im: *const InputMethod,
-        state_manager: *const StateManager
-    ) -> *mut IMService {
-        Box::<IMService>::into_raw(Box::new(
-            IMService {
-                im: im,
-                state_manager: state_manager,
-                ui_manager: None,
-                pending: IMProtocolState::default(),
-                current: IMProtocolState::default(),
-                preedit_string: String::new(),
-                serial: Wrapping(0u32),
-            }
-        ))
-    }
-
-    #[no_mangle]
-    pub extern "C"
-    fn imservice_set_ui(imservice: *mut IMService, ui_manager: *const UIManager) {
-        if imservice.is_null() {
-            panic!("Null imservice pointer");
-        }
-        let imservice: &mut IMService = unsafe { &mut *imservice };
-        imservice.ui_manager = if ui_manager.is_null() {
-            None
-        } else {
-            Some(ui_manager)
-        };
-    }
     
     // TODO: is unsafe needed here?
     #[no_mangle]
@@ -203,7 +167,7 @@ pub mod c {
         if let Some(ui) = imservice.ui_manager {
             server_context_service_hide_keyboard(ui);
         }
-    }
+    }    
 
     // FIXME: destroy and deallocate
     
@@ -349,12 +313,38 @@ pub struct IMService {
     /// Owned reference (still created and destroyed in C)
     pub im: *const c::InputMethod,
     /// Unowned reference. Be careful, it's shared with C at large
-    ui_manager: Option<*const c::UIManager>,
-    /// Unowned reference. Be careful, it's shared with C at large
     state_manager: *const c::StateManager,
+    /// Unowned reference. Be careful, it's shared with C at large
+    pub ui_manager: Option<*const c::UIManager>,
 
     pending: IMProtocolState,
     current: IMProtocolState, // turn current into an idiomatic representation?
     preedit_string: String,
     serial: Wrapping<u32>,
+}
+
+impl IMService {
+    pub fn new(
+        im: *mut c::InputMethod,
+        state_manager: *const c::StateManager,
+    ) -> Box<IMService> {
+        // IMService will be referenced to by C,
+        // so it needs to stay in the same place in memory via Box
+        let imservice = Box::new(IMService {
+            im,
+            ui_manager: None,
+            state_manager,
+            pending: IMProtocolState::default(),
+            current: IMProtocolState::default(),
+            preedit_string: String::new(),
+            serial: Wrapping(0u32),
+        });
+        unsafe {
+            c::imservice_connect_listeners(
+                im,
+                imservice.as_ref() as *const IMService,
+            );
+        }
+        imservice
+    }
 }

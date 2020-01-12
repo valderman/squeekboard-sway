@@ -28,8 +28,8 @@
 #include "eek/eek.h"
 #include "eekboard/eekboard-context-service.h"
 #include "dbus.h"
-#include "imservice.h"
 #include "outputs.h"
+#include "submission.h"
 #include "server-context-service.h"
 #include "wayland.h"
 
@@ -42,7 +42,7 @@ struct squeekboard {
     DBusHandler *dbus_handler;
     EekboardContextService *settings_context;
     ServerContextService *ui_context;
-    struct imservice *imservice;
+    struct submission *submission;
 };
 
 
@@ -261,16 +261,11 @@ main (int argc, char **argv)
         exit (1);
     }
 
-    struct imservice *imservice = NULL;
     if (instance.wayland.input_method_manager) {
-        imservice = get_imservice(instance.wayland.input_method_manager,
-                                  instance.wayland.seat,
-                                  instance.settings_context);
-        if (imservice) {
-            instance.imservice = imservice;
-        } else {
-            g_warning("Failed to register as an input method");
-        }
+        // Cannot fail
+        instance.submission = get_submission(instance.wayland.input_method_manager,
+                                             instance.wayland.seat,
+                                             instance.settings_context);
     }
 
     ServerContextService *ui_context = server_context_service_new(instance.settings_context);
@@ -279,8 +274,8 @@ main (int argc, char **argv)
         exit(1);
     }
     instance.ui_context = ui_context;
-    if (instance.imservice) {
-        imservice_set_ui(instance.imservice, instance.ui_context);
+    if (instance.submission) {
+        submission_set_ui(instance.submission, instance.ui_context);
     }
     if (instance.dbus_handler) {
         dbus_handler_set_ui_context(instance.dbus_handler, instance.ui_context);

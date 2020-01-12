@@ -244,7 +244,7 @@ pub mod c {
     pub mod procedures {
         use super::*;
 
-        use ::submission::c::ZwpVirtualKeyboardV1;
+        use ::vkeyboard::c::ZwpVirtualKeyboardV1;
 
         // This is constructed only in C, no need for warnings
         #[allow(dead_code)]
