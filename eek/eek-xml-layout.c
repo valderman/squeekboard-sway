@@ -30,9 +30,8 @@
 
 LevelKeyboard *
 eek_xml_layout_real_create_keyboard (const char *keyboard_type,
-                                     EekboardContextService *manager,
                                      enum squeek_arrangement_kind t)
 {
     struct squeek_layout *layout = squeek_load_layout(keyboard_type, t);
-    return level_keyboard_new(manager, layout);
+    return level_keyboard_new(layout);
 }

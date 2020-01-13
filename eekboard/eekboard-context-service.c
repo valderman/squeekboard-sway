@@ -81,11 +81,10 @@ struct _EekboardContextServicePrivate {
 G_DEFINE_TYPE_WITH_PRIVATE (EekboardContextService, eekboard_context_service, G_TYPE_OBJECT);
 
 static LevelKeyboard *
-eekboard_context_service_real_create_keyboard (EekboardContextService *self,
-                                               const gchar            *keyboard_type,
+eekboard_context_service_real_create_keyboard (const gchar            *keyboard_type,
                                                enum squeek_arrangement_kind t)
 {
-    LevelKeyboard *keyboard = eek_xml_layout_real_create_keyboard(keyboard_type, self, t);
+    LevelKeyboard *keyboard = eek_xml_layout_real_create_keyboard(keyboard_type, t);
     if (!keyboard) {
         g_error("Failed to create a keyboard");
     }
@@ -220,7 +219,7 @@ eekboard_context_service_update_layout(EekboardContextService *context, enum squ
     }
 
     // generic part follows
-    LevelKeyboard *keyboard = eekboard_context_service_real_create_keyboard(context, keyboard_layout, t);
+    LevelKeyboard *keyboard = eekboard_context_service_real_create_keyboard(keyboard_layout, t);
     // set as current
     LevelKeyboard *previous_keyboard = context->priv->keyboard;
     context->priv->keyboard = keyboard;

@@ -30,7 +30,6 @@ G_BEGIN_DECLS
 
 LevelKeyboard *
 eek_xml_layout_real_create_keyboard (const char *keyboard_type,
-                                     EekboardContextService *manager,
                                      enum squeek_arrangement_kind t);
 G_END_DECLS
 #endif  /* EEK_XML_LAYOUT_H */
