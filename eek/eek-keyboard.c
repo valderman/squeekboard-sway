@@ -18,20 +18,8 @@
  * 02110-1301 USA
  */
 
-/**
- * SECTION:eek-keyboard
- * @short_description: Base class of a keyboard
- * @see_also: #EekSection
- *
- * The #EekKeyboardClass class represents a keyboard, which consists
- * of one or more sections of the #EekSectionClass class.
- */
-
 #include "config.h"
-#include <glib/gprintf.h>
 
-#include "eekboard/eekboard-context-service.h"
-#include "keymap.h"
 #include "eek-keyboard.h"
 
 void level_keyboard_deinit(LevelKeyboard *self) {
@@ -49,7 +37,7 @@ void level_keyboard_init(LevelKeyboard *self, struct squeek_layout *layout) {
     self->layout = layout;
 }
 
-LevelKeyboard *level_keyboard_new(EekboardContextService *manager, struct squeek_layout *layout) {
+LevelKeyboard *level_keyboard_new(struct squeek_layout *layout) {
     LevelKeyboard *keyboard = g_new0(LevelKeyboard, 1);
     level_keyboard_init(keyboard, layout);
     return keyboard;
