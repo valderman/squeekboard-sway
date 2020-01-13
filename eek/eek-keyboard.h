@@ -28,7 +28,6 @@
 #include <glib-object.h>
 #include <xkbcommon/xkbcommon.h>
 #include "eek-types.h"
-#include "eek-layout.h"
 #include "src/layout.h"
 
 G_BEGIN_DECLS
@@ -47,8 +46,9 @@ typedef struct _LevelKeyboard LevelKeyboard;
 gchar *             eek_keyboard_get_keymap
                                      (LevelKeyboard *keyboard);
 
-LevelKeyboard *level_keyboard_new(struct squeek_layout *layout);
-void level_keyboard_deinit(LevelKeyboard *self);
+LevelKeyboard*
+level_keyboard_new (const gchar            *keyboard_type,
+                    enum squeek_arrangement_kind t);
 void level_keyboard_free(LevelKeyboard *self);
 
 G_END_DECLS

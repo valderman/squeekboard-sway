@@ -16,31 +16,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/**
- * SECTION:eekboard-context-service
- * @short_description: base server implementation of eekboard input
- * context service
- *
- * The #EekboardService class provides a base server side
- * implementation of eekboard input context service.
- */
-
 #include "config.h"
 
-#include <fcntl.h>
 #include <stdio.h>
-#define _XOPEN_SOURCE 500
-#include <string.h>
-#include <sys/mman.h>
-#include <sys/random.h> // TODO: this is Linux-specific
-#include <xkbcommon/xkbcommon.h>
 
 #include <gio/gio.h>
 
 #include "wayland.h"
 
 #include "eek/eek-keyboard.h"
-#include "eek/eek-xml-layout.h"
 #include "src/server-context-service.h"
 
 #include "eekboard/eekboard-context-service.h"
@@ -79,60 +63,6 @@ struct _EekboardContextServicePrivate {
 };
 
 G_DEFINE_TYPE_WITH_PRIVATE (EekboardContextService, eekboard_context_service, G_TYPE_OBJECT);
-
-static LevelKeyboard *
-eekboard_context_service_real_create_keyboard (const gchar            *keyboard_type,
-                                               enum squeek_arrangement_kind t)
-{
-    LevelKeyboard *keyboard = eek_xml_layout_real_create_keyboard(keyboard_type, t);
-    if (!keyboard) {
-        g_error("Failed to create a keyboard");
-    }
-
-    struct xkb_context *context = xkb_context_new(XKB_CONTEXT_NO_FLAGS);
-    if (!context) {
-        g_error("No context created");
-    }
-
-    const gchar *keymap_str = squeek_layout_get_keymap(keyboard->layout);
-
-    struct xkb_keymap *keymap = xkb_keymap_new_from_string(context, keymap_str,
-        XKB_KEYMAP_FORMAT_TEXT_V1, XKB_KEYMAP_COMPILE_NO_FLAGS);
-
-    if (!keymap)
-        g_error("Bad keymap:\n%s", keymap_str);
-
-    xkb_context_unref(context);
-    keyboard->keymap = keymap;
-
-    keymap_str = xkb_keymap_get_as_string(keymap, XKB_KEYMAP_FORMAT_TEXT_V1);
-    keyboard->keymap_len = strlen(keymap_str) + 1;
-
-    g_autofree char *path = strdup("/eek_keymap-XXXXXX");
-    char *r = &path[strlen(path) - 6];
-    getrandom(r, 6, GRND_NONBLOCK);
-    for (unsigned i = 0; i < 6; i++) {
-        r[i] = (r[i] & 0b1111111) | 0b1000000; // A-z
-        r[i] = r[i] > 'z' ? '?' : r[i]; // The randomizer doesn't need to be good...
-    }
-    int keymap_fd = shm_open(path, O_RDWR | O_CREAT | O_EXCL, 0600);
-    if (keymap_fd < 0) {
-        g_error("Failed to set up keymap fd");
-    }
-    keyboard->keymap_fd = keymap_fd;
-    shm_unlink(path);
-    if (ftruncate(keymap_fd, (off_t)keyboard->keymap_len)) {
-        g_error("Failed to increase keymap fd size");
-    }
-    char *ptr = mmap(NULL, keyboard->keymap_len, PROT_WRITE, MAP_SHARED,
-        keymap_fd, 0);
-    if ((void*)ptr == (void*)-1) {
-        g_error("Failed to set up mmap");
-    }
-    strncpy(ptr, keymap_str, keyboard->keymap_len);
-    munmap(ptr, keyboard->keymap_len);
-    return keyboard;
-}
 
 static void
 eekboard_context_service_set_property (GObject      *object,
@@ -219,14 +149,12 @@ eekboard_context_service_update_layout(EekboardContextService *context, enum squ
     }
 
     // generic part follows
-    LevelKeyboard *keyboard = eekboard_context_service_real_create_keyboard(keyboard_layout, t);
+    LevelKeyboard *keyboard = level_keyboard_new(keyboard_layout, t);
     // set as current
     LevelKeyboard *previous_keyboard = context->priv->keyboard;
     context->priv->keyboard = keyboard;
-
     // Update the keymap if necessary.
-    // Done directly here instead of in "keyboard" update handler
-    // to keep keymap-related actions close together.
+    // TODO: Update submission on change event
     if (context->priv->submission) {
         submission_set_keyboard(context->priv->submission, keyboard);
     }
