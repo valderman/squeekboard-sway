@@ -8,7 +8,7 @@ void imservice_handle_input_method_activate(void *data, struct zwp_input_method_
 void imservice_handle_input_method_deactivate(void *data, struct zwp_input_method_v2 *input_method);
 void imservice_handle_surrounding_text(void *data, struct zwp_input_method_v2 *input_method,
                                        const char *text, uint32_t cursor, uint32_t anchor);
-void imservice_handle_commit_state(void *data, struct zwp_input_method_v2 *input_method);
+void imservice_handle_done(void *data, struct zwp_input_method_v2 *input_method);
 void imservice_handle_content_type(void *data, struct zwp_input_method_v2 *input_method, uint32_t hint, uint32_t purpose);
 void imservice_handle_text_change_cause(void *data, struct zwp_input_method_v2 *input_method, uint32_t cause);
 void imservice_handle_unavailable(void *data, struct zwp_input_method_v2 *input_method);
@@ -19,7 +19,7 @@ static const struct zwp_input_method_v2_listener input_method_listener = {
     .surrounding_text = imservice_handle_surrounding_text,
     .text_change_cause = imservice_handle_text_change_cause,
     .content_type = imservice_handle_content_type,
-    .done = imservice_handle_commit_state,
+    .done = imservice_handle_done,
     .unavailable = imservice_handle_unavailable,
 };
 

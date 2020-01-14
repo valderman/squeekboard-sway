@@ -122,13 +122,12 @@ pub mod c {
     
     #[no_mangle]
     pub extern "C"
-    fn imservice_handle_commit_state(imservice: *mut IMService,
+    fn imservice_handle_done(imservice: *mut IMService,
         im: *const InputMethod)
     {
         let imservice = check_imservice(imservice, im).unwrap();
         let active_changed = imservice.current.active ^ imservice.pending.active;
-        
-        imservice.serial += Wrapping(1u32);
+
         imservice.current = imservice.pending.clone();
         imservice.pending = IMProtocolState {
             active: imservice.current.active,
