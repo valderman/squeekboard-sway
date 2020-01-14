@@ -2,6 +2,7 @@
 
 use ::keyboard::{ KeyCode, PressType };
 use ::layout::c::LevelKeyboard;
+use ::submission::Timestamp;
 
 /// Gathers stuff defined in C or called by C
 pub mod c {
@@ -27,9 +28,6 @@ pub mod c {
         );
     }
 }
-
-#[derive(Clone, Copy)]
-pub struct Timestamp(pub u32);
 
 /// Layout-independent backend. TODO: Have one instance per program or seat
 pub struct VirtualKeyboard(pub c::ZwpVirtualKeyboardV1);

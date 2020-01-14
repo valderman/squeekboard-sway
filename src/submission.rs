@@ -18,11 +18,7 @@
  * */
 
 use ::imservice::IMService;
-//use ::vkeyboard::VirtualKeyboard;
-
-/// Temporary reexport to keep stuff based directly on virtual-keyboard working
-/// until a unified handler appears and prompts a rework.
-pub use vkeyboard::*;
+use ::vkeyboard::VirtualKeyboard;
 
 /// Gathers stuff defined in C or called by C
 pub mod c {
@@ -92,6 +88,9 @@ pub mod c {
         submission.virtual_keyboard.update_keymap(keyboard);
     }
 }
+
+#[derive(Clone, Copy)]
+pub struct Timestamp(pub u32);
 
 pub struct Submission {
     // used by C callbacks internally, TODO: make use with virtual keyboard
