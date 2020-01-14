@@ -1,4 +1,5 @@
 use std::boxed::Box;
+use std::ffi;
 use std::ffi::CString;
 use std::num::Wrapping;
 use std::string::String;
@@ -29,6 +30,8 @@ pub mod c {
         fn imservice_destroy_im(im: *mut c::InputMethod);
         #[allow(improper_ctypes)] // IMService will never be dereferenced in C
         pub fn imservice_connect_listeners(im: *mut InputMethod, imservice: *const IMService);
+        pub fn eek_input_method_commit_string(im: *mut InputMethod, text: *const c_char);
+        
         fn eekboard_context_service_set_hint_purpose(state: *const StateManager, hint: u32, purpose: u32);
         fn server_context_service_show_keyboard(imservice: *const UIManager);
         fn server_context_service_hide_keyboard(imservice: *const UIManager);
@@ -314,7 +317,7 @@ impl Default for IMProtocolState {
 
 pub struct IMService {
     /// Owned reference (still created and destroyed in C)
-    pub im: *const c::InputMethod,
+    pub im: *mut c::InputMethod,
     /// Unowned reference. Be careful, it's shared with C at large
     state_manager: *const c::StateManager,
     /// Unowned reference. Be careful, it's shared with C at large
@@ -324,6 +327,13 @@ pub struct IMService {
     current: IMProtocolState, // turn current into an idiomatic representation?
     preedit_string: String,
     serial: Wrapping<u32>,
+}
+
+pub enum SubmitError {
+    /// The input method had not been activated
+    NotActive,
+    /// Submitted text has null bytes
+    NullBytes(ffi::NulError),
 }
 
 impl IMService {
@@ -349,5 +359,18 @@ impl IMService {
             );
         }
         imservice
+    }
+    
+    pub fn commit_string(&self, text: &str) -> Result<(), SubmitError> {
+        match self.current.active {
+            true => {
+                let text = CString::new(text).map_err(SubmitError::NullBytes)?;
+                unsafe {
+                    c::eek_input_method_commit_string(self.im, text.as_ptr())
+                }
+                Ok(())
+            },
+            false => Err(SubmitError::NotActive),
+        }
     }
 }
