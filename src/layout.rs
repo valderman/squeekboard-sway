@@ -265,6 +265,11 @@ pub mod c {
             let time = Timestamp(time);
             let layout = unsafe { &mut *layout };
             let virtual_keyboard = VirtualKeyboard(virtual_keyboard);
+            let ui_backend = UIBackend {
+                widget_to_layout,
+                keyboard: ui_keyboard,
+            };
+
             // The list must be copied,
             // because it will be mutated in the loop
             for key in layout.pressed_keys.clone() {
@@ -272,17 +277,16 @@ pub mod c {
                 seat::handle_release_key(
                     layout,
                     &virtual_keyboard,
-                    &widget_to_layout,
+                    Some(&ui_backend),
                     time,
-                    ui_keyboard,
-                    manager,
+                    Some(manager),
                     key,
                 );
             }
             drawing::queue_redraw(ui_keyboard);
         }
 
-        /// Release all buittons but don't redraw
+        /// Release all buttons but don't redraw
         #[no_mangle]
         pub extern "C"
         fn squeek_layout_release_all_only(
@@ -296,10 +300,13 @@ pub mod c {
             // because it will be mutated in the loop
             for key in layout.pressed_keys.clone() {
                 let key: &Rc<RefCell<KeyState>> = key.borrow();
-                layout.release_key(
+                seat::handle_release_key(
+                    layout,
                     &virtual_keyboard,
+                    None, // don't update UI
+                    Timestamp(time),
+                    None, // don't switch layouts
                     &mut key.clone(),
-                    Timestamp(time)
                 );
             }
         }
@@ -353,8 +360,11 @@ pub mod c {
             let time = Timestamp(time);
             let layout = unsafe { &mut *layout };
             let virtual_keyboard = VirtualKeyboard(virtual_keyboard);
-
-            let point = widget_to_layout.forward(
+            let ui_backend = UIBackend {
+                widget_to_layout,
+                keyboard: ui_keyboard,
+            };
+            let point = ui_backend.widget_to_layout.forward(
                 Point { x: x_widget, y: y_widget }
             );
             
@@ -379,10 +389,9 @@ pub mod c {
                         seat::handle_release_key(
                             layout,
                             &virtual_keyboard,
-                            &widget_to_layout,
+                            Some(&ui_backend),
                             time,
-                            ui_keyboard,
-                            manager,
+                            Some(manager),
                             key,
                         );
                     }
@@ -397,10 +406,9 @@ pub mod c {
                     seat::handle_release_key(
                         layout,
                         &virtual_keyboard,
-                        &widget_to_layout,
+                        Some(&ui_backend),
                         time,
-                        ui_keyboard,
-                        manager,
+                        Some(manager),
                         key,
                     );
                 }
@@ -612,6 +620,7 @@ pub struct LayoutData {
     pub margins: Margins,
 }
 
+#[derive(Debug)]
 struct NoSuchView;
 
 // Unfortunately, changes are not atomic due to mutability :(
@@ -644,84 +653,22 @@ impl Layout {
         }
     }
 
-    fn release_key(
-        &mut self,
-        virtual_keyboard: &VirtualKeyboard,
-        mut key: &mut Rc<RefCell<KeyState>>,
-        time: Timestamp,
-    ) {
-        if !self.pressed_keys.remove(&::util::Pointer(key.clone())) {
-            eprintln!("Warning: key {:?} was not pressed", key);
-        }
-        virtual_keyboard.switch(
-            &mut key.borrow_mut(),
-            PressType::Released,
-            time,
-        );
-        self.set_level_from_press(&mut key);
-    }
-    
     fn press_key(
         &mut self,
         virtual_keyboard: &VirtualKeyboard,
-        key: &mut Rc<RefCell<KeyState>>,
+        rckey: &mut Rc<RefCell<KeyState>>,
         time: Timestamp,
     ) {
-        if !self.pressed_keys.insert(::util::Pointer(key.clone())) {
-            eprintln!("Warning: key {:?} was already pressed", key);
+        if !self.pressed_keys.insert(::util::Pointer(rckey.clone())) {
+            eprintln!("Warning: key {:?} was already pressed", rckey);
         }
+        let mut key = rckey.borrow_mut();
         virtual_keyboard.switch(
-            &mut key.borrow_mut(),
+            &key.keycodes,
             PressType::Pressed,
             time,
         );
-    }
-
-    fn set_level_from_press(&mut self, key: &Rc<RefCell<KeyState>>) {
-        let keys = self.locked_keys.clone();
-        for key in &keys {
-            self.locked_keys.remove(key);
-            self.set_state_from_press(key.borrow());
-        }
-
-        // Don't handle the same key twice, but handle it at least once,
-        // because its press is the reason we're here
-        if !keys.contains(&::util::Pointer(key.clone())) {
-            self.set_state_from_press(key);
-        }
-    }
-
-    fn set_state_from_press(&mut self, key: &Rc<RefCell<KeyState>>) {
-        // Action should not hold a reference to key,
-        // because key is later borrowed for mutation. So action is cloned.
-        // RefCell::borrow() is covered up by (dyn Borrow)::borrow()
-        // if used like key.borrow() :(
-        let action = RefCell::borrow(key).action.clone();
-        let view_name = match action {
-            Action::SetLevel(name) => {
-                Some(name.clone())
-            },
-            Action::LockLevel { lock, unlock } => {
-                let locked = {
-                    let mut key = key.borrow_mut();
-                    key.locked ^= true;
-                    key.locked
-                };
-
-                if locked {
-                    self.locked_keys.insert(::util::Pointer(key.clone()));
-                }
-
-                Some(if locked { lock } else { unlock }.clone())
-            },
-            _ => None,
-        };
-
-        if let Some(view_name) = view_name {
-            if let Err(_e) = self.set_view(view_name.clone()) {
-                eprintln!("No such view: {}, ignoring switch", view_name)
-            };
-        };
+        key.pressed = PressType::Pressed;
     }
 
     /// Calculates size without margins
@@ -848,44 +795,161 @@ mod procedures {
     }
 }
 
+pub struct UIBackend {
+    widget_to_layout: c::Transformation,
+    keyboard: c::EekGtkKeyboard,
+}
+
 /// Top level procedures, dispatching to everything
 mod seat {
     use super::*;
 
-    // TODO: turn into release_button
+    fn try_set_view(layout: &mut Layout, view_name: String) {
+        layout.set_view(view_name.clone())
+            .map_err(|e|
+                eprintln!("Bad view {} ({:?}), ignoring", view_name, e)
+            ).ok();
+    }
+
+    /// A vessel holding an obligation to switch view.
+    /// Use with #[must_use]
+    struct ViewChange<'a> {
+        layout: &'a mut Layout,
+        view_name: Option<String>,
+    }
+    
+    impl<'a> ViewChange<'a> {
+        fn choose_view(self, view_name: String) -> ViewChange<'a> {
+            ViewChange {
+                view_name: Some(view_name),
+                ..self
+            }
+        }
+        fn apply(self) {
+            if let Some(name) = self.view_name {
+                try_set_view(self.layout, name);
+            }
+        }
+    }
+
+    /// Find all impermanent view changes and undo them in an arbitrary order.
+    /// Return an obligation to actually switch the view.
+    /// The final view is the "unlock" view
+    /// from one of the currently stuck keys.
+    // As long as only one stuck button is used, this should be fine.
+    // This is guaranteed because pressing a lock button unlocks all others.
+    // TODO: Make some broader guarantee about the resulting view,
+    // e.g. by maintaining a stack of stuck keys.
+    #[must_use]
+    fn unstick_locks(layout: &mut Layout) -> ViewChange {
+        let mut new_view = None;
+        for key in layout.locked_keys.clone() {
+            let key: &Rc<RefCell<KeyState>> = key.borrow();
+            let mut key = RefCell::borrow_mut(key);
+            match &key.action {
+                Action::LockView { lock: _, unlock: view } => {
+                    new_view = Some(view.clone());
+                },
+                a => eprintln!(
+                    "BUG: action {:?} was found inside locked keys",
+                    a
+                ),
+            };
+            key.locked = false;
+        }
+        
+        ViewChange {
+            layout,
+            view_name: new_view,
+        }
+    }
+
     pub fn handle_release_key(
         layout: &mut Layout,
         virtual_keyboard: &VirtualKeyboard,
-        widget_to_layout: &c::Transformation,
+        ui: Option<&UIBackend>,
         time: Timestamp,
-        ui_keyboard: c::EekGtkKeyboard,
-        manager: manager::c::Manager,
-        key: &Rc<RefCell<KeyState>>,
+        manager: Option<manager::c::Manager>,
+        rckey: &Rc<RefCell<KeyState>>,
     ) {
-        layout.release_key(virtual_keyboard, &mut key.clone(), time);
+        let key: KeyState = {
+            RefCell::borrow(rckey).clone()
+        };
+        let action = key.action.clone();
 
-        let view = layout.get_current_view();
-        let action = RefCell::borrow(key).action.clone();
-        if let Action::ShowPreferences = action {
-            let places = ::layout::procedures::find_key_places(
-                view, key
-            );
-            // getting first item will cause mispositioning
-            // with more than one button with the same key
-            // on the keyboard
-            if let Some((offset, button)) = places.get(0) {
-                let bounds = c::Bounds {
-                    x: offset.x, y: offset.y,
-                    width: button.size.width,
-                    height: button.size.height,
-                };
-                ::popover::show(
-                    ui_keyboard,
-                    widget_to_layout.reverse_bounds(bounds),
-                    manager,
+        // update
+        let key = key.into_released();
+        let key = match action {
+            Action::LockView { lock: _, unlock: _ } => key.into_activated(),
+            _ => key,
+        };
+
+        // process changes
+        match action {
+            Action::Submit { text: _, keys: _ } => {
+                unstick_locks(layout).apply();
+                virtual_keyboard.switch(
+                    &key.keycodes,
+                    PressType::Released,
+                    time,
                 );
-            }
+            },
+            Action::SetView(view) => {
+                try_set_view(layout, view)
+            },
+            Action::LockView { lock, unlock } => {
+                // The button that triggered this will be in the right state
+                // due to commit at the end.
+                unstick_locks(layout)
+                    // It doesn't matter what the resulting view should be,
+                    // it's getting changed anyway.
+                    .choose_view(
+                        match key.locked {
+                            true => lock.clone(),
+                            false => unlock.clone(),
+                        }
+                    )
+                    .apply()
+            },
+            // only show when UI is present
+            Action::ShowPreferences => if let Some(ui) = &ui {
+                // only show when layout manager is available
+                if let Some(manager) = manager {
+                    let view = layout.get_current_view();
+                    let places = ::layout::procedures::find_key_places(
+                        view, &rckey,
+                    );
+                    // Getting first item will cause mispositioning
+                    // with more than one button with the same key
+                    // on the keyboard.
+                    if let Some((position, button)) = places.get(0) {
+                        let bounds = c::Bounds {
+                            x: position.x,
+                            y: position.y,
+                            width: button.size.width,
+                            height: button.size.height,
+                        };
+                        ::popover::show(
+                            ui.keyboard,
+                            ui.widget_to_layout.reverse_bounds(bounds),
+                            manager,
+                        );
+                    }
+                }
+            },
+            Action::SetModifier(_) => eprintln!("Modifiers unsupported"),
+        };
+
+        let pointer = ::util::Pointer(rckey.clone());
+        // Apply state changes
+        layout.pressed_keys.remove(&pointer);
+        if key.locked {
+            layout.locked_keys.insert(pointer);
+        } else {
+            layout.locked_keys.remove(&pointer);
         }
+        // Commit activated button state changes
+        RefCell::replace(rckey, key);
     }
 }
 
@@ -900,7 +964,7 @@ mod test {
             pressed: PressType::Released,
             locked: false,
             keycodes: Vec::new(),
-            action: Action::SetLevel("default".into()),
+            action: Action::SetView("default".into()),
         }))
     }
 

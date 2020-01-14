@@ -522,7 +522,7 @@ fn create_action<H: WarningHandler>(
     match submission {
         SubmitData::Action(
             Action::SetView(view_name)
-        ) => ::action::Action::SetLevel(
+        ) => ::action::Action::SetView(
             filter_view_name(
                 name, view_name.clone(), &view_names,
                 warning_handler,
@@ -530,7 +530,7 @@ fn create_action<H: WarningHandler>(
         ),
         SubmitData::Action(Action::Locking {
             lock_view, unlock_view
-        }) => ::action::Action::LockLevel {
+        }) => ::action::Action::LockView {
             lock: filter_view_name(
                 name,
                 lock_view.clone(),

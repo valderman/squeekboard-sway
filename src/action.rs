@@ -6,8 +6,8 @@ use std::ffi::CString;
 #[derive(Debug, Clone, PartialEq)]
 pub struct KeySym(pub String);
 
-/// Use to switch layouts
-type Level = String;
+/// Use to switch views
+type View = String;
 
 /// Use to send modified keypresses
 #[derive(Debug, Clone, PartialEq)]
@@ -20,12 +20,12 @@ pub enum Modifier {
 #[derive(Debug, Clone, PartialEq)]
 pub enum Action {
     /// Switch to this view
-    SetLevel(Level),
+    SetView(View),
     /// Switch to a view and latch
-    LockLevel {
-        lock: Level,
+    LockView {
+        lock: View,
         /// When unlocked by pressing it or emitting a key
-        unlock: Level,
+        unlock: View,
     },
     /// Set this modifier TODO: release?
     SetModifier(Modifier),

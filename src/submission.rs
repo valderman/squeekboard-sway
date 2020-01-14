@@ -1,6 +1,6 @@
 /*! Managing the events belonging to virtual-keyboard interface. */
 
-use ::keyboard::{ KeyState, PressType };
+use ::keyboard::{ KeyCode, PressType };
 
 /// Gathers stuff defined in C or called by C
 pub mod c {
@@ -33,16 +33,14 @@ impl VirtualKeyboard {
     // TODO: split out keyboard state management
     pub fn switch(
         &self,
-        key: &mut KeyState,
+        keycodes: &Vec<KeyCode>,
         action: PressType,
         timestamp: Timestamp,
     ) {
-        key.pressed = action.clone();
-
-        let keycodes_count = key.keycodes.len();
-        for keycode in key.keycodes.iter() {
+        let keycodes_count = keycodes.len();
+        for keycode in keycodes.iter() {
             let keycode = keycode - 8;
-            match (&key.pressed, keycodes_count) {
+            match (action, keycodes_count) {
                 // Pressing a key made out of a single keycode is simple:
                 // press on press, release on release.
                 (_, 1) => unsafe {
