@@ -1,13 +1,16 @@
 /*! State of the emulated keyboard and keys.
  * Regards the keyboard as if it was composed of switches. */
 
+use std::cell::RefCell;
 use std::collections::HashMap;
 use std::fmt;
 use std::io;
+use std::rc::Rc;
 use std::string::FromUtf8Error;
 
 use ::action::Action;
 
+// Traits
 use std::io::Write;
 use std::iter::{ FromIterator, IntoIterator };
 
@@ -18,6 +21,11 @@ pub enum PressType {
 }
 
 pub type KeyCode = u32;
+
+/// When the submitted actions of keys need to be tracked,
+/// they need a stable, comparable ID
+#[derive(PartialEq)]
+pub struct KeyStateId(*const KeyState);
 
 #[derive(Debug, Clone)]
 pub struct KeyState {
@@ -47,6 +55,12 @@ impl KeyState {
             pressed: PressType::Released,
             ..self
         }
+    }
+
+    /// KeyStates instances are the unique identifiers of pressed keys,
+    /// and the actions submitted with them.
+    pub fn get_id(keystate: &Rc<RefCell<KeyState>>) -> KeyStateId {
+        KeyStateId(keystate.as_ptr() as *const KeyState)
     }
 }
 

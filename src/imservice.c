@@ -55,6 +55,11 @@ eek_input_method_commit_string(struct zwp_input_method_v2 *zwp_input_method_v2, 
     zwp_input_method_v2_commit_string(zwp_input_method_v2, text);
 }
 
+void
+eek_input_method_commit(struct zwp_input_method_v2 *zwp_input_method_v2, uint32_t serial)
+{
+    zwp_input_method_v2_commit(zwp_input_method_v2, serial);
+}
 
 /// Declared explicitly because _destroy is inline,
 /// making it unavailable in Rust

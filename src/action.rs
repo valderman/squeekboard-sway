@@ -31,7 +31,8 @@ pub enum Action {
     SetModifier(Modifier),
     /// Submit some text
     Submit {
-        /// Text to submit with input-method
+        /// Text to submit with input-method.
+        /// If None, then keys are to be submitted instead.
         text: Option<CString>,
         /// The key events this symbol submits when submitting text is not possible
         keys: Vec<KeySym>,
