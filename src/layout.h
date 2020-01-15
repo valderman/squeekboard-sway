@@ -7,6 +7,7 @@
 #include "eek/eek-gtk-keyboard.h"
 #include "eek/eek-renderer.h"
 #include "eek/eek-types.h"
+#include "src/submission.h"
 #include "virtual-keyboard-unstable-v1-client-protocol.h"
 
 enum squeek_arrangement_kind {
@@ -53,6 +54,6 @@ void squeek_layout_drag(struct squeek_layout *layout,
                         struct transformation widget_to_layout,
                         uint32_t timestamp, EekboardContextService *manager,
                         EekGtkKeyboard *ui_keyboard);
-void squeek_layout_draw_all_changed(struct squeek_layout *layout, EekRenderer* renderer, cairo_t     *cr);
+void squeek_layout_draw_all_changed(struct squeek_layout *layout, EekRenderer* renderer, cairo_t     *cr, struct submission *submission);
 void squeek_draw_layout_base_view(struct squeek_layout *layout, EekRenderer* renderer, cairo_t     *cr);
 #endif

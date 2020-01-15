@@ -990,6 +990,18 @@ mod seat {
                     )
                     .apply()
             },
+            Action::ApplyModifier(modifier) => {
+                // FIXME: key id is unneeded with stateless locks
+                let key_id = KeyState::get_id(rckey);
+                let gets_locked = !submission.is_modifier_active(modifier.clone());
+                match gets_locked {
+                    true => submission.handle_add_modifier(
+                        key_id,
+                        modifier, time,
+                    ),
+                    false => submission.handle_drop_modifier(key_id, time),
+                }
+            }
             // only show when UI is present
             Action::ShowPreferences => if let Some(ui) = &ui {
                 // only show when layout manager is available
@@ -1016,10 +1028,6 @@ mod seat {
                     }
                 }
             },
-            Action::SetModifier(_) => log_print!(
-                logging::Level::Bug,
-                "Modifiers unsupported",
-            ),
         };
 
         let pointer = ::util::Pointer(rckey.clone());

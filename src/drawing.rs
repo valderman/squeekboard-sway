@@ -3,9 +3,11 @@
 use cairo;
 use std::cell::RefCell;
 
+use ::action::Action;
 use ::keyboard;
 use ::layout::{ Button, Layout };
 use ::layout::c::{ EekGtkKeyboard, Point };
+use ::submission::Submission;
 
 use glib::translate::FromGlibPtrNone;
 use gtk::WidgetExt;
@@ -44,13 +46,21 @@ mod c {
         layout: *mut Layout,
         renderer: EekRenderer,
         cr: *mut cairo_sys::cairo_t,
+        submission: *const Submission,
     ) {
         let layout = unsafe { &mut *layout };
+        let submission = unsafe { &*submission };
         let cr = unsafe { cairo::Context::from_raw_none(cr) };
+        let active_modifiers = submission.get_active_modifiers();
 
         layout.foreach_visible_button(|offset, button| {
             let state = RefCell::borrow(&button.state).clone();
-            let locked = state.action.is_active(&layout.current_view);
+            let active_mod = match &state.action {
+                Action::ApplyModifier(m) => active_modifiers.contains(m),
+                _ => false,
+            };
+            let locked = state.action.is_active(&layout.current_view)
+                | active_mod;
             if state.pressed == keyboard::PressType::Pressed || locked {
                 render_button_at_position(
                     renderer, &cr,

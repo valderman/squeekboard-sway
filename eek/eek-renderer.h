@@ -25,6 +25,7 @@
 #include <pango/pangocairo.h>
 
 #include "eek-types.h"
+#include "src/submission.h"
 
 G_BEGIN_DECLS
 
@@ -59,7 +60,7 @@ cairo_surface_t *eek_renderer_get_icon_surface(const gchar     *icon_name,
                                                 gint             size,
                                                 gint             scale);
 
-void             eek_renderer_render_keyboard  (EekRenderer     *renderer,
+void             eek_renderer_render_keyboard  (EekRenderer     *renderer, struct submission *submission,
                                                 cairo_t         *cr);
 
 struct transformation
