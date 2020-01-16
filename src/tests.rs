@@ -1,17 +1,22 @@
 /*! Testing functionality */
 
 use ::data::Layout;
+use ::logging;
 use xkbcommon::xkb;
-
-use ::logging::WarningHandler;
 
 
 pub struct CountAndPrint(u32);
 
-impl WarningHandler for CountAndPrint {
-    fn handle(&mut self, warning: &str) {
-        self.0 = self.0 + 1;
-        println!("{}", warning);
+impl logging::Handler for CountAndPrint {
+    fn handle(&mut self, level: logging::Level, warning: &str) {
+        use logging::Level::*;
+        match level {
+            Panic | Bug | Error | Warning | Surprise => {
+                self.0 += 1;
+            },
+            _ => {}
+        }
+        logging::Print{}.handle(level, warning)
     }
 }
 
@@ -34,7 +39,7 @@ fn check_layout(layout: Layout) {
     let (layout, handler) = layout.build(handler);
 
     if handler.0 > 0 {
-        println!("{} mistakes in layout", handler.0)
+        println!("{} problems while parsing layout", handler.0)
     }
 
     let layout = layout.expect("layout broken");

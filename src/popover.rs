@@ -7,6 +7,7 @@ use ::layout::c::{ Bounds, EekGtkKeyboard };
 use ::locale;
 use ::locale::{ OwnedTranslation, Translation, compare_current_locale };
 use ::locale_config::system_locale;
+use ::logging;
 use ::manager;
 use ::resources;
 
@@ -242,10 +243,13 @@ fn translate_layout_names(layouts: &Vec<LayoutId>) -> Vec<OwnedTranslation> {
                 .as_ref()
                 .to_owned()
         )
-        .or_warn("No locale detected")
+        .or_print(logging::Problem::Surprise, "No locale detected")
         .and_then(|lang| {
             resources::get_layout_names(lang.as_str())
-                .or_warn(&format!("No translations for locale {}", lang))
+                .or_print(
+                    logging::Problem::Surprise,
+                    &format!("No translations for locale {}", lang),
+                )
         });
 
     match builtin_translations {
