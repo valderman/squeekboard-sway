@@ -108,8 +108,20 @@ pub enum Problem {
     Surprise,
 }
 
+/// Sugar for approach 2
+// TODO: avoid, deprecate.
+// Handler instances should be long lived, not one per call.
+macro_rules! log_print {
+    ($level:expr, $($arg:tt)*) => (::logging::print($level, &format!($($arg)*)))
+}
+
+/// Approach 2
+pub fn print(level: Level, message: &str) {
+    Print{}.handle(level, message)
+}
+
 /// Sugar for logging errors in results.
-pub trait Warn where Self: Sized{
+pub trait Warn where Self: Sized {
     type Value;
     /// Approach 2.
     fn or_print(self, level: Problem, message: &str) -> Option<Self::Value> {

@@ -190,11 +190,13 @@ fn load_layout_data_with_fallback(
                 (
                     LoadError::BadData(Error::Missing(e)),
                     DataSource::File(file)
-                ) => eprintln!( // TODO: print in debug logging level
+                ) => log_print!(
+                    logging::Level::Debug,
                     "Tried file {:?}, but it's missing: {}",
                     file, e
                 ),
-                (e, source) => eprintln!(
+                (e, source) => log_print!(
+                    logging::Level::Warning,
                     "Failed to load layout from {}: {}, skipping",
                     source, e
                 ),

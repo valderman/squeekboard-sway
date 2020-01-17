@@ -8,6 +8,7 @@
 
 use std::cmp;
 use std::ffi::{ CStr, CString };
+use std::fmt;
 use std::os::raw::c_char;
 use std::ptr;
 use std::str::Utf8Error;
@@ -45,6 +46,12 @@ mod c {
 pub enum Error {
     StringConversion(Utf8Error),
     NoInfo,
+}
+
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt::Debug::fmt(&self, f)
+    }
 }
 
 pub struct XkbInfo(c::GnomeXkbInfo);

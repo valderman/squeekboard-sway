@@ -85,7 +85,10 @@ fn get_theme_name(settings: &gtk::Settings) -> GtkTheme {
             match &e {
                 env::VarError::NotPresent => {},
                 // maybe TODO: forward this warning?
-                e => eprintln!("GTK_THEME variable invalid: {}", e),
+                e => log_print!(
+                    logging::Level::Surprise,
+                    "GTK_THEME variable invalid: {}", e,
+                ),
             };
             e
         }).ok();

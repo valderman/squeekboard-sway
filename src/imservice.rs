@@ -4,10 +4,12 @@ use std::fmt;
 use std::num::Wrapping;
 use std::string::String;
 
+use ::logging;
 use ::util::c::into_cstring;
 
 // Traits
 use std::convert::TryFrom;
+use ::logging::Warn;
 
 
 /// Gathers stuff defined in C or called by C
@@ -102,16 +104,20 @@ pub mod c {
         let imservice = check_imservice(imservice, im).unwrap();
         imservice.pending = IMProtocolState {
             content_hint: {
-                ContentHint::from_bits(hint).unwrap_or_else(|| {
-                    eprintln!("Warning: received invalid hint flags");
-                    ContentHint::NONE
-                })
+                ContentHint::from_bits(hint)
+                    .or_print(
+                        logging::Problem::Warning,
+                        "Received invalid hint flags",
+                    )
+                    .unwrap_or(ContentHint::NONE)
             },
             content_purpose: {
-                ContentPurpose::try_from(purpose).unwrap_or_else(|_e| {
-                    eprintln!("Warning: Received invalid purpose value");
-                    ContentPurpose::Normal
-                })
+                ContentPurpose::try_from(purpose)
+                    .or_print(
+                        logging::Problem::Warning,
+                        "Received invalid purpose value",
+                    )
+                    .unwrap_or(ContentPurpose::Normal)
             },
             ..imservice.pending.clone()
         };
@@ -126,10 +132,12 @@ pub mod c {
         let imservice = check_imservice(imservice, im).unwrap();
         imservice.pending = IMProtocolState {
             text_change_cause: {
-                ChangeCause::try_from(cause).unwrap_or_else(|_e| {
-                    eprintln!("Warning: received invalid cause value");
-                    ChangeCause::InputMethod
-                })
+                ChangeCause::try_from(cause)
+                    .or_print(
+                        logging::Problem::Warning,
+                        "Received invalid cause value",
+                    )
+                    .unwrap_or(ChangeCause::InputMethod)
             },
             ..imservice.pending.clone()
         };

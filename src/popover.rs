@@ -222,14 +222,10 @@ fn translate_layout_names(layouts: &Vec<LayoutId>) -> Vec<OwnedTranslation> {
             LayoutId::System { name, kind: _ } => {
                 xkb_translator.get_display_name(name)
                     .map(|s| Status::Translated(OwnedTranslation(s)))
-                    .unwrap_or_else(|e| {
-                        eprintln!(
-                            "No display name for xkb layout {}: {:?}",
-                            name,
-                            e,
-                        );
-                        Status::Remaining(name.clone())
-                    })
+                    .or_print(
+                        logging::Problem::Surprise,
+                        &format!("No display name for xkb layout {}", name),
+                    ).unwrap_or_else(|| Status::Remaining(name.clone()))
             },
             LayoutId::Local(name) => Status::Remaining(name.clone()),
         });
@@ -365,10 +361,10 @@ pub fn show(
             match state {
                 Some(v) => {
                     v.get::<String>()
-                        .or_else(|| {
-                            eprintln!("Variant is not string: {:?}", v);
-                            None
-                        })
+                        .or_print(
+                            logging::Problem::Bug,
+                            &format!("Variant is not string: {:?}", v)
+                        )
                         .map(|state| {
                             let (_id, layout) = choices.iter()
                                 .find(
@@ -380,7 +376,10 @@ pub fn show(
                             )
                         });
                 },
-                None => eprintln!("No variant selected"),
+                None => log_print!(
+                    logging::Level::Debug,
+                    "No variant selected",
+                ),
             };
             menu_inner.popdown();
         });
