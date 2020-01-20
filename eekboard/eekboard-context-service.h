@@ -46,6 +46,8 @@ typedef struct _EekboardContextServicePrivate EekboardContextServicePrivate;
 /**
  * EekboardContextService:
  *
+ * Handles layout state, gsettings, and virtual-keyboard.
+ *
  * TODO: Restrict to managing keyboard layouts, and maybe button repeats,
  * and the virtual keyboard protocol.
  *
@@ -63,8 +65,6 @@ struct _EekboardContextService {
 /**
  * EekboardContextServiceClass:
  * @create_keyboard: virtual function for create a keyboard from string
- * @show_keyboard: virtual function for show a keyboard
- * @hide_keyboard: virtual function for hide a keyboard
  * @enabled: class handler for #EekboardContextService::enabled signal
  * @disabled: class handler for #EekboardContextService::disabled signal
  */
@@ -75,12 +75,8 @@ struct _EekboardContextServiceClass {
     /*< public >*/
     struct squeek_view *(*create_keyboard)    (EekboardContextService *self,
                                         const gchar            *keyboard_type);
-    void         (*show_keyboard)      (EekboardContextService *self);
-    void         (*hide_keyboard)      (EekboardContextService *self);
 
     /* signals */
-    void         (*enabled)            (EekboardContextService *self);
-    void         (*disabled)           (EekboardContextService *self);
     void         (*destroyed)          (EekboardContextService *self);
 
     /*< private >*/
@@ -88,14 +84,10 @@ struct _EekboardContextServiceClass {
     gpointer pdummy[24];
 };
 
+EekboardContextService *eekboard_context_service_new();
 GType         eekboard_context_service_get_type
                                               (void) G_GNUC_CONST;
-void          eekboard_context_service_enable (EekboardContextService *context);
-void          eekboard_context_service_disable (EekboardContextService *context);
-void          eekboard_context_service_show_keyboard
-                                              (EekboardContextService *context);
-void          eekboard_context_service_hide_keyboard
-                                              (EekboardContextService *context);
+EekboardContextService *eekboard_context_service_new(void);
 void          eekboard_context_service_destroy (EekboardContextService *context);
 LevelKeyboard *eekboard_context_service_get_keyboard(EekboardContextService *context);
 

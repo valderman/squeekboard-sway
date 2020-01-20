@@ -23,22 +23,26 @@
 #include "eek/eek.h"
 #include "eek/eek-gtk-keyboard.h"
 #include "eek/layersurface.h"
+#include "eekboard/eekboard-context-service.h"
 #include "wayland.h"
-
 #include "server-context-service.h"
 
 enum {
     PROP_0,
     PROP_SIZE_CONSTRAINT_LANDSCAPE,
     PROP_SIZE_CONSTRAINT_PORTRAIT,
+    PROP_VISIBLE,
     PROP_LAST
 };
 
 typedef struct _ServerContextServiceClass ServerContextServiceClass;
 
 struct _ServerContextService {
-    EekboardContextService parent;
+    GObject parent;
 
+    EekboardContextService *state; // unowned
+
+    gboolean visible;
     PhoshLayerSurface *window;
     GtkWidget *widget;
     guint hiding;
@@ -50,10 +54,10 @@ struct _ServerContextService {
 };
 
 struct _ServerContextServiceClass {
-    EekboardContextServiceClass parent_class;
+    GObjectClass parent_class;
 };
 
-G_DEFINE_TYPE (ServerContextService, server_context_service, EEKBOARD_TYPE_CONTEXT_SERVICE);
+G_DEFINE_TYPE(ServerContextService, server_context_service, G_TYPE_OBJECT);
 
 static void
 on_destroy (GtkWidget *widget, gpointer user_data)
@@ -65,7 +69,7 @@ on_destroy (GtkWidget *widget, gpointer user_data)
     context->window = NULL;
     context->widget = NULL;
 
-    eekboard_context_service_destroy (EEKBOARD_CONTEXT_SERVICE (context));
+    //eekboard_context_service_destroy (EEKBOARD_CONTEXT_SERVICE (context));
 }
 
 static void
@@ -76,17 +80,6 @@ on_notify_keyboard (GObject              *object,
                     GParamSpec           *spec,
                     ServerContextService *context)
 {
-    const LevelKeyboard *keyboard = eekboard_context_service_get_keyboard (EEKBOARD_CONTEXT_SERVICE(context));
-
-    if (!keyboard)
-        g_error("Programmer error: keyboard layout was unset!");
-
-    // The keymap will get set even if the window is hidden.
-    // It's not perfect,
-    // but simpler than adding a check in the window showing procedure
-    eekboard_context_service_set_keymap(EEKBOARD_CONTEXT_SERVICE(context),
-                                        keyboard);
-
     /* Recreate the keyboard widget to keep in sync with the keymap. */
     if (context->window)
         make_widget(context);
@@ -95,8 +88,8 @@ on_notify_keyboard (GObject              *object,
     g_object_get (context, "visible", &visible, NULL);
 
     if (visible) {
-        eekboard_context_service_hide_keyboard(EEKBOARD_CONTEXT_SERVICE(context));
-        eekboard_context_service_show_keyboard(EEKBOARD_CONTEXT_SERVICE(context));
+        server_context_service_hide_keyboard(context);
+        server_context_service_show_keyboard(context);
     }
 }
 
@@ -229,33 +222,13 @@ make_widget (ServerContextService *context)
         context->widget = NULL;
     }
 
-    LevelKeyboard *keyboard = eekboard_context_service_get_keyboard (EEKBOARD_CONTEXT_SERVICE(context));
+    LevelKeyboard *keyboard = eekboard_context_service_get_keyboard (context->state);
 
     context->widget = eek_gtk_keyboard_new (keyboard);
 
     gtk_widget_set_has_tooltip (context->widget, TRUE);
     gtk_container_add (GTK_CONTAINER(context->window), context->widget);
     gtk_widget_show (context->widget);
-}
-
-static void
-server_context_service_real_show_keyboard (EekboardContextService *_context)
-{
-    ServerContextService *context = SERVER_CONTEXT_SERVICE(_context);
-
-    if (context->hiding) {
-	    g_source_remove (context->hiding);
-	    context->hiding = 0;
-    }
-
-    if (!context->window)
-        make_window (context);
-    if (!context->widget)
-        make_widget (context);
-
-    EEKBOARD_CONTEXT_SERVICE_CLASS (server_context_service_parent_class)->
-        show_keyboard (_context);
-    gtk_widget_show (GTK_WIDGET(context->window));
 }
 
 static gboolean
@@ -268,20 +241,49 @@ on_hide (ServerContextService *context)
 }
 
 static void
-server_context_service_real_hide_keyboard (EekboardContextService *_context)
+server_context_service_real_show_keyboard (ServerContextService *context)
 {
-    ServerContextService *context = SERVER_CONTEXT_SERVICE(_context);
+    if (context->hiding) {
+	    g_source_remove (context->hiding);
+	    context->hiding = 0;
+    }
 
-    if (!context->hiding)
-	context->hiding = g_timeout_add (200, (GSourceFunc) on_hide, context);
+    if (!context->window)
+        make_window (context);
+    if (!context->widget)
+        make_widget (context);
 
-    EEKBOARD_CONTEXT_SERVICE_CLASS (server_context_service_parent_class)->
-        hide_keyboard (_context);
+    context->visible = TRUE;
+    gtk_widget_show (GTK_WIDGET(context->window));
 }
 
 static void
-server_context_service_real_destroyed (EekboardContextService *_context)
+server_context_service_real_hide_keyboard (ServerContextService *context)
 {
+    if (!context->hiding)
+        context->hiding = g_timeout_add (200, (GSourceFunc) on_hide, context);
+
+    context->visible = FALSE;
+}
+
+void
+server_context_service_show_keyboard (ServerContextService *context)
+{
+    g_return_if_fail (SERVER_IS_CONTEXT_SERVICE(context));
+
+    if (!context->visible) {
+        server_context_service_real_show_keyboard (context);
+    }
+}
+
+void
+server_context_service_hide_keyboard (ServerContextService *context)
+{
+    g_return_if_fail (SERVER_IS_CONTEXT_SERVICE(context));
+
+    if (context->visible) {
+        server_context_service_real_hide_keyboard (context);
+    }
 }
 
 static void
@@ -306,7 +308,27 @@ server_context_service_set_property (GObject      *object,
                        &context->size_constraint_portrait[0],
                        &context->size_constraint_portrait[1]);
         break;
+    case PROP_VISIBLE:
+        context->visible = g_value_get_boolean (value);
+        break;
 
+    default:
+        G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+        break;
+    }
+}
+
+static void
+server_context_service_get_property (GObject    *object,
+                                       guint       prop_id,
+                                       GValue     *value,
+                                       GParamSpec *pspec)
+{
+    ServerContextService *context = SERVER_CONTEXT_SERVICE(object);
+    switch (prop_id) {
+    case PROP_VISIBLE:
+        g_value_set_boolean (value, context->visible);
+        break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
         break;
@@ -327,15 +349,11 @@ server_context_service_dispose (GObject *object)
 static void
 server_context_service_class_init (ServerContextServiceClass *klass)
 {
-    EekboardContextServiceClass *context_class = EEKBOARD_CONTEXT_SERVICE_CLASS(klass);
     GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
     GParamSpec *pspec;
 
-    context_class->show_keyboard = server_context_service_real_show_keyboard;
-    context_class->hide_keyboard = server_context_service_real_hide_keyboard;
-    context_class->destroyed = server_context_service_real_destroyed;
-
     gobject_class->set_property = server_context_service_set_property;
+    gobject_class->get_property = server_context_service_get_property;
     gobject_class->dispose = server_context_service_dispose;
 
     pspec = g_param_spec_variant ("size-constraint-landscape",
@@ -357,24 +375,38 @@ server_context_service_class_init (ServerContextServiceClass *klass)
     g_object_class_install_property (gobject_class,
                                      PROP_SIZE_CONSTRAINT_PORTRAIT,
                                      pspec);
+
+    /**
+     * Flag to indicate if keyboard is visible or not.
+     */
+    pspec = g_param_spec_boolean ("visible",
+                                  "Visible",
+                                  "Visible",
+                                  FALSE,
+                                  G_PARAM_READWRITE);
+    g_object_class_install_property (gobject_class,
+                                     PROP_VISIBLE,
+                                     pspec);
 }
 
 static void
-server_context_service_init (ServerContextService *context)
+server_context_service_init (ServerContextService *state) {
+    (void)state;
+}
+
+ServerContextService *
+server_context_service_new (EekboardContextService *state)
 {
-    g_signal_connect (context,
+    ServerContextService *ui = g_object_new (SERVER_TYPE_CONTEXT_SERVICE, NULL);
+    ui->state = state;
+    g_signal_connect (state,
                       "notify::keyboard",
                       G_CALLBACK(on_notify_keyboard),
-                      context);
+                      ui);
+    return ui;
 }
 
-EekboardContextService *
-server_context_service_new ()
+enum squeek_arrangement_kind server_context_service_get_layout_type(ServerContextService *service)
 {
-    return EEKBOARD_CONTEXT_SERVICE(g_object_new (SERVER_TYPE_CONTEXT_SERVICE, NULL));
-}
-
-enum squeek_arrangement_kind server_context_service_get_layout_type(EekboardContextService *service)
-{
-    return SERVER_CONTEXT_SERVICE(service)->last_type;
+    return service->last_type;
 }

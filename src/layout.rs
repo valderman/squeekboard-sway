@@ -336,11 +336,12 @@ pub mod c {
                     .map(|place| place.button.state.clone())
             };
             
-            if let Some(mut state) = state {
-                layout.press_key(
+            if let Some(state) = state {
+                seat::handle_press_key(
+                    layout,
                     &VirtualKeyboard(virtual_keyboard),
-                    &mut state,
                     Timestamp(time),
+                    &state,
                 );
                 // maybe TODO: draw on the display buffer here
                 drawing::queue_redraw(ui_keyboard);
@@ -383,7 +384,7 @@ pub mod c {
                 )})
             };
 
-            if let Some((mut state, _button, _view_position)) = button_info {
+            if let Some((state, _button, _view_position)) = button_info {
                 let mut found = false;
                 for wrapped_key in pressed {
                     let key: &Rc<RefCell<KeyState>> = wrapped_key.borrow();
@@ -401,7 +402,12 @@ pub mod c {
                     }
                 }
                 if !found {
-                    layout.press_key(&virtual_keyboard, &mut state, time);
+                    seat::handle_press_key(
+                        layout,
+                        &virtual_keyboard,
+                        time,
+                        &state,
+                    );
                     // maybe TODO: draw on the display buffer here
                 }
             } else {
@@ -663,27 +669,6 @@ impl Layout {
         }
     }
 
-    fn press_key(
-        &mut self,
-        virtual_keyboard: &VirtualKeyboard,
-        rckey: &mut Rc<RefCell<KeyState>>,
-        time: Timestamp,
-    ) {
-        if !self.pressed_keys.insert(::util::Pointer(rckey.clone())) {
-            log_print!(
-                logging::Level::Bug,
-                "Key {:?} was already pressed", rckey,
-            );
-        }
-        let mut key = rckey.borrow_mut();
-        virtual_keyboard.switch(
-            &key.keycodes,
-            PressType::Pressed,
-            time,
-        );
-        key.pressed = PressType::Pressed;
-    }
-
     /// Calculates size without margins
     fn calculate_inner_size(&self) -> Size {
         Size {
@@ -877,6 +862,24 @@ mod seat {
             layout,
             view_name: new_view,
         }
+    }
+
+    pub fn handle_press_key(
+        layout: &mut Layout,
+        virtual_keyboard: &VirtualKeyboard,
+        time: Timestamp,
+        rckey: &Rc<RefCell<KeyState>>,
+    ) {
+        if !layout.pressed_keys.insert(::util::Pointer(rckey.clone())) {
+            eprintln!("Warning: key {:?} was already pressed", rckey);
+        }
+        let mut key = rckey.borrow_mut();
+        virtual_keyboard.switch(
+            &key.keycodes,
+            PressType::Pressed,
+            time,
+        );
+        key.pressed = PressType::Pressed;
     }
 
     pub fn handle_release_key(

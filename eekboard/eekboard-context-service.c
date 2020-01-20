@@ -37,7 +37,6 @@
 
 #include <gio/gio.h>
 
-#include "eekboard/key-emitter.h"
 #include "wayland.h"
 
 #include "eek/eek-xml-layout.h"
@@ -48,13 +47,10 @@
 enum {
     PROP_0, // Magic: without this, keyboard is not useable in g_object_notify
     PROP_KEYBOARD,
-    PROP_VISIBLE,
     PROP_LAST
 };
 
 enum {
-    ENABLED,
-    DISABLED,
     DESTROYED,
     LAST_SIGNAL
 };
@@ -65,17 +61,18 @@ static guint signals[LAST_SIGNAL] = { 0, };
     (G_TYPE_INSTANCE_GET_PRIVATE ((obj), EEKBOARD_TYPE_CONTEXT_SERVICE, EekboardContextServicePrivate))
 
 struct _EekboardContextServicePrivate {
-    gboolean enabled;
-    gboolean visible;
-
     LevelKeyboard *keyboard; // currently used keyboard
     GHashTable *keyboard_hash; // a table of available keyboards, per layout
 
     char *overlay;
 
-    GSettings *settings;
+    GSettings *settings; // Owned reference
     uint32_t hint;
     uint32_t purpose;
+
+    // Maybe TODO: it's used only for fetching layout type.
+    // Maybe let UI push the type to this structure?
+    ServerContextService *ui; // unowned reference
 };
 
 G_DEFINE_TYPE_WITH_PRIVATE (EekboardContextService, eekboard_context_service, G_TYPE_OBJECT);
@@ -136,34 +133,13 @@ eekboard_context_service_real_create_keyboard (EekboardContextService *self,
 }
 
 static void
-eekboard_context_service_real_show_keyboard (EekboardContextService *self)
-{
-    self->priv->visible = TRUE;
-}
-
-static void
-eekboard_context_service_real_hide_keyboard (EekboardContextService *self)
-{
-    self->priv->visible = FALSE;
-}
-
-static void
 eekboard_context_service_set_property (GObject      *object,
                                        guint         prop_id,
                                        const GValue *value,
                                        GParamSpec   *pspec)
 {
-    EekboardContextService *context = EEKBOARD_CONTEXT_SERVICE(object);
-
+    (void)value;
     switch (prop_id) {
-    case PROP_KEYBOARD:
-        if (context->priv->keyboard)
-            g_object_unref (context->priv->keyboard);
-        context->priv->keyboard = g_value_get_object (value);
-        break;
-    case PROP_VISIBLE:
-        context->priv->visible = g_value_get_boolean (value);
-        break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
         break;
@@ -181,9 +157,6 @@ eekboard_context_service_get_property (GObject    *object,
     switch (prop_id) {
     case PROP_KEYBOARD:
         g_value_set_object (value, context->priv->keyboard);
-        break;
-    case PROP_VISIBLE:
-        g_value_set_boolean (value, context->priv->visible);
         break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -249,6 +222,11 @@ eekboard_context_service_update_layout(EekboardContextService *context, enum squ
     LevelKeyboard *previous_keyboard = context->priv->keyboard;
     context->priv->keyboard = keyboard;
 
+    // The keymap will get set even if the window is hidden.
+    // It's not perfect,
+    // but simpler than adding a check in the window showing procedure
+    eekboard_context_service_set_keymap(context, keyboard);
+
     g_object_notify (G_OBJECT(context), "keyboard");
 
     // replacing the keyboard above will cause the previous keyboard to get destroyed from the UI side (eek_gtk_keyboard_dispose)
@@ -258,7 +236,12 @@ eekboard_context_service_update_layout(EekboardContextService *context, enum squ
 }
 
 static void update_layout_and_type(EekboardContextService *context) {
-    eekboard_context_service_update_layout(context, server_context_service_get_layout_type(context));
+    EekboardContextServicePrivate *priv = EEKBOARD_CONTEXT_SERVICE_GET_PRIVATE(context);
+    enum squeek_arrangement_kind layout_kind = ARRANGEMENT_KIND_BASE;
+    if (priv->ui) {
+        layout_kind = server_context_service_get_layout_type(priv->ui);
+    }
+    eekboard_context_service_update_layout(context, layout_kind);
 }
 
 static gboolean
@@ -294,48 +277,10 @@ eekboard_context_service_class_init (EekboardContextServiceClass *klass)
     GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
     GParamSpec *pspec;
 
-    klass->show_keyboard = eekboard_context_service_real_show_keyboard;
-    klass->hide_keyboard = eekboard_context_service_real_hide_keyboard;
-
     gobject_class->constructed = eekboard_context_service_constructed;
     gobject_class->set_property = eekboard_context_service_set_property;
     gobject_class->get_property = eekboard_context_service_get_property;
     gobject_class->dispose = eekboard_context_service_dispose;
-
-    /**
-     * EekboardContextService::enabled:
-     * @context: an #EekboardContextService
-     *
-     * Emitted when @context is enabled.
-     */
-    signals[ENABLED] =
-        g_signal_new (I_("enabled"),
-                      G_TYPE_FROM_CLASS(gobject_class),
-                      G_SIGNAL_RUN_LAST,
-                      G_STRUCT_OFFSET(EekboardContextServiceClass, enabled),
-                      NULL,
-                      NULL,
-                      g_cclosure_marshal_VOID__VOID,
-                      G_TYPE_NONE,
-                      0);
-
-    /**
-     * EekboardContextService::disabled:
-     * @context: an #EekboardContextService
-     *
-     * Emitted when @context is enabled.
-     */
-    signals[DISABLED] =
-        g_signal_new (I_("disabled"),
-                      G_TYPE_FROM_CLASS(gobject_class),
-                      G_SIGNAL_RUN_LAST,
-                      G_STRUCT_OFFSET(EekboardContextServiceClass, disabled),
-                      NULL,
-                      NULL,
-                      g_cclosure_marshal_VOID__VOID,
-                      G_TYPE_NONE,
-                      0);
-
     /**
      * EekboardContextService::destroyed:
      * @context: an #EekboardContextService
@@ -361,23 +306,9 @@ eekboard_context_service_class_init (EekboardContextServiceClass *klass)
     pspec = g_param_spec_pointer("keyboard",
                                  "Keyboard",
                                  "Keyboard",
-                                 G_PARAM_READWRITE);
+                                 G_PARAM_READABLE);
     g_object_class_install_property (gobject_class,
                                      PROP_KEYBOARD,
-                                     pspec);
-
-    /**
-     * EekboardContextService:visible:
-     *
-     * Flag to indicate if keyboard is visible or not.
-     */
-    pspec = g_param_spec_boolean ("visible",
-                                  "Visible",
-                                  "Visible",
-                                  FALSE,
-                                  G_PARAM_READWRITE);
-    g_object_class_install_property (gobject_class,
-                                     PROP_VISIBLE,
                                      pspec);
 }
 
@@ -405,62 +336,6 @@ eekboard_context_service_init (EekboardContextService *self)
 }
 
 /**
- * eekboard_context_service_enable:
- * @context: an #EekboardContextService
- *
- * Enable @context.  This function is called when @context is pushed
- * by eekboard_service_push_context().
- */
-void
-eekboard_context_service_enable (EekboardContextService *context)
-{
-    g_return_if_fail (EEKBOARD_IS_CONTEXT_SERVICE(context));
-
-    if (!context->priv->enabled) {
-        context->priv->enabled = TRUE;
-        g_signal_emit (context, signals[ENABLED], 0);
-    }
-}
-
-/**
- * eekboard_context_service_disable:
- * @context: an #EekboardContextService
- *
- * Disable @context.  This function is called when @context is pushed
- * by eekboard_service_pop_context().
- */
-void
-eekboard_context_service_disable (EekboardContextService *context)
-{
-    g_return_if_fail (EEKBOARD_IS_CONTEXT_SERVICE(context));
-
-    if (context->priv->enabled) {
-        context->priv->enabled = FALSE;
-        g_signal_emit (context, signals[DISABLED], 0);
-    }
-}
-
-void
-eekboard_context_service_show_keyboard (EekboardContextService *context)
-{
-    g_return_if_fail (EEKBOARD_IS_CONTEXT_SERVICE(context));
-
-    if (!context->priv->visible) {
-        EEKBOARD_CONTEXT_SERVICE_GET_CLASS(context)->show_keyboard (context);
-    }
-}
-
-void
-eekboard_context_service_hide_keyboard (EekboardContextService *context)
-{
-    g_return_if_fail (EEKBOARD_IS_CONTEXT_SERVICE(context));
-
-    if (context->priv->visible) {
-        EEKBOARD_CONTEXT_SERVICE_GET_CLASS(context)->hide_keyboard (context);
-    }
-}
-
-/**
  * eekboard_context_service_destroy:
  * @context: an #EekboardContextService
  *
@@ -471,9 +346,6 @@ eekboard_context_service_destroy (EekboardContextService *context)
 {
     g_return_if_fail (EEKBOARD_IS_CONTEXT_SERVICE(context));
 
-    if (context->priv->enabled) {
-        eekboard_context_service_disable (context);
-    }
     g_free(context->priv->overlay);
     g_signal_emit (context, signals[DESTROYED], 0);
 }
@@ -520,4 +392,9 @@ eekboard_context_service_set_overlay(EekboardContextService *context, const char
 const char*
 eekboard_context_service_get_overlay(EekboardContextService *context) {
     return context->priv->overlay;
+}
+
+EekboardContextService *eekboard_context_service_new()
+{
+    return g_object_new (EEKBOARD_TYPE_CONTEXT_SERVICE, NULL);
 }

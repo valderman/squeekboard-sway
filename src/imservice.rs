@@ -24,33 +24,55 @@ pub mod c {
     #[repr(transparent)]
     pub struct InputMethod(*const c_void);
     
-    /// EekboardContextService*
+    /// ServerContextService*
     #[repr(transparent)]
     pub struct UIManager(*const c_void);
-    
+
+    /// EekboardContextService*
+    #[repr(transparent)]
+    pub struct StateManager(*const c_void);
+
     #[no_mangle]
     extern "C" {
         fn imservice_destroy_im(im: *mut c::InputMethod);
-        fn eekboard_context_service_set_hint_purpose(imservice: *const UIManager, hint: u32, purpose: u32);
-        fn eekboard_context_service_show_keyboard(imservice: *const UIManager);
-        fn eekboard_context_service_hide_keyboard(imservice: *const UIManager);
+        fn eekboard_context_service_set_hint_purpose(state: *const StateManager, hint: u32, purpose: u32);
+        fn server_context_service_show_keyboard(imservice: *const UIManager);
+        fn server_context_service_hide_keyboard(imservice: *const UIManager);
     }
     
     // The following defined in Rust. TODO: wrap naked pointers to Rust data inside RefCells to prevent multiple writers
     
     #[no_mangle]
-    pub unsafe extern "C"
-    fn imservice_new(im: *const InputMethod, ui_manager: *const UIManager) -> *mut IMService {
+    pub extern "C"
+    fn imservice_new(
+        im: *const InputMethod,
+        state_manager: *const StateManager
+    ) -> *mut IMService {
         Box::<IMService>::into_raw(Box::new(
             IMService {
                 im: im,
-                ui_manager: ui_manager,
+                state_manager: state_manager,
+                ui_manager: None,
                 pending: IMProtocolState::default(),
                 current: IMProtocolState::default(),
                 preedit_string: String::new(),
                 serial: Wrapping(0u32),
             }
         ))
+    }
+
+    #[no_mangle]
+    pub extern "C"
+    fn imservice_set_ui(imservice: *mut IMService, ui_manager: *const UIManager) {
+        if imservice.is_null() {
+            panic!("Null imservice pointer");
+        }
+        let imservice: &mut IMService = unsafe { &mut *imservice };
+        imservice.ui_manager = if ui_manager.is_null() {
+            None
+        } else {
+            Some(ui_manager)
+        };
     }
     
     // TODO: is unsafe needed here?
@@ -157,15 +179,20 @@ pub mod c {
             active: imservice.current.active,
             ..IMProtocolState::default()
         };
+
         if active_changed {
             if imservice.current.active {
-                eekboard_context_service_show_keyboard(imservice.ui_manager);
+                if let Some(ui) = imservice.ui_manager {
+                    server_context_service_show_keyboard(ui);
+                }
                 eekboard_context_service_set_hint_purpose(
-                    imservice.ui_manager,
+                    imservice.state_manager,
                     imservice.current.content_hint.bits(),
                     imservice.current.content_purpose.clone() as u32);
             } else {
-                eekboard_context_service_hide_keyboard(imservice.ui_manager);
+                if let Some(ui) = imservice.ui_manager {
+                    server_context_service_hide_keyboard(ui);
+                }
             }
         }
     }
@@ -182,7 +209,9 @@ pub mod c {
         // the keyboard is already decommissioned
         imservice.current.active = false;
 
-        eekboard_context_service_hide_keyboard(imservice.ui_manager);
+        if let Some(ui) = imservice.ui_manager {
+            server_context_service_hide_keyboard(ui);
+        }
     }
 
     // FIXME: destroy and deallocate
@@ -334,7 +363,9 @@ pub struct IMService {
     /// Owned reference (still created and destroyed in C)
     pub im: *const c::InputMethod,
     /// Unowned reference. Be careful, it's shared with C at large
-    ui_manager: *const c::UIManager,
+    ui_manager: Option<*const c::UIManager>,
+    /// Unowned reference. Be careful, it's shared with C at large
+    state_manager: *const c::StateManager,
 
     pending: IMProtocolState,
     current: IMProtocolState, // turn current into an idiomatic representation?

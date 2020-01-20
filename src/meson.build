@@ -12,6 +12,7 @@ config_h = configure_file(
 
 sources = [
   config_h,
+  'dbus.c',
   'imservice.c',
   'server-context-service.c',
   'wayland.c',
@@ -24,9 +25,7 @@ sources = [
   '../eek/eek-xml-layout.c',
   '../eek/layersurface.c',
   dbus_src,
-  '../eekboard/key-emitter.c',
   '../eekboard/eekboard-context-service.c',
-  '../eekboard/eekboard-service.c',
   #  '../eekboard/eekboard-xklutil.c',
   squeekboard_resources,
   wl_proto_sources,

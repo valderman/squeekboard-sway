@@ -1,3 +1,20 @@
+squeekboard (1.8.0) amber-phone; urgency=medium
+
+  [ Dorota Czaplejewicz ]
+  * translations: Use gnome-desktop's xkb info database for layout names
+  * translations: Make the code cleaner
+  * overlay: Add terminal
+  * eek-layout: Remove unused
+  * pre-release: Update deps
+
+ -- Dorota Czaplejewicz <dorota.czaplejewicz@puri.sm>  Tue, 14 Jan 2020 13:55:00 +0000
+
+squeekboard (1.7.0) amber-phone; urgency=medium
+
+  * New terminal layout appearing on terminal input hint
+
+ -- Dorota Czaplejewicz <dorota.czaplejewicz@puri.sm>  Wed, 08 Jan 2020 11:53:07 +0000
+
 squeekboard (1.7.0) amber-phone; urgency=medium
 
   * New terminal layout appearing on terminal input hint
