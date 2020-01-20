@@ -871,7 +871,10 @@ mod seat {
         rckey: &Rc<RefCell<KeyState>>,
     ) {
         if !layout.pressed_keys.insert(::util::Pointer(rckey.clone())) {
-            eprintln!("Warning: key {:?} was already pressed", rckey);
+            log_print!(
+                logging::Level::Bug,
+                "Key {:?} was already pressed", rckey,
+            );
         }
         let mut key = rckey.borrow_mut();
         virtual_keyboard.switch(
