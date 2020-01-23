@@ -116,16 +116,18 @@ impl Submission {
         key: &KeyState, key_id: KeyStateId,
         time: Timestamp,
     ) {
-        let key_string = match &key.action {
-            Action::Submit { text, keys: _ } => text,
+        match &key.action {
+            Action::Submit { text: _, keys: _ }
+                | Action::Erase
+            => (),
             _ => {
-                eprintln!("BUG: Submitted key with action other than Submit");
+                eprintln!("BUG: Submitted key with action other than Submit or Erase");
                 return;
             },
         };
 
-        let text_was_committed = match (&mut self.imservice, key_string) {
-            (Some(imservice), Some(text)) => {
+        let was_committed_as_text = match (&mut self.imservice, &key.action) {
+            (Some(imservice), Action::Submit { text: Some(text), keys: _ }) => {
                 let submit_result = imservice.commit_string(text)
                     .and_then(|_| imservice.commit());
                 match submit_result {
@@ -133,10 +135,18 @@ impl Submission {
                     Err(imservice::SubmitError::NotActive) => false,
                 }
             },
+            (Some(imservice), Action::Erase) => {
+                let submit_result = imservice.delete_surrounding_text(1, 0)
+                    .and_then(|_| imservice.commit());
+                match submit_result {
+                    Ok(()) => true,
+                    Err(imservice::SubmitError::NotActive) => false,
+                }
+            }
             (_, _) => false,
         };
         
-        let submit_action = match text_was_committed {
+        let submit_action = match was_committed_as_text {
             true => SubmittedAction::IMService,
             false => {
                 self.virtual_keyboard.switch(

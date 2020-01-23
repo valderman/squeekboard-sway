@@ -887,7 +887,9 @@ mod seat {
 
         // process changes
         match action {
-            Action::Submit { text: _, keys: _ } => {
+            Action::Submit { text: _, keys: _ }
+                | Action::Erase
+            => {
                 unstick_locks(layout).apply();
                 submission.handle_release(KeyState::get_id(rckey), time);
             },

@@ -79,9 +79,10 @@ fn sorted<'a, I: Iterator<Item=&'a str>>(
 pub fn generate_keycodes<'a, C: IntoIterator<Item=&'a str>>(
     key_names: C
 ) -> HashMap<String, u32> {
+    let special_keysyms = ["BackSpace", "Return"].iter().map(|&s| s);
     HashMap::from_iter(
         // sort to remove a source of indeterminism in keycode assignment
-        sorted(key_names.into_iter())
+        sorted(key_names.into_iter().chain(special_keysyms))
             .map(|name| String::from(name))
             .zip(9..)
     )
@@ -108,7 +109,10 @@ impl From<io::Error> for FormattingError {
     }
 }
 
-/// Generates a de-facto single level keymap. TODO: actually drop second level
+/// Generates a de-facto single level keymap.
+// TODO: don't rely on keys and their order,
+// but rather on what keysyms and keycodes are in use.
+// Iterating actions makes it hard to deduplicate keysyms.
 pub fn generate_keymap(
     keystates: &HashMap::<String, KeyState>
 ) -> Result<String, FormattingError> {
@@ -123,17 +127,32 @@ pub fn generate_keymap(
     )?;
     
     for (name, state) in keystates.iter() {
-        if let Action::Submit { text: _, keys } = &state.action {
-            if let 0 = keys.len() { eprintln!("Key {} has no keysyms", name); };
-            for (named_keysym, keycode) in keys.iter().zip(&state.keycodes) {
+        match &state.action {
+            Action::Submit { text: _, keys } => {
+                if let 0 = keys.len() { eprintln!("Key {} has no keysyms", name); };
+                for (named_keysym, keycode) in keys.iter().zip(&state.keycodes) {
+                    write!(
+                        buf,
+                        "
+        <{}> = {};",
+                        named_keysym.0,
+                        keycode,
+                    )?;
+                }
+            },
+            Action::Erase => {
+                let mut keycodes = state.keycodes.iter();
                 write!(
                     buf,
                     "
-        <{}> = {};",
-                    named_keysym.0,
-                    keycode,
+        <BackSpace> = {};",
+                    keycodes.next().expect("Erase key has no keycode"),
                 )?;
-            }
+                if let Some(_) = keycodes.next() {
+                    eprintln!("BUG: Erase key has multiple keycodes");
+                }
+            },
+            _ => {},
         }
     }
     
@@ -145,7 +164,9 @@ pub fn generate_keymap(
     xkb_symbols \"squeekboard\" {{
 
         name[Group1] = \"Letters\";
-        name[Group2] = \"Numbers/Symbols\";"
+        name[Group2] = \"Numbers/Symbols\";
+        
+        key <BackSpace> {{ [ BackSpace ] }};"
     )?;
     
     for (name, state) in keystates.iter() {

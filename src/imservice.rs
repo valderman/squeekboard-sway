@@ -35,6 +35,7 @@ pub mod c {
         #[allow(improper_ctypes)] // IMService will never be dereferenced in C
         pub fn imservice_connect_listeners(im: *mut InputMethod, imservice: *const IMService);
         pub fn eek_input_method_commit_string(im: *mut InputMethod, text: *const c_char);
+        pub fn eek_input_method_delete_surrounding_text(im: *mut InputMethod, before: u32, after: u32);
         pub fn eek_input_method_commit(im: *mut InputMethod, serial: u32);
         fn eekboard_context_service_set_hint_purpose(state: *const StateManager, hint: u32, purpose: u32);
         fn server_context_service_show_keyboard(imservice: *const UIManager);
@@ -368,6 +369,24 @@ impl IMService {
             true => {
                 unsafe {
                     c::eek_input_method_commit_string(self.im, text.as_ptr())
+                }
+                Ok(())
+            },
+            false => Err(SubmitError::NotActive),
+        }
+    }
+
+    pub fn delete_surrounding_text(
+        &self,
+        before: u32, after: u32,
+    ) -> Result<(), SubmitError> {
+        match self.current.active {
+            true => {
+                unsafe {
+                    c::eek_input_method_delete_surrounding_text(
+                        self.im,
+                        before, after,
+                    )
                 }
                 Ok(())
             },

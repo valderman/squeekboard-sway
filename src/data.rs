@@ -15,6 +15,7 @@ use std::vec::Vec;
 
 use xkbcommon::xkb;
 
+use ::action;
 use ::keyboard::{
     KeyState, PressType,
     generate_keymap, generate_keycodes, FormattingError
@@ -259,6 +260,9 @@ enum Action {
     SetView(String),
     #[serde(rename="show_prefs")]
     ShowPrefs,
+    /// Remove last character
+    #[serde(rename="erase")]
+    Erase,
 }
 
 #[derive(Debug, Clone, Deserialize, PartialEq)]
@@ -381,6 +385,10 @@ impl Layout {
                             )
                     }).collect()
                 },
+                action::Action::Erase => vec![
+                    *keymap.get("BackSpace")
+                        .expect(&format!("BackSpace missing from keymap")),
+                ],
                 _ => Vec::new(),
             };
             (
@@ -547,6 +555,7 @@ fn create_action<H: WarningHandler>(
         SubmitData::Action(
             Action::ShowPrefs
         ) => ::action::Action::ShowPreferences,
+        SubmitData::Action(Action::Erase) => action::Action::Erase,
         SubmitData::Keysym(keysym) => ::action::Action::Submit {
             text: None,
             keys: vec!(::action::KeySym(
@@ -581,7 +590,7 @@ fn create_action<H: WarningHandler>(
                     false => format!("U{:04X}", codepoint as u32),
                 })
             }).collect(),
-        }
+        },
     }
 }
 
