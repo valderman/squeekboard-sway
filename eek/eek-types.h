@@ -38,6 +38,7 @@ G_BEGIN_DECLS
 typedef struct _EekBounds EekBounds;
 
 typedef struct _EekboardContextService EekboardContextService;
+typedef struct _ServerContextService ServerContextService;
 typedef struct _LevelKeyboard LevelKeyboard;
 
 /**

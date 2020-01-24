@@ -28,6 +28,9 @@
 #include <glib.h>
 #include <gtk/gtk.h>
 
+#include "eek/eek-types.h"
+
+struct submission;
 typedef struct _LevelKeyboard LevelKeyboard; // including causes weird bugs
 
 G_BEGIN_DECLS
@@ -45,7 +48,7 @@ struct _EekGtkKeyboardClass
 };
 
 GType      eek_gtk_keyboard_get_type  (void) G_GNUC_CONST;
-GtkWidget *eek_gtk_keyboard_new       (LevelKeyboard *keyboard);
+GtkWidget *eek_gtk_keyboard_new       (LevelKeyboard *keyboard, EekboardContextService *eekservice, struct submission *submission);
 
 G_END_DECLS
 #endif  /* EEK_GTK_KEYBOARD_H */

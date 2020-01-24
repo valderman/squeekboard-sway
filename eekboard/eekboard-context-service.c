@@ -16,30 +16,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/**
- * SECTION:eekboard-context-service
- * @short_description: base server implementation of eekboard input
- * context service
- *
- * The #EekboardService class provides a base server side
- * implementation of eekboard input context service.
- */
-
 #include "config.h"
 
-#include <fcntl.h>
 #include <stdio.h>
-#define _XOPEN_SOURCE 500
-#include <string.h>
-#include <sys/mman.h>
-#include <sys/random.h> // TODO: this is Linux-specific
-#include <xkbcommon/xkbcommon.h>
 
 #include <gio/gio.h>
 
 #include "wayland.h"
 
-#include "eek/eek-xml-layout.h"
+#include "eek/eek-keyboard.h"
 #include "src/server-context-service.h"
 
 #include "eekboard/eekboard-context-service.h"
@@ -73,64 +58,11 @@ struct _EekboardContextServicePrivate {
     // Maybe TODO: it's used only for fetching layout type.
     // Maybe let UI push the type to this structure?
     ServerContextService *ui; // unowned reference
+    /// Needed for keymap changes after keyboard updates
+    struct submission *submission; // unowned
 };
 
 G_DEFINE_TYPE_WITH_PRIVATE (EekboardContextService, eekboard_context_service, G_TYPE_OBJECT);
-
-static LevelKeyboard *
-eekboard_context_service_real_create_keyboard (EekboardContextService *self,
-                                               const gchar            *keyboard_type,
-                                               enum squeek_arrangement_kind t)
-{
-    LevelKeyboard *keyboard = eek_xml_layout_real_create_keyboard(keyboard_type, self, t);
-    if (!keyboard) {
-        g_error("Failed to create a keyboard");
-    }
-
-    struct xkb_context *context = xkb_context_new(XKB_CONTEXT_NO_FLAGS);
-    if (!context) {
-        g_error("No context created");
-    }
-
-    const gchar *keymap_str = squeek_layout_get_keymap(keyboard->layout);
-
-    struct xkb_keymap *keymap = xkb_keymap_new_from_string(context, keymap_str,
-        XKB_KEYMAP_FORMAT_TEXT_V1, XKB_KEYMAP_COMPILE_NO_FLAGS);
-
-    if (!keymap)
-        g_error("Bad keymap:\n%s", keymap_str);
-
-    xkb_context_unref(context);
-    keyboard->keymap = keymap;
-
-    keymap_str = xkb_keymap_get_as_string(keymap, XKB_KEYMAP_FORMAT_TEXT_V1);
-    keyboard->keymap_len = strlen(keymap_str) + 1;
-
-    g_autofree char *path = strdup("/eek_keymap-XXXXXX");
-    char *r = &path[strlen(path) - 6];
-    getrandom(r, 6, GRND_NONBLOCK);
-    for (unsigned i = 0; i < 6; i++) {
-        r[i] = (r[i] & 0b1111111) | 0b1000000; // A-z
-        r[i] = r[i] > 'z' ? '?' : r[i]; // The randomizer doesn't need to be good...
-    }
-    int keymap_fd = shm_open(path, O_RDWR | O_CREAT | O_EXCL, 0600);
-    if (keymap_fd < 0) {
-        g_error("Failed to set up keymap fd");
-    }
-    keyboard->keymap_fd = keymap_fd;
-    shm_unlink(path);
-    if (ftruncate(keymap_fd, (off_t)keyboard->keymap_len)) {
-        g_error("Failed to increase keymap fd size");
-    }
-    char *ptr = mmap(NULL, keyboard->keymap_len, PROT_WRITE, MAP_SHARED,
-        keymap_fd, 0);
-    if ((void*)ptr == (void*)-1) {
-        g_error("Failed to set up mmap");
-    }
-    strncpy(ptr, keymap_str, keyboard->keymap_len);
-    munmap(ptr, keyboard->keymap_len);
-    return keyboard;
-}
 
 static void
 eekboard_context_service_set_property (GObject      *object,
@@ -217,15 +149,15 @@ eekboard_context_service_update_layout(EekboardContextService *context, enum squ
     }
 
     // generic part follows
-    LevelKeyboard *keyboard = eekboard_context_service_real_create_keyboard(context, keyboard_layout, t);
+    LevelKeyboard *keyboard = level_keyboard_new(keyboard_layout, t);
     // set as current
     LevelKeyboard *previous_keyboard = context->priv->keyboard;
     context->priv->keyboard = keyboard;
-
-    // The keymap will get set even if the window is hidden.
-    // It's not perfect,
-    // but simpler than adding a check in the window showing procedure
-    eekboard_context_service_set_keymap(context, keyboard);
+    // Update the keymap if necessary.
+    // TODO: Update submission on change event
+    if (context->priv->submission) {
+        submission_set_keyboard(context->priv->submission, keyboard);
+    }
 
     g_object_notify (G_OBJECT(context), "keyboard");
 
@@ -262,12 +194,6 @@ static void
 eekboard_context_service_constructed (GObject *object)
 {
     EekboardContextService *context = EEKBOARD_CONTEXT_SERVICE (object);
-    context->virtual_keyboard = zwp_virtual_keyboard_manager_v1_create_virtual_keyboard(
-                squeek_wayland->virtual_keyboard_manager,
-                squeek_wayland->seat);
-    if (!context->virtual_keyboard) {
-        g_error("Programmer error: Failed to receive a virtual keyboard instance");
-    }
     update_layout_and_type(context);
 }
 
@@ -363,14 +289,6 @@ eekboard_context_service_get_keyboard (EekboardContextService *context)
     return context->priv->keyboard;
 }
 
-void eekboard_context_service_set_keymap(EekboardContextService *context,
-                                         const LevelKeyboard *keyboard)
-{
-    zwp_virtual_keyboard_v1_keymap(context->virtual_keyboard,
-        WL_KEYBOARD_KEYMAP_FORMAT_XKB_V1,
-        keyboard->keymap_fd, keyboard->keymap_len);
-}
-
 void eekboard_context_service_set_hint_purpose(EekboardContextService *context,
                                                uint32_t hint, uint32_t purpose)
 {
@@ -394,7 +312,13 @@ eekboard_context_service_get_overlay(EekboardContextService *context) {
     return context->priv->overlay;
 }
 
-EekboardContextService *eekboard_context_service_new()
+EekboardContextService *eekboard_context_service_new(void)
 {
     return g_object_new (EEKBOARD_TYPE_CONTEXT_SERVICE, NULL);
+}
+void eekboard_context_service_set_submission(EekboardContextService *context, struct submission *submission) {
+    context->priv->submission = submission;
+    if (context->priv->submission) {
+        submission_set_keyboard(context->priv->submission, context->priv->keyboard);
+    }
 }

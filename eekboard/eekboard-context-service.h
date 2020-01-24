@@ -22,7 +22,8 @@
 #ifndef EEKBOARD_CONTEXT_SERVICE_H
 #define EEKBOARD_CONTEXT_SERVICE_H 1
 
-#include <eek/eek.h>
+#include "src/submission.h"
+#include "src/layout.h"
 
 #include "virtual-keyboard-unstable-v1-client-protocol.h"
 #include "text-input-unstable-v3-client-protocol.h"
@@ -58,8 +59,6 @@ struct _EekboardContextService {
     GObject parent;
 
     EekboardContextServicePrivate *priv;
-
-    struct zwp_virtual_keyboard_v1 *virtual_keyboard;
 };
 
 /**
@@ -84,10 +83,10 @@ struct _EekboardContextServiceClass {
     gpointer pdummy[24];
 };
 
-EekboardContextService *eekboard_context_service_new();
 GType         eekboard_context_service_get_type
                                               (void) G_GNUC_CONST;
 EekboardContextService *eekboard_context_service_new(void);
+void eekboard_context_service_set_submission(EekboardContextService *context, struct submission *submission);
 void          eekboard_context_service_destroy (EekboardContextService *context);
 LevelKeyboard *eekboard_context_service_get_keyboard(EekboardContextService *context);
 

@@ -22,7 +22,6 @@ sources = [
   '../eek/eek-keyboard.c',
   '../eek/eek-renderer.c',
   '../eek/eek-types.c',
-  '../eek/eek-xml-layout.c',
   '../eek/layersurface.c',
   dbus_src,
   '../eekboard/eekboard-context-service.c',

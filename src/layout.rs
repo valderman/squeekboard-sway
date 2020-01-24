@@ -27,7 +27,7 @@ use ::action::Action;
 use ::drawing;
 use ::keyboard::{ KeyState, PressType };
 use ::manager;
-use ::submission::{ Timestamp, VirtualKeyboard };
+use ::submission::{ Submission, Timestamp };
 use ::util::find_max_double;
 
 use std::borrow::Borrow;
@@ -143,6 +143,11 @@ pub mod c {
             }
         }
     }
+    
+    // This is constructed only in C, no need for warnings
+    #[allow(dead_code)]
+    #[repr(transparent)]
+    pub struct LevelKeyboard(*const c_void);
 
     // The following defined in Rust. TODO: wrap naked pointers to Rust data inside RefCells to prevent multiple writers
 
@@ -244,19 +249,12 @@ pub mod c {
     pub mod procedures {
         use super::*;
 
-        use ::submission::c::ZwpVirtualKeyboardV1;
-
-        // This is constructed only in C, no need for warnings
-        #[allow(dead_code)]
-        #[repr(transparent)]
-        pub struct LevelKeyboard(*const c_void);
-
         /// Release pointer in the specified position
         #[no_mangle]
         pub extern "C"
         fn squeek_layout_release(
             layout: *mut Layout,
-            virtual_keyboard: ZwpVirtualKeyboardV1, // TODO: receive a reference to the backend
+            submission: *mut Submission,
             widget_to_layout: Transformation,
             time: u32,
             manager: manager::c::Manager,
@@ -264,7 +262,7 @@ pub mod c {
         ) {
             let time = Timestamp(time);
             let layout = unsafe { &mut *layout };
-            let virtual_keyboard = VirtualKeyboard(virtual_keyboard);
+            let submission = unsafe { &mut *submission };
             let ui_backend = UIBackend {
                 widget_to_layout,
                 keyboard: ui_keyboard,
@@ -276,7 +274,7 @@ pub mod c {
                 let key: &Rc<RefCell<KeyState>> = key.borrow();
                 seat::handle_release_key(
                     layout,
-                    &virtual_keyboard,
+                    submission,
                     Some(&ui_backend),
                     time,
                     Some(manager),
@@ -291,18 +289,18 @@ pub mod c {
         pub extern "C"
         fn squeek_layout_release_all_only(
             layout: *mut Layout,
-            virtual_keyboard: ZwpVirtualKeyboardV1, // TODO: receive a reference to the backend
+            submission: *mut Submission,
             time: u32,
         ) {
             let layout = unsafe { &mut *layout };
-            let virtual_keyboard = VirtualKeyboard(virtual_keyboard);
+            let submission = unsafe { &mut *submission };
             // The list must be copied,
             // because it will be mutated in the loop
             for key in layout.pressed_keys.clone() {
                 let key: &Rc<RefCell<KeyState>> = key.borrow();
                 seat::handle_release_key(
                     layout,
-                    &virtual_keyboard,
+                    submission,
                     None, // don't update UI
                     Timestamp(time),
                     None, // don't switch layouts
@@ -315,13 +313,14 @@ pub mod c {
         pub extern "C"
         fn squeek_layout_depress(
             layout: *mut Layout,
-            virtual_keyboard: ZwpVirtualKeyboardV1, // TODO: receive a reference to the backend
+            submission: *mut Submission,
             x_widget: f64, y_widget: f64,
             widget_to_layout: Transformation,
             time: u32,
             ui_keyboard: EekGtkKeyboard,
         ) {
             let layout = unsafe { &mut *layout };
+            let submission = unsafe { &mut *submission };
             let point = widget_to_layout.forward(
                 Point { x: x_widget, y: y_widget }
             );
@@ -335,7 +334,7 @@ pub mod c {
             if let Some(state) = state {
                 seat::handle_press_key(
                     layout,
-                    &VirtualKeyboard(virtual_keyboard),
+                    submission,
                     Timestamp(time),
                     &state,
                 );
@@ -351,7 +350,7 @@ pub mod c {
         pub extern "C"
         fn squeek_layout_drag(
             layout: *mut Layout,
-            virtual_keyboard: ZwpVirtualKeyboardV1, // TODO: receive a reference to the backend
+            submission: *mut Submission,
             x_widget: f64, y_widget: f64,
             widget_to_layout: Transformation,
             time: u32,
@@ -360,7 +359,7 @@ pub mod c {
         ) {
             let time = Timestamp(time);
             let layout = unsafe { &mut *layout };
-            let virtual_keyboard = VirtualKeyboard(virtual_keyboard);
+            let submission = unsafe { &mut *submission };
             let ui_backend = UIBackend {
                 widget_to_layout,
                 keyboard: ui_keyboard,
@@ -389,7 +388,7 @@ pub mod c {
                     } else {
                         seat::handle_release_key(
                             layout,
-                            &virtual_keyboard,
+                            submission,
                             Some(&ui_backend),
                             time,
                             Some(manager),
@@ -400,7 +399,7 @@ pub mod c {
                 if !found {
                     seat::handle_press_key(
                         layout,
-                        &virtual_keyboard,
+                        submission,
                         time,
                         &state,
                     );
@@ -411,7 +410,7 @@ pub mod c {
                     let key: &Rc<RefCell<KeyState>> = wrapped_key.borrow();
                     seat::handle_release_key(
                         layout,
-                        &virtual_keyboard,
+                        submission,
                         Some(&ui_backend),
                         time,
                         Some(manager),
@@ -854,7 +853,7 @@ mod seat {
 
     pub fn handle_press_key(
         layout: &mut Layout,
-        virtual_keyboard: &VirtualKeyboard,
+        submission: &mut Submission,
         time: Timestamp,
         rckey: &Rc<RefCell<KeyState>>,
     ) {
@@ -862,7 +861,7 @@ mod seat {
             eprintln!("Warning: key {:?} was already pressed", rckey);
         }
         let mut key = rckey.borrow_mut();
-        virtual_keyboard.switch(
+        submission.virtual_keyboard.switch(
             &key.keycodes,
             PressType::Pressed,
             time,
@@ -872,7 +871,7 @@ mod seat {
 
     pub fn handle_release_key(
         layout: &mut Layout,
-        virtual_keyboard: &VirtualKeyboard,
+        submission: &mut Submission,
         ui: Option<&UIBackend>,
         time: Timestamp,
         manager: Option<manager::c::Manager>,
@@ -894,7 +893,7 @@ mod seat {
         match action {
             Action::Submit { text: _, keys: _ } => {
                 unstick_locks(layout).apply();
-                virtual_keyboard.switch(
+                submission.virtual_keyboard.switch(
                     &key.keycodes,
                     PressType::Released,
                     time,

@@ -24,6 +24,7 @@
 #include "eek/eek-gtk-keyboard.h"
 #include "eek/layersurface.h"
 #include "eekboard/eekboard-context-service.h"
+#include "submission.h"
 #include "wayland.h"
 #include "server-context-service.h"
 
@@ -41,10 +42,12 @@ struct _ServerContextService {
     GObject parent;
 
     EekboardContextService *state; // unowned
+    /// Needed for instantiating the widget
+    struct submission *submission; // unowned
 
     gboolean visible;
     PhoshLayerSurface *window;
-    GtkWidget *widget;
+    GtkWidget *widget; // nullable
     guint hiding;
     guint last_requested_height;
     enum squeek_arrangement_kind last_type;
@@ -224,7 +227,7 @@ make_widget (ServerContextService *context)
 
     LevelKeyboard *keyboard = eekboard_context_service_get_keyboard (context->state);
 
-    context->widget = eek_gtk_keyboard_new (keyboard);
+    context->widget = eek_gtk_keyboard_new (keyboard, context->state, context->submission);
 
     gtk_widget_set_has_tooltip (context->widget, TRUE);
     gtk_container_add (GTK_CONTAINER(context->window), context->widget);
@@ -395,9 +398,10 @@ server_context_service_init (ServerContextService *state) {
 }
 
 ServerContextService *
-server_context_service_new (EekboardContextService *state)
+server_context_service_new (EekboardContextService *state, struct submission *submission)
 {
     ServerContextService *ui = g_object_new (SERVER_TYPE_CONTEXT_SERVICE, NULL);
+    ui->submission = submission;
     ui->state = state;
     g_signal_connect (state,
                       "notify::keyboard",

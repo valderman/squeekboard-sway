@@ -40,16 +40,15 @@ struct _LevelKeyboard {
     size_t keymap_len; // length of the data inside keymap_fd
 
     guint id; // as a key to layout choices
-
-    EekboardContextService *manager; // unowned reference
 };
 typedef struct _LevelKeyboard LevelKeyboard;
 
 gchar *             eek_keyboard_get_keymap
                                      (LevelKeyboard *keyboard);
 
-LevelKeyboard *level_keyboard_new(EekboardContextService *manager, struct squeek_layout *layout);
-void level_keyboard_deinit(LevelKeyboard *self);
+LevelKeyboard*
+level_keyboard_new (const gchar            *keyboard_type,
+                    enum squeek_arrangement_kind t);
 void level_keyboard_free(LevelKeyboard *self);
 
 G_END_DECLS
