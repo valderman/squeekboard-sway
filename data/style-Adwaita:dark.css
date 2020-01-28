@@ -2,6 +2,7 @@ sq_view {
     background-color: rgba(0, 0, 0, 255);
     color: #ffffff;
     font-family: cantarell, sans-serif;
+    font-size: 25px;
 }
 
 sq_view sq_button {
@@ -33,6 +34,10 @@ sq_button.wide {
 sq_button.locked {
     background: #ffffff;
     color: #2b292f;
+}
+
+sq_button.action {
+    font-size: 0.75em;
 }
 
 #Return {
