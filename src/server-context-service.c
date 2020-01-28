@@ -145,7 +145,7 @@ on_surface_configure(PhoshLayerSurface *surface, ServerContextService *context)
     enum squeek_arrangement_kind new_type = get_type((uint32_t)width, (uint32_t)height);
     if (context->last_type != new_type) {
         context->last_type = new_type;
-        eekboard_context_service_update_layout(EEKBOARD_CONTEXT_SERVICE(context), context->last_type);
+        eekboard_context_service_update_layout(context->state, context->last_type);
     }
 
     guint desired_height = calculate_height(width);
