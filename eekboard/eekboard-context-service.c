@@ -316,9 +316,14 @@ EekboardContextService *eekboard_context_service_new(void)
 {
     return g_object_new (EEKBOARD_TYPE_CONTEXT_SERVICE, NULL);
 }
+
 void eekboard_context_service_set_submission(EekboardContextService *context, struct submission *submission) {
     context->priv->submission = submission;
     if (context->priv->submission) {
         submission_set_keyboard(context->priv->submission, context->priv->keyboard);
     }
+}
+
+void eekboard_context_service_set_ui(EekboardContextService *context, ServerContextService *ui) {
+    context->priv->ui = ui;
 }

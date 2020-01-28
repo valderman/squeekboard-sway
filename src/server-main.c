@@ -288,6 +288,7 @@ main (int argc, char **argv)
     if (instance.dbus_handler) {
         dbus_handler_set_ui_context(instance.dbus_handler, instance.ui_context);
     }
+    eekboard_context_service_set_ui(instance.settings_context, instance.ui_context);
 
     session_register();
 

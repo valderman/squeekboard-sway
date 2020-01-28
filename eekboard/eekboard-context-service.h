@@ -87,6 +87,7 @@ GType         eekboard_context_service_get_type
                                               (void) G_GNUC_CONST;
 EekboardContextService *eekboard_context_service_new(void);
 void eekboard_context_service_set_submission(EekboardContextService *context, struct submission *submission);
+void eekboard_context_service_set_ui(EekboardContextService *context, ServerContextService *ui);
 void          eekboard_context_service_destroy (EekboardContextService *context);
 LevelKeyboard *eekboard_context_service_get_keyboard(EekboardContextService *context);
 

@@ -201,7 +201,10 @@ fn load_layout_data_with_fallback(
                     source, e
                 ),
             },
-            Ok(layout) => return (kind, layout),
+            Ok(layout) => {
+                log_print!(logging::Level::Info, "Loaded layout {}", source);
+                return (kind, layout);
+            }
         }
     }
 
