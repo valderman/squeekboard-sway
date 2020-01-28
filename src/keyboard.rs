@@ -155,7 +155,10 @@ pub fn generate_keymap(
                     keycodes.next().expect("Erase key has no keycode"),
                 )?;
                 if let Some(_) = keycodes.next() {
-                    eprintln!("BUG: Erase key has multiple keycodes");
+                    log_print!(
+                        logging::Level::Bug,
+                        "Erase key has multiple keycodes",
+                    );
                 }
             },
             _ => {},

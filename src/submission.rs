@@ -21,6 +21,7 @@ use ::action::Action;
 use ::imservice;
 use ::imservice::IMService;
 use ::keyboard::{ KeyCode, KeyState, KeyStateId, PressType };
+use ::logging;
 use ::vkeyboard::VirtualKeyboard;
 
 /// Gathers stuff defined in C or called by C
@@ -121,7 +122,10 @@ impl Submission {
                 | Action::Erase
             => (),
             _ => {
-                eprintln!("BUG: Submitted key with action other than Submit or Erase");
+                log_print!(
+                    logging::Level::Bug,
+                    "Submitted key with action other than Submit or Erase",
+                );
                 return;
             },
         };
