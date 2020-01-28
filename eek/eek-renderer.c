@@ -52,7 +52,7 @@ G_DEFINE_TYPE_WITH_PRIVATE (EekRenderer, eek_renderer, G_TYPE_OBJECT)
 
 /* eek-keyboard-drawing.c */
 static void render_button_label (cairo_t *cr, GtkStyleContext *ctx,
-                                                const struct squeek_button *button);
+                                                const gchar *label, EekBounds bounds);
 
 void eek_render_button                         (EekRenderer *self,
                                                 cairo_t     *cr, const struct squeek_button *button,
@@ -124,7 +124,11 @@ static void render_button_in_context(gint scale_factor,
             return;
         }
     }
-    render_button_label (cr, ctx, button);
+
+    const gchar *label = squeek_button_get_label(button);
+    if (label) {
+        render_button_label (cr, ctx, label, squeek_button_get_bounds(button));
+    }
 }
 
 void
@@ -169,15 +173,9 @@ eek_render_button (EekRenderer *self,
 static void
 render_button_label (cairo_t     *cr,
                      GtkStyleContext *ctx,
-                     const struct squeek_button *button)
+                     const gchar *label,
+                     EekBounds bounds)
 {
-    const gchar *label = squeek_button_get_label(button);
-    if (!label) {
-        return;
-    }
-
-    EekBounds bounds = squeek_button_get_bounds(button);
-
     PangoFontDescription *font;
     gtk_style_context_get(ctx,
                           gtk_style_context_get_state(ctx),
