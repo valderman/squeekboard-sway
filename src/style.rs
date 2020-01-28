@@ -19,6 +19,7 @@
 /*! CSS data loading. */
 
 use std::env;
+use ::logging;
 
 use glib::object::ObjectExt;
 use logging::Warn;
@@ -84,7 +85,10 @@ fn get_theme_name(settings: &gtk::Settings) -> GtkTheme {
             match &e {
                 env::VarError::NotPresent => {},
                 // maybe TODO: forward this warning?
-                e => eprintln!("GTK_THEME variable invalid: {}", e),
+                e => log_print!(
+                    logging::Level::Surprise,
+                    "GTK_THEME variable invalid: {}", e,
+                ),
             };
             e
         }).ok();
@@ -94,15 +98,13 @@ fn get_theme_name(settings: &gtk::Settings) -> GtkTheme {
         None => GtkTheme {
             name: {
                 settings.get_property("gtk-theme-name")
-                    // maybe TODO: is this worth a warning?
-                    .or_warn("No theme name")
+                    .or_print(logging::Problem::Surprise, "No theme name")
                     .and_then(|value| value.get::<String>())
                     .unwrap_or(DEFAULT_THEME_NAME.into())
             },
             variant: {
                 settings.get_property("gtk-application-prefer-dark-theme")
-                    // maybe TODO: is this worth a warning?
-                    .or_warn("No settings key")
+                    .or_print(logging::Problem::Surprise, "No settings key")
                     .and_then(|value| value.get::<bool>())
                     .and_then(|dark_preferred| match dark_preferred {
                         true => Some("dark".into()),

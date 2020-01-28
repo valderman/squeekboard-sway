@@ -7,6 +7,7 @@ use std::io;
 use std::string::FromUtf8Error;
 
 use ::action::Action;
+use ::logging;
 
 use std::io::Write;
 use std::iter::{ FromIterator, IntoIterator };
@@ -110,7 +111,12 @@ pub fn generate_keymap(
     
     for (name, state) in keystates.iter() {
         if let Action::Submit { text: _, keys } = &state.action {
-            if let 0 = keys.len() { eprintln!("Key {} has no keysyms", name); };
+            if let 0 = keys.len() {
+                log_print!(
+                    logging::Level::Warning,
+                    "Key {} has no keysyms", name,
+                );
+            };
             for (named_keysym, keycode) in keys.iter().zip(&state.keycodes) {
                 write!(
                     buf,

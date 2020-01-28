@@ -1,12 +1,15 @@
 use std::boxed::Box;
 use std::ffi::CString;
+use std::fmt;
 use std::num::Wrapping;
 use std::string::String;
 
+use ::logging;
 use ::util::c::into_cstring;
 
 // Traits
 use std::convert::TryFrom;
+use ::logging::Warn;
 
 
 /// Gathers stuff defined in C or called by C
@@ -87,16 +90,20 @@ pub mod c {
         let imservice = check_imservice(imservice, im).unwrap();
         imservice.pending = IMProtocolState {
             content_hint: {
-                ContentHint::from_bits(hint).unwrap_or_else(|| {
-                    eprintln!("Warning: received invalid hint flags");
-                    ContentHint::NONE
-                })
+                ContentHint::from_bits(hint)
+                    .or_print(
+                        logging::Problem::Warning,
+                        "Received invalid hint flags",
+                    )
+                    .unwrap_or(ContentHint::NONE)
             },
             content_purpose: {
-                ContentPurpose::try_from(purpose).unwrap_or_else(|_e| {
-                    eprintln!("Warning: Received invalid purpose value");
-                    ContentPurpose::Normal
-                })
+                ContentPurpose::try_from(purpose)
+                    .or_print(
+                        logging::Problem::Warning,
+                        "Received invalid purpose value",
+                    )
+                    .unwrap_or(ContentPurpose::Normal)
             },
             ..imservice.pending.clone()
         };
@@ -111,10 +118,12 @@ pub mod c {
         let imservice = check_imservice(imservice, im).unwrap();
         imservice.pending = IMProtocolState {
             text_change_cause: {
-                ChangeCause::try_from(cause).unwrap_or_else(|_e| {
-                    eprintln!("Warning: received invalid cause value");
-                    ChangeCause::InputMethod
-                })
+                ChangeCause::try_from(cause)
+                    .or_print(
+                        logging::Problem::Warning,
+                        "Received invalid cause value",
+                    )
+                    .unwrap_or(ChangeCause::InputMethod)
             },
             ..imservice.pending.clone()
         };
@@ -242,10 +251,17 @@ pub enum ContentPurpose {
     Terminal = 13,
 }
 
+// Utilities from ::logging need a printable error type
+pub struct UnrecognizedValue;
+
+impl fmt::Display for UnrecognizedValue {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Unrecognized value")
+    }
+}
+
 impl TryFrom<u32> for ContentPurpose {
-    // There's only one way to fail: number not in protocol,
-    // so no special error type is needed
-    type Error = ();
+    type Error = UnrecognizedValue;
     fn try_from(num: u32) -> Result<Self, Self::Error> {
         use self::ContentPurpose::*;
         match num {
@@ -263,7 +279,7 @@ impl TryFrom<u32> for ContentPurpose {
             11 => Ok(Time),
             12 => Ok(Datetime),
             13 => Ok(Terminal),
-            _ => Err(()),
+            _ => Err(UnrecognizedValue),
         }
     }
 }
@@ -276,14 +292,12 @@ pub enum ChangeCause {
 }
 
 impl TryFrom<u32> for ChangeCause {
-    // There's only one way to fail: number not in protocol,
-    // so no special error type is needed
-    type Error = ();
+    type Error = UnrecognizedValue;
     fn try_from(num: u32) -> Result<Self, Self::Error> {
         match num {
             0 => Ok(ChangeCause::InputMethod),
             1 => Ok(ChangeCause::Other),
-            _ => Err(())
+            _ => Err(UnrecognizedValue)
         }
     }
 }

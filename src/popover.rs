@@ -7,6 +7,7 @@ use ::layout::c::{ Bounds, EekGtkKeyboard };
 use ::locale;
 use ::locale::{ OwnedTranslation, Translation, compare_current_locale };
 use ::locale_config::system_locale;
+use ::logging;
 use ::manager;
 use ::resources;
 
@@ -221,14 +222,10 @@ fn translate_layout_names(layouts: &Vec<LayoutId>) -> Vec<OwnedTranslation> {
             LayoutId::System { name, kind: _ } => {
                 xkb_translator.get_display_name(name)
                     .map(|s| Status::Translated(OwnedTranslation(s)))
-                    .unwrap_or_else(|e| {
-                        eprintln!(
-                            "No display name for xkb layout {}: {:?}",
-                            name,
-                            e,
-                        );
-                        Status::Remaining(name.clone())
-                    })
+                    .or_print(
+                        logging::Problem::Surprise,
+                        &format!("No display name for xkb layout {}", name),
+                    ).unwrap_or_else(|| Status::Remaining(name.clone()))
             },
             LayoutId::Local(name) => Status::Remaining(name.clone()),
         });
@@ -242,10 +239,13 @@ fn translate_layout_names(layouts: &Vec<LayoutId>) -> Vec<OwnedTranslation> {
                 .as_ref()
                 .to_owned()
         )
-        .or_warn("No locale detected")
+        .or_print(logging::Problem::Surprise, "No locale detected")
         .and_then(|lang| {
             resources::get_layout_names(lang.as_str())
-                .or_warn(&format!("No translations for locale {}", lang))
+                .or_print(
+                    logging::Problem::Surprise,
+                    &format!("No translations for locale {}", lang),
+                )
         });
 
     match builtin_translations {
@@ -361,10 +361,10 @@ pub fn show(
             match state {
                 Some(v) => {
                     v.get::<String>()
-                        .or_else(|| {
-                            eprintln!("Variant is not string: {:?}", v);
-                            None
-                        })
+                        .or_print(
+                            logging::Problem::Bug,
+                            &format!("Variant is not string: {:?}", v)
+                        )
                         .map(|state| {
                             let (_id, layout) = choices.iter()
                                 .find(
@@ -376,7 +376,10 @@ pub fn show(
                             )
                         });
                 },
-                None => eprintln!("No variant selected"),
+                None => log_print!(
+                    logging::Level::Debug,
+                    "No variant selected",
+                ),
             };
             menu_inner.popdown();
         });

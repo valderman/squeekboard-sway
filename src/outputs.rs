@@ -1,7 +1,10 @@
 /*! Managing Wayland outputs */
 
 use std::vec::Vec;
+use ::logging;
 
+// traits
+use ::logging::Warn;
 
 /// Gathers stuff defined in C or called by C
 pub mod c {
@@ -113,14 +116,11 @@ pub mod c {
         _make: *const c_char, _model: *const c_char,
         transform: i32,
     ) {
-        let transform = Transform::from_u32(transform as u32).unwrap_or_else(
-            || {
-                eprintln!(
-                    "Warning: received invalid wl_output.transform value"
-                );
-                Transform::Normal
-            }
-        );
+        let transform = Transform::from_u32(transform as u32)
+            .or_print(
+                logging::Problem::Warning,
+                "Received invalid wl_output.transform value",
+            ).unwrap_or(Transform::Normal);
 
         let outputs = outputs.clone_ref();
         let mut collection = outputs.borrow_mut();
@@ -129,7 +129,10 @@ pub mod c {
                 .map(|o| &mut o.pending);
         match output_state {
             Some(state) => { state.transform = Some(transform) },
-            None => eprintln!("Wayland error: Got mode on unknown output"),
+            None => log_print!(
+                logging::Level::Warning,
+                "Got geometry on unknown output",
+            ),
         };
     }
 
@@ -141,10 +144,12 @@ pub mod c {
         height: i32,
         _refresh: i32,
     ) {
-        let flags = Mode::from_bits(flags).unwrap_or_else(|| {
-            eprintln!("Warning: received invalid wl_output.mode flags");
-            Mode::NONE
-        });
+        let flags = Mode::from_bits(flags)
+            .or_print(
+                logging::Problem::Warning,
+                "Received invalid wl_output.mode flags",
+            ).unwrap_or(Mode::NONE);
+
         let outputs = outputs.clone_ref();
         let mut collection = outputs.borrow_mut();
         let output_state: Option<&mut OutputState>
@@ -156,7 +161,10 @@ pub mod c {
                     state.current_mode = Some(super::Mode { width, height});
                 }
             },
-            None => eprintln!("Wayland error: Got mode on unknown output"),
+            None => log_print!(
+                logging::Level::Warning,
+                "Got mode on unknown output",
+            ),
         };
     }
 
@@ -169,7 +177,10 @@ pub mod c {
         let output = find_output_mut(&mut collection, wl_output);
         match output {
             Some(output) => { output.current = output.pending.clone(); }
-            None => eprintln!("Wayland error: Got done on unknown output"),
+            None => log_print!(
+                logging::Level::Warning,
+                "Got done on unknown output",
+            ),
         };
     }
 
@@ -185,7 +196,10 @@ pub mod c {
                 .map(|o| &mut o.pending);
         match output_state {
             Some(state) => { state.scale = factor; }
-            None => eprintln!("Wayland error: Got done on unknown output"),
+            None => log_print!(
+                logging::Level::Warning,
+                "Got scale on unknown output",
+            ),
         };
     }
 
@@ -258,7 +272,10 @@ pub mod c {
                 }
             },
             _ => {
-                eprintln!("Not enough info registered on output");
+                log_print!(
+                    logging::Level::Surprise,
+                    "Not enough info received on output",
+                );
                 0
             },
         }

@@ -15,6 +15,9 @@ extern crate regex;
 extern crate serde;
 extern crate xkbcommon;
 
+#[macro_use]
+mod logging;
+
 mod action;
 pub mod data;
 mod drawing;
@@ -24,7 +27,6 @@ mod keyboard;
 mod layout;
 mod locale;
 mod locale_config;
-mod logging;
 mod manager;
 mod outputs;
 mod popover;
