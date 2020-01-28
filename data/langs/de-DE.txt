@@ -1,8 +1,0 @@
-us Englisch (US)
-de Deutsch
-el Griechisch
-es Spanisch
-it Italienisch
-jp+kana Japanisch (Kana)
-no Norwegisch
-
