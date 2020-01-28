@@ -42,22 +42,17 @@ typedef struct _EekRendererPrivate
     GtkStyleContext *view_context; // owned
     GtkStyleContext *button_context; // TODO: maybe move a copy to each button
 
-    gdouble border_width; // FIXME: border of what?
-
     gdouble allocation_width;
     gdouble allocation_height;
     gint scale_factor; /* the outputs scale factor */
     struct transformation widget_to_layout;
-
-    PangoFontDescription *font; // owned reference
-
 } EekRendererPrivate;
 
 G_DEFINE_TYPE_WITH_PRIVATE (EekRenderer, eek_renderer, G_TYPE_OBJECT)
 
 /* eek-keyboard-drawing.c */
-static void eek_renderer_render_button_label (EekRenderer *self, cairo_t *cr, GtkStyleContext *ctx,
-                                                const struct squeek_button *button);
+static void render_button_label (cairo_t *cr, GtkStyleContext *ctx,
+                                                const gchar *label, EekBounds bounds);
 
 void eek_render_button                         (EekRenderer *self,
                                                 cairo_t     *cr, const struct squeek_button *button,
@@ -86,8 +81,7 @@ render_outline (cairo_t     *cr,
         position.x, position.y, position.width, position.height);
 }
 
-static void render_button_in_context(EekRenderer *self,
-                                     gint scale_factor,
+static void render_button_in_context(gint scale_factor,
                                      cairo_t     *cr,
                                      GtkStyleContext *ctx,
                                      const struct squeek_button *button) {
@@ -130,7 +124,11 @@ static void render_button_in_context(EekRenderer *self,
             return;
         }
     }
-    eek_renderer_render_button_label (self, cr, ctx, button);
+
+    const gchar *label = squeek_button_get_label(button);
+    if (label) {
+        render_button_label (cr, ctx, label, squeek_button_get_bounds(button));
+    }
 }
 
 void
@@ -162,7 +160,7 @@ eek_render_button (EekRenderer *self,
     }
     gtk_style_context_add_class(ctx, outline_name);
 
-    render_button_in_context(self, priv->scale_factor, cr, ctx, button);
+    render_button_in_context(priv->scale_factor, cr, ctx, button);
 
     // Save and restore functions don't work if gtk_render_* was used in between
     gtk_style_context_set_state(ctx, GTK_STATE_FLAG_NORMAL);
@@ -173,43 +171,16 @@ eek_render_button (EekRenderer *self,
 }
 
 static void
-eek_renderer_render_button_label (EekRenderer *self,
-                                  cairo_t     *cr,
-                                  GtkStyleContext *ctx,
-                                  const struct squeek_button *button)
+render_button_label (cairo_t     *cr,
+                     GtkStyleContext *ctx,
+                     const gchar *label,
+                     EekBounds bounds)
 {
-    EekRendererPrivate *priv = eek_renderer_get_instance_private (self);
-
-    const gchar *label = squeek_button_get_label(button);
-
-    if (!label) {
-        return;
-    }
-
     PangoFontDescription *font;
-    gdouble scale;
-
-
-    if (!priv->font) {
-        const PangoFontDescription *base_font;
-        gdouble size;
-
-        base_font = pango_context_get_font_description (priv->pcontext);
-        // FIXME: Base font size on the same size unit used for button sizing,
-        // and make the default about 1/3 of the current row height
-        size = 30000.0;
-        priv->font = pango_font_description_copy (base_font);
-        pango_font_description_set_size (priv->font, (gint)round(size * 0.6));
-    }
-
-    EekBounds bounds = squeek_button_get_bounds(button);
-    scale = MIN((bounds.width - priv->border_width) / bounds.width,
-                (bounds.height - priv->border_width) / bounds.height);
-
-    font = pango_font_description_copy (priv->font);
-    pango_font_description_set_size (font,
-                                     (gint)round(pango_font_description_get_size (font) * scale));
-
+    gtk_style_context_get(ctx,
+                          gtk_style_context_get_state(ctx),
+                          "font", &font,
+                          NULL);
     PangoLayout *layout = pango_cairo_create_layout (cr);
     pango_layout_set_font_description (layout, font);
     pango_font_description_free (font);
@@ -219,8 +190,7 @@ eek_renderer_render_button_label (EekRenderer *self,
     if (line->resolved_dir == PANGO_DIRECTION_RTL) {
         pango_layout_set_alignment (layout, PANGO_ALIGN_RIGHT);
     }
-    pango_layout_set_width (layout,
-                            PANGO_SCALE * bounds.width * scale);
+    pango_layout_set_width (layout, PANGO_SCALE * bounds.width);
 
     PangoRectangle extents = { 0, };
     pango_layout_get_extents (layout, NULL, &extents);
@@ -331,7 +301,6 @@ eek_renderer_finalize (GObject *object)
     g_object_unref(priv->css_provider);
     g_object_unref(priv->view_context);
     g_object_unref(priv->button_context);
-    pango_font_description_free (priv->font);
     G_OBJECT_CLASS (eek_renderer_parent_class)->finalize (object);
 }
 
@@ -390,11 +359,9 @@ eek_renderer_init (EekRenderer *self)
 
     priv->keyboard = NULL;
     priv->pcontext = NULL;
-    priv->border_width = 1.0;
     priv->allocation_width = 0.0;
     priv->allocation_height = 0.0;
     priv->scale_factor = 1;
-    priv->font = NULL;
 
     GtkIconTheme *theme = gtk_icon_theme_get_default ();
 
