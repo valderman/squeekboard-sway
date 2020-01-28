@@ -4,8 +4,10 @@ use gio;
 use gtk;
 use std::ffi::CString;
 use ::layout::c::{ Bounds, EekGtkKeyboard };
-use ::locale::{ Translation, compare_current_locale };
+use ::locale;
+use ::locale::{ OwnedTranslation, Translation, compare_current_locale };
 use ::locale_config::system_locale;
+use ::logging;
 use ::manager;
 use ::resources;
 
@@ -17,6 +19,7 @@ use glib::variant::ToVariant;
 use gtk::PopoverExt;
 use gtk::WidgetExt;
 use std::io::Write;
+use ::logging::Warn;
 
 mod variants {
     use glib;
@@ -94,7 +97,7 @@ mod variants {
     }
 }
 
-fn make_menu_builder(inputs: Vec<(&str, Translation)>) -> gtk::Builder {
+fn make_menu_builder(inputs: Vec<(&str, OwnedTranslation)>) -> gtk::Builder {
     let mut xml: Vec<u8> = Vec::new();
     writeln!(
         xml,
@@ -194,6 +197,81 @@ fn get_current_layout(
     }
 }
 
+/// Translates all provided layout names according to current locale,
+/// for the purpose of display (i.e. errors will be caught and reported)
+fn translate_layout_names(layouts: &Vec<LayoutId>) -> Vec<OwnedTranslation> {
+    // This procedure is rather ugly...
+    // Xkb lookup *must not* be applied to non-system layouts,
+    // so both translators can't be merged into one lookup table,
+    // therefore must be done in two steps.
+    // `XkbInfo` being temporary also means
+    // that its return values must be copied,
+    // forcing the use of `OwnedTranslation`.
+    enum Status {
+        /// xkb names should get all translated here
+        Translated(OwnedTranslation),
+        /// Builtin names need builtin translations
+        Remaining(String),
+    }
+
+    // Attempt to take all xkb names from gnome-desktop's xkb info.
+    let xkb_translator = locale::XkbInfo::new();
+
+    let translated_names = layouts.iter()
+        .map(|id| match id {
+            LayoutId::System { name, kind: _ } => {
+                xkb_translator.get_display_name(name)
+                    .map(|s| Status::Translated(OwnedTranslation(s)))
+                    .or_print(
+                        logging::Problem::Surprise,
+                        &format!("No display name for xkb layout {}", name),
+                    ).unwrap_or_else(|| Status::Remaining(name.clone()))
+            },
+            LayoutId::Local(name) => Status::Remaining(name.clone()),
+        });
+
+    // Non-xkb layouts and weird xkb layouts
+    // still need to be looked up in the internal database.
+    let builtin_translations = system_locale()
+        .map(|locale|
+            locale.tags_for("messages")
+                .next().unwrap() // guaranteed to exist
+                .as_ref()
+                .to_owned()
+        )
+        .or_print(logging::Problem::Surprise, "No locale detected")
+        .and_then(|lang| {
+            resources::get_layout_names(lang.as_str())
+                .or_print(
+                    logging::Problem::Surprise,
+                    &format!("No translations for locale {}", lang),
+                )
+        });
+
+    match builtin_translations {
+        Some(translations) => {
+            translated_names
+                .map(|status| match status {
+                    Status::Remaining(name) => {
+                        translations.get(name.as_str())
+                            .unwrap_or(&Translation(name.as_str()))
+                            .to_owned()
+                    },
+                    Status::Translated(t) => t,
+                })
+                .collect()
+        },
+        None => {
+            translated_names
+                .map(|status| match status {
+                    Status::Remaining(name) => OwnedTranslation(name),
+                    Status::Translated(t) => t,
+                })
+                .collect()
+        },
+    }
+}
+
 pub fn show(
     window: EekGtkKeyboard,
     position: Bounds,
@@ -218,46 +296,21 @@ pub fn show(
         .chain(overlay_layouts)
         .collect();
 
-    let translations = system_locale()
-        .map(|locale|
-            locale.tags_for("messages")
-                .next().unwrap() // guaranteed to exist
-                .as_ref()
-                .to_owned()
-        )
-        .and_then(|lang| resources::get_layout_names(lang.as_str()));
-
-    let translated_names = all_layouts.iter()
-        .map(LayoutId::get_name);
-    let translated_names: Vec<Translation> = match translations {
-        Some(translations) => {
-            translated_names
-                .map(move |name| {
-                    translations.get(name)
-                        .map(|translation| translation.clone())
-                        .unwrap_or(Translation(name))
-                })
-                .collect()
-        },
-        None => {
-            translated_names.map(|name| Translation(name))
-                .collect()
-        },
-    };
-
+    let translated_names = translate_layout_names(&all_layouts);
+    
     // sorted collection of human and machine names
-    let mut human_names: Vec<(Translation, LayoutId)> = translated_names
+    let mut human_names: Vec<(OwnedTranslation, LayoutId)> = translated_names
         .into_iter()
         .zip(all_layouts.clone().into_iter())
         .collect();
 
     human_names.sort_unstable_by(|(tr_a, _), (tr_b, _)| {
-        compare_current_locale(tr_a.0, tr_b.0)
+        compare_current_locale(&tr_a.0, &tr_b.0)
     });
 
     // GVariant doesn't natively support `enum`s,
     // so the `choices` vector will serve as a lookup table.
-    let choices_with_translations: Vec<(String, (Translation, LayoutId))>
+    let choices_with_translations: Vec<(String, (OwnedTranslation, LayoutId))>
         = human_names.into_iter()
             .enumerate()
                 .map(|(i, human_entry)| {(
@@ -268,7 +321,7 @@ pub fn show(
 
     let builder = make_menu_builder(
         choices_with_translations.iter()
-            .map(|(id, (translation, _))| (id.as_str(), translation.clone()))
+            .map(|(id, (translation, _))| (id.as_str(), (*translation).clone()))
             .collect()
     );
 
@@ -308,10 +361,10 @@ pub fn show(
             match state {
                 Some(v) => {
                     v.get::<String>()
-                        .or_else(|| {
-                            eprintln!("Variant is not string: {:?}", v);
-                            None
-                        })
+                        .or_print(
+                            logging::Problem::Bug,
+                            &format!("Variant is not string: {:?}", v)
+                        )
                         .map(|state| {
                             let (_id, layout) = choices.iter()
                                 .find(
@@ -323,7 +376,10 @@ pub fn show(
                             )
                         });
                 },
-                None => eprintln!("No variant selected"),
+                None => log_print!(
+                    logging::Level::Debug,
+                    "No variant selected",
+                ),
             };
             menu_inner.popdown();
         });

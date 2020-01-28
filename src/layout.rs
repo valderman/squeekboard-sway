@@ -20,17 +20,21 @@
 use std::cell::RefCell;
 use std::collections::{ HashMap, HashSet };
 use std::ffi::CString;
+use std::fmt;
 use std::rc::Rc;
 use std::vec::Vec;
 
 use ::action::Action;
 use ::drawing;
 use ::keyboard::{ KeyState, PressType };
+use ::logging;
 use ::manager;
 use ::submission::{ Submission, Timestamp };
 use ::util::find_max_double;
 
+// Traits
 use std::borrow::Borrow;
+use ::logging::Warn;
 
 /// Gathers stuff defined in C or called by C
 pub mod c {
@@ -628,6 +632,12 @@ pub struct LayoutData {
 #[derive(Debug)]
 struct NoSuchView;
 
+impl fmt::Display for NoSuchView {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "No such view")
+    }
+}
+
 // Unfortunately, changes are not atomic due to mutability :(
 // An error will not be recoverable
 // The usage of &mut on Rc<RefCell<KeyState>> doesn't mean anything special.
@@ -793,9 +803,10 @@ mod seat {
 
     fn try_set_view(layout: &mut Layout, view_name: String) {
         layout.set_view(view_name.clone())
-            .map_err(|e|
-                eprintln!("Bad view {} ({:?}), ignoring", view_name, e)
-            ).ok();
+            .or_print(
+                logging::Problem::Bug,
+                &format!("Bad view {}, ignoring", view_name),
+            );
     }
 
     /// A vessel holding an obligation to switch view.
@@ -837,9 +848,10 @@ mod seat {
                 Action::LockView { lock: _, unlock: view } => {
                     new_view = Some(view.clone());
                 },
-                a => eprintln!(
-                    "BUG: action {:?} was found inside locked keys",
-                    a
+                a => log_print!(
+                    logging::Level::Bug,
+                    "Non-locking action {:?} was found inside locked keys",
+                    a,
                 ),
             };
             key.locked = false;
@@ -858,7 +870,10 @@ mod seat {
         rckey: &Rc<RefCell<KeyState>>,
     ) {
         if !layout.pressed_keys.insert(::util::Pointer(rckey.clone())) {
-            eprintln!("Warning: key {:?} was already pressed", rckey);
+            log_print!(
+                logging::Level::Bug,
+                "Key {:?} was already pressed", rckey,
+            );
         }
         let mut key = rckey.borrow_mut();
         submission.handle_press(&key, KeyState::get_id(rckey), time);
@@ -936,7 +951,10 @@ mod seat {
                     }
                 }
             },
-            Action::SetModifier(_) => eprintln!("Modifiers unsupported"),
+            Action::SetModifier(_) => log_print!(
+                logging::Level::Bug,
+                "Modifiers unsupported",
+            ),
         };
 
         let pointer = ::util::Pointer(rckey.clone());

@@ -9,6 +9,7 @@ use std::rc::Rc;
 use std::string::FromUtf8Error;
 
 use ::action::Action;
+use ::logging;
 
 // Traits
 use std::io::Write;
@@ -129,7 +130,12 @@ pub fn generate_keymap(
     for (name, state) in keystates.iter() {
         match &state.action {
             Action::Submit { text: _, keys } => {
-                if let 0 = keys.len() { eprintln!("Key {} has no keysyms", name); };
+                if let 0 = keys.len() {
+                    log_print!(
+                        logging::Level::Warning,
+                        "Key {} has no keysyms", name,
+                    );
+                };
                 for (named_keysym, keycode) in keys.iter().zip(&state.keycodes) {
                     write!(
                         buf,

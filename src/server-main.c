@@ -67,9 +67,11 @@ on_name_lost (GDBusConnection *connection,
               gpointer         user_data)
 {
     // TODO: could conceivable continue working
+    // if intrnal changes stop sending dbus changes
     (void)connection;
     (void)name;
     (void)user_data;
+    g_error("DBus unavailable, unclear how to continue.");
     exit (1);
 }
 

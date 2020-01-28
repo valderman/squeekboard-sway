@@ -45,6 +45,7 @@ build_deb:
       paths:
         - "*.deb"
     script:
+        - rm -f ../*.deb
         - apt-get -y build-dep .
         - apt-get -y install devscripts
         - debuild -i -us -uc -b
@@ -59,6 +60,7 @@ build_deb:arm64:
       paths:
         - "*.deb"
     script:
+        - rm -f ../*.deb
         - apt-get -y build-dep .
         - apt-get -y install devscripts
         - debuild -i -us -uc -b

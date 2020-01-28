@@ -11,6 +11,7 @@ use std::iter::FromIterator;
 // and what a convenience layout. "_wide" is not a layout,
 // neither is "number"
 const KEYBOARDS: &[(*const str, *const str)] = &[
+    // layouts
     ("us", include_str!("../data/keyboards/us.yaml")),
     ("us_wide", include_str!("../data/keyboards/us_wide.yaml")),
     ("de", include_str!("../data/keyboards/de.yaml")),
@@ -24,6 +25,7 @@ const KEYBOARDS: &[(*const str, *const str)] = &[
     ("no", include_str!("../data/keyboards/no.yaml")),
     ("number", include_str!("../data/keyboards/number.yaml")),
     ("se", include_str!("../data/keyboards/se.yaml")),
+    // layout+overlay
     ("terminal", include_str!("../data/keyboards/terminal.yaml")),
     // Overlays
     ("emoji", include_str!("../data/keyboards/emoji.yaml")),
@@ -44,7 +46,8 @@ pub fn get_keyboard(needle: &str) -> Option<&'static str> {
 }
 
 const OVERLAY_NAMES: &[*const str] = &[
-    "emoji"
+    "emoji",
+    "terminal",
 ];
 
 pub fn get_overlays() -> Vec<&'static str> {
