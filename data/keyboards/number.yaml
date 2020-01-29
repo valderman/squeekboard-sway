@@ -23,7 +23,7 @@ buttons:
     Return:
         outline: outline7
         icon: "key-enter"
-        keysym: "BackSpace"
+        keysym: "Return"
     asterisk:
         text: "*"
     numbersign:
