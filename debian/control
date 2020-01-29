@@ -35,8 +35,8 @@ Architecture: linux-any
 Depends:
 # for the Adwaita-dark theme
  gnome-themes-extra-data,
- ${shlibs:Depends}
- ${misc:Depends}
+ ${shlibs:Depends},
+ ${misc:Depends},
 Description: On-screen keyboard for Wayland
  Virtual keyboard supporting Wayland, built primarily for the Librem 5 phone.
 
@@ -45,8 +45,8 @@ Architecture: linux-any
 Depends:
  python3,
  python3-gi,
- ${shlibs:Depends}
- ${misc:Depends}
+ ${shlibs:Depends},
+ ${misc:Depends},
 Description: Resources for making Squeekboard layouts
  Tools for creating and testing Squeekboard layouts:
  .
