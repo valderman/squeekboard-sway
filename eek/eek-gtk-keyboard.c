@@ -25,10 +25,6 @@
 
 #include "config.h"
 
-#ifdef HAVE_LIBCANBERRA
-#include <canberra-gtk.h>
-#endif
-
 #include <math.h>
 #include <string.h>
 
