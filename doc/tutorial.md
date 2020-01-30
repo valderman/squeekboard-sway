@@ -34,13 +34,15 @@ So at least I will try to start writing a short how-to here and edit this post a
 * Additionally take a look at https://source.puri.sm/Librem5/squeekboard/blob/master/HACKING.md#testing
 * You can either test it locally on your Linux system or use the [QEMU Librem 5 image ](https://developer.puri.sm/Librem5/Development_Environment/Boards/emulators.html)
 * To test squeekboard locally, you need phoc. Either compile that from the sources as well or use the CI repository ci.puri.sm for Debian based systems:
-`deb [arch=amd64] http://ci.puri.sm/ scratch librem5`
+  `deb [arch=amd64] http://ci.puri.sm/ scratch librem5`
+
 Squeekboard can be installed from there as a Debian package, too (that’s what I often do). But beware - there be dragons! You could bork your system with these packages and you should probably disable this repository again after installing what you need - these packages are not meant for production systems (or so I heard :wink: )
 
 **Creating the keyboard layout**
 
 * To be written: For the time being, take a look at [Using non-latin language on Librem 5 ](https://forums.puri.sm/t/using-non-latin-language-on-librem-5/7103/5)
 * The correct name of the .yaml file can be found with the command `gsettings get org.gnome.desktop.input-sources sources`
+
 The output should be something like this: `[('xkb', 'us'), ('xkb', 'de')]`
 So f.ex. “de.yaml” would be the correct name for the German keyboard layout.
 * The translations for the keyboard layout names in the different languages can be found at `data/langs/`
