@@ -22,7 +22,8 @@ build_docs:
     paths:
       - _build
   script:
-      - apt-get -y install python3-recommonmark python3-sphinx
+      - apt-get -y install python3-pip python3-sphinx
+      - pip3 install recommonmark
       - ./doc/build.sh _build
 
 build_meson:
