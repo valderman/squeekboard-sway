@@ -12,6 +12,10 @@ TARGET_DIR="${1:-./}"
 
 SPHINX=sphinx-build
 
+if [ ! -d $DOCS_DIR/_static ]; then
+    mkdir -p $DOCS_DIR/_static
+fi
+
 if ! which sphinx-build ; then
     SPHINX=sphinx-build-3
 fi
