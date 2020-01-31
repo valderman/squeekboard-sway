@@ -1,3 +1,56 @@
+squeekboard (1.8.1) amber-phone; urgency=medium
+
+  [ Dorota Czaplejewicz ]
+  * action: Rename Level to View
+  * keyboard: Introduce a KeyCode type wrapping u32
+  * layout: Centralize handling key releases
+  * layout: Make handling presses uniform
+  * UI: Drop indirection for show/hide functions
+  * managers: Move visible flag to UI manager
+  * dbus_service: Remove unused function
+  * dbus: Remove unneeded gobjectness
+  * dbus: Rename handler from eekboard_service
+  * context: Moved keymap setting together with its generation
+  * key-emitter: Remove unused
+  * eekboard_context_service: Drop unused enable property
+  * services: Split out layout management from EekboardContextService
+  * submission: Move away from virtual-keyboard
+  * submission: Create a new wrapper over imservice
+  * imservice: Limited scope of unsafe
+  * EekGtkKeyboard: Use a direct reference to EekboardContext
+  * submission: Take over virtual_keyboard handling
+  * keyboard: Cleanups of unused code
+  * levelkeyboard: Drop unused manager references
+  * keyboard: Gather up keymap handling, drop layout
+  * submission: Remove wildcard reexport
+  * imservice: Rename commit_state to done to match protocol
+  * ci: Clean up `..` before it's searched for artifacts
+  * dbus: Log error on dbus exit
+  * logging: Try to improve common operations
+  * imservice: Return something more resembling an Error on failure
+  * logging: Unified to remove random eprint calls
+  * press_key: Use proper logging
+  * number: Fix keysym for Return
+  * build: Strip clap of optional features
+  * layouts: Fix segfault on switching to wide
+  * font: Use font from style context
+  * font: Only pass relevant data to label renderer
+
+  [ Sebastian Krzyszkowiak ]
+  * layout: terminal: Swap positions of preferences and actions button
+  * layout: terminal: Show actions button on all views
+  * layout: terminal: Replace actions button with period on symbols view
+
+  [ Dorota Czaplejewicz ]
+  * setup: Connect ui to the state manager
+  * debian: Add missing commas
+
+  [ David Boddie ]
+  * Tidy build file and docs
+  * Use pip to install recommonmark
+
+ -- Dorota Czaplejewicz <dorota.czaplejewicz@puri.sm>  Fri, 31 Jan 2020 09:59:12 +0000
+
 squeekboard (1.8.0) amber-phone; urgency=medium
 
   [ Dorota Czaplejewicz ]
