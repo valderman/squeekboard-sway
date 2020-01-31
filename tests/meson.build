@@ -57,6 +57,7 @@ foreach layout : [
     'jp+kana','jp+kana_wide',
     'no',
     'number',
+    'pl', 'pl_wide',
     'se',
     'terminal',
     

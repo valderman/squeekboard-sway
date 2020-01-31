@@ -1,0 +1,102 @@
+---
+outlines:
+    default: { width: 54, height: 42 }
+    altline: { width: 81, height: 42 }
+    wide: { width: 100, height: 42 }
+    spaceline: { width: 206, height: 42 }
+    special: { width: 54, height: 42 }
+
+views:
+    base:
+        - "q w e r t y u i o p"
+        - "a s d f g h j k l"
+        - "Shift_L   z x c v b n m  BackSpace"
+        - "show_numbers preferences         space        show_accents Return"
+    upper:
+        - "Q W E R T Y U I O P"
+        - "A S D F G H J K L"
+        - "Shift_L   Z X C V B N M  BackSpace"
+        - "show_numbers preferences         space        show_upper_accents Return"
+    numbers:
+        - "1 2 3 4 5 6 7 8 9 0"
+        - "@ # $ % & - _ + ( )"
+        - "show_symbols   , \" ' colon ; ! ?  BackSpace"
+        - "show_letters preferences         space        period Return"
+    symbols:
+        - "~ ` | · √ π τ ÷ × ¶"
+        - "© ® £ € ¥ ^ ° * { }"
+        - "show_numbers_from_symbols   \\ / < > = [ ]  BackSpace"
+        - "show_letters preferences         space        period Return"
+    accents:
+        - "q w ę r t y u i ó p"
+        - "ą ś d f g h j k ł"
+        - "Shift_L   ż ź ć v b ń m  BackSpace"
+        - "show_numbers preferences         space        show_accents Return"
+    upper_accents:
+        - "Q W Ę R T Y U I Ó P"
+        - "Ą Ś D F G H J K Ł"
+        - "Shift_L   Ż Ź Ć V B Ń M  BackSpace"
+        - "show_numbers preferences         space        show_upper_accents Return"
+
+buttons:
+    Shift_L:
+        action:
+            locking:
+                lock_view: "upper"
+                unlock_view: "base"
+        outline: "altline"
+        icon: "key-shift"
+    BackSpace:
+        outline: "altline"
+        icon: "edit-clear-symbolic"
+        keysym: "BackSpace"
+    preferences:
+        action: "show_prefs"
+        outline: "special"
+        icon: "keyboard-mode-symbolic"
+    show_numbers:
+        action:
+            set_view: "numbers"
+        outline: "wide"
+        label: "123"
+    show_numbers_from_symbols:
+        action:
+            set_view: "numbers"
+        outline: "altline"
+        label: "123"
+    show_letters:
+        action:
+            set_view: "base"
+        outline: "wide"
+        label: "ABC"
+    show_symbols:
+        action:
+            set_view: "symbols"
+        outline: "altline"
+        label: "*/="
+    show_accents:
+        action:
+            locking:
+                lock_view: "accents"
+                unlock_view: "base"
+        outline: "altline"
+        label: "ąę"
+    show_upper_accents:
+        action:
+            locking:
+                lock_view: "upper_accents"
+                unlock_view: "upper"
+        outline: "altline"
+        label: "ĄĘ"
+    period:
+        outline: "altline"
+        text: "."
+    space:
+        outline: "spaceline"
+        text: " "
+    Return:
+        outline: "wide"
+        icon: "key-enter"
+        keysym: "Return"
+    colon:
+        text: ":"
