@@ -60,7 +60,7 @@ fn check_layout(layout: Layout) {
     let state = xkb::State::new(&keymap);
     
     // "Press" each button with keysyms
-    for view in layout.views.values() {
+    for (_pos, view) in layout.views.values() {
         for (_y, row) in &view.get_rows() {
             for (_x, button) in &row.buttons {
                 let keystate = button.state.borrow();

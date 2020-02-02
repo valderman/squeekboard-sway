@@ -417,8 +417,8 @@ impl Layout {
             )}
         );
 
-        let views = HashMap::from_iter(
-            self.views.iter().map(|(name, view)| {
+        let views: Vec<_> = self.views.iter()
+            .map(|(name, view)| {
                 let rows = view.iter().map(|row| {
                     let buttons = row.split_ascii_whitespace()
                         .map(|name| {
@@ -445,8 +445,25 @@ impl Layout {
                     name.clone(),
                     layout::View::new(rows)
                 )
-            })
-        );
+            }).collect();
+
+        // Center views on the same point.
+        let views = {
+            let total_size = layout::View::calculate_super_size(
+                views.iter().map(|(_name, view)| view).collect()
+            );
+
+            HashMap::from_iter(views.into_iter().map(|(name, view)| (
+                name,
+                (
+                    layout::c::Point {
+                        x: (total_size.width - view.get_width()) / 2.0,
+                        y: (total_size.height - view.get_height()) / 2.0,
+                    },
+                    view,
+                ),
+            )))
+        };
 
         (
             Ok(::layout::LayoutData {
@@ -742,7 +759,7 @@ mod tests {
             .build(ProblemPanic).0
             .unwrap();
         assert_eq!(
-            out.views["base"]
+            out.views["base"].1
                 .get_rows()[0].1
                 .buttons[0].1
                 .label,
@@ -757,7 +774,7 @@ mod tests {
             .build(ProblemPanic).0
             .unwrap();
         assert_eq!(
-            out.views["base"]
+            out.views["base"].1
                 .get_rows()[0].1
                 .buttons[0].1
                 .label,
@@ -773,7 +790,7 @@ mod tests {
             .build(ProblemPanic).0
             .unwrap();
         assert_eq!(
-            out.views["base"]
+            out.views["base"].1
                 .get_rows()[0].1
                 .buttons[0].1
                 .state.borrow()

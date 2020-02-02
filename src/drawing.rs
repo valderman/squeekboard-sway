@@ -47,14 +47,16 @@ mod c {
         let layout = unsafe { &mut *layout };
         let cr = unsafe { cairo::Context::from_raw_none(cr) };
 
-        let view = layout.get_current_view();
+        let (view_offset, view) = layout.get_current_view_position();
         for (row_offset, row) in &view.get_rows() {
             for (x_offset, button) in &row.buttons {
                 let state = RefCell::borrow(&button.state).clone();
                 if state.pressed == keyboard::PressType::Pressed || state.locked {
                     render_button_at_position(
                         renderer, &cr,
-                        row_offset + Point { x: *x_offset, y: 0.0 },
+                        view_offset
+                            + row_offset.clone()
+                            + Point { x: *x_offset, y: 0.0 },
                         button.as_ref(),
                         state.pressed, state.locked,
                     );
@@ -72,12 +74,14 @@ mod c {
     ) {
         let layout = unsafe { &mut *layout };
         let cr = unsafe { cairo::Context::from_raw_none(cr) };
-        let view = layout.get_current_view();
+        let (view_offset, view) = layout.get_current_view_position();
         for (row_offset, row) in &view.get_rows() {
             for (x_offset, button) in &row.buttons {
                 render_button_at_position(
                     renderer, &cr,
-                    row_offset + Point { x: *x_offset, y: 0.0 },
+                    view_offset
+                            + row_offset.clone()
+                            + Point { x: *x_offset, y: 0.0 },
                     button.as_ref(),
                     keyboard::PressType::Released, false,
                 );
