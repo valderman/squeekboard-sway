@@ -3,6 +3,7 @@
 use cairo;
 use std::cell::RefCell;
 
+use ::action::Action;
 use ::keyboard;
 use ::layout::{ Button, Layout };
 use ::layout::c::{ EekGtkKeyboard, Point };
@@ -37,6 +38,7 @@ mod c {
         );
     }
 
+    /// Draws all buttons that are not in the base state
     #[no_mangle]
     pub extern "C"
     fn squeek_layout_draw_all_changed(
@@ -51,12 +53,19 @@ mod c {
         for (row_offset, row) in &view.get_rows() {
             for (x_offset, button) in &row.buttons {
                 let state = RefCell::borrow(&button.state).clone();
-                if state.pressed == keyboard::PressType::Pressed || state.locked {
+                let locked = match state.action {
+                    Action::SetView(name) => name == layout.current_view,
+                    Action::LockView { lock, unlock: _ } => {
+                        lock == layout.current_view
+                    },
+                    _ => false,
+                };
+                if state.pressed == keyboard::PressType::Pressed || locked {
                     render_button_at_position(
                         renderer, &cr,
                         row_offset + Point { x: *x_offset, y: 0.0 },
                         button.as_ref(),
-                        state.pressed, state.locked,
+                        state.pressed, locked,
                     );
                 }
             }
