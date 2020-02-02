@@ -486,8 +486,6 @@ pub struct Button {
 pub struct Row {
     /// Buttons together with their offset from the left
     pub buttons: Vec<(f64, Box<Button>)>,
-    /// Angle is not really used anywhere...
-    pub angle: i32,
 }
 
 impl Row {    
@@ -765,7 +763,6 @@ mod procedures {
 
             let row = Row {
                 buttons: vec!((0.1, button)),
-                angle: 0,
             };
 
             let view = View {
@@ -1012,7 +1009,6 @@ mod test {
             (
                 0.0,
                 Row {
-                    angle: 0,
                     buttons: vec![(
                         0.0,
                         Box::new(Button {
@@ -1025,7 +1021,6 @@ mod test {
             (
                 10.0,
                 Row {
-                    angle: 0,
                     buttons: vec![(
                         0.0,
                         Box::new(Button {
@@ -1049,7 +1044,6 @@ mod test {
             (
                 0.0,
                 Row {
-                    angle: 0,
                     buttons: vec![(
                         0.0,
                         Box::new(Button {

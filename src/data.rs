@@ -432,8 +432,7 @@ impl Layout {
                                 &mut warning_handler,
                             ))
                         });
-                    ::layout::Row {
-                        angle: 0,
+                    layout::Row {
                         buttons: add_offsets(
                             buttons,
                             |button| button.size.width,
