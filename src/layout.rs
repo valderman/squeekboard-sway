@@ -728,6 +728,20 @@ impl Layout {
         let (offset, layout) = self.get_current_view_position();
         layout.find_button_by_position(point - offset)
     }
+
+    pub fn foreach_visible_button<F>(&self, mut f: F)
+        where F: FnMut(c::Point, &Box<Button>)
+    {
+        let (view_offset, view) = self.get_current_view_position();
+        for (row_offset, row) in &view.get_rows() {
+            for (x_offset, button) in &row.buttons {
+                let offset = view_offset
+                    + row_offset.clone()
+                    + c::Point { x: *x_offset, y: 0.0 };
+                f(offset, button);
+            }
+        }
+    }
 }
 
 mod procedures {
