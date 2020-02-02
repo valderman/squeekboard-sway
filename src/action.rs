@@ -38,3 +38,19 @@ pub enum Action {
     },
     ShowPreferences,
 }
+
+impl Action {
+    pub fn is_locked(&self, view_name: &str) -> bool {
+        match self {
+            Action::LockView { lock, unlock: _ } => lock == view_name,
+            _ => false,
+        }
+    }
+    pub fn is_active(&self, view_name: &str) -> bool {
+        match self {
+            Action::SetView(view) => view == view_name,
+            Action::LockView { lock, unlock: _ } => lock == view_name,
+            _ => false,
+        }
+    }
+}

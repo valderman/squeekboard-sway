@@ -23,7 +23,6 @@ pub type KeyCode = u32;
 #[derive(Debug, Clone)]
 pub struct KeyState {
     pub pressed: PressType,
-    pub locked: bool,
     /// A cache of raw keycodes derived from Action::Sumbit given a keymap
     pub keycodes: Vec<KeyCode>,
     /// Static description of what the key does when pressed or released
@@ -31,17 +30,6 @@ pub struct KeyState {
 }
 
 impl KeyState {
-    #[must_use]
-    pub fn into_activated(self) -> KeyState {
-        match self.action {
-            Action::LockView { lock: _, unlock: _ } => KeyState {
-                locked: self.locked ^ true,
-                ..self
-            },
-            _ => self,
-        }
-    }
-
     #[must_use]
     pub fn into_released(self) -> KeyState {
         KeyState {
@@ -195,7 +183,6 @@ mod tests {
                     keys: vec!(KeySym("a".into()), KeySym("c".into())),
                 },
                 keycodes: vec!(9, 10),
-                locked: false,
                 pressed: PressType::Released,
             },
         }).unwrap();

@@ -3,7 +3,6 @@
 use cairo;
 use std::cell::RefCell;
 
-use ::action::Action;
 use ::keyboard;
 use ::layout::{ Button, Layout };
 use ::layout::c::{ EekGtkKeyboard, Point };
@@ -53,13 +52,7 @@ mod c {
         for (row_offset, row) in &view.get_rows() {
             for (x_offset, button) in &row.buttons {
                 let state = RefCell::borrow(&button.state).clone();
-                let locked = match state.action {
-                    Action::SetView(name) => name == layout.current_view,
-                    Action::LockView { lock, unlock: _ } => {
-                        lock == layout.current_view
-                    },
-                    _ => false,
-                };
+                let locked = state.action.is_active(&layout.current_view);
                 if state.pressed == keyboard::PressType::Pressed || locked {
                     render_button_at_position(
                         renderer, &cr,
