@@ -20,13 +20,13 @@ views:
         - "show_numbers preferences      space        show_actions Return"
     numbers:
         - "1 2 3 4 5 6 7 8 9 0"
-        - "@ # $ % & - _ + ( )"
+        - "* # $ / & - _ + ( )"
         - "show_symbols   , \" ' colon ; ! ?  BackSpace"
         - "show_letters preferences         space        period Return"
     symbols:
         - "~ ` | · √ π τ ÷ × ¶"
-        - "© ® £ € ¥ ^ ° * { }"
-        - "show_numbers_from_symbols   \\ / < > = [ ]  BackSpace"
+        - "© ® £ € ¥ ^ ° @ { }"
+        - "show_numbers_from_symbols   \\ % < > = [ ]  BackSpace"
         - "show_letters preferences         space        period Return"
     actions:
         - "F1  F2  F3  F4  F5  F6"
@@ -69,7 +69,7 @@ buttons:
         action:
             set_view: "symbols"
         outline: "altline"
-        label: "*/="
+        label: "τ=\\"
     show_actions:
         action:
             set_view: "actions"
