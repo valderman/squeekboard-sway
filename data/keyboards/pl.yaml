@@ -30,12 +30,12 @@ views:
     accents:
         - "q w ę r t y u i ó p"
         - "ą ś d f g h j k ł"
-        - "Shift_L   ż ź ć v b ń m  BackSpace"
+        - "accents_show_upper   ż ź ć v b ń m  BackSpace"
         - "show_numbers preferences         space        show_accents Return"
     upper_accents:
         - "Q W Ę R T Y U I Ó P"
         - "Ą Ś D F G H J K Ł"
-        - "Shift_L   Ż Ź Ć V B Ń M  BackSpace"
+        - "accents_show_upper   Ż Ź Ć V B Ń M  BackSpace"
         - "show_numbers preferences         space        show_upper_accents Return"
 
 
@@ -45,6 +45,13 @@ buttons:
             locking:
                 lock_view: "upper"
                 unlock_view: "base"
+        outline: "altline"
+        icon: "key-shift"
+    accents_show_upper:
+        action:
+            locking:
+                lock_view: "upper_accents"
+                unlock_view: "accents"
         outline: "altline"
         icon: "key-shift"
     BackSpace:
