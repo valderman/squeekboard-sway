@@ -876,11 +876,7 @@ mod seat {
             );
         }
         let mut key = rckey.borrow_mut();
-        submission.virtual_keyboard.switch(
-            &key.keycodes,
-            PressType::Pressed,
-            time,
-        );
+        submission.handle_press(&key, KeyState::get_id(rckey), time);
         key.pressed = PressType::Pressed;
     }
 
@@ -906,13 +902,11 @@ mod seat {
 
         // process changes
         match action {
-            Action::Submit { text: _, keys: _ } => {
+            Action::Submit { text: _, keys: _ }
+                | Action::Erase
+            => {
                 unstick_locks(layout).apply();
-                submission.virtual_keyboard.switch(
-                    &key.keycodes,
-                    PressType::Released,
-                    time,
-                );
+                submission.handle_release(KeyState::get_id(rckey), time);
             },
             Action::SetView(view) => {
                 try_set_view(layout, view)

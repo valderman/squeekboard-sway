@@ -195,7 +195,7 @@ buttons:
     BackSpace:
         outline: "wide"
         icon: "edit-clear-symbolic"
-        keysym: "BackSpace"
+        action: erase
     Return:
         outline: "wide"
         icon: "key-enter"
