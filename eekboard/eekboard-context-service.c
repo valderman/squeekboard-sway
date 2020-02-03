@@ -116,6 +116,7 @@ settings_get_layout(GSettings *settings, char **type, char **layout)
     GVariant *inputs = g_settings_get_value(settings, "sources");
     // current layout is always first
     g_variant_get_child(inputs, 0, "(ss)", type, layout);
+    g_variant_unref(inputs);
 }
 
 void
