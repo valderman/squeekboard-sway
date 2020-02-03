@@ -140,9 +140,11 @@ eekboard_context_service_update_layout(EekboardContextService *context, enum squ
     switch (priv->purpose) {
     case ZWP_TEXT_INPUT_V3_CONTENT_PURPOSE_NUMBER:
     case ZWP_TEXT_INPUT_V3_CONTENT_PURPOSE_PHONE:
+        g_free(keyboard_layout);
         keyboard_layout = g_strdup("number");
         break;
     case ZWP_TEXT_INPUT_V3_CONTENT_PURPOSE_TERMINAL:
+        g_free(keyboard_layout);
         keyboard_layout = g_strdup("terminal");
         break;
     default:
