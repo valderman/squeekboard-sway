@@ -17,11 +17,11 @@
  * and those events SHOULD NOT cause any lost events.
  * */
  
-use ::action::Action;
+use std::ffi::CString;
+ 
 use ::imservice;
 use ::imservice::IMService;
-use ::keyboard::{ KeyCode, KeyState, KeyStateId, PressType };
-use ::logging;
+use ::keyboard::{ KeyCode, KeyStateId, PressType };
 use ::vkeyboard::VirtualKeyboard;
 
 /// Gathers stuff defined in C or called by C
@@ -109,59 +109,66 @@ pub struct Submission {
     pressed: Vec<(KeyStateId, SubmittedAction)>,
 }
 
+pub enum SubmitData<'a> {
+    Text(&'a CString),
+    Erase,
+    Keycodes,
+}
+
 impl Submission {
     /// Sends a submit text event if possible;
     /// otherwise sends key press and makes a note of it
     pub fn handle_press(
         &mut self,
-        key: &KeyState, key_id: KeyStateId,
+        key_id: KeyStateId,
+        data: SubmitData,
+        keycodes: &Vec<KeyCode>,
         time: Timestamp,
     ) {
-        match &key.action {
-            Action::Submit { text: _, keys: _ }
-                | Action::Erase
-            => (),
-            _ => {
-                log_print!(
-                    logging::Level::Bug,
-                    "Submitted key with action other than Submit or Erase",
-                );
-                return;
+        let was_committed_as_text = match &mut self.imservice {
+            Some(imservice) => {
+                enum Outcome {
+                    Submitted(Result<(), imservice::SubmitError>),
+                    NotSubmitted,
+                };
+
+                let submit_outcome = match data {
+                    SubmitData::Text(text) => {
+                        Outcome::Submitted(imservice.commit_string(text))
+                    },
+                    SubmitData::Erase => {
+                        /* Delete_surrounding_text takes byte offsets,
+                         * so cannot work without get_surrounding_text.
+                         * This is a bug in the protocol.
+                         */
+                        // imservice.delete_surrounding_text(1, 0),
+                        Outcome::NotSubmitted
+                    },
+                    SubmitData::Keycodes => Outcome::NotSubmitted,
+                };
+
+                match submit_outcome {
+                    Outcome::Submitted(result) => {
+                        match result.and_then(|()| imservice.commit()) {
+                            Ok(()) => true,
+                            Err(imservice::SubmitError::NotActive) => false,
+                        }
+                    },
+                    Outcome::NotSubmitted => false,
+                }
             },
+            _ => false,
         };
 
-        let was_committed_as_text = match (&mut self.imservice, &key.action) {
-            (Some(imservice), Action::Submit { text: Some(text), keys: _ }) => {
-                let submit_result = imservice.commit_string(text)
-                    .and_then(|_| imservice.commit());
-                match submit_result {
-                    Ok(()) => true,
-                    Err(imservice::SubmitError::NotActive) => false,
-                }
-            },
-            /* Delete_surrounding_text takes byte offsets,
-             * so cannot work without get_surrounding_text.
-             * This is a bug in the protocol.
-            (Some(imservice), Action::Erase) => {
-                let submit_result = imservice.delete_surrounding_text(1, 0)
-                    .and_then(|_| imservice.commit());
-                match submit_result {
-                    Ok(()) => true,
-                    Err(imservice::SubmitError::NotActive) => false,
-                }
-            }*/
-            (_, _) => false,
-        };
-        
         let submit_action = match was_committed_as_text {
             true => SubmittedAction::IMService,
             false => {
                 self.virtual_keyboard.switch(
-                    &key.keycodes,
+                    keycodes,
                     PressType::Pressed,
                     time,
                 );
-                SubmittedAction::VirtualKeyboard(key.keycodes.clone())
+                SubmittedAction::VirtualKeyboard(keycodes.clone())
             },
         };
         

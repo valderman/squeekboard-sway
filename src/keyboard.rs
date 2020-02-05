@@ -46,6 +46,14 @@ impl KeyState {
         }
     }
 
+    #[must_use]
+    pub fn into_pressed(self) -> KeyState {
+        KeyState {
+            pressed: PressType::Pressed,
+            ..self
+        }
+    }
+
     /// KeyStates instances are the unique identifiers of pressed keys,
     /// and the actions submitted with them.
     pub fn get_id(keystate: &Rc<RefCell<KeyState>>) -> KeyStateId {
