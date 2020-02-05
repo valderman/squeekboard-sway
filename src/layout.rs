@@ -910,7 +910,6 @@ mod seat {
 
         // update
         let key = key.into_released();
-        let mut locked = key.action.is_locked(&layout.current_view);
 
         // process changes
         match action {
@@ -924,12 +923,12 @@ mod seat {
                 try_set_view(layout, view)
             },
             Action::LockView { lock, unlock } => {
-                locked ^= true;
+                let gets_locked = !key.action.is_locked(&layout.current_view);
                 unstick_locks(layout)
                     // It doesn't matter what the resulting view should be,
                     // it's getting changed anyway.
                     .choose_view(
-                        match locked {
+                        match gets_locked {
                             true => lock.clone(),
                             false => unlock.clone(),
                         }
