@@ -1,3 +1,40 @@
+squeekboard (1.9.0) amber-phone; urgency=medium
+
+  [ Dorota Czaplejewicz ]
+  * imservice: Add commit_string method
+  * submission: Handle submitting strings
+  * input_method: Use for erasing
+  * logging: Use in merged functions
+  * translations: Remove redundant ones
+  * translations: Translate builtin layouts
+  * greek: Rename to gr which is used by gnome settings
+
+  [ Sebastian Krzyszkowiak ]
+  * layouts: Add Polish layouts
+
+  [ Dorota Czaplejewicz ]
+  * locks: Draw based on current view
+  * locking: Lock keys statelessly
+  * layouts: Better accented uppercase in PL
+  * emoji: Add more choices
+  * row: Eliminate angle
+  * layout: Center views relative to each other and the layout bounds
+  * drawing: Generalized foreach_visible_button
+  * variant: Fix double-free
+  * variant: Fix leak
+  * keyboard_layout: Fix leak
+  * layout: Improve scoping of locked variable
+  * terminal: Make */ easier to reach
+
+  [ Sebastian Krzyszkowiak ]
+  * layouts: terminal: Use altline outline for dot key
+
+  [ Dorota Czaplejewicz ]
+  * text input: Disable erasing
+  * cargo: Update deps
+
+ -- Dorota Czaplejewicz <dorota.czaplejewicz@puri.sm>  Wed, 19 Feb 2020 14:32:39 +0000
+
 squeekboard (1.8.1) amber-phone; urgency=medium
 
   [ Dorota Czaplejewicz ]
