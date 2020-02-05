@@ -116,6 +116,7 @@ settings_get_layout(GSettings *settings, char **type, char **layout)
     GVariant *inputs = g_settings_get_value(settings, "sources");
     // current layout is always first
     g_variant_get_child(inputs, 0, "(ss)", type, layout);
+    g_variant_unref(inputs);
 }
 
 void
@@ -139,9 +140,11 @@ eekboard_context_service_update_layout(EekboardContextService *context, enum squ
     switch (priv->purpose) {
     case ZWP_TEXT_INPUT_V3_CONTENT_PURPOSE_NUMBER:
     case ZWP_TEXT_INPUT_V3_CONTENT_PURPOSE_PHONE:
+        g_free(keyboard_layout);
         keyboard_layout = g_strdup("number");
         break;
     case ZWP_TEXT_INPUT_V3_CONTENT_PURPOSE_TERMINAL:
+        g_free(keyboard_layout);
         keyboard_layout = g_strdup("terminal");
         break;
     default:
