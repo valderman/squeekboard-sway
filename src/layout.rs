@@ -619,7 +619,6 @@ pub struct Layout {
     // When the list tracks actual location,
     // it becomes possible to place popovers and other UI accurately.
     pub pressed_keys: HashSet<::util::Pointer<RefCell<KeyState>>>,
-    pub locked_keys: HashSet<::util::Pointer<RefCell<KeyState>>>,
 }
 
 /// A builder structure for picking up layout data from storage
@@ -650,7 +649,6 @@ impl Layout {
             views: data.views,
             keymap_str: data.keymap_str,
             pressed_keys: HashSet::new(),
-            locked_keys: HashSet::new(),
             margins: data.margins,
         }
     }
@@ -713,6 +711,23 @@ impl Layout {
             origin_y: self.margins.top,
             scale: 1.0,
         })
+    }
+
+    pub fn get_locked_keys(&self) -> Vec<Rc<RefCell<KeyState>>> {
+        let mut out = Vec::new();
+        let view = self.get_current_view();
+        for (_, row) in &view.get_rows() {
+            for (_, button) in &row.buttons {
+                let locked = {
+                    let state = RefCell::borrow(&button.state).clone();
+                    state.action.is_locked(&self.current_view)
+                };
+                if locked {
+                    out.push(button.state.clone());
+                }
+            }
+        }
+        out
     }
 }
 
@@ -838,12 +853,13 @@ mod seat {
     // This is guaranteed because pressing a lock button unlocks all others.
     // TODO: Make some broader guarantee about the resulting view,
     // e.g. by maintaining a stack of stuck keys.
+    // FIXME: This doesn't record changes in layout.locked_keys
     #[must_use]
     fn unstick_locks(layout: &mut Layout) -> ViewChange {
         let mut new_view = None;
-        for key in layout.locked_keys.clone() {
+        for key in layout.get_locked_keys().clone() {
             let key: &Rc<RefCell<KeyState>> = key.borrow();
-            let mut key = RefCell::borrow_mut(key);
+            let key = RefCell::borrow(key);
             match &key.action {
                 Action::LockView { lock: _, unlock: view } => {
                     new_view = Some(view.clone());
@@ -854,7 +870,6 @@ mod seat {
                     a,
                 ),
             };
-            key.locked = false;
         }
         
         ViewChange {
@@ -895,10 +910,7 @@ mod seat {
 
         // update
         let key = key.into_released();
-        let key = match action {
-            Action::LockView { lock: _, unlock: _ } => key.into_activated(),
-            _ => key,
-        };
+        let mut locked = key.action.is_locked(&layout.current_view);
 
         // process changes
         match action {
@@ -912,13 +924,12 @@ mod seat {
                 try_set_view(layout, view)
             },
             Action::LockView { lock, unlock } => {
-                // The button that triggered this will be in the right state
-                // due to commit at the end.
+                locked ^= true;
                 unstick_locks(layout)
                     // It doesn't matter what the resulting view should be,
                     // it's getting changed anyway.
                     .choose_view(
-                        match key.locked {
+                        match locked {
                             true => lock.clone(),
                             false => unlock.clone(),
                         }
@@ -960,11 +971,6 @@ mod seat {
         let pointer = ::util::Pointer(rckey.clone());
         // Apply state changes
         layout.pressed_keys.remove(&pointer);
-        if key.locked {
-            layout.locked_keys.insert(pointer);
-        } else {
-            layout.locked_keys.remove(&pointer);
-        }
         // Commit activated button state changes
         RefCell::replace(rckey, key);
     }
@@ -979,7 +985,6 @@ mod test {
     pub fn make_state() -> Rc<RefCell<::keyboard::KeyState>> {
         Rc::new(RefCell::new(::keyboard::KeyState {
             pressed: PressType::Released,
-            locked: false,
             keycodes: Vec::new(),
             action: Action::SetView("default".into()),
         }))
@@ -1058,7 +1063,6 @@ mod test {
             current_view: String::new(),
             keymap_str: CString::new("").unwrap(),
             kind: ArrangementKind::Base,
-            locked_keys: HashSet::new(),
             pressed_keys: HashSet::new(),
             // Lots of bottom margin
             margins: Margins {

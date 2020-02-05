@@ -400,7 +400,6 @@ impl Layout {
                 name.into(),
                 KeyState {
                     pressed: PressType::Released,
-                    locked: false,
                     keycodes,
                     action,
                 }
