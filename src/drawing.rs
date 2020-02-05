@@ -37,6 +37,7 @@ mod c {
         );
     }
 
+    /// Draws all buttons that are not in the base state
     #[no_mangle]
     pub extern "C"
     fn squeek_layout_draw_all_changed(
@@ -49,12 +50,13 @@ mod c {
 
         layout.foreach_visible_button(|offset, button| {
             let state = RefCell::borrow(&button.state).clone();
-            if state.pressed == keyboard::PressType::Pressed || state.locked {
+            let locked = state.action.is_active(&layout.current_view);
+            if state.pressed == keyboard::PressType::Pressed || locked {
                 render_button_at_position(
                     renderer, &cr,
                     offset,
                     button.as_ref(),
-                    state.pressed, state.locked,
+                    state.pressed, locked,
                 );
             }
         })

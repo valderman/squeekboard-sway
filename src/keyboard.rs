@@ -1,14 +1,17 @@
 /*! State of the emulated keyboard and keys.
  * Regards the keyboard as if it was composed of switches. */
 
+use std::cell::RefCell;
 use std::collections::HashMap;
 use std::fmt;
 use std::io;
+use std::rc::Rc;
 use std::string::FromUtf8Error;
 
 use ::action::Action;
 use ::logging;
 
+// Traits
 use std::io::Write;
 use std::iter::{ FromIterator, IntoIterator };
 
@@ -20,10 +23,14 @@ pub enum PressType {
 
 pub type KeyCode = u32;
 
+/// When the submitted actions of keys need to be tracked,
+/// they need a stable, comparable ID
+#[derive(PartialEq)]
+pub struct KeyStateId(*const KeyState);
+
 #[derive(Debug, Clone)]
 pub struct KeyState {
     pub pressed: PressType,
-    pub locked: bool,
     /// A cache of raw keycodes derived from Action::Sumbit given a keymap
     pub keycodes: Vec<KeyCode>,
     /// Static description of what the key does when pressed or released
@@ -32,22 +39,17 @@ pub struct KeyState {
 
 impl KeyState {
     #[must_use]
-    pub fn into_activated(self) -> KeyState {
-        match self.action {
-            Action::LockView { lock: _, unlock: _ } => KeyState {
-                locked: self.locked ^ true,
-                ..self
-            },
-            _ => self,
-        }
-    }
-
-    #[must_use]
     pub fn into_released(self) -> KeyState {
         KeyState {
             pressed: PressType::Released,
             ..self
         }
+    }
+
+    /// KeyStates instances are the unique identifiers of pressed keys,
+    /// and the actions submitted with them.
+    pub fn get_id(keystate: &Rc<RefCell<KeyState>>) -> KeyStateId {
+        KeyStateId(keystate.as_ptr() as *const KeyState)
     }
 }
 
@@ -66,9 +68,10 @@ fn sorted<'a, I: Iterator<Item=&'a str>>(
 pub fn generate_keycodes<'a, C: IntoIterator<Item=&'a str>>(
     key_names: C
 ) -> HashMap<String, u32> {
+    let special_keysyms = ["BackSpace", "Return"].iter().map(|&s| s);
     HashMap::from_iter(
         // sort to remove a source of indeterminism in keycode assignment
-        sorted(key_names.into_iter())
+        sorted(key_names.into_iter().chain(special_keysyms))
             .map(|name| String::from(name))
             .zip(9..)
     )
@@ -95,7 +98,10 @@ impl From<io::Error> for FormattingError {
     }
 }
 
-/// Generates a de-facto single level keymap. TODO: actually drop second level
+/// Generates a de-facto single level keymap.
+// TODO: don't rely on keys and their order,
+// but rather on what keysyms and keycodes are in use.
+// Iterating actions makes it hard to deduplicate keysyms.
 pub fn generate_keymap(
     keystates: &HashMap::<String, KeyState>
 ) -> Result<String, FormattingError> {
@@ -110,22 +116,40 @@ pub fn generate_keymap(
     )?;
     
     for (name, state) in keystates.iter() {
-        if let Action::Submit { text: _, keys } = &state.action {
-            if let 0 = keys.len() {
-                log_print!(
-                    logging::Level::Warning,
-                    "Key {} has no keysyms", name,
-                );
-            };
-            for (named_keysym, keycode) in keys.iter().zip(&state.keycodes) {
+        match &state.action {
+            Action::Submit { text: _, keys } => {
+                if let 0 = keys.len() {
+                    log_print!(
+                        logging::Level::Warning,
+                        "Key {} has no keysyms", name,
+                    );
+                };
+                for (named_keysym, keycode) in keys.iter().zip(&state.keycodes) {
+                    write!(
+                        buf,
+                        "
+        <{}> = {};",
+                        named_keysym.0,
+                        keycode,
+                    )?;
+                }
+            },
+            Action::Erase => {
+                let mut keycodes = state.keycodes.iter();
                 write!(
                     buf,
                     "
-        <{}> = {};",
-                    named_keysym.0,
-                    keycode,
+        <BackSpace> = {};",
+                    keycodes.next().expect("Erase key has no keycode"),
                 )?;
-            }
+                if let Some(_) = keycodes.next() {
+                    log_print!(
+                        logging::Level::Bug,
+                        "Erase key has multiple keycodes",
+                    );
+                }
+            },
+            _ => {},
         }
     }
     
@@ -137,7 +161,9 @@ pub fn generate_keymap(
     xkb_symbols \"squeekboard\" {{
 
         name[Group1] = \"Letters\";
-        name[Group2] = \"Numbers/Symbols\";"
+        name[Group2] = \"Numbers/Symbols\";
+        
+        key <BackSpace> {{ [ BackSpace ] }};"
     )?;
     
     for (name, state) in keystates.iter() {
@@ -195,7 +221,6 @@ mod tests {
                     keys: vec!(KeySym("a".into()), KeySym("c".into())),
                 },
                 keycodes: vec!(9, 10),
-                locked: false,
                 pressed: PressType::Released,
             },
         }).unwrap();

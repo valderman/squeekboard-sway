@@ -629,7 +629,6 @@ pub struct Layout {
     // When the list tracks actual location,
     // it becomes possible to place popovers and other UI accurately.
     pub pressed_keys: HashSet<::util::Pointer<RefCell<KeyState>>>,
-    pub locked_keys: HashSet<::util::Pointer<RefCell<KeyState>>>,
 }
 
 /// A builder structure for picking up layout data from storage
@@ -661,7 +660,6 @@ impl Layout {
             views: data.views,
             keymap_str: data.keymap_str,
             pressed_keys: HashSet::new(),
-            locked_keys: HashSet::new(),
             margins: data.margins,
         }
     }
@@ -672,7 +670,7 @@ impl Layout {
     }
 
     pub fn get_current_view(&self) -> &View {
-        &self.get_current_view_position().1
+        &self.views.get(&self.current_view).expect("Selected nonexistent view").1
     }
 
     fn set_view(&mut self, view: String) -> Result<(), NoSuchView> {
@@ -741,6 +739,23 @@ impl Layout {
                 f(offset, button);
             }
         }
+    }
+
+    pub fn get_locked_keys(&self) -> Vec<Rc<RefCell<KeyState>>> {
+        let mut out = Vec::new();
+        let view = self.get_current_view();
+        for (_, row) in &view.get_rows() {
+            for (_, button) in &row.buttons {
+                let locked = {
+                    let state = RefCell::borrow(&button.state).clone();
+                    state.action.is_locked(&self.current_view)
+                };
+                if locked {
+                    out.push(button.state.clone());
+                }
+            }
+        }
+        out
     }
 }
 
@@ -868,9 +883,9 @@ mod seat {
     #[must_use]
     fn unstick_locks(layout: &mut Layout) -> ViewChange {
         let mut new_view = None;
-        for key in layout.locked_keys.clone() {
+        for key in layout.get_locked_keys().clone() {
             let key: &Rc<RefCell<KeyState>> = key.borrow();
-            let mut key = RefCell::borrow_mut(key);
+            let key = RefCell::borrow(key);
             match &key.action {
                 Action::LockView { lock: _, unlock: view } => {
                     new_view = Some(view.clone());
@@ -881,7 +896,6 @@ mod seat {
                     a,
                 ),
             };
-            key.locked = false;
         }
         
         ViewChange {
@@ -903,11 +917,7 @@ mod seat {
             );
         }
         let mut key = rckey.borrow_mut();
-        submission.virtual_keyboard.switch(
-            &key.keycodes,
-            PressType::Pressed,
-            time,
-        );
+        submission.handle_press(&key, KeyState::get_id(rckey), time);
         key.pressed = PressType::Pressed;
     }
 
@@ -926,32 +936,26 @@ mod seat {
 
         // update
         let key = key.into_released();
-        let key = match action {
-            Action::LockView { lock: _, unlock: _ } => key.into_activated(),
-            _ => key,
-        };
+        let mut locked = key.action.is_locked(&layout.current_view);
 
         // process changes
         match action {
-            Action::Submit { text: _, keys: _ } => {
+            Action::Submit { text: _, keys: _ }
+                | Action::Erase
+            => {
                 unstick_locks(layout).apply();
-                submission.virtual_keyboard.switch(
-                    &key.keycodes,
-                    PressType::Released,
-                    time,
-                );
+                submission.handle_release(KeyState::get_id(rckey), time);
             },
             Action::SetView(view) => {
                 try_set_view(layout, view)
             },
             Action::LockView { lock, unlock } => {
-                // The button that triggered this will be in the right state
-                // due to commit at the end.
+                locked ^= true;
                 unstick_locks(layout)
                     // It doesn't matter what the resulting view should be,
                     // it's getting changed anyway.
                     .choose_view(
-                        match key.locked {
+                        match locked {
                             true => lock.clone(),
                             false => unlock.clone(),
                         }
@@ -993,11 +997,6 @@ mod seat {
         let pointer = ::util::Pointer(rckey.clone());
         // Apply state changes
         layout.pressed_keys.remove(&pointer);
-        if key.locked {
-            layout.locked_keys.insert(pointer);
-        } else {
-            layout.locked_keys.remove(&pointer);
-        }
         // Commit activated button state changes
         RefCell::replace(rckey, key);
     }
@@ -1012,7 +1011,6 @@ mod test {
     pub fn make_state() -> Rc<RefCell<::keyboard::KeyState>> {
         Rc::new(RefCell::new(::keyboard::KeyState {
             pressed: PressType::Released,
-            locked: false,
             keycodes: Vec::new(),
             action: Action::SetView("default".into()),
         }))
@@ -1088,7 +1086,6 @@ mod test {
             current_view: String::new(),
             keymap_str: CString::new("").unwrap(),
             kind: ArrangementKind::Base,
-            locked_keys: HashSet::new(),
             pressed_keys: HashSet::new(),
             // Lots of bottom margin
             margins: Margins {

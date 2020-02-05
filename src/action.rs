@@ -31,10 +31,29 @@ pub enum Action {
     SetModifier(Modifier),
     /// Submit some text
     Submit {
-        /// Text to submit with input-method
+        /// Text to submit with input-method.
+        /// If None, then keys are to be submitted instead.
         text: Option<CString>,
         /// The key events this symbol submits when submitting text is not possible
         keys: Vec<KeySym>,
     },
+    /// Erase a position behind the cursor
+    Erase,
     ShowPreferences,
+}
+
+impl Action {
+    pub fn is_locked(&self, view_name: &str) -> bool {
+        match self {
+            Action::LockView { lock, unlock: _ } => lock == view_name,
+            _ => false,
+        }
+    }
+    pub fn is_active(&self, view_name: &str) -> bool {
+        match self {
+            Action::SetView(view) => view == view_name,
+            Action::LockView { lock, unlock: _ } => lock == view_name,
+            _ => false,
+        }
+    }
 }

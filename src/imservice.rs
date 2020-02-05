@@ -1,3 +1,8 @@
+/*! Manages zwp_input_method_v2 protocol.
+ * 
+ * Library module.
+ */
+
 use std::boxed::Box;
 use std::ffi::CString;
 use std::fmt;
@@ -32,6 +37,9 @@ pub mod c {
         fn imservice_destroy_im(im: *mut c::InputMethod);
         #[allow(improper_ctypes)] // IMService will never be dereferenced in C
         pub fn imservice_connect_listeners(im: *mut InputMethod, imservice: *const IMService);
+        pub fn eek_input_method_commit_string(im: *mut InputMethod, text: *const c_char);
+        pub fn eek_input_method_delete_surrounding_text(im: *mut InputMethod, before: u32, after: u32);
+        pub fn eek_input_method_commit(im: *mut InputMethod, serial: u32);
         fn eekboard_context_service_set_hint_purpose(state: *const StateManager, hint: u32, purpose: u32);
         fn server_context_service_show_keyboard(imservice: *const UIManager);
         fn server_context_service_hide_keyboard(imservice: *const UIManager);
@@ -328,7 +336,7 @@ impl Default for IMProtocolState {
 
 pub struct IMService {
     /// Owned reference (still created and destroyed in C)
-    pub im: *const c::InputMethod,
+    pub im: *mut c::InputMethod,
     /// Unowned reference. Be careful, it's shared with C at large
     state_manager: *const c::StateManager,
     /// Unowned reference. Be careful, it's shared with C at large
@@ -338,6 +346,11 @@ pub struct IMService {
     current: IMProtocolState, // turn current into an idiomatic representation?
     preedit_string: String,
     serial: Wrapping<u32>,
+}
+
+pub enum SubmitError {
+    /// The input method had not been activated
+    NotActive,
 }
 
 impl IMService {
@@ -363,5 +376,52 @@ impl IMService {
             );
         }
         imservice
+    }
+    
+    pub fn commit_string(&self, text: &CString) -> Result<(), SubmitError> {
+        match self.current.active {
+            true => {
+                unsafe {
+                    c::eek_input_method_commit_string(self.im, text.as_ptr())
+                }
+                Ok(())
+            },
+            false => Err(SubmitError::NotActive),
+        }
+    }
+
+    pub fn delete_surrounding_text(
+        &self,
+        before: u32, after: u32,
+    ) -> Result<(), SubmitError> {
+        match self.current.active {
+            true => {
+                unsafe {
+                    c::eek_input_method_delete_surrounding_text(
+                        self.im,
+                        before, after,
+                    )
+                }
+                Ok(())
+            },
+            false => Err(SubmitError::NotActive),
+        }
+    }
+
+    pub fn commit(&mut self) -> Result<(), SubmitError> {
+        match self.current.active {
+            true => {
+                unsafe {
+                    c::eek_input_method_commit(self.im, self.serial.0)
+                }
+                self.serial += Wrapping(1u32);
+                Ok(())
+            },
+            false => Err(SubmitError::NotActive),
+        }
+    }
+
+    pub fn is_active(&self) -> bool {
+        self.current.active
     }
 }

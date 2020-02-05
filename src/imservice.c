@@ -49,6 +49,23 @@ void imservice_connect_listeners(struct zwp_input_method_v2 *im, struct imservic
     zwp_input_method_v2_add_listener(im, &input_method_listener, imservice);
 }
 
+void
+eek_input_method_commit_string(struct zwp_input_method_v2 *zwp_input_method_v2, const char *text)
+{
+    zwp_input_method_v2_commit_string(zwp_input_method_v2, text);
+}
+
+void
+eek_input_method_delete_surrounding_text(struct zwp_input_method_v2 *zwp_input_method_v2, uint32_t before_length, uint32_t after_length) {
+    zwp_input_method_v2_delete_surrounding_text(zwp_input_method_v2, before_length, after_length);
+};
+
+void
+eek_input_method_commit(struct zwp_input_method_v2 *zwp_input_method_v2, uint32_t serial)
+{
+    zwp_input_method_v2_commit(zwp_input_method_v2, serial);
+}
+
 /// Declared explicitly because _destroy is inline,
 /// making it unavailable in Rust
 void imservice_destroy_im(struct zwp_input_method_v2 *im) {

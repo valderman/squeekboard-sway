@@ -16,8 +16,12 @@
  * The text-input interface may be enabled and disabled at arbitrary times,
  * and those events SHOULD NOT cause any lost events.
  * */
-
+ 
+use ::action::Action;
+use ::imservice;
 use ::imservice::IMService;
+use ::keyboard::{ KeyCode, KeyState, KeyStateId, PressType };
+use ::logging;
 use ::vkeyboard::VirtualKeyboard;
 
 /// Gathers stuff defined in C or called by C
@@ -57,6 +61,7 @@ pub mod c {
             Submission {
                 imservice,
                 virtual_keyboard: VirtualKeyboard(vk),
+                pressed: Vec::new(),
             }
         ))
     }
@@ -92,9 +97,91 @@ pub mod c {
 #[derive(Clone, Copy)]
 pub struct Timestamp(pub u32);
 
+enum SubmittedAction {
+    /// A collection of keycodes that were pressed
+    VirtualKeyboard(Vec<KeyCode>),
+    IMService,
+}
+
 pub struct Submission {
-    // used by C callbacks internally, TODO: make use with virtual keyboard
-    #[allow(dead_code)]
     imservice: Option<Box<IMService>>,
-    pub virtual_keyboard: VirtualKeyboard,
+    virtual_keyboard: VirtualKeyboard,
+    pressed: Vec<(KeyStateId, SubmittedAction)>,
+}
+
+impl Submission {
+    /// Sends a submit text event if possible;
+    /// otherwise sends key press and makes a note of it
+    pub fn handle_press(
+        &mut self,
+        key: &KeyState, key_id: KeyStateId,
+        time: Timestamp,
+    ) {
+        match &key.action {
+            Action::Submit { text: _, keys: _ }
+                | Action::Erase
+            => (),
+            _ => {
+                log_print!(
+                    logging::Level::Bug,
+                    "Submitted key with action other than Submit or Erase",
+                );
+                return;
+            },
+        };
+
+        let was_committed_as_text = match (&mut self.imservice, &key.action) {
+            (Some(imservice), Action::Submit { text: Some(text), keys: _ }) => {
+                let submit_result = imservice.commit_string(text)
+                    .and_then(|_| imservice.commit());
+                match submit_result {
+                    Ok(()) => true,
+                    Err(imservice::SubmitError::NotActive) => false,
+                }
+            },
+            (Some(imservice), Action::Erase) => {
+                let submit_result = imservice.delete_surrounding_text(1, 0)
+                    .and_then(|_| imservice.commit());
+                match submit_result {
+                    Ok(()) => true,
+                    Err(imservice::SubmitError::NotActive) => false,
+                }
+            }
+            (_, _) => false,
+        };
+        
+        let submit_action = match was_committed_as_text {
+            true => SubmittedAction::IMService,
+            false => {
+                self.virtual_keyboard.switch(
+                    &key.keycodes,
+                    PressType::Pressed,
+                    time,
+                );
+                SubmittedAction::VirtualKeyboard(key.keycodes.clone())
+            },
+        };
+        
+        self.pressed.push((key_id, submit_action));
+    }
+    
+    pub fn handle_release(&mut self, key_id: KeyStateId, time: Timestamp) {
+        let index = self.pressed.iter().position(|(id, _)| *id == key_id);
+        if let Some(index) = index {
+            let (_id, action) = self.pressed.remove(index);
+            match action {
+                // string already sent, nothing to do
+                SubmittedAction::IMService => {},
+                // no matter if the imservice got activated,
+                // keys must be released
+                SubmittedAction::VirtualKeyboard(keycodes) => {
+                    self.virtual_keyboard.switch(
+                        &keycodes,
+                        PressType::Released,
+                        time,
+                    )
+                },
+            }
+        };
+    }
 }

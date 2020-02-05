@@ -46,7 +46,7 @@ buttons:
     BackSpace:
         outline: "altline"
         icon: "edit-clear-symbolic"
-        keysym: "BackSpace"
+        action: "erase"
     preferences:
         action: "show_prefs"
         outline: "altline"
