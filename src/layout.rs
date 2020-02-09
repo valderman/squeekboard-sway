@@ -329,11 +329,8 @@ pub mod c {
                 Point { x: x_widget, y: y_widget }
             );
 
-            let state = {
-                let view = layout.get_current_view();
-                view.find_button_by_position(point)
-                    .map(|place| place.button.state.clone())
-            };
+            let state = layout.find_button_by_position(point)
+                .map(|place| place.button.state.clone());
             
             if let Some(state) = state {
                 seat::handle_press_key(
@@ -374,8 +371,7 @@ pub mod c {
             
             let pressed = layout.pressed_keys.clone();
             let button_info = {
-                let view = layout.get_current_view();
-                let place = view.find_button_by_position(point);
+                let place = layout.find_button_by_position(point);
                 place.map(|place| {(
                     place.button.state.clone(),
                     place.button.clone(),
@@ -486,8 +482,6 @@ pub struct Button {
 pub struct Row {
     /// Buttons together with their offset from the left
     pub buttons: Vec<(f64, Box<Button>)>,
-    /// Angle is not really used anywhere...
-    pub angle: i32,
 }
 
 impl Row {    
@@ -554,14 +548,14 @@ impl View {
         })
     }
     
-    fn get_width(&self) -> f64 {
+    pub fn get_width(&self) -> f64 {
         // No need to call `get_rows()`,
         // as the biggest row is the most far reaching in both directions
         // because they are all centered.
         find_max_double(self.rows.iter(), |(_offset, row)| row.get_width())
     }
     
-    fn get_height(&self) -> f64 {
+    pub fn get_height(&self) -> f64 {
         self.rows.iter().next_back()
             .map(|(y_offset, row)| row.get_height() + y_offset)
             .unwrap_or(0.0)
@@ -577,6 +571,21 @@ impl View {
             },
             row,
         )}).collect()
+    }
+
+    /// Returns a size which contains all the views
+    /// if they are all centered on the same point.
+    pub fn calculate_super_size(views: Vec<&View>) -> Size {
+        Size {
+            height: find_max_double(
+                views.iter(),
+                |view| view.get_height(),
+            ),
+            width: find_max_double(
+                views.iter(),
+                |view| view.get_width(),
+            ),
+        }
     }
 }
 
@@ -605,7 +614,8 @@ pub struct Layout {
     // Views own the actual buttons which have state
     // Maybe they should own UI only,
     // and keys should be owned by a dedicated non-UI-State?
-    pub views: HashMap<String, View>,
+    /// Point is the offset within the layout
+    pub views: HashMap<String, (c::Point, View)>,
 
     // Non-UI stuff
     /// xkb keymap applicable to the contained keys. Unchangeable
@@ -623,7 +633,8 @@ pub struct Layout {
 
 /// A builder structure for picking up layout data from storage
 pub struct LayoutData {
-    pub views: HashMap<String, View>,
+    /// Point is the offset within layout
+    pub views: HashMap<String, (c::Point, View)>,
     pub keymap_str: CString,
     pub margins: Margins,
 }
@@ -653,8 +664,13 @@ impl Layout {
         }
     }
 
+    pub fn get_current_view_position(&self) -> &(c::Point, View) {
+        &self.views
+            .get(&self.current_view).expect("Selected nonexistent view")
+    }
+
     pub fn get_current_view(&self) -> &View {
-        self.views.get(&self.current_view).expect("Selected nonexistent view")
+        &self.views.get(&self.current_view).expect("Selected nonexistent view").1
     }
 
     fn set_view(&mut self, view: String) -> Result<(), NoSuchView> {
@@ -668,16 +684,9 @@ impl Layout {
 
     /// Calculates size without margins
     fn calculate_inner_size(&self) -> Size {
-        Size {
-            height: find_max_double(
-                self.views.iter(),
-                |(_name, view)| view.get_height(),
-            ),
-            width: find_max_double(
-                self.views.iter(),
-                |(_name, view)| view.get_width(),
-            ),
-        }
+        View::calculate_super_size(
+            self.views.iter().map(|(_, (_offset, v))| v).collect()
+        )
     }
 
     /// Size including margins
@@ -711,6 +720,25 @@ impl Layout {
             origin_y: self.margins.top,
             scale: 1.0,
         })
+    }
+
+    fn find_button_by_position(&self, point: c::Point) -> Option<ButtonPlace> {
+        let (offset, layout) = self.get_current_view_position();
+        layout.find_button_by_position(point - offset)
+    }
+
+    pub fn foreach_visible_button<F>(&self, mut f: F)
+        where F: FnMut(c::Point, &Box<Button>)
+    {
+        let (view_offset, view) = self.get_current_view_position();
+        for (row_offset, row) in &view.get_rows() {
+            for (x_offset, button) in &row.buttons {
+                let offset = view_offset
+                    + row_offset.clone()
+                    + c::Point { x: *x_offset, y: 0.0 };
+                f(offset, button);
+            }
+        }
     }
 
     pub fn get_locked_keys(&self) -> Vec<Rc<RefCell<KeyState>>> {
@@ -780,7 +808,6 @@ mod procedures {
 
             let row = Row {
                 buttons: vec!((0.1, button)),
-                angle: 0,
             };
 
             let view = View {
@@ -853,7 +880,6 @@ mod seat {
     // This is guaranteed because pressing a lock button unlocks all others.
     // TODO: Make some broader guarantee about the resulting view,
     // e.g. by maintaining a stack of stuck keys.
-    // FIXME: This doesn't record changes in layout.locked_keys
     #[must_use]
     fn unstick_locks(layout: &mut Layout) -> ViewChange {
         let mut new_view = None;
@@ -1010,7 +1036,6 @@ mod test {
             (
                 0.0,
                 Row {
-                    angle: 0,
                     buttons: vec![(
                         0.0,
                         Box::new(Button {
@@ -1023,7 +1048,6 @@ mod test {
             (
                 10.0,
                 Row {
-                    angle: 0,
                     buttons: vec![(
                         0.0,
                         Box::new(Button {
@@ -1047,7 +1071,6 @@ mod test {
             (
                 0.0,
                 Row {
-                    angle: 0,
                     buttons: vec![(
                         0.0,
                         Box::new(Button {
@@ -1071,7 +1094,7 @@ mod test {
                 bottom: 1.0,
             },
             views: hashmap! {
-                String::new() => view,
+                String::new() => (c::Point { x: 0.0, y: 0.0 }, view),
             },
         };
         assert_eq!(
