@@ -76,7 +76,7 @@ buttons:
         outline: "altline"
         label: ">_"
     period:
-        outline: "special"
+        outline: "altline"
         text: "."
     space:
         outline: "spaceline"
