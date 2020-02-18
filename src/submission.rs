@@ -139,6 +139,9 @@ impl Submission {
                     Err(imservice::SubmitError::NotActive) => false,
                 }
             },
+            /* Delete_surrounding_text takes byte offsets,
+             * so cannot work without get_surrounding_text.
+             * This is a bug in the protocol.
             (Some(imservice), Action::Erase) => {
                 let submit_result = imservice.delete_surrounding_text(1, 0)
                     .and_then(|_| imservice.commit());
@@ -146,7 +149,7 @@ impl Submission {
                     Ok(()) => true,
                     Err(imservice::SubmitError::NotActive) => false,
                 }
-            }
+            }*/
             (_, _) => false,
         };
         
