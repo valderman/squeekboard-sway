@@ -1,16 +1,80 @@
 ---
 outlines:
     default: { width: 52, height: 52 }
-    altline: { width: 52, height: 52 }
+    altline: { width: 40, height: 52 }
+    narrow: { width: 22, height: 52 }
 
 views:
     base:
         - "😀 😁 😅 😂 😊 😇 🙃"
         - "😍 😘 😋 😜 😎 🥳 😔"
         - "😢 😭 😡 😱 🤔 😬 🙄"
-        - "preferences 🤨 🤓 😴 🤢 🤮 😈"
+        - "preferences blank 1 2 3 4 5 6 blank BackSpace"
+    two:
+        - "🤩 🤨 🤓 😴 🤢 🤮 😈"
+        - "💩 🙌 👏 👍 👎 👌 👋"
+        - "💪 🖕 🙏 💋 🤦‍♀️ 🤷‍♀️ 💃"
+        - "preferences blank 1 2 3 4 5 6 blank BackSpace"
+    three:
+        - "🐶 🐱 🐯 🙈 🐴 🦄 🌳"
+        - "🍀 🌹 💫 ⭐️ ✨ 💥 🔥"
+        - "🌈 ☀️ 🌤 🌧 ⛄️ ☂️ 🌊"
+        - "preferences blank 1 2 3 4 5 6 blank BackSpace"
+    four:
+        - "🍎 🍓 🍑 🍍 🍆 🥑 🥦"
+        - "🍕 🎂 🍫 🍿 🍻 🍾 🍽"
+        - "⚽️ 🏀 🏓 🏆 🎹 🎸 🎯"
+        - "preferences blank 1 2 3 4 5 6 blank BackSpace"
+    five:
+        - "🚗 🚌 🚲 🚄 🚂 ✈️ 🛰"
+        - "🚀 🛸 🚁 🚦 🏝 🏔 ⛺️"
+        - "🏠 🏢 🏥 🏛 🛤 🌅 🎇"
+        - "preferences blank 1 2 3 4 5 6 blank BackSpace"
+    six:
+        - "⌚️ 📱 💻 🖥 🖨 🕹 ✉️"
+        - "📞 ☎️ ⏰ ⏳ 📈 📉 📌"
+        - "🎁 ❤️ 💕 💯 ✅ ❎ 📢"
+        - "preferences blank 1 2 3 4 5 6 blank BackSpace"
+
 buttons:
+    1:
+        action:
+            set_view: "base"
+        outline: "altline"
+        label: "1"
+    2:
+        action:
+            set_view: "two"
+        outline: "altline"
+        label: "2"
+    3:
+        action:
+            set_view: "three"
+        outline: "altline"
+        label: "3"
+    4:
+        action:
+            set_view: "four"
+        outline: "altline"
+        label: "4"
+    5:
+        action:
+            set_view: "five"
+        outline: "altline"
+        label: "5"
+    6:
+        action:
+            set_view: "six"
+        outline: "altline"
+        label: "6"
     preferences:
         action: "show_prefs"
         outline: "altline"
         icon: "keyboard-mode-symbolic"
+    BackSpace:
+        outline: "altline"
+        icon: "edit-clear-symbolic"
+        keysym: BackSpace
+    blank:
+        outline: "narrow"
+        text: ""
