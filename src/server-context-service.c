@@ -30,8 +30,6 @@
 
 enum {
     PROP_0,
-    PROP_SIZE_CONSTRAINT_LANDSCAPE,
-    PROP_SIZE_CONSTRAINT_PORTRAIT,
     PROP_VISIBLE,
     PROP_LAST
 };
@@ -51,9 +49,6 @@ struct _ServerContextService {
     guint hiding;
     guint last_requested_height;
     enum squeek_arrangement_kind last_type;
-
-    gdouble size_constraint_landscape[2];
-    gdouble size_constraint_portrait[2];
 };
 
 struct _ServerContextServiceClass {
@@ -296,21 +291,8 @@ server_context_service_set_property (GObject      *object,
                                      GParamSpec   *pspec)
 {
     ServerContextService *context = SERVER_CONTEXT_SERVICE(object);
-    GVariant *variant;
 
     switch (prop_id) {
-    case PROP_SIZE_CONSTRAINT_LANDSCAPE:
-        variant = g_value_get_variant (value);
-        g_variant_get (variant, "(dd)",
-                       &context->size_constraint_landscape[0],
-                       &context->size_constraint_landscape[1]);
-        break;
-    case PROP_SIZE_CONSTRAINT_PORTRAIT:
-        variant = g_value_get_variant (value);
-        g_variant_get (variant, "(dd)",
-                       &context->size_constraint_portrait[0],
-                       &context->size_constraint_portrait[1]);
-        break;
     case PROP_VISIBLE:
         context->visible = g_value_get_boolean (value);
         break;
@@ -358,26 +340,6 @@ server_context_service_class_init (ServerContextServiceClass *klass)
     gobject_class->set_property = server_context_service_set_property;
     gobject_class->get_property = server_context_service_get_property;
     gobject_class->dispose = server_context_service_dispose;
-
-    pspec = g_param_spec_variant ("size-constraint-landscape",
-                                  "Size constraint landscape",
-                                  "Size constraint landscape",
-                                  G_VARIANT_TYPE("(dd)"),
-                                  NULL,
-                                  G_PARAM_WRITABLE);
-    g_object_class_install_property (gobject_class,
-                                     PROP_SIZE_CONSTRAINT_LANDSCAPE,
-                                     pspec);
-
-    pspec = g_param_spec_variant ("size-constraint-portrait",
-                                  "Size constraint portrait",
-                                  "Size constraint portrait",
-                                  G_VARIANT_TYPE("(dd)"),
-                                  NULL,
-                                  G_PARAM_WRITABLE);
-    g_object_class_install_property (gobject_class,
-                                     PROP_SIZE_CONSTRAINT_PORTRAIT,
-                                     pspec);
 
     /**
      * Flag to indicate if keyboard is visible or not.

@@ -41,16 +41,6 @@
 #include "src/layout.h"
 #include "src/submission.h"
 
-enum {
-    PROP_0,
-    PROP_LAST
-};
-
-/* since 2.91.5 GDK_DRAWABLE was removed and gdk_cairo_create takes
-   GdkWindow as the argument */
-#ifndef GDK_DRAWABLE
-#define GDK_DRAWABLE(x) (x)
-#endif
 
 typedef struct _EekGtkKeyboardPrivate
 {
@@ -328,9 +318,4 @@ eek_gtk_keyboard_new (LevelKeyboard *keyboard, EekboardContextService *eekservic
     priv->eekboard_context = eekservice;
     priv->submission = submission;
     return GTK_WIDGET(ret);
-}
-
-EekRenderer *eek_gtk_keyboard_get_renderer(EekGtkKeyboard *self) {
-    EekGtkKeyboardPrivate *priv = eek_gtk_keyboard_get_instance_private (self);
-    return priv->renderer;
 }
