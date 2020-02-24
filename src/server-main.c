@@ -28,6 +28,7 @@
 #include "eek/eek.h"
 #include "eekboard/eekboard-context-service.h"
 #include "dbus.h"
+#include "layout.h"
 #include "outputs.h"
 #include "submission.h"
 #include "server-context-service.h"
@@ -38,11 +39,12 @@
 
 /// Global application state
 struct squeekboard {
-    struct squeek_wayland wayland;
-    DBusHandler *dbus_handler;
-    EekboardContextService *settings_context;
-    ServerContextService *ui_context;
-    struct submission *submission;
+    struct squeek_wayland wayland; // Just hooks.
+    DBusHandler *dbus_handler; // Controls visibility of the OSK.
+    EekboardContextService *settings_context; // Gsettings hooks.
+    ServerContextService *ui_context; // mess, includes the entire UI
+    struct submission *submission; // Wayland text input handling.
+    struct squeek_layout_state layout_choice; // Currently wanted layout.
 };
 
 
@@ -199,7 +201,7 @@ main (int argc, char **argv)
         g_warning("Wayland input method interface not available");
     }
 
-    instance.settings_context = eekboard_context_service_new();
+    instance.settings_context = eekboard_context_service_new(&instance.layout_choice);
 
     // set up dbus
 
@@ -276,7 +278,8 @@ main (int argc, char **argv)
 
     ServerContextService *ui_context = server_context_service_new(
                 instance.settings_context,
-                instance.submission);
+                instance.submission,
+                &instance.layout_choice);
     if (!ui_context) {
         g_error("Could not initialize GUI");
         exit(1);

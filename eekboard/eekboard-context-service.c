@@ -48,12 +48,7 @@ static guint signals[LAST_SIGNAL] = { 0, };
 struct _EekboardContextServicePrivate {
     LevelKeyboard *keyboard; // currently used keyboard
     GHashTable *keyboard_hash; // a table of available keyboards, per layout
-
-    char *overlay;
-
     GSettings *settings; // Owned reference
-    uint32_t hint;
-    uint32_t purpose;
 
     // Maybe TODO: it's used only for fetching layout type.
     // Maybe let UI push the type to this structure?
@@ -120,39 +115,31 @@ settings_get_layout(GSettings *settings, char **type, char **layout)
 }
 
 void
-eekboard_context_service_update_layout(EekboardContextService *context, enum squeek_arrangement_kind t)
-{
-    g_autofree gchar *keyboard_layout = NULL;
-    if (context->priv->overlay) {
-        keyboard_layout = g_strdup(context->priv->overlay);
-    } else {
-        g_autofree gchar *keyboard_type = NULL;
-        settings_get_layout(context->priv->settings,
-                            &keyboard_type, &keyboard_layout);
-    }
+eekboard_context_service_use_layout(EekboardContextService *context, struct squeek_layout_state *state) {
+    gchar *layout_name = state->overlay_name;
 
-    if (!keyboard_layout) {
-        keyboard_layout = g_strdup("us");
-    }
+    if (layout_name == NULL) {
+        layout_name = state->layout_name;
 
-    EekboardContextServicePrivate *priv = EEKBOARD_CONTEXT_SERVICE_GET_PRIVATE(context);
+        switch (state->purpose) {
+        case ZWP_TEXT_INPUT_V3_CONTENT_PURPOSE_NUMBER:
+        case ZWP_TEXT_INPUT_V3_CONTENT_PURPOSE_PHONE:
+            layout_name = "number";
+            break;
+        case ZWP_TEXT_INPUT_V3_CONTENT_PURPOSE_TERMINAL:
+            layout_name = "terminal";
+            break;
+        default:
+            ;
+        }
 
-    switch (priv->purpose) {
-    case ZWP_TEXT_INPUT_V3_CONTENT_PURPOSE_NUMBER:
-    case ZWP_TEXT_INPUT_V3_CONTENT_PURPOSE_PHONE:
-        g_free(keyboard_layout);
-        keyboard_layout = g_strdup("number");
-        break;
-    case ZWP_TEXT_INPUT_V3_CONTENT_PURPOSE_TERMINAL:
-        g_free(keyboard_layout);
-        keyboard_layout = g_strdup("terminal");
-        break;
-    default:
-        ;
+        if (layout_name == NULL) {
+            layout_name = "us";
+        }
     }
 
     // generic part follows
-    LevelKeyboard *keyboard = level_keyboard_new(keyboard_layout, t);
+    LevelKeyboard *keyboard = level_keyboard_new(layout_name, state->arrangement);
     // set as current
     LevelKeyboard *previous_keyboard = context->priv->keyboard;
     context->priv->keyboard = keyboard;
@@ -162,6 +149,7 @@ eekboard_context_service_update_layout(EekboardContextService *context, enum squ
         submission_set_keyboard(context->priv->submission, keyboard);
     }
 
+    // Update UI
     g_object_notify (G_OBJECT(context), "keyboard");
 
     // replacing the keyboard above will cause the previous keyboard to get destroyed from the UI side (eek_gtk_keyboard_dispose)
@@ -170,13 +158,22 @@ eekboard_context_service_update_layout(EekboardContextService *context, enum squ
     }
 }
 
-static void update_layout_and_type(EekboardContextService *context) {
-    EekboardContextServicePrivate *priv = EEKBOARD_CONTEXT_SERVICE_GET_PRIVATE(context);
-    enum squeek_arrangement_kind layout_kind = ARRANGEMENT_KIND_BASE;
-    if (priv->ui) {
-        layout_kind = server_context_service_get_layout_type(priv->ui);
+static void eekboard_context_service_update_settings_layout(EekboardContextService *context) {
+    g_autofree gchar *keyboard_layout = NULL;
+    g_autofree gchar *keyboard_type = NULL;
+    settings_get_layout(context->priv->settings,
+                        &keyboard_type, &keyboard_layout);
+
+    if (g_strcmp0(context->layout->layout_name, keyboard_layout) != 0 || context->layout->overlay_name) {
+        g_free(context->layout->overlay_name);
+        context->layout->overlay_name = NULL;
+        if (keyboard_layout) {
+            g_free(context->layout->layout_name);
+            context->layout->layout_name = g_strdup(keyboard_layout);
+        }
+        // This must actually update the UI.
+        eekboard_context_service_use_layout(context, context->layout);
     }
-    eekboard_context_service_update_layout(context, layout_kind);
 }
 
 static gboolean
@@ -187,17 +184,14 @@ settings_handle_layout_changed(GSettings *s,
     (void)keys;
     (void)n_keys;
     EekboardContextService *context = user_data;
-    g_free(context->priv->overlay);
-    context->priv->overlay = NULL;
-    update_layout_and_type(context);
+    eekboard_context_service_update_settings_layout(context);
     return TRUE;
 }
 
 static void
 eekboard_context_service_constructed (GObject *object)
 {
-    EekboardContextService *context = EEKBOARD_CONTEXT_SERVICE (object);
-    update_layout_and_type(context);
+    (void)object;
 }
 
 static void
@@ -260,8 +254,6 @@ eekboard_context_service_init (EekboardContextService *self)
         g_warning ("Could not connect to gsettings updates, layout"
                    " changing unavailable");
     }
-
-    self->priv->overlay = NULL;
 }
 
 /**
@@ -274,8 +266,6 @@ void
 eekboard_context_service_destroy (EekboardContextService *context)
 {
     g_return_if_fail (EEKBOARD_IS_CONTEXT_SERVICE(context));
-
-    g_free(context->priv->overlay);
     g_signal_emit (context, signals[DESTROYED], 0);
 }
 
@@ -295,29 +285,34 @@ eekboard_context_service_get_keyboard (EekboardContextService *context)
 void eekboard_context_service_set_hint_purpose(EekboardContextService *context,
                                                uint32_t hint, uint32_t purpose)
 {
-    EekboardContextServicePrivate *priv = EEKBOARD_CONTEXT_SERVICE_GET_PRIVATE(context);
-
-    if (priv->hint != hint || priv->purpose != purpose) {
-        priv->hint = hint;
-        priv->purpose = purpose;
-        update_layout_and_type(context);
+    if (context->layout->hint != hint || context->layout->purpose != purpose) {
+        context->layout->hint = hint;
+        context->layout->purpose = purpose;
+        eekboard_context_service_use_layout(context, context->layout);
     }
 }
 
 void
 eekboard_context_service_set_overlay(EekboardContextService *context, const char* name) {
-    context->priv->overlay = g_strdup(name);
-    update_layout_and_type(context);
+    if (g_strcmp0(context->layout->overlay_name, name)) {
+        g_free(context->layout->overlay_name);
+        context->layout->overlay_name = g_strdup(name);
+        eekboard_context_service_use_layout(context, context->layout);
+    }
 }
 
 const char*
 eekboard_context_service_get_overlay(EekboardContextService *context) {
-    return context->priv->overlay;
+    return context->layout->overlay_name;
 }
 
-EekboardContextService *eekboard_context_service_new(void)
+EekboardContextService *eekboard_context_service_new(struct squeek_layout_state *state)
 {
-    return g_object_new (EEKBOARD_TYPE_CONTEXT_SERVICE, NULL);
+    EekboardContextService *context = g_object_new (EEKBOARD_TYPE_CONTEXT_SERVICE, NULL);
+    context->layout = state;
+    eekboard_context_service_update_settings_layout(context);
+    eekboard_context_service_use_layout(context, context->layout);
+    return context;
 }
 
 void eekboard_context_service_set_submission(EekboardContextService *context, struct submission *submission) {
