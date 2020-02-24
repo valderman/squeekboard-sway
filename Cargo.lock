@@ -2,10 +2,10 @@
 # It is not intended for manual editing.
 [[package]]
 name = "aho-corasick"
-version = "0.7.7"
+version = "0.7.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "memchr 2.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "memchr 2.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -254,7 +254,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "memchr"
-version = "2.3.0"
+version = "2.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
@@ -317,8 +317,8 @@ name = "regex"
 version = "1.1.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "aho-corasick 0.7.7 (registry+https://github.com/rust-lang/crates.io-index)",
- "memchr 2.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "aho-corasick 0.7.8 (registry+https://github.com/rust-lang/crates.io-index)",
+ "memchr 2.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "regex-syntax 0.6.14 (registry+https://github.com/rust-lang/crates.io-index)",
  "thread_local 0.3.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "utf8-ranges 1.0.4 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -457,7 +457,7 @@ dependencies = [
 ]
 
 [metadata]
-"checksum aho-corasick 0.7.7 (registry+https://github.com/rust-lang/crates.io-index)" = "5f56c476256dc249def911d6f7580b5fc7e875895b5d7ee88f5d602208035744"
+"checksum aho-corasick 0.7.8 (registry+https://github.com/rust-lang/crates.io-index)" = "743ad5a418686aad3b87fd14c43badd828cf26e214a00f92a384291cf22e1811"
 "checksum atk-sys 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)" = "c7017e53393e713212aed7aea336b6553be4927f58c37070a56c2fe3d107e489"
 "checksum bitflags 1.0.4 (registry+https://github.com/rust-lang/crates.io-index)" = "228047a76f468627ca71776ecdebd732a3423081fcf5125585bcd7c49886ce12"
 "checksum cairo-rs 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)" = "dd940f0d609699e343ef71c4af5f66423afbf30d666f796dabd8fd15229cf5b6"
@@ -481,7 +481,7 @@ dependencies = [
 "checksum libc 0.2.66 (registry+https://github.com/rust-lang/crates.io-index)" = "d515b1f41455adea1313a4a2ac8a8a477634fbae63cc6100e3aebb207ce61558"
 "checksum linked-hash-map 0.5.2 (registry+https://github.com/rust-lang/crates.io-index)" = "ae91b68aebc4ddb91978b11a1b02ddd8602a05ec19002801c5666000e05e0f83"
 "checksum maplit 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)" = "3e2e65a1a2e43cfcb47a895c4c8b10d1f4a61097f9f254f183aee60cad9c651d"
-"checksum memchr 2.3.0 (registry+https://github.com/rust-lang/crates.io-index)" = "3197e20c7edb283f87c071ddfc7a2cca8f8e0b888c242959846a6fce03c72223"
+"checksum memchr 2.3.2 (registry+https://github.com/rust-lang/crates.io-index)" = "53445de381a1f436797497c61d851644d0e8e88e6140f22872ad33a704933978"
 "checksum memmap 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)" = "6585fd95e7bb50d6cc31e20d4cf9afb4e2ba16c5846fc76793f11218da9c475b"
 "checksum pango 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)" = "4c2cb169402a3eb1ba034a7cc7d95b8b1c106e9be5ba4be79a5a93dc1a2795f4"
 "checksum pango-sys 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)" = "d6eb49268e69dd0c1da5d3001a61aac08e2e9d2bfbe4ae4b19b9963c998f6453"
