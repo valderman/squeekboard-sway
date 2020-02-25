@@ -26,24 +26,20 @@
 
 #include "eek-types.h"
 
-G_BEGIN_DECLS
-
-#define EEK_TYPE_RENDERER (eek_renderer_get_type())
-G_DECLARE_DERIVABLE_TYPE (EekRenderer, eek_renderer, EEK, RENDERER, GObject)
-
-struct _EekRendererClass
+typedef struct EekRenderer
 {
-    GObjectClass parent_class;
+    LevelKeyboard *keyboard; // unowned
+    PangoContext *pcontext; // owned
+    GtkCssProvider *css_provider; // owned
+    GtkStyleContext *view_context; // owned
+    GtkStyleContext *button_context; // TODO: maybe move a copy to each button
 
-    cairo_surface_t *(* get_icon_surface)   (EekRenderer *self,
-                                             const gchar *icon_name,
-                                             gint         size,
-                                             gint         scale);
+    gdouble allocation_width;
+    gdouble allocation_height;
+    gint scale_factor; /* the outputs scale factor */
+    struct transformation widget_to_layout;
+} EekRenderer;
 
-    /*< private >*/
-    /* padding */
-    gpointer pdummy[23];
-};
 
 GType            eek_renderer_get_type         (void) G_GNUC_CONST;
 EekRenderer     *eek_renderer_new              (LevelKeyboard     *keyboard,
@@ -61,6 +57,8 @@ cairo_surface_t *eek_renderer_get_icon_surface(const gchar     *icon_name,
 
 void             eek_renderer_render_keyboard  (EekRenderer     *renderer,
                                                 cairo_t         *cr);
+void
+eek_renderer_free (EekRenderer        *self);
 
 struct transformation
 eek_renderer_get_transformation (EekRenderer *renderer);

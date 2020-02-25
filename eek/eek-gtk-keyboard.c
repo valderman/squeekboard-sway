@@ -287,7 +287,7 @@ eek_gtk_keyboard_dispose (GObject *object)
     EekGtkKeyboardPrivate *priv = eek_gtk_keyboard_get_instance_private (self);
 
     if (priv->renderer) {
-        g_object_unref (priv->renderer);
+        eek_renderer_free(priv->renderer);
         priv->renderer = NULL;
         priv->renderer = NULL;
     }
@@ -342,7 +342,7 @@ on_notify_keyboard (GObject              *object,
     EekGtkKeyboardPrivate *priv = (EekGtkKeyboardPrivate*)eek_gtk_keyboard_get_instance_private (self);
     priv->keyboard = eekboard_context_service_get_keyboard(EEKBOARD_CONTEXT_SERVICE(object));
     if (priv->renderer) {
-        g_object_unref(priv->renderer);
+        eek_renderer_free(priv->renderer);
     }
     priv->renderer = NULL;
     gtk_widget_queue_draw(GTK_WIDGET(self));
