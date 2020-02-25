@@ -139,7 +139,8 @@ eekboard_context_service_use_layout(EekboardContextService *context, struct sque
     }
 
     // generic part follows
-    LevelKeyboard *keyboard = level_keyboard_new(layout_name, state->arrangement);
+    struct squeek_layout *layout = squeek_load_layout(layout_name, state->arrangement);
+    LevelKeyboard *keyboard = level_keyboard_new(layout);
     // set as current
     LevelKeyboard *previous_keyboard = context->priv->keyboard;
     context->priv->keyboard = keyboard;
