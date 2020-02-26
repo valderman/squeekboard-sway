@@ -193,9 +193,9 @@ render_button_label (cairo_t     *cr,
 
 void
 eek_renderer_render_keyboard (EekRenderer *self,
-                                   cairo_t     *cr)
+                                   cairo_t     *cr,
+                              LevelKeyboard *keyboard)
 {
-    g_return_if_fail (self->keyboard);
     g_return_if_fail (self->allocation_width > 0.0);
     g_return_if_fail (self->allocation_height > 0.0);
 
@@ -209,17 +209,14 @@ eek_renderer_render_keyboard (EekRenderer *self,
     cairo_translate (cr, self->widget_to_layout.origin_x, self->widget_to_layout.origin_y);
     cairo_scale (cr, self->widget_to_layout.scale, self->widget_to_layout.scale);
 
-    squeek_draw_layout_base_view(self->keyboard->layout, self, cr);
-    squeek_layout_draw_all_changed(self->keyboard->layout, self, cr);
+    squeek_draw_layout_base_view(keyboard->layout, self, cr);
+    squeek_layout_draw_all_changed(keyboard->layout, self, cr);
     cairo_restore (cr);
 }
 
 void
 eek_renderer_free (EekRenderer        *self)
 {
-    if (self->keyboard) {
-        self->keyboard = NULL;
-    }
     if (self->pcontext) {
         g_object_unref (self->pcontext);
         self->pcontext = NULL;
@@ -261,7 +258,6 @@ static GType button_type() {
 static void
 renderer_init (EekRenderer *self)
 {
-    self->keyboard = NULL;
     self->pcontext = NULL;
     self->allocation_width = 0.0;
     self->allocation_height = 0.0;
@@ -282,7 +278,6 @@ eek_renderer_new (LevelKeyboard  *keyboard,
     renderer_init(renderer);
     renderer->pcontext = pcontext;
     g_object_ref (renderer->pcontext);
-    renderer->keyboard = keyboard;
 
     /* Create a style context for the layout */
     GtkWidgetPath *path = gtk_widget_path_new();
@@ -291,7 +286,7 @@ eek_renderer_new (LevelKeyboard  *keyboard,
     renderer->view_context = gtk_style_context_new();
     gtk_style_context_set_path(renderer->view_context, path);
     gtk_widget_path_unref(path);
-    if (squeek_layout_get_kind(renderer->keyboard->layout) == ARRANGEMENT_KIND_WIDE) {
+    if (squeek_layout_get_kind(keyboard->layout) == ARRANGEMENT_KIND_WIDE) {
         gtk_style_context_add_class(renderer->view_context, "wide");
     }
     gtk_style_context_add_provider (renderer->view_context,
@@ -301,7 +296,7 @@ eek_renderer_new (LevelKeyboard  *keyboard,
     /* Create a style context for the buttons */
     path = gtk_widget_path_new();
     gtk_widget_path_append_type(path, view_type());
-    if (squeek_layout_get_kind(renderer->keyboard->layout) == ARRANGEMENT_KIND_WIDE) {
+    if (squeek_layout_get_kind(keyboard->layout) == ARRANGEMENT_KIND_WIDE) {
         gtk_widget_path_iter_add_class(path, -1, "wide");
     }
     gtk_widget_path_append_type(path, button_type());
@@ -318,6 +313,7 @@ eek_renderer_new (LevelKeyboard  *keyboard,
 
 void
 eek_renderer_set_allocation_size (EekRenderer *renderer,
+                                  struct squeek_layout *layout,
                                   gdouble      width,
                                   gdouble      height)
 {
@@ -327,7 +323,7 @@ eek_renderer_set_allocation_size (EekRenderer *renderer,
     renderer->allocation_height = height;
 
     renderer->widget_to_layout = squeek_layout_calculate_transformation(
-                renderer->keyboard->layout,
+                layout,
                 renderer->allocation_width, renderer->allocation_height);
 
     // This is where size-dependent surfaces would be released

@@ -32,7 +32,6 @@
 
 struct submission;
 struct squeek_layout_state;
-typedef struct _LevelKeyboard LevelKeyboard; // including causes weird bugs
 
 G_BEGIN_DECLS
 #define EEK_TYPE_GTK_KEYBOARD (eek_gtk_keyboard_get_type())

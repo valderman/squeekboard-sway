@@ -26,17 +26,25 @@
 
 #include "eek-types.h"
 
+struct squeek_layout;
+
+/// Renders LevelKayboards
+/// It cannot adjust styles at runtime.
 typedef struct EekRenderer
 {
-    LevelKeyboard *keyboard; // unowned
     PangoContext *pcontext; // owned
     GtkCssProvider *css_provider; // owned
     GtkStyleContext *view_context; // owned
     GtkStyleContext *button_context; // TODO: maybe move a copy to each button
+    /// Style class for rendering the view and button CSS.
+    gchar *extra_style; // owned
 
+    // Mutable state
+    /// Background extents
     gdouble allocation_width;
     gdouble allocation_height;
     gint scale_factor; /* the outputs scale factor */
+    /// Coords transformation
     struct transformation widget_to_layout;
 } EekRenderer;
 
@@ -45,7 +53,7 @@ GType            eek_renderer_get_type         (void) G_GNUC_CONST;
 EekRenderer     *eek_renderer_new              (LevelKeyboard     *keyboard,
                                                 PangoContext    *pcontext);
 void             eek_renderer_set_allocation_size
-                                               (EekRenderer     *renderer,
+                                               (EekRenderer     *renderer, struct squeek_layout *layout,
                                                 gdouble          width,
                                                 gdouble          height);
 void             eek_renderer_set_scale_factor (EekRenderer     *renderer,
@@ -56,7 +64,7 @@ cairo_surface_t *eek_renderer_get_icon_surface(const gchar     *icon_name,
                                                 gint             scale);
 
 void             eek_renderer_render_keyboard  (EekRenderer     *renderer,
-                                                cairo_t         *cr);
+                                                cairo_t         *cr, LevelKeyboard *keyboard);
 void
 eek_renderer_free (EekRenderer        *self);
 

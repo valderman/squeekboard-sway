@@ -44,11 +44,11 @@
 
 typedef struct _EekGtkKeyboardPrivate
 {
-    EekRenderer *renderer;
+    EekRenderer *renderer; // owned, nullable
     EekboardContextService *eekboard_context; // unowned reference
     struct submission *submission; // unowned reference
 
-    struct squeek_layout_state *layout;
+    struct squeek_layout_state *layout; // unowned
     LevelKeyboard *keyboard; // unowned reference; it's kept in server-context
 
     GdkEventSequence *sequence; // unowned reference
@@ -92,13 +92,14 @@ eek_gtk_keyboard_real_draw (GtkWidget *self,
                     pcontext);
 
         eek_renderer_set_allocation_size (priv->renderer,
+                                          priv->keyboard->layout,
                                           allocation.width,
                                           allocation.height);
         eek_renderer_set_scale_factor (priv->renderer,
                                        gtk_widget_get_scale_factor (self));
     }
 
-    eek_renderer_render_keyboard (priv->renderer, cr);
+    eek_renderer_render_keyboard (priv->renderer, cr, priv->keyboard);
     return FALSE;
 }
 
@@ -129,6 +130,7 @@ eek_gtk_keyboard_real_size_allocate (GtkWidget     *self,
 
     if (priv->renderer)
         eek_renderer_set_allocation_size (priv->renderer,
+                                          priv->keyboard->layout,
                                           allocation->width,
                                           allocation->height);
 
