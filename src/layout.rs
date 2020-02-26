@@ -26,10 +26,10 @@ use std::vec::Vec;
 
 use ::action::Action;
 use ::drawing;
-use ::keyboard::{ KeyState, PressType };
+use ::keyboard::KeyState;
 use ::logging;
 use ::manager;
-use ::submission::{ Submission, Timestamp };
+use ::submission::{ Submission, SubmitData, Timestamp };
 use ::util::find_max_double;
 
 // Traits
@@ -916,9 +916,38 @@ mod seat {
                 "Key {:?} was already pressed", rckey,
             );
         }
-        let mut key = rckey.borrow_mut();
-        submission.handle_press(&key, KeyState::get_id(rckey), time);
-        key.pressed = PressType::Pressed;
+        let key: KeyState = {
+            RefCell::borrow(rckey).clone()
+        };
+        let action = key.action.clone();
+        match action {
+            Action::Submit {
+                text: Some(text),
+                keys: _,
+            } => submission.handle_press(
+                KeyState::get_id(rckey),
+                SubmitData::Text(&text),
+                &key.keycodes,
+                time,
+            ),
+            Action::Submit {
+                text: None,
+                keys: _,
+            } => submission.handle_press(
+                KeyState::get_id(rckey),
+                SubmitData::Keycodes,
+                &key.keycodes,
+                time,
+            ),
+            Action::Erase => submission.handle_press(
+                KeyState::get_id(rckey),
+                SubmitData::Erase,
+                &key.keycodes,
+                time,
+            ),
+            _ => {},
+        };
+        RefCell::replace(rckey, key.into_pressed());
     }
 
     pub fn handle_release_key(
@@ -1006,6 +1035,7 @@ mod test {
     use super::*;
 
     use std::ffi::CString;
+    use ::keyboard::PressType;
 
     pub fn make_state() -> Rc<RefCell<::keyboard::KeyState>> {
         Rc::new(RefCell::new(::keyboard::KeyState {
