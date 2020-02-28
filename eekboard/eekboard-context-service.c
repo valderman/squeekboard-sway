@@ -47,7 +47,6 @@ static guint signals[LAST_SIGNAL] = { 0, };
 
 struct _EekboardContextServicePrivate {
     LevelKeyboard *keyboard; // currently used keyboard
-    GHashTable *keyboard_hash; // a table of available keyboards, per layout
     GSettings *settings; // Owned reference
 
     // Maybe TODO: it's used only for fetching layout type.
@@ -94,13 +93,6 @@ eekboard_context_service_get_property (GObject    *object,
 static void
 eekboard_context_service_dispose (GObject *object)
 {
-    EekboardContextService *context = EEKBOARD_CONTEXT_SERVICE(object);
-
-    if (context->priv->keyboard_hash) {
-        g_hash_table_destroy (context->priv->keyboard_hash);
-        context->priv->keyboard_hash = NULL;
-    }
-
     G_OBJECT_CLASS (eekboard_context_service_parent_class)->
         dispose (object);
 }
@@ -240,12 +232,6 @@ static void
 eekboard_context_service_init (EekboardContextService *self)
 {
     self->priv = EEKBOARD_CONTEXT_SERVICE_GET_PRIVATE(self);
-
-    self->priv->keyboard_hash =
-        g_hash_table_new_full (g_direct_hash,
-                               g_direct_equal,
-                               NULL,
-                               (GDestroyNotify)g_object_unref);
 
     self->priv->settings = g_settings_new ("org.gnome.desktop.input-sources");
     gulong conn_id = g_signal_connect(self->priv->settings, "change-event",
