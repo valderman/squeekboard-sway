@@ -29,6 +29,7 @@ mod variants {
 
     use glib::ToVariant;
     use glib::translate::FromGlibPtrFull;
+    use glib::translate::FromGlibPtrNone;
     use glib::translate::ToGlibPtr;
 
     /// Unpacks tuple & array variants
@@ -91,12 +92,7 @@ mod variants {
             unsafe {
                 let ret = glib_sys::g_variant_builder_end(builder);
                 glib_sys::g_variant_builder_unref(builder);
-                // HACK: This is to prevent C taking ownership
-                // of "floating" Variants,
-                // where Rust gets to keep a stale reference
-                // and crash when trying to drop it.
-                glib_sys::g_variant_ref_sink(ret);
-                glib::Variant::from_glib_full(ret)
+                glib::Variant::from_glib_none(ret)
             }
         }
     }
