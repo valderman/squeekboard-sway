@@ -38,7 +38,7 @@ You may notice that they are ordered roughly from "user-focused" to "maintainer-
 Sending patches
 ---------------
 
-By submitting a change to this project, you agree to license it under the [GPL license version 3](./COPYING), or any later version. You also certify that your contribution fulfills the [Developer's Certificate of Origin 1.1](./dco.txt).
+By submitting a change to this project, you agree to license it under the [GPL license version 3](https://source.puri.sm/Librem5/squeekboard/blob/master/COPYING), or any later version. You also certify that your contribution fulfills the [Developer's Certificate of Origin 1.1](https://source.puri.sm/Librem5/squeekboard/blob/master/dco.txt).
 
 Development environment
 -----------------------
@@ -56,8 +56,7 @@ sudo apt-get -y install build-essential
 sudo apt-get -y build-dep .
 ```
 
-For an explicit list of dependencies check the `Build-Depends` entry in the
-[`debian/control`](./debian/control) file.
+For an explicit list of dependencies check the `Build-Depends` entry in the [`debian/control`](https://source.puri.sm/Librem5/squeekboard/blob/master/debian/control) file.
 
 Testing
 -------
