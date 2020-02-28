@@ -84,3 +84,13 @@ test:
   script:
     - apt-get -y build-dep .
     - ninja -C _build test
+
+check_release:
+  <<: *tags
+  stage: test
+  only:
+    refs:
+      - master
+  script:
+    - apt-get install git python3
+    - (head -n 1 ./debian/changelog && git tag) | ./debian/check_release.py
