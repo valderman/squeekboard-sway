@@ -3,6 +3,38 @@ Hacking
 
 This document describes the standards for modifying and maintaining the *squeekboard* project.
 
+Principles
+----------
+
+The project was built upon some guiding principles, which should be respected primarily by the maintainers, but also by contributors to avoid needlessly rejected changes.
+
+The overarching principle of *squeekboard* is to empower users.
+
+Software is primarily meant to solve problems of its users. Often in the quest to make software better, a hard distinction is made between the developer, who becomes the creator, and the user, who takes the role of the consumer, without direct influence on the software they use.
+This project aims to give users the power to make the software work for them by blurring the lines between users and developers.
+
+Nonwithstanding its current state, *squeekboard* must be structured in a way that provides users a gradual way to gain more experience and power to adjust it. It must be easy, in order of importance:
+
+- to use the software,
+- to modify its resources,
+- to change its behaviour,
+- to contribute upstream.
+
+To give an idea of what it means in practice, those are some examples of what has been important for *squeekboard* so far:
+
+- being quick and useable,
+- allowing local overrides of resources and config,
+- storing resources and config as editable, standard files,
+- having complete, up to date documentation of interfaces,
+- having an easy process of sending contributions,
+- adapting to to user's settings and constrains without overriding them,
+- avoiding compiling whenever possible,
+- making it easy to build,
+- having code that is [simple and obvious](https://www.python.org/dev/peps/pep-0020/),
+- having an easy process of testing and accepting contributions.
+
+You may notice that they are ordered roughly from "user-focused" to "maintainer-focused". While good properties are desired, sometimes they conflict, and maintainers should give additional weight to those benefitting the user compared to those benefitting regular contributors.
+
 Sending patches
 ---------------
 
