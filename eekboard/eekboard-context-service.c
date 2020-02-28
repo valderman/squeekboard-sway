@@ -114,8 +114,14 @@ static void
 settings_get_layout(GSettings *settings, char **type, char **layout)
 {
     GVariant *inputs = g_settings_get_value(settings, "sources");
-    // current layout is always first
-    g_variant_get_child(inputs, 0, "(ss)", type, layout);
+    if (g_variant_n_children(inputs) == 0) {
+        g_warning("No system layout present");
+        *type = NULL;
+        *layout = NULL;
+    } else {
+        // current layout is always first
+        g_variant_get_child(inputs, 0, "(ss)", type, layout);
+    }
     g_variant_unref(inputs);
 }
 
