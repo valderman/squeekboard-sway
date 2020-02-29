@@ -43,6 +43,7 @@ struct _ServerContextService {
     /// Needed for instantiating the widget
     struct submission *submission; // unowned
     struct squeek_layout_state *layout;
+    struct ui_manager *manager; // unowned
 
     gboolean visible;
     PhoshLayerSurface *window;
@@ -86,18 +87,6 @@ on_notify_unmap (GObject    *object,
     g_object_set (context, "visible", FALSE, NULL);
 }
 
-static uint32_t
-calculate_height(int32_t width)
-{
-    uint32_t height = 180;
-    if (width < 360 && width > 0) {
-        height = ((unsigned)width * 7 / 12); // to match 360×210
-    } else if (width < 540) {
-        height = 180 + (540 - (unsigned)width) * 30 / 180; // smooth transition
-    }
-    return height;
-}
-
 static void
 on_surface_configure(PhoshLayerSurface *surface, ServerContextService *context)
 {
@@ -108,7 +97,7 @@ on_surface_configure(PhoshLayerSurface *surface, ServerContextService *context)
                  "configured-height", &height,
                  NULL);
 
-    guint desired_height = calculate_height(width);
+    guint desired_height = squeek_uiman_get_perceptual_height(context->manager);
     guint configured_height = (guint)height;
     // if height was already requested once but a different one was given
     // (for the same set of surrounding properties),
@@ -131,14 +120,14 @@ make_window (ServerContextService *context)
     if (context->window)
         g_error("Window already present");
 
-    struct wl_output *output = squeek_outputs_get_current(squeek_wayland->outputs);
-    int32_t width = squeek_outputs_get_perceptual_width(squeek_wayland->outputs, output);
-    uint32_t height = calculate_height(width);
+    struct squeek_output_handle output = squeek_outputs_get_current(squeek_wayland->outputs);
+    squeek_uiman_set_output(context->manager, output);
+    uint32_t height = squeek_uiman_get_perceptual_height(context->manager);
 
     context->window = g_object_new (
         PHOSH_TYPE_LAYER_SURFACE,
         "layer-shell", squeek_wayland->layer_shell,
-        "wl-output", output,
+        "wl-output", output.output,
         "height", height,
         "anchor", ZWLR_LAYER_SURFACE_V1_ANCHOR_BOTTOM
                   | ZWLR_LAYER_SURFACE_V1_ANCHOR_LEFT
@@ -322,11 +311,12 @@ server_context_service_init (ServerContextService *state) {
 }
 
 ServerContextService *
-server_context_service_new (EekboardContextService *state, struct submission *submission, struct squeek_layout_state *layout)
+server_context_service_new (EekboardContextService *state, struct submission *submission, struct squeek_layout_state *layout, struct ui_manager *uiman)
 {
     ServerContextService *ui = g_object_new (SERVER_TYPE_CONTEXT_SERVICE, NULL);
     ui->submission = submission;
     ui->state = state;
     ui->layout = layout;
+    ui->manager = uiman;
     return ui;
 }

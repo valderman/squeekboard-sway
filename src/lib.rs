@@ -35,5 +35,6 @@ mod style;
 mod submission;
 pub mod tests;
 pub mod util;
+mod ui_manager;
 mod vkeyboard;
 mod xdg;

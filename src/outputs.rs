@@ -17,7 +17,7 @@ pub mod c {
     // Defined in C
 
     #[repr(transparent)]
-    #[derive(Clone, PartialEq)]
+    #[derive(Clone, PartialEq, Copy)]
     pub struct WlOutput(*const c_void);
 
     #[repr(C)]
@@ -104,6 +104,24 @@ pub mod c {
     }
 
     type COutputs = ::util::c::Wrapped<Outputs>;
+
+    /// A stable reference to an output.
+    #[derive(Clone)]
+    #[repr(C)]
+    pub struct OutputHandle {
+        wl_output: WlOutput,
+        outputs: COutputs,
+    }
+
+    impl OutputHandle {
+        // Cannot return an Output reference
+        // because COutputs is too deeply wrapped
+        pub fn get_state(&self) -> Option<OutputState> {
+            let outputs = self.outputs.clone_ref();
+            let outputs = outputs.borrow();
+            find_output(&outputs, self.wl_output.clone()).map(|o| o.current.clone())
+        }
+    }
 
     // Defined in Rust
 
@@ -240,46 +258,15 @@ pub mod c {
     
     #[no_mangle]
     pub extern "C"
-    fn squeek_outputs_get_current(raw_collection: COutputs) -> WlOutput {
+    fn squeek_outputs_get_current(raw_collection: COutputs) -> OutputHandle {
         let collection = raw_collection.clone_ref();
         let collection = collection.borrow();
-        collection.outputs[0].output.clone()
-    }
-
-    #[no_mangle]
-    pub extern "C"
-    fn squeek_outputs_get_perceptual_width(
-        raw_collection: COutputs,
-        wl_output: WlOutput,
-    ) -> i32 {
-        let collection = raw_collection.clone_ref();
-        let collection = collection.borrow();
-
-        let output_state = find_output(&collection, wl_output)
-            .map(|o| &o.current);
-        match output_state {
-            Some(OutputState {
-                current_mode: Some(super::Mode { width, height } ),
-                transform: Some(transform),
-                scale,
-            }) => {
-                match transform {
-                    Transform::Normal
-                    | Transform::Rotated180
-                    | Transform::Flipped
-                    | Transform::FlippedRotated180 => width / scale,
-                    _ => height / scale,
-                }
-            },
-            _ => {
-                log_print!(
-                    logging::Level::Surprise,
-                    "Not enough info received on output",
-                );
-                0
-            },
+        OutputHandle {
+            wl_output: collection.outputs[0].output.clone(),
+            outputs: raw_collection.clone(),
         }
     }
+
     // TODO: handle unregistration
     
     fn find_output(
@@ -305,6 +292,14 @@ pub mod c {
     }
 }
 
+/// Generic size
+#[derive(Clone)]
+pub struct Size {
+    pub width: u32,
+    pub height: u32,
+}
+
+/// wl_output mode
 #[derive(Clone)]
 struct Mode {
     width: i32,
@@ -315,15 +310,47 @@ struct Mode {
 pub struct OutputState {
     current_mode: Option<Mode>,
     transform: Option<c::Transform>,
-    scale: i32,
+    pub scale: i32,
 }
 
 impl OutputState {
+    // More properly, this would have been a builder kind of struct,
+    // with wl_output gradually adding properties to it
+    // before it reached a fully initialized state,
+    // when it would transform into a struct without all (some?) of the Options.
+    // However, it's not clear which state is fully initialized,
+    // and whether it would make things easier at all anyway.
     fn uninitialized() -> OutputState {
         OutputState {
             current_mode: None,
             transform: None,
             scale: 1,
+        }
+    }
+
+    pub fn get_pixel_size(&self) -> Option<Size> {
+        use self::c::Transform;
+        match self {
+            OutputState {
+                current_mode: Some(Mode { width, height } ),
+                transform: Some(transform),
+                scale: _,
+            } => Some(
+                match transform {
+                    Transform::Normal
+                    | Transform::Rotated180
+                    | Transform::Flipped
+                    | Transform::FlippedRotated180 => Size {
+                        width: *width as u32,
+                        height: *height as u32,
+                    },
+                    _ => Size {
+                        width: *height as u32,
+                        height: *width as u32,
+                    },
+                }
+            ),
+            _ => None,
         }
     }
 }

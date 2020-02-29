@@ -32,6 +32,7 @@
 #include "outputs.h"
 #include "submission.h"
 #include "server-context-service.h"
+#include "ui_manager.h"
 #include "wayland.h"
 
 #include <gdk/gdkwayland.h>
@@ -45,6 +46,7 @@ struct squeekboard {
     ServerContextService *ui_context; // mess, includes the entire UI
     struct submission *submission; // Wayland text input handling.
     struct squeek_layout_state layout_choice; // Currently wanted layout.
+    struct ui_manager *ui_manager; // UI shape tracker/chooser. TODO: merge with layuot choice
 };
 
 
@@ -201,6 +203,8 @@ main (int argc, char **argv)
         g_warning("Wayland input method interface not available");
     }
 
+    instance.ui_manager = squeek_uiman_new();
+
     instance.settings_context = eekboard_context_service_new(&instance.layout_choice);
 
     // set up dbus
@@ -279,7 +283,8 @@ main (int argc, char **argv)
     ServerContextService *ui_context = server_context_service_new(
                 instance.settings_context,
                 instance.submission,
-                &instance.layout_choice);
+                &instance.layout_choice,
+                instance.ui_manager);
     if (!ui_context) {
         g_error("Could not initialize GUI");
         exit(1);
