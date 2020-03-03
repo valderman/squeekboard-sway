@@ -113,6 +113,9 @@ eekboard_context_service_dispose (GObject *object)
 static void
 settings_get_layout(GSettings *settings, char **type, char **layout)
 {
+    if (!settings) {
+        return;
+    }
     GVariant *inputs = g_settings_get_value(settings, "sources");
     if (g_variant_n_children(inputs) == 0) {
         g_warning("No system layout present");
@@ -257,14 +260,29 @@ eekboard_context_service_init (EekboardContextService *self)
                                g_direct_equal,
                                NULL,
                                (GDestroyNotify)g_object_unref);
-
-    self->priv->settings = g_settings_new ("org.gnome.desktop.input-sources");
-    gulong conn_id = g_signal_connect(self->priv->settings, "change-event",
-                                      G_CALLBACK(settings_handle_layout_changed),
-                                      self);
-    if (conn_id == 0) {
-        g_warning ("Could not connect to gsettings updates, layout"
-                   " changing unavailable");
+    const char *schema_name = "org.gnome.desktop.input-sources";
+    GSettingsSchemaSource *ssrc = g_settings_schema_source_get_default();
+    if (ssrc) {
+        GSettingsSchema *schema = g_settings_schema_source_lookup(ssrc,
+                                                                  schema_name,
+                                                                  TRUE);
+        if (schema) {
+            // Not referencing the found schema directly,
+            // because it's not clear how...
+            self->priv->settings = g_settings_new (schema_name);
+            gulong conn_id = g_signal_connect(self->priv->settings, "change-event",
+                                              G_CALLBACK(settings_handle_layout_changed),
+                                              self);
+            if (conn_id == 0) {
+                g_warning ("Could not connect to gsettings updates, "
+                           "automatic layout changing unavailable");
+            }
+        } else {
+            g_warning("Gsettings schema %s is not installed on the system. "
+                      "Layout switching unavailable", schema_name);
+        }
+    } else {
+        g_warning("No gsettings schemas installed. Layout switching unavailable.");
     }
 
     self->priv->overlay = NULL;
