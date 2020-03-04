@@ -249,7 +249,7 @@ pub mod c {
         unsafe { Box::from_raw(layout) };
     }
 
-    /// Entry points for more complex procedures and algoithms which span multiple modules
+    /// Entry points for more complex procedures and algorithms which span multiple modules
     pub mod procedures {
         use super::*;
 
