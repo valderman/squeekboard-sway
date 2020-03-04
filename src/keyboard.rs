@@ -31,7 +31,7 @@ pub struct KeyStateId(*const KeyState);
 #[derive(Debug, Clone)]
 pub struct KeyState {
     pub pressed: PressType,
-    /// A cache of raw keycodes derived from Action::Sumbit given a keymap
+    /// A cache of raw keycodes derived from Action::Submit given a keymap
     pub keycodes: Vec<KeyCode>,
     /// Static description of what the key does when pressed or released
     pub action: Action,
