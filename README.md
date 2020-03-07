@@ -56,4 +56,4 @@ $ src/squeekboard
 Developing
 ----------
 
-See `HACKING.md`
+See [`docs/hacking.md`](docs/hacking.md) for this copy, or the [official documentation](https://developer.puri.sm/projects/squeekboard/) for the current release.
