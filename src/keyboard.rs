@@ -23,6 +23,24 @@ pub enum PressType {
 
 pub type KeyCode = u32;
 
+bitflags!{
+    /// Map to `virtual_keyboard.modifiers` modifiers values
+    /// From https://www.x.org/releases/current/doc/kbproto/xkbproto.html#Keyboard_State
+    pub struct Modifiers: u8 {
+        const SHIFT = 0x1;
+        const LOCK = 0x2;
+        const CONTROL = 0x4;
+        /// Alt
+        const MOD1 = 0x8;
+        const MOD2 = 0x10;
+        const MOD3 = 0x20;
+        /// Meta
+        const MOD4 = 0x40;
+        /// AltGr
+        const MOD5 = 0x80;
+    }
+}
+
 /// When the submitted actions of keys need to be tracked,
 /// they need a stable, comparable ID
 #[derive(PartialEq)]
