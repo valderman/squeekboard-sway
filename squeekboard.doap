@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Project xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#" xmlns="http://usefulinc.com/ns/doap#" xmlns:foaf="http://xmlns.com/foaf/0.1/" xmlns:admin="http://webns.net/mvcb/">
+ <name>squeekboard</name>
+ <shortdesc>A Wayland virtual keyboard</shortdesc>
+ <description>A virtual keyboard supporting Wayland, built primarily for the Librem 5 phone.</description>
+ <homepage rdf:resource="https://source.puri.sm/Librem5/squeekboard" />
+ <bug-database rdf:resource="https://source.puri.sm/Librem5/squeekboard/issues" />
+ <os>Linux</os>
+ <license rdf:resource="http://usefulinc.com/doap/licenses/gpl" />
+ <maintainer>
+  <foaf:Person>
+     <foaf:name>Dorota Czaplejewicz</foaf:name>
+     <foaf:mbox rdf:resource="mailto:dorota.czaplejewicz@puri.sm" />
+  </foaf:Person>
+ </maintainer>
+ 
+</Project>

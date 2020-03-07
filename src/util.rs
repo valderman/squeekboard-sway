@@ -197,6 +197,12 @@ pub trait WarningHandler {
     fn handle(&mut self, warning: &str);
 }
 
+/// Removes the first matcing item
+pub fn vec_remove<T, F: FnMut(&T) -> bool>(v: &mut Vec<T>, pred: F) -> Option<T> {
+    let idx = v.iter().position(pred);
+    idx.map(|idx| v.remove(idx))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

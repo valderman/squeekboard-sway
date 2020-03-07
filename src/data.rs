@@ -240,14 +240,20 @@ type ButtonIds = String;
 #[derive(Debug, Default, Deserialize, PartialEq)]
 #[serde(deny_unknown_fields)]
 struct ButtonMeta {
-    /// Special action to perform on activation. Conflicts with keysym, text.
+    // TODO: structure (action, keysym, text, modifier) as an enum
+    // to detect conflicts and missing values at compile time
+    /// Special action to perform on activation.
+    /// Conflicts with keysym, text, modifier.
     action: Option<Action>,
     /// The name of the XKB keysym to emit on activation.
-    /// Conflicts with action, text
+    /// Conflicts with action, text, modifier.
     keysym: Option<String>,
     /// The text to submit on activation. Will be derived from ID if not present
-    /// Conflicts with action, keysym
+    /// Conflicts with action, keysym, modifier.
     text: Option<String>,
+    /// The modifier to apply while the key is locked
+    /// Conflicts with action, keysym, text
+    modifier: Option<Modifier>,
     /// If not present, will be derived from text or the button ID
     label: Option<String>,
     /// Conflicts with label
@@ -268,6 +274,20 @@ enum Action {
     /// Remove last character
     #[serde(rename="erase")]
     Erase,
+}
+
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[serde(deny_unknown_fields)]
+enum Modifier {
+    Control,
+    Shift,
+    Lock,
+    #[serde(alias="Mod1")]
+    Alt,
+    Mod2,
+    Mod3,
+    Mod4,
+    Mod5,
 }
 
 #[derive(Debug, Clone, Deserialize, PartialEq)]
@@ -510,22 +530,27 @@ fn create_action<H: logging::Handler>(
         Action(Action),
         Text(String),
         Keysym(String),
+        Modifier(Modifier),
     };
     
     let submission = match (
         &symbol_meta.action,
         &symbol_meta.keysym,
-        &symbol_meta.text
+        &symbol_meta.text,
+        &symbol_meta.modifier,
     ) {
-        (Some(action), None, None) => SubmitData::Action(action.clone()),
-        (None, Some(keysym), None) => SubmitData::Keysym(keysym.clone()),
-        (None, None, Some(text)) => SubmitData::Text(text.clone()),
-        (None, None, None) => SubmitData::Text(name.into()),
+        (Some(action), None, None, None) => SubmitData::Action(action.clone()),
+        (None, Some(keysym), None, None) => SubmitData::Keysym(keysym.clone()),
+        (None, None, Some(text), None) => SubmitData::Text(text.clone()),
+        (None, None, None, Some(modifier)) => {
+            SubmitData::Modifier(modifier.clone())
+        },
+        (None, None, None, None) => SubmitData::Text(name.into()),
         _ => {
             warning_handler.handle(
                 logging::Level::Warning,
                 &format!(
-                    "Button {} has more than one of (action, keysym, text)",
+                    "Button {} has more than one of (action, keysym, text, modifier)",
                     name,
                 ),
             );
@@ -613,6 +638,26 @@ fn create_action<H: logging::Handler>(
                     false => format!("U{:04X}", codepoint as u32),
                 })
             }).collect(),
+        },
+        SubmitData::Modifier(modifier) => match modifier {
+            Modifier::Control => action::Action::ApplyModifier(
+                action::Modifier::Control,
+            ),
+            Modifier::Alt => action::Action::ApplyModifier(
+                action::Modifier::Alt,
+            ),
+            unsupported_modifier => {
+                warning_handler.handle(
+                    logging::Level::Bug,
+                    &format!(
+                        "Modifier {:?} unsupported", unsupported_modifier,
+                    ),
+                );
+                action::Action::Submit {
+                    text: None,
+                    keys: Vec::new(),
+                }
+            },
         },
     }
 }
@@ -711,6 +756,7 @@ mod tests {
                         keysym: None,
                         action: None,
                         text: None,
+                        modifier: None,
                         label: Some("test".into()),
                         outline: None,
                     }
@@ -852,6 +898,7 @@ mod tests {
                         keysym: None,
                         text: None,
                         action: None,
+                        modifier: None,
                         label: Some("test".into()),
                         outline: None,
                     }

@@ -10,8 +10,11 @@ pub struct KeySym(pub String);
 type View = String;
 
 /// Use to send modified keypresses
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Modifier {
+    /// Control and Alt are the only modifiers
+    /// which doesn't interfere with levels,
+    /// so it's simple to implement as levels are deprecated in squeekboard.
     Control,
     Alt,
 }
@@ -27,8 +30,8 @@ pub enum Action {
         /// When unlocked by pressing it or emitting a key
         unlock: View,
     },
-    /// Set this modifier TODO: release?
-    SetModifier(Modifier),
+    /// Hold this modifier for as long as the button is pressed
+    ApplyModifier(Modifier),
     /// Submit some text
     Submit {
         /// Text to submit with input-method.

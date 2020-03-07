@@ -23,6 +23,24 @@ pub enum PressType {
 
 pub type KeyCode = u32;
 
+bitflags!{
+    /// Map to `virtual_keyboard.modifiers` modifiers values
+    /// From https://www.x.org/releases/current/doc/kbproto/xkbproto.html#Keyboard_State
+    pub struct Modifiers: u8 {
+        const SHIFT = 0x1;
+        const LOCK = 0x2;
+        const CONTROL = 0x4;
+        /// Alt
+        const MOD1 = 0x8;
+        const MOD2 = 0x10;
+        const MOD3 = 0x20;
+        /// Meta
+        const MOD4 = 0x40;
+        /// AltGr
+        const MOD5 = 0x80;
+    }
+}
+
 /// When the submitted actions of keys need to be tracked,
 /// they need a stable, comparable ID
 #[derive(PartialEq)]
@@ -31,7 +49,7 @@ pub struct KeyStateId(*const KeyState);
 #[derive(Debug, Clone)]
 pub struct KeyState {
     pub pressed: PressType,
-    /// A cache of raw keycodes derived from Action::Sumbit given a keymap
+    /// A cache of raw keycodes derived from Action::Submit given a keymap
     pub keycodes: Vec<KeyCode>,
     /// Static description of what the key does when pressed or released
     pub action: Action,
@@ -42,6 +60,14 @@ impl KeyState {
     pub fn into_released(self) -> KeyState {
         KeyState {
             pressed: PressType::Released,
+            ..self
+        }
+    }
+
+    #[must_use]
+    pub fn into_pressed(self) -> KeyState {
+        KeyState {
+            pressed: PressType::Pressed,
             ..self
         }
     }

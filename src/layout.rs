@@ -26,10 +26,10 @@ use std::vec::Vec;
 
 use ::action::Action;
 use ::drawing;
-use ::keyboard::{ KeyState, PressType };
+use ::keyboard::KeyState;
 use ::logging;
 use ::manager;
-use ::submission::{ Submission, Timestamp };
+use ::submission::{ Submission, SubmitData, Timestamp };
 use ::util::find_max_double;
 
 // Traits
@@ -249,7 +249,7 @@ pub mod c {
         unsafe { Box::from_raw(layout) };
     }
 
-    /// Entry points for more complex procedures and algoithms which span multiple modules
+    /// Entry points for more complex procedures and algorithms which span multiple modules
     pub mod procedures {
         use super::*;
 
@@ -916,9 +916,38 @@ mod seat {
                 "Key {:?} was already pressed", rckey,
             );
         }
-        let mut key = rckey.borrow_mut();
-        submission.handle_press(&key, KeyState::get_id(rckey), time);
-        key.pressed = PressType::Pressed;
+        let key: KeyState = {
+            RefCell::borrow(rckey).clone()
+        };
+        let action = key.action.clone();
+        match action {
+            Action::Submit {
+                text: Some(text),
+                keys: _,
+            } => submission.handle_press(
+                KeyState::get_id(rckey),
+                SubmitData::Text(&text),
+                &key.keycodes,
+                time,
+            ),
+            Action::Submit {
+                text: None,
+                keys: _,
+            } => submission.handle_press(
+                KeyState::get_id(rckey),
+                SubmitData::Keycodes,
+                &key.keycodes,
+                time,
+            ),
+            Action::Erase => submission.handle_press(
+                KeyState::get_id(rckey),
+                SubmitData::Erase,
+                &key.keycodes,
+                time,
+            ),
+            _ => {},
+        };
+        RefCell::replace(rckey, key.into_pressed());
     }
 
     pub fn handle_release_key(
@@ -961,6 +990,18 @@ mod seat {
                     )
                     .apply()
             },
+            Action::ApplyModifier(modifier) => {
+                // FIXME: key id is unneeded with stateless locks
+                let key_id = KeyState::get_id(rckey);
+                let gets_locked = !submission.is_modifier_active(modifier.clone());
+                match gets_locked {
+                    true => submission.handle_add_modifier(
+                        key_id,
+                        modifier, time,
+                    ),
+                    false => submission.handle_drop_modifier(key_id, time),
+                }
+            }
             // only show when UI is present
             Action::ShowPreferences => if let Some(ui) = &ui {
                 // only show when layout manager is available
@@ -987,10 +1028,6 @@ mod seat {
                     }
                 }
             },
-            Action::SetModifier(_) => log_print!(
-                logging::Level::Bug,
-                "Modifiers unsupported",
-            ),
         };
 
         let pointer = ::util::Pointer(rckey.clone());
@@ -1006,6 +1043,7 @@ mod test {
     use super::*;
 
     use std::ffi::CString;
+    use ::keyboard::PressType;
 
     pub fn make_state() -> Rc<RefCell<::keyboard::KeyState>> {
         Rc::new(RefCell::new(::keyboard::KeyState {

@@ -1,6 +1,6 @@
 /*! Managing the events belonging to virtual-keyboard interface. */
 
-use ::keyboard::{ KeyCode, PressType };
+use ::keyboard::{ KeyCode, Modifiers, PressType };
 use ::layout::c::LevelKeyboard;
 use ::submission::Timestamp;
 
@@ -26,6 +26,11 @@ pub mod c {
             virtual_keyboard: ZwpVirtualKeyboardV1,
             keyboard: LevelKeyboard,
         );
+        
+        pub fn eek_virtual_keyboard_set_modifiers(
+            virtual_keyboard: ZwpVirtualKeyboardV1,
+            modifiers: u32,
+        );
     }
 }
 
@@ -33,7 +38,7 @@ pub mod c {
 pub struct VirtualKeyboard(pub c::ZwpVirtualKeyboardV1);
 
 impl VirtualKeyboard {
-    // TODO: split out keyboard state management
+    // TODO: error out if keymap not set
     pub fn switch(
         &self,
         keycodes: &Vec<KeyCode>,
@@ -68,12 +73,16 @@ impl VirtualKeyboard {
         }
     }
     
+    pub fn set_modifiers_state(&self, modifiers: Modifiers) {
+        let modifiers = modifiers.bits() as u32;
+        unsafe {
+            c::eek_virtual_keyboard_set_modifiers(self.0, modifiers);
+        }
+    }
+    
     pub fn update_keymap(&self, keyboard: LevelKeyboard) {
         unsafe {
-            c::eek_virtual_keyboard_update_keymap(
-                self.0,
-                keyboard,
-            );
+            c::eek_virtual_keyboard_update_keymap(self.0, keyboard);
         }
     }
 }

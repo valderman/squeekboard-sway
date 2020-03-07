@@ -191,8 +191,10 @@ render_button_label (cairo_t     *cr,
     g_object_unref (layout);
 }
 
+// FIXME: Pass just the active modifiers instead of entire submission
 void
 eek_renderer_render_keyboard (EekRenderer *self,
+                              struct submission *submission,
                                    cairo_t     *cr,
                               LevelKeyboard *keyboard)
 {
@@ -210,7 +212,7 @@ eek_renderer_render_keyboard (EekRenderer *self,
     cairo_scale (cr, self->widget_to_layout.scale, self->widget_to_layout.scale);
 
     squeek_draw_layout_base_view(keyboard->layout, self, cr);
-    squeek_layout_draw_all_changed(keyboard->layout, self, cr);
+    squeek_layout_draw_all_changed(keyboard->layout, self, cr, submission);
     cairo_restore (cr);
 }
 

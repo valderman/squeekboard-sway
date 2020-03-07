@@ -20,6 +20,12 @@ void eek_virtual_keyboard_update_keymap(struct zwp_virtual_keyboard_v1 *zwp_virt
         keyboard->keymap_fd, keyboard->keymap_len);
 }
 
+void
+eek_virtual_keyboard_set_modifiers(struct zwp_virtual_keyboard_v1 *zwp_virtual_keyboard_v1, uint32_t mods_depressed) {
+    zwp_virtual_keyboard_v1_modifiers(zwp_virtual_keyboard_v1,
+                                      mods_depressed, 0, 0, 0);
+}
+
 int squeek_output_add_listener(struct wl_output *wl_output,
                                 const struct wl_output_listener *listener, void *data) {
     return wl_output_add_listener(wl_output, listener, data);

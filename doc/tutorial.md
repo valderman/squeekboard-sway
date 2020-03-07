@@ -31,7 +31,7 @@ So at least I will try to start writing a short how-to here and edit this post a
 **Running squeekboard**
 
 * Follow these instructions to run squeekboard: [https://source.puri.sm/Librem5/squeekboard/blob/master/README.md#running ](https://source.puri.sm/Librem5/squeekboard/blob/master/README.md#running)
-* Additionally take a look at https://source.puri.sm/Librem5/squeekboard/blob/master/HACKING.md#testing
+* Additionally take a look at the contribution document for [testing info](HACKING.md#testing)
 * You can either test it locally on your Linux system or use the [QEMU Librem 5 image ](https://developer.puri.sm/Librem5/Development_Environment/Boards/emulators.html)
 * To test squeekboard locally, you need phoc. Either compile that from the sources as well or use the CI repository ci.puri.sm for Debian based systems:
   `deb [arch=amd64] http://ci.puri.sm/ scratch librem5`
