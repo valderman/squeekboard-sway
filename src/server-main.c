@@ -228,9 +228,9 @@ main (int argc, char **argv)
         error = NULL;
         connection = g_bus_get_sync (G_BUS_TYPE_SESSION, NULL, &error);
         if (connection == NULL) {
-            g_printerr ("Can't connect to the bus: %s\n", error->message);
+            g_printerr ("Can't connect to the bus: %s. "
+                        "Visibility switching unavailable.", error->message);
             g_error_free (error);
-            exit (1);
         }
         break;
     case G_BUS_TYPE_NONE:
@@ -252,25 +252,28 @@ main (int argc, char **argv)
         g_assert_not_reached ();
         break;
     }
+    guint owner_id = 0;
+    DBusHandler *service = NULL;
+    if (connection) {
+        service = dbus_handler_new(connection, DBUS_SERVICE_PATH);
 
-    DBusHandler *service = dbus_handler_new(connection, DBUS_SERVICE_PATH);
+        if (service == NULL) {
+            g_printerr ("Can't create dbus server\n");
+            exit (1);
+        }
+        instance.dbus_handler = service;
 
-    if (service == NULL) {
-        g_printerr ("Can't create dbus server\n");
-        exit (1);
-    }
-    instance.dbus_handler = service;
-
-    guint owner_id = g_bus_own_name_on_connection (connection,
-                                             DBUS_SERVICE_INTERFACE,
-                                             G_BUS_NAME_OWNER_FLAGS_NONE,
-                                             on_name_acquired,
-                                             on_name_lost,
-                                             NULL,
-                                             NULL);
-    if (owner_id == 0) {
-        g_printerr ("Can't own the name\n");
-        exit (1);
+        owner_id = g_bus_own_name_on_connection (connection,
+                                                 DBUS_SERVICE_INTERFACE,
+                                                 G_BUS_NAME_OWNER_FLAGS_NONE,
+                                                 on_name_acquired,
+                                                 on_name_lost,
+                                                 NULL,
+                                                 NULL);
+        if (owner_id == 0) {
+            g_printerr ("Can't own the name\n");
+            exit (1);
+        }
     }
 
     instance.submission = get_submission(instance.wayland.input_method_manager,
@@ -304,9 +307,15 @@ main (int argc, char **argv)
 
     g_main_loop_run (loop);
 
-    g_bus_unown_name (owner_id);
-    g_object_unref (service);
-    g_object_unref (connection);
+    if (connection) {
+        if (service) {
+            if (owner_id != 0) {
+                g_bus_unown_name (owner_id);
+            }
+            g_object_unref (service);
+        }
+        g_object_unref (connection);
+    }
     g_main_loop_unref (loop);
 
     squeek_wayland_deinit (&instance.wayland);

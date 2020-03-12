@@ -132,19 +132,40 @@ fn make_menu_builder(inputs: Vec<(&str, OwnedTranslation)>) -> gtk::Builder {
     )
 }
 
+fn get_settings(schema_name: &str) -> Option<gio::Settings> {
+    let mut error_handler = logging::Print{};
+    gio::SettingsSchemaSource::get_default()
+        .or_warn(
+            &mut error_handler,
+            logging::Problem::Surprise,
+            "No gsettings schemas installed.",
+        )
+        .and_then(|sss| 
+            sss.lookup(schema_name, true)
+                .or_warn(
+                    &mut error_handler,
+                    logging::Problem::Surprise,
+                    &format!("Gsettings schema {} not installed", schema_name),
+                )
+        )
+        .map(|_sschema| gio::Settings::new(schema_name))
+}
+
 fn set_layout(kind: String, name: String) {
-    let settings = gio::Settings::new("org.gnome.desktop.input-sources");
-    let inputs = settings.get_value("sources").unwrap();
-    let current = (kind.clone(), name.clone());
-    let inputs = variants::get_tuples(inputs).into_iter()
-        .filter(|t| t != &current);
-    let inputs = vec![(kind, name)].into_iter()
-        .chain(inputs).collect();
-    settings.set_value(
-        "sources",
-        &variants::ArrayPairString(inputs).to_variant(),
-    );
-    settings.apply();
+    let settings = get_settings("org.gnome.desktop.input-sources");
+    if let Some(settings) = settings {
+        let inputs = settings.get_value("sources").unwrap();
+        let current = (kind.clone(), name.clone());
+        let inputs = variants::get_tuples(inputs).into_iter()
+            .filter(|t| t != &current);
+        let inputs = vec![(kind, name)].into_iter()
+            .chain(inputs).collect();
+        settings.set_value(
+            "sources",
+            &variants::ArrayPairString(inputs).to_variant(),
+        );
+        settings.apply();
+    }
 }
 
 /// A reference to what the user wants to see
@@ -284,9 +305,13 @@ pub fn show(
     let overlay_layouts = resources::get_overlays().into_iter()
         .map(|name| LayoutId::Local(name.to_string()));
 
-    let settings = gio::Settings::new("org.gnome.desktop.input-sources");
-    let inputs = settings.get_value("sources").unwrap();
-    let inputs = variants::get_tuples(inputs);
+    let settings = get_settings("org.gnome.desktop.input-sources");
+    let inputs = settings
+        .map(|settings| {
+            let inputs = settings.get_value("sources").unwrap();
+            variants::get_tuples(inputs)
+        })
+        .unwrap_or_else(|| Vec::new());
     
     let system_layouts: Vec<LayoutId> = inputs.into_iter()
         .map(|(kind, name)| LayoutId::System { kind, name })

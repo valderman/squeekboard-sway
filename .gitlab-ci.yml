@@ -92,5 +92,5 @@ check_release:
     refs:
       - master
   script:
-    - apt-get install git python3
+    - apt-get -y install git python3
     - (head -n 1 ./debian/changelog && git tag) | ./debian/check_release.py
