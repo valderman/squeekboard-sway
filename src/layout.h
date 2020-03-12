@@ -9,10 +9,19 @@
 #include "eek/eek-types.h"
 #include "src/submission.h"
 #include "virtual-keyboard-unstable-v1-client-protocol.h"
+#include "text-input-unstable-v3-client-protocol.h"
 
 enum squeek_arrangement_kind {
     ARRANGEMENT_KIND_BASE = 0,
     ARRANGEMENT_KIND_WIDE = 1,
+};
+
+struct squeek_layout_state {
+    enum squeek_arrangement_kind arrangement;
+    enum zwp_text_input_v3_content_purpose purpose;
+    enum zwp_text_input_v3_content_hint hint;
+    char *layout_name;
+    char *overlay_name;
 };
 
 struct squeek_layout;

@@ -41,23 +41,15 @@
 #include "src/layout.h"
 #include "src/submission.h"
 
-enum {
-    PROP_0,
-    PROP_LAST
-};
-
-/* since 2.91.5 GDK_DRAWABLE was removed and gdk_cairo_create takes
-   GdkWindow as the argument */
-#ifndef GDK_DRAWABLE
-#define GDK_DRAWABLE(x) (x)
-#endif
 
 typedef struct _EekGtkKeyboardPrivate
 {
     EekRenderer *renderer;
     EekboardContextService *eekboard_context; // unowned reference
     struct submission *submission; // unowned reference
-    LevelKeyboard *keyboard; // unowned reference; it's kept in server-context (FIXME)
+
+    struct squeek_layout_state *layout;
+    LevelKeyboard *keyboard; // unowned reference; it's kept in server-context
 
     GdkEventSequence *sequence; // unowned reference
 } EekGtkKeyboardPrivate;
@@ -88,10 +80,16 @@ eek_gtk_keyboard_real_draw (GtkWidget *self,
     GtkAllocation allocation;
     gtk_widget_get_allocation (self, &allocation);
 
+    if (!priv->keyboard) {
+        return FALSE;
+    }
+
     if (!priv->renderer) {
         PangoContext *pcontext = gtk_widget_get_pango_context (self);
 
-        priv->renderer = eek_renderer_new (priv->keyboard, pcontext);
+        priv->renderer = eek_renderer_new (
+                    priv->keyboard,
+                    pcontext);
 
         eek_renderer_set_allocation_size (priv->renderer,
                                           allocation.width,
@@ -103,12 +101,30 @@ eek_gtk_keyboard_real_draw (GtkWidget *self,
     return FALSE;
 }
 
+static enum squeek_arrangement_kind get_type(uint32_t width, uint32_t height) {
+    (void)height;
+    if (width < 540) {
+        return ARRANGEMENT_KIND_BASE;
+    }
+    return ARRANGEMENT_KIND_WIDE;
+}
+
 static void
 eek_gtk_keyboard_real_size_allocate (GtkWidget     *self,
                                      GtkAllocation *allocation)
 {
     EekGtkKeyboardPrivate *priv =
         eek_gtk_keyboard_get_instance_private (EEK_GTK_KEYBOARD (self));
+
+    // check if the change would switch types
+    enum squeek_arrangement_kind new_type = get_type(
+                (uint32_t)(allocation->width - allocation->x),
+                (uint32_t)(allocation->height - allocation->y));
+    if (priv->layout->arrangement != new_type) {
+        priv->layout->arrangement = new_type;
+
+        eekboard_context_service_use_layout(priv->eekboard_context, priv->layout);
+    }
 
     if (priv->renderer)
         eek_renderer_set_allocation_size (priv->renderer,
@@ -123,7 +139,9 @@ static void depress(EekGtkKeyboard *self,
                     gdouble x, gdouble y, guint32 time)
 {
     EekGtkKeyboardPrivate *priv = eek_gtk_keyboard_get_instance_private (self);
-
+    if (!priv->keyboard) {
+        return;
+    }
     squeek_layout_depress(priv->keyboard->layout,
                           priv->submission,
                           x, y, eek_renderer_get_transformation(priv->renderer), time, self);
@@ -133,7 +151,10 @@ static void drag(EekGtkKeyboard *self,
                  gdouble x, gdouble y, guint32 time)
 {
     EekGtkKeyboardPrivate *priv = eek_gtk_keyboard_get_instance_private (self);
-    squeek_layout_drag(priv->keyboard->layout,
+    if (!priv->keyboard) {
+        return;
+    }
+    squeek_layout_drag(eekboard_context_service_get_keyboard(priv->eekboard_context)->layout,
                        priv->submission,
                        x, y, eek_renderer_get_transformation(priv->renderer), time,
                        priv->eekboard_context, self);
@@ -142,8 +163,10 @@ static void drag(EekGtkKeyboard *self,
 static void release(EekGtkKeyboard *self, guint32 time)
 {
     EekGtkKeyboardPrivate *priv = eek_gtk_keyboard_get_instance_private (self);
-
-    squeek_layout_release(priv->keyboard->layout,
+    if (!priv->keyboard) {
+        return;
+    }
+    squeek_layout_release(eekboard_context_service_get_keyboard(priv->eekboard_context)->layout,
                           priv->submission,
                           eek_renderer_get_transformation(priv->renderer), time,
                           priv->eekboard_context, self);
@@ -310,26 +333,46 @@ eek_gtk_keyboard_init (EekGtkKeyboard *self)
     (void)self;
 }
 
+static void
+on_notify_keyboard (GObject              *object,
+                    GParamSpec           *spec,
+                    EekGtkKeyboard *self) {
+    (void)spec;
+    EekGtkKeyboardPrivate *priv = (EekGtkKeyboardPrivate*)eek_gtk_keyboard_get_instance_private (self);
+    priv->keyboard = eekboard_context_service_get_keyboard(EEKBOARD_CONTEXT_SERVICE(object));
+    if (priv->renderer) {
+        g_object_unref(priv->renderer);
+    }
+    priv->renderer = NULL;
+    gtk_widget_queue_draw(GTK_WIDGET(self));
+}
+
 /**
- * eek_gtk_keyboard_new:
- * @keyboard: an #EekKeyboard
- *
  * Create a new #GtkWidget displaying @keyboard.
  * Returns: a #GtkWidget
  */
 GtkWidget *
-eek_gtk_keyboard_new (LevelKeyboard *keyboard, EekboardContextService *eekservice,
-                      struct submission *submission)
+eek_gtk_keyboard_new (EekboardContextService *eekservice,
+                      struct submission *submission,
+                      struct squeek_layout_state *layout)
 {
     EekGtkKeyboard *ret = EEK_GTK_KEYBOARD(g_object_new (EEK_TYPE_GTK_KEYBOARD, NULL));
     EekGtkKeyboardPrivate *priv = (EekGtkKeyboardPrivate*)eek_gtk_keyboard_get_instance_private (ret);
-    priv->keyboard = keyboard;
     priv->eekboard_context = eekservice;
     priv->submission = submission;
+    priv->layout = layout;
+    priv->renderer = NULL;
+    g_signal_connect (eekservice,
+                      "notify::keyboard",
+                      G_CALLBACK(on_notify_keyboard),
+                      ret);
+    on_notify_keyboard(G_OBJECT(eekservice), NULL, ret);
+    /* TODO: this is how a compound keyboard
+     * made out of a layout and a suggestion bar could start.
+     * GtkBox *box = GTK_BOX(gtk_box_new(GTK_ORIENTATION_VERTICAL, 0));
+    GtkEntry *fill = GTK_ENTRY(gtk_entry_new());
+    gtk_box_pack_start(box, GTK_WIDGET(fill), FALSE, FALSE, 0);
+    gtk_box_pack_start(box, GTK_WIDGET(ret), TRUE, TRUE, 0);
+    return GTK_WIDGET(box);*/
     return GTK_WIDGET(ret);
-}
-
-EekRenderer *eek_gtk_keyboard_get_renderer(EekGtkKeyboard *self) {
-    EekGtkKeyboardPrivate *priv = eek_gtk_keyboard_get_instance_private (self);
-    return priv->renderer;
 }

@@ -30,8 +30,6 @@
 
 enum {
     PROP_0,
-    PROP_SIZE_CONSTRAINT_LANDSCAPE,
-    PROP_SIZE_CONSTRAINT_PORTRAIT,
     PROP_VISIBLE,
     PROP_LAST
 };
@@ -44,16 +42,13 @@ struct _ServerContextService {
     EekboardContextService *state; // unowned
     /// Needed for instantiating the widget
     struct submission *submission; // unowned
+    struct squeek_layout_state *layout;
 
     gboolean visible;
     PhoshLayerSurface *window;
     GtkWidget *widget; // nullable
     guint hiding;
     guint last_requested_height;
-    enum squeek_arrangement_kind last_type;
-
-    gdouble size_constraint_landscape[2];
-    gdouble size_constraint_portrait[2];
 };
 
 struct _ServerContextServiceClass {
@@ -73,27 +68,6 @@ on_destroy (GtkWidget *widget, gpointer user_data)
     context->widget = NULL;
 
     //eekboard_context_service_destroy (EEKBOARD_CONTEXT_SERVICE (context));
-}
-
-static void
-make_widget (ServerContextService *context);
-
-static void
-on_notify_keyboard (GObject              *object,
-                    GParamSpec           *spec,
-                    ServerContextService *context)
-{
-    /* Recreate the keyboard widget to keep in sync with the keymap. */
-    if (context->window)
-        make_widget(context);
-
-    gboolean visible;
-    g_object_get (context, "visible", &visible, NULL);
-
-    if (visible) {
-        server_context_service_hide_keyboard(context);
-        server_context_service_show_keyboard(context);
-    }
 }
 
 static void
@@ -124,14 +98,6 @@ calculate_height(int32_t width)
     return height;
 }
 
-enum squeek_arrangement_kind get_type(uint32_t width, uint32_t height) {
-    (void)height;
-    if (width < 540) {
-        return ARRANGEMENT_KIND_BASE;
-    }
-    return ARRANGEMENT_KIND_WIDE;
-}
-
 static void
 on_surface_configure(PhoshLayerSurface *surface, ServerContextService *context)
 {
@@ -141,12 +107,6 @@ on_surface_configure(PhoshLayerSurface *surface, ServerContextService *context)
                  "configured-width", &width,
                  "configured-height", &height,
                  NULL);
-    // check if the change would switch types
-    enum squeek_arrangement_kind new_type = get_type((uint32_t)width, (uint32_t)height);
-    if (context->last_type != new_type) {
-        context->last_type = new_type;
-        eekboard_context_service_update_layout(context->state, context->last_type);
-    }
 
     guint desired_height = calculate_height(width);
     guint configured_height = (guint)height;
@@ -224,14 +184,11 @@ make_widget (ServerContextService *context)
         gtk_widget_destroy(context->widget);
         context->widget = NULL;
     }
-
-    LevelKeyboard *keyboard = eekboard_context_service_get_keyboard (context->state);
-
-    context->widget = eek_gtk_keyboard_new (keyboard, context->state, context->submission);
+    context->widget = eek_gtk_keyboard_new (context->state, context->submission, context->layout);
 
     gtk_widget_set_has_tooltip (context->widget, TRUE);
     gtk_container_add (GTK_CONTAINER(context->window), context->widget);
-    gtk_widget_show (context->widget);
+    gtk_widget_show_all(context->widget);
 }
 
 static gboolean
@@ -296,21 +253,8 @@ server_context_service_set_property (GObject      *object,
                                      GParamSpec   *pspec)
 {
     ServerContextService *context = SERVER_CONTEXT_SERVICE(object);
-    GVariant *variant;
 
     switch (prop_id) {
-    case PROP_SIZE_CONSTRAINT_LANDSCAPE:
-        variant = g_value_get_variant (value);
-        g_variant_get (variant, "(dd)",
-                       &context->size_constraint_landscape[0],
-                       &context->size_constraint_landscape[1]);
-        break;
-    case PROP_SIZE_CONSTRAINT_PORTRAIT:
-        variant = g_value_get_variant (value);
-        g_variant_get (variant, "(dd)",
-                       &context->size_constraint_portrait[0],
-                       &context->size_constraint_portrait[1]);
-        break;
     case PROP_VISIBLE:
         context->visible = g_value_get_boolean (value);
         break;
@@ -359,26 +303,6 @@ server_context_service_class_init (ServerContextServiceClass *klass)
     gobject_class->get_property = server_context_service_get_property;
     gobject_class->dispose = server_context_service_dispose;
 
-    pspec = g_param_spec_variant ("size-constraint-landscape",
-                                  "Size constraint landscape",
-                                  "Size constraint landscape",
-                                  G_VARIANT_TYPE("(dd)"),
-                                  NULL,
-                                  G_PARAM_WRITABLE);
-    g_object_class_install_property (gobject_class,
-                                     PROP_SIZE_CONSTRAINT_LANDSCAPE,
-                                     pspec);
-
-    pspec = g_param_spec_variant ("size-constraint-portrait",
-                                  "Size constraint portrait",
-                                  "Size constraint portrait",
-                                  G_VARIANT_TYPE("(dd)"),
-                                  NULL,
-                                  G_PARAM_WRITABLE);
-    g_object_class_install_property (gobject_class,
-                                     PROP_SIZE_CONSTRAINT_PORTRAIT,
-                                     pspec);
-
     /**
      * Flag to indicate if keyboard is visible or not.
      */
@@ -398,19 +322,11 @@ server_context_service_init (ServerContextService *state) {
 }
 
 ServerContextService *
-server_context_service_new (EekboardContextService *state, struct submission *submission)
+server_context_service_new (EekboardContextService *state, struct submission *submission, struct squeek_layout_state *layout)
 {
     ServerContextService *ui = g_object_new (SERVER_TYPE_CONTEXT_SERVICE, NULL);
     ui->submission = submission;
     ui->state = state;
-    g_signal_connect (state,
-                      "notify::keyboard",
-                      G_CALLBACK(on_notify_keyboard),
-                      ui);
+    ui->layout = layout;
     return ui;
-}
-
-enum squeek_arrangement_kind server_context_service_get_layout_type(ServerContextService *service)
-{
-    return service->last_type;
 }

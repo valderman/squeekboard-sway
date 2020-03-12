@@ -57,8 +57,8 @@ typedef struct _EekboardContextServicePrivate EekboardContextServicePrivate;
  */
 struct _EekboardContextService {
     GObject parent;
-
     EekboardContextServicePrivate *priv;
+    struct squeek_layout_state *layout; // Unowned
 };
 
 /**
@@ -85,7 +85,7 @@ struct _EekboardContextServiceClass {
 
 GType         eekboard_context_service_get_type
                                               (void) G_GNUC_CONST;
-EekboardContextService *eekboard_context_service_new(void);
+EekboardContextService *eekboard_context_service_new(struct squeek_layout_state *state);
 void eekboard_context_service_set_submission(EekboardContextService *context, struct submission *submission);
 void eekboard_context_service_set_ui(EekboardContextService *context, ServerContextService *ui);
 void          eekboard_context_service_destroy (EekboardContextService *context);
@@ -98,6 +98,6 @@ void eekboard_context_service_set_hint_purpose(EekboardContextService *context,
                                                uint32_t hint,
                                                uint32_t purpose);
 void
-eekboard_context_service_update_layout(EekboardContextService *context, enum squeek_arrangement_kind t);
+eekboard_context_service_use_layout(EekboardContextService *context, struct squeek_layout_state *layout);
 G_END_DECLS
 #endif  /* EEKBOARD_CONTEXT_SERVICE_H */
