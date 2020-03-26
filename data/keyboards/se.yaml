@@ -47,17 +47,17 @@ buttons:
     show_numbers:
         action:
             set_view: "numbers"
-        outline: "altline"
+        outline: "wide"
         label: "123"
     show_letters:
         action:
             set_view: "base"
-        outline: "altline"
+        outline: "wide"
         label: "ABC"
     show_symbols:
         action:
             set_view: "symbols"
-        outline: "altline"
+        outline: "wide"
         label: "*/="
     ".":
         outline: altline
