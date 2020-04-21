@@ -30,7 +30,7 @@ views:
     eschars:
         - "â Â à À æ Æ ä î Î ï"
         - "ê Ê è È œ Œ ë é É ö"
-        - "show_numbers   ÿ ç Ç ù û ü ô Ô  BackSpace"
+        - "show_numbers   ÿ ç ù û ü ô Ô  BackSpace"
         - "show_letters show_eschars preferences         space        « » Return"
 
 buttons:
