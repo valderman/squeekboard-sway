@@ -2,36 +2,36 @@
 outlines:
     default:   { width: 35.33, height: 52 }
     altline:   { width: 52.67, height: 52 }
-    wide:      { width: 62,    height: 52 }
-    spaceline: { width: 99.67, height: 52 }
+    wide:      { width: 59,    height: 52 }
+    spaceline: { width: 140,   height: 52 }
     special:   { width: 44,    height: 52 }
 
 views:
     base:
         - "a z e r t y u i o p"
         - "q s d f g h j k l m"
-        - "Shift_L   w x c v b n ç   BackSpace"
-        - "show_numbers show_eschars preferences         space        , period Return"
+        - "Shift_L   w x c v b n .   BackSpace"
+        - "show_numbers preferences         space        show_eschars Return"
     upper:
         - "A Z E R T Y U I O P"
         - "Q S D F G H J K L M"
-        - "Shift_L   W X C V B N Ç  BackSpace"
-        - "show_numbers show_eschars preferences         space        ? period Return"
+        - "Shift_L   W X C V B N ,  BackSpace"
+        - "show_numbers preferences         space        show_eschars Return"
     numbers:
         - "1 2 3 4 5 6 7 8 9 0"
         - "@ # € % & - _ + ( )"
         - "show_symbols   , \" ' colon ; ! ?  BackSpace"
-        - "show_letters show_eschars preferences         space        ? period Return"
+        - "show_letters preferences         space        show_eschars Return"
     symbols:
         - "~ ` | · √ π τ ÷ × ¶"
         - "© ® £ $ ¥ ^ ° * { }"
-        - "show_numbers   \\ / < > = [ ]  BackSpace"
-        - "show_letters show_eschars preferences         space        ? period Return"
+        - "show_numbers_from_symbols   \\ / < > = [ ]  BackSpace"
+        - "show_letters preferences         space        show_eschars Return"
     eschars:
         - "â Â à À æ Æ ä î Î ï"
         - "ê Ê è È œ Œ ë é É ö"
         - "show_numbers   ÿ ç ù û ü ô Ô  BackSpace"
-        - "show_letters show_eschars preferences         space        « » Return"
+        - "show_letters preferences         space        show_eschars Return"
 
 buttons:
     Shift_L:
@@ -44,12 +44,17 @@ buttons:
     BackSpace:
         outline: "altline"
         icon: "edit-clear-symbolic"
-        action: "erase"
+        action: erase
     preferences:
         action: "show_prefs"
-        outline: "default"
+        outline: "special"
         icon: "keyboard-mode-symbolic"
     show_numbers:
+        action:
+            set_view: "numbers"
+        outline: "wide"
+        label: "123"
+    show_numbers_from_symbols:
         action:
             set_view: "numbers"
         outline: "altline"
@@ -57,7 +62,7 @@ buttons:
     show_letters:
         action:
             set_view: "base"
-        outline: "altline"
+        outline: "wide"
         label: "abc"
     show_symbols:
         action:
@@ -71,14 +76,11 @@ buttons:
                 unlock_view: "base"
         outline: "altline"
         label: "âÂ"
-    period:
-        outline: "default"
-        text: "."
     space:
         outline: "spaceline"
         text: " "
     Return:
-        outline: "altline"
+        outline: "wide"
         icon: "key-enter"
         keysym: "Return"
     colon:
