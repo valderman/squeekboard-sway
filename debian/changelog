@@ -1,3 +1,23 @@
+squeekboard (1.9.1) amber-phone; urgency=medium
+
+  [ Dorota Czaplejewicz ]
+  * layout: Improve press handling
+  * settings: Handle empty settings
+  * Variant: Use proper pointer conversion between C and Rust
+  * meta: Add doap file
+  * modifiers: Support Control and Alt
+  * CI: Test that any bump to changelog has a corresponding tag
+  * docs: Add the guiding principle
+  * hacking: Move into docs/
+
+  [ &t ]
+  * Fix minor comment typos
+
+  [ Dorota Czaplejewicz ]
+  * cargo: Bump package versions before release
+
+ -- Dorota Czaplejewicz <dorota.czaplejewicz@puri.sm>  Sun, 08 Mar 2020 10:04:29 +0000
+
 squeekboard (1.9.0) amber-phone; urgency=medium
 
   [ Dorota Czaplejewicz ]
