@@ -47,8 +47,7 @@ gchar *             eek_keyboard_get_keymap
                                      (LevelKeyboard *keyboard);
 
 LevelKeyboard*
-level_keyboard_new (const gchar            *keyboard_type,
-                    enum squeek_arrangement_kind t);
+level_keyboard_new (struct squeek_layout *layout);
 void level_keyboard_free(LevelKeyboard *self);
 
 G_END_DECLS

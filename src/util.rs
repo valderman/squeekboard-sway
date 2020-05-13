@@ -98,7 +98,8 @@ pub mod c {
             Rc::from_raw(self.0)
         }
         
-        /// Creates a new Rc reference to the same data
+        /// Creates a new Rc reference to the same data.
+        /// Use for accessing the underlying data as a reference.
         pub fn clone_ref(&self) -> Rc<RefCell<T>> {
             // A bit dangerous: the Rc may be in use elsewhere
             let used_rc = unsafe { Rc::from_raw(self.0) };
@@ -130,6 +131,7 @@ pub mod c {
     impl<T> COpaquePtr for Wrapped<T> {}
 }
 
+/// Clones the underlying data structure, like ToOwned.
 pub trait CloneOwned {
     type Owned;
     fn clone_owned(&self) -> Self::Owned;

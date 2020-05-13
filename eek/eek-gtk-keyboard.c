@@ -44,11 +44,11 @@
 
 typedef struct _EekGtkKeyboardPrivate
 {
-    EekRenderer *renderer;
+    EekRenderer *renderer; // owned, nullable
     EekboardContextService *eekboard_context; // unowned reference
     struct submission *submission; // unowned reference
 
-    struct squeek_layout_state *layout;
+    struct squeek_layout_state *layout; // unowned
     LevelKeyboard *keyboard; // unowned reference; it's kept in server-context
 
     GdkEventSequence *sequence; // unowned reference
@@ -92,18 +92,21 @@ eek_gtk_keyboard_real_draw (GtkWidget *self,
                     pcontext);
 
         eek_renderer_set_allocation_size (priv->renderer,
+                                          priv->keyboard->layout,
                                           allocation.width,
                                           allocation.height);
         eek_renderer_set_scale_factor (priv->renderer,
                                        gtk_widget_get_scale_factor (self));
     }
-    eek_renderer_render_keyboard (priv->renderer, priv->submission, cr);
+
+    eek_renderer_render_keyboard (priv->renderer, priv->submission, cr, priv->keyboard);
     return FALSE;
 }
 
+// Units of pixel size
 static enum squeek_arrangement_kind get_type(uint32_t width, uint32_t height) {
     (void)height;
-    if (width < 540) {
+    if (width < 1080) {
         return ARRANGEMENT_KIND_BASE;
     }
     return ARRANGEMENT_KIND_WIDE;
@@ -115,11 +118,11 @@ eek_gtk_keyboard_real_size_allocate (GtkWidget     *self,
 {
     EekGtkKeyboardPrivate *priv =
         eek_gtk_keyboard_get_instance_private (EEK_GTK_KEYBOARD (self));
-
+    uint32_t scale = (uint32_t)gtk_widget_get_scale_factor(self);
     // check if the change would switch types
     enum squeek_arrangement_kind new_type = get_type(
-                (uint32_t)(allocation->width - allocation->x),
-                (uint32_t)(allocation->height - allocation->y));
+                (uint32_t)(allocation->width - allocation->x) * scale,
+                (uint32_t)(allocation->height - allocation->y) * scale);
     if (priv->layout->arrangement != new_type) {
         priv->layout->arrangement = new_type;
 
@@ -128,6 +131,7 @@ eek_gtk_keyboard_real_size_allocate (GtkWidget     *self,
 
     if (priv->renderer)
         eek_renderer_set_allocation_size (priv->renderer,
+                                          priv->keyboard->layout,
                                           allocation->width,
                                           allocation->height);
 
@@ -286,7 +290,7 @@ eek_gtk_keyboard_dispose (GObject *object)
     EekGtkKeyboardPrivate *priv = eek_gtk_keyboard_get_instance_private (self);
 
     if (priv->renderer) {
-        g_object_unref (priv->renderer);
+        eek_renderer_free(priv->renderer);
         priv->renderer = NULL;
         priv->renderer = NULL;
     }
@@ -341,7 +345,7 @@ on_notify_keyboard (GObject              *object,
     EekGtkKeyboardPrivate *priv = (EekGtkKeyboardPrivate*)eek_gtk_keyboard_get_instance_private (self);
     priv->keyboard = eekboard_context_service_get_keyboard(EEKBOARD_CONTEXT_SERVICE(object));
     if (priv->renderer) {
-        g_object_unref(priv->renderer);
+        eek_renderer_free(priv->renderer);
     }
     priv->renderer = NULL;
     gtk_widget_queue_draw(GTK_WIDGET(self));

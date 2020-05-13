@@ -27,30 +27,34 @@
 #include "eek-types.h"
 #include "src/submission.h"
 
-G_BEGIN_DECLS
+struct squeek_layout;
 
-#define EEK_TYPE_RENDERER (eek_renderer_get_type())
-G_DECLARE_DERIVABLE_TYPE (EekRenderer, eek_renderer, EEK, RENDERER, GObject)
-
-struct _EekRendererClass
+/// Renders LevelKayboards
+/// It cannot adjust styles at runtime.
+typedef struct EekRenderer
 {
-    GObjectClass parent_class;
+    PangoContext *pcontext; // owned
+    GtkCssProvider *css_provider; // owned
+    GtkStyleContext *view_context; // owned
+    GtkStyleContext *button_context; // TODO: maybe move a copy to each button
+    /// Style class for rendering the view and button CSS.
+    gchar *extra_style; // owned
 
-    cairo_surface_t *(* get_icon_surface)   (EekRenderer *self,
-                                             const gchar *icon_name,
-                                             gint         size,
-                                             gint         scale);
+    // Mutable state
+    /// Background extents
+    gdouble allocation_width;
+    gdouble allocation_height;
+    gint scale_factor; /* the outputs scale factor */
+    /// Coords transformation
+    struct transformation widget_to_layout;
+} EekRenderer;
 
-    /*< private >*/
-    /* padding */
-    gpointer pdummy[23];
-};
 
 GType            eek_renderer_get_type         (void) G_GNUC_CONST;
 EekRenderer     *eek_renderer_new              (LevelKeyboard     *keyboard,
                                                 PangoContext    *pcontext);
 void             eek_renderer_set_allocation_size
-                                               (EekRenderer     *renderer,
+                                               (EekRenderer     *renderer, struct squeek_layout *layout,
                                                 gdouble          width,
                                                 gdouble          height);
 void             eek_renderer_set_scale_factor (EekRenderer     *renderer,
@@ -61,7 +65,9 @@ cairo_surface_t *eek_renderer_get_icon_surface(const gchar     *icon_name,
                                                 gint             scale);
 
 void             eek_renderer_render_keyboard  (EekRenderer     *renderer, struct submission *submission,
-                                                cairo_t         *cr);
+                                                cairo_t         *cr, LevelKeyboard *keyboard);
+void
+eek_renderer_free (EekRenderer        *self);
 
 struct transformation
 eek_renderer_get_transformation (EekRenderer *renderer);

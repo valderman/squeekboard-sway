@@ -38,10 +38,8 @@ void level_keyboard_free(LevelKeyboard *self) {
 }
 
 LevelKeyboard*
-level_keyboard_new (const gchar            *keyboard_type,
-                    enum squeek_arrangement_kind t)
+level_keyboard_new (struct squeek_layout *layout)
 {
-    struct squeek_layout *layout = squeek_load_layout(keyboard_type, t);
     LevelKeyboard *keyboard = g_new0(LevelKeyboard, 1);
 
     if (!keyboard) {
