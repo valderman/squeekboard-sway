@@ -27,6 +27,7 @@ const KEYBOARDS: &[(*const str, *const str)] = &[
     ("number", include_str!("../data/keyboards/number.yaml")),
     ("pl", include_str!("../data/keyboards/pl.yaml")),
     ("pl_wide", include_str!("../data/keyboards/pl_wide.yaml")),
+    ("ru", include_str!("../data/keyboards/ru.yaml")),
     ("se", include_str!("../data/keyboards/se.yaml")),
     // layout+overlay
     ("terminal", include_str!("../data/keyboards/terminal.yaml")),
@@ -68,6 +69,7 @@ const LAYOUT_NAMES: &[(*const str, *const str)] = &[
     ("es-ES", include_str!("../data/langs/es-ES.txt")),
     ("ja-JP", include_str!("../data/langs/ja-JP.txt")),
     ("pl-PL", include_str!("../data/langs/pl-PL.txt")),
+    ("ru-RU", include_str!("../data/langs/ru-RU.txt")),
 ];
 
 pub fn get_layout_names(lang: &str)
