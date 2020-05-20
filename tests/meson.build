@@ -59,6 +59,7 @@ foreach layout : [
     'no',
     'number',
     'pl', 'pl_wide',
+    'ru',
     'se',
     'terminal',
     
