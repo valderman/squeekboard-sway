@@ -42,6 +42,7 @@ endif
 prefix = get_option('prefix')
 bindir = join_paths(prefix, get_option('bindir'))
 datadir = join_paths(prefix, get_option('datadir'))
+desktopdir = join_paths(datadir, 'applications')
 pkgdatadir = join_paths(datadir, meson.project_name())
 if get_option('depdatadir') == ''
   depdatadir = datadir

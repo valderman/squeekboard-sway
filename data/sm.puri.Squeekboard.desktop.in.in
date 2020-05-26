@@ -2,7 +2,7 @@
 Name=Squeekboard
 GenericName=Squeekboard Virtual Keyboard
 Comment=Virtual Keyboard
-Exec=squeekboard
+Exec=@bindir@/squeekboard
 Terminal=false
 Type=Application
 NoDisplay=true
