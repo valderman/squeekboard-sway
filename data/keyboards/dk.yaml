@@ -1,0 +1,98 @@
+---
+outlines:
+    default: { width: 32, height: 52 }
+    altline: { width: 48.39024, height: 52 }
+    wide: { width: 62, height: 52 }
+    outline7: { width: 88.97561, height: 52 }
+    spaceline: { width: 150.5853, height: 52 }
+
+views:
+    base:
+        - "q w e r t y u i o p å"
+        - "a s d f g h j k l ø æ"
+        - "Shift_L   z x c v b n m  BackSpace"
+        - "show_numbers preferences         space        .    Return"
+    upper:
+        - "Q W E R T Y U I O P Å"
+        - "A S D F G H J K L Ø Æ"
+        - "Shift_L   Z X C V B N M  BackSpace"
+        - "show_numbers preferences         space        .    Return"
+    numbers:
+        - "1 2 3 4 5 6 7 8 9 0"
+        - "@ # $ % & - _ + ( )"
+        - "show_symbols   , \" ' : ; ! ?  BackSpace"
+        - "show_letters preferences         space        .    Return"
+    symbols:
+        - "~ ` | U00B7 squareroot Greek_pi Greek_tau division multiply paragraph"
+        - "copyright U00AE U00A3 EuroSign U00A5 asciicircum degree * { }"
+        - "show_numbers   \\ / < > = [ ]  BackSpace"
+        - "show_letters preferences         space        .    Return"
+
+buttons:
+    Shift_L:
+        action:
+            locking:
+                lock_view: "upper"
+                unlock_view: "base"
+        outline: "altline"
+        icon: "key-shift"
+    BackSpace:
+        outline: "altline"
+        icon: "edit-clear-symbolic"
+        action: erase
+    preferences:
+        action: "show_prefs"
+        outline: "altline"
+        icon: "keyboard-mode-symbolic"
+    show_numbers:
+        action:
+            set_view: "numbers"
+        outline: "altline"
+        label: "123"
+    show_letters:
+        action:
+            set_view: "base"
+        outline: "altline"
+        label: "ABC"
+    show_symbols:
+        action:
+            set_view: "symbols"
+        outline: "altline"
+        label: "*/="
+    ".":
+        outline: altline
+    space:
+        outline: spaceline
+        text: " "
+    Return:
+        outline: "wide"
+        icon: "key-enter"
+        keysym: "Return"
+    U00B7:
+        text: "·"
+    squareroot:
+        text: "√"
+    Greek_pi:
+        text: "π"
+    division:
+        text: "÷"
+    multiply:
+        text: "×"
+    paragraph:
+        text: "¶"
+    Greek_tau:
+        text: "τ"
+    copyright:
+        text: "©"
+    U00AE:
+        text: "®"
+    U00A3:
+        text: "£"
+    EuroSign:
+        text: "€"
+    U00A5:
+        text: "¥"
+    asciicircum:
+        text: "^"
+    degree:
+        text: "°"
