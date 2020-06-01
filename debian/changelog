@@ -1,3 +1,53 @@
+squeekboard (1.9.2) amber-phone; urgency=medium
+
+  [ Dorota Czaplejewicz ]
+  * keyboard: Remove unused code
+  * gsettings: Don't crash when unavailable
+  * dbus: Don't crash if can't make a connection
+  * gsettings: Don't crash on switching when unavailable
+  * layout: Split out choice to a struct on its own
+  * renderer: Simplify by dropping gobjectness
+  * levelkeyboard: Rearrange to make future conversion easier
+  * layout: Minor generalizations
+  * Remove unused code
+  * sizing: Create a standalone UI shape manager
+  * sizing: Ignore scaling factor for layout selection
+  * CI: Fix typo
+  * Update rust deps for release
+
+  [ Andreas Rönnquist ]
+  * Swedish keyboard, wide button switching between numbers, symbols and base
+  * More fixes of button sizes
+  * Folder is doc, not docs
+
+  [ uzanto ]
+  * Add new file
+  * Replace duplicated show_symbols by show_eschars and removed "Delete" button that it's doing nothing
+
+  [ Arnaud Ferraris ]
+  * keyboards: fr: fix keyboard layout
+  * keyboards: fr: make sure the layout fits the screen
+  * resources: include French keyboard layout
+  * keyboards: fr: improve consistency with other layouts
+  * keyboards: fr: improve diacritics layout
+  * tests: add french layout
+
+  [ Vlad ]
+  * Fresh Russian layout
+
+  [ Jordi Masip ]
+  * Removed unused dependency 'libcroco'
+
+  [ Florian Klink ]
+  * sm.puri.Squeekboard.desktop: make path to Exec= absolute
+
+  [ Ole Guldberg ]
+  * Danish keyboard layout
+  * Danish keyboard layout
+  * add test for danish layout
+
+ -- Dorota Czaplejewicz <dorota.czaplejewicz@puri.sm>  Mon, 01 Jun 2020 09:39:12 +0000
+
 squeekboard (1.9.1) amber-phone; urgency=medium
 
   [ Dorota Czaplejewicz ]
