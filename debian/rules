@@ -3,13 +3,20 @@
 export CARGO_HOME = $(CURDIR)/debian/cargo
 export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 
+distrel := $(shell lsb_release --codename --short)
+ifneq (,$(filter $(distrel),buster))
+	legacy = true
+else
+	legacy = false
+endif
+
 %:
 	dh $@ --builddirectory=_build --buildsystem=meson
 
 # The Debian version of linked-hash-map doesn't provide any hash,
 # causing Cargo to refuse to build with a crates.io copy
-build-arch:
+override_dh_auto_configure:
 	[ ! -f Cargo.lock ] || rm Cargo.lock
-	dh $@ --builddirectory=_build --buildsystem=meson
+	dh_auto_configure -- -Dlegacy=$(legacy)
 
 override_dh_autoreconf:

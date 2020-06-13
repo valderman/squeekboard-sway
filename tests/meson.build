@@ -69,7 +69,9 @@ foreach layout : [
     test(
         'test_layout_' + layout,
         cargo_script,
-        args: ['run', '--example', 'test_layout', layout]
+        args: ['run'] + cargo_build_flags
+            + [ '--example', 'test_layout', '--', layout],
+        workdir: meson.build_root(),
     )
 endforeach
 
