@@ -4,7 +4,7 @@ export CARGO_HOME = $(CURDIR)/debian/cargo
 export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 
 distrel := $(shell lsb_release --codename --short)
-ifneq (,$(filter $(distrel),buster))
+ifneq (,$(filter $(distrel),buster amber))
 	legacy = true
 else
 	legacy = false
