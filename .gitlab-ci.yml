@@ -53,6 +53,23 @@ build_deb:
         - debuild -i -us -uc -b
         - cp ../*.deb .
 
+build_deb:amber:
+    image: pureos/amber
+    tags:
+        - librem5
+    stage: build
+    artifacts:
+      paths:
+        - "*.deb"
+    script:
+        - echo "deb http://ci.puri.sm/ scratch librem5" > /etc/apt/sources.list.d/ci.list
+        - apt-get -y update
+        - rm -f ../*.deb
+        - apt-get -y build-dep .
+        - apt-get -y install devscripts
+        - debuild -i -us -uc -b
+        - cp ../*.deb .
+
 build_deb:arm64:
     tags:
         - librem5:arm64
