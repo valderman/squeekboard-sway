@@ -23,6 +23,7 @@ use ::action::Modifier;
 use ::imservice;
 use ::imservice::IMService;
 use ::keyboard::{ KeyCode, KeyStateId, Modifiers, PressType };
+use ::layout::c::LevelKeyboard;
 use ::util::vec_remove;
 use ::vkeyboard::VirtualKeyboard;
 
@@ -36,7 +37,6 @@ pub mod c {
     use std::os::raw::c_void;
 
     use ::imservice::c::InputMethod;
-    use ::layout::c::LevelKeyboard;
     use ::vkeyboard::c::ZwpVirtualKeyboardV1;
 
     // The following defined in C
@@ -91,18 +91,23 @@ pub mod c {
 
     #[no_mangle]
     pub extern "C"
-    fn submission_set_keyboard(submission: *mut Submission, keyboard: LevelKeyboard) {
+    fn submission_set_keyboard(
+        submission: *mut Submission,
+        keyboard: LevelKeyboard,
+        time: u32,
+    ) {
         if submission.is_null() {
             panic!("Null submission pointer");
         }
         let submission: &mut Submission = unsafe { &mut *submission };
-        submission.virtual_keyboard.update_keymap(keyboard);
+        submission.update_keymap(keyboard, Timestamp(time));
     }
 }
 
 #[derive(Clone, Copy)]
 pub struct Timestamp(pub u32);
 
+#[derive(Clone)]
 enum SubmittedAction {
     /// A collection of keycodes that were pressed
     VirtualKeyboard(Vec<KeyCode>),
@@ -242,5 +247,45 @@ impl Submission {
         HashSet::from_iter(
             self.modifiers_active.iter().map(|(_id, m)| m.clone())
         )
+    }
+
+    fn clear_all_modifiers(&mut self) {
+        // Looks like an optimization,
+        // but preemptive cleaning is needed before setting a new keymap,
+        // so removing this check would break keymap setting.
+        if self.modifiers_active.is_empty() {
+            return;
+        }
+        self.modifiers_active = Vec::new();
+        self.virtual_keyboard.set_modifiers_state(Modifiers::empty())
+    }
+
+    fn release_all_virtual_keys(&mut self, time: Timestamp) {
+        let virtual_pressed = self.pressed
+            .clone().into_iter()
+            .filter_map(|(id, action)| {
+                match action {
+                    SubmittedAction::VirtualKeyboard(_) => Some(id),
+                    _ => None,
+                }
+            });
+        for id in virtual_pressed {
+            self.handle_release(id, time);
+        }
+    }
+
+    /// Changes keymap and clears pressed keys and modifiers.
+    ///
+    /// It's not obvious if clearing is the right thing to do, 
+    /// but keymap update may (or may not) do that,
+    /// possibly putting self.modifiers_active and self.pressed out of sync,
+    /// so a consistent stance is adopted to avoid that.
+    /// Alternatively, modifiers could be restored on the new keymap.
+    /// That approach might be difficult
+    /// due to modifiers meaning different things in different keymaps.
+    pub fn update_keymap(&mut self, keyboard: LevelKeyboard, time: Timestamp) {
+        self.clear_all_modifiers();
+        self.release_all_virtual_keys(time);
+        self.virtual_keyboard.update_keymap(keyboard);
     }
 }

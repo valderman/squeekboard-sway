@@ -95,6 +95,6 @@ void eekboard_context_service_set_hint_purpose(EekboardContextService *context,
                                                uint32_t hint,
                                                uint32_t purpose);
 void
-eekboard_context_service_use_layout(EekboardContextService *context, struct squeek_layout_state *layout);
+eekboard_context_service_use_layout(EekboardContextService *context, struct squeek_layout_state *layout, uint32_t timestamp);
 G_END_DECLS
 #endif  /* EEKBOARD_CONTEXT_SERVICE_H */
