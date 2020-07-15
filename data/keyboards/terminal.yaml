@@ -32,7 +32,7 @@ views:
     eschars:
         - "F1 F2 F3 F4 F5 F6 F7 F8 F9 F10 F11 F12"
         - "ä è é ö ü Ä È É Ö Ü"
-        - "à â ê î ô À Â È Î Ô"
+        - "à â ê î ô À Â Ê Î Ô"
         - "Del  « » ç Ç æ œ ß  BackSpace"
         - "show_symbols show_eschars preferences         space        „ “ Return"
         - "Alt Esc PgUp PgDn Home End"
