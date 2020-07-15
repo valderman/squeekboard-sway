@@ -5,7 +5,7 @@ outlines:
     spaceline: { width: 160, height: 50 }
     special: { width: 35.33, height: 50 }
     action: { width: 85, height: 35 }
-    fkey: { width: 41, height: 50 }
+    fkey: { width: 42, height: 50 }
 
 views:
     base:
