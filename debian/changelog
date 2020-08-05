@@ -1,3 +1,37 @@
+squeekboard (1.9.3) amber-phone; urgency=medium
+
+  [ Björn Tantau ]
+  * Show more useful keys at the same time.
+  * Add Ctrl and Alt modifier keys.
+  * Add missing Ê key.
+  * Make f-keys slightly wider.
+  * Add Menu key.
+
+  [ Guido Günther ]
+  * d/rules: Only remove Cargo.lock if it exists
+  * eek: Drop libcanberra usage
+  * debian: Build-depend on libfeedback
+  * eek-gtk-keyboard: Trigger event feedback on button press (Closes: #166)
+
+  [ Dorota Czaplejewicz ]
+  * build: Add missing gio-unix dependency
+  * build: Make compatible with Debian Bullseye
+  * debian: Add amber to legacy distro list
+  * ci: Add amber job
+  * debian: Require lsb-release
+  * size: Hardcode size to work around screen rotation
+  * ci: Re-add x64 Buster build
+  * italian: Fix space and period
+
+  [ Sebastian Krzyszkowiak ]
+  * Revert "Merge branch 'btantau-master-patch-76686' into 'master'"
+  * Terminal layout: another approach
+
+  [ Luís Fernando Stürmer da Rosa ]
+  * Brazilian Portuguese Keyboard Layout.
+
+ -- Sebastian Krzyszkowiak <sebastian.krzyszkowiak@puri.sm>  Wed, 05 Aug 2020 16:16:08 +0200
+
 squeekboard (1.9.2) amber-phone; urgency=medium
 
   [ Dorota Czaplejewicz ]
