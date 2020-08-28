@@ -43,7 +43,7 @@ bitflags!{
 
 /// When the submitted actions of keys need to be tracked,
 /// they need a stable, comparable ID
-#[derive(PartialEq)]
+#[derive(Clone, PartialEq)]
 pub struct KeyStateId(*const KeyState);
 
 #[derive(Debug, Clone)]

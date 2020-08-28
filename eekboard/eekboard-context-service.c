@@ -116,7 +116,7 @@ settings_get_layout(GSettings *settings, char **type, char **layout)
 }
 
 void
-eekboard_context_service_use_layout(EekboardContextService *context, struct squeek_layout_state *state) {
+eekboard_context_service_use_layout(EekboardContextService *context, struct squeek_layout_state *state, uint32_t timestamp) {
     gchar *layout_name = state->overlay_name;
 
     if (layout_name == NULL) {
@@ -148,7 +148,7 @@ eekboard_context_service_use_layout(EekboardContextService *context, struct sque
     // Update the keymap if necessary.
     // TODO: Update submission on change event
     if (context->priv->submission) {
-        submission_set_keyboard(context->priv->submission, keyboard);
+        submission_set_keyboard(context->priv->submission, keyboard, timestamp);
     }
 
     // Update UI
@@ -174,7 +174,8 @@ static void eekboard_context_service_update_settings_layout(EekboardContextServi
             context->layout->layout_name = g_strdup(keyboard_layout);
         }
         // This must actually update the UI.
-        eekboard_context_service_use_layout(context, context->layout);
+        uint32_t time = gdk_event_get_time(NULL);
+        eekboard_context_service_use_layout(context, context->layout, time);
     }
 }
 
@@ -299,7 +300,8 @@ void eekboard_context_service_set_hint_purpose(EekboardContextService *context,
     if (context->layout->hint != hint || context->layout->purpose != purpose) {
         context->layout->hint = hint;
         context->layout->purpose = purpose;
-        eekboard_context_service_use_layout(context, context->layout);
+        uint32_t time = gdk_event_get_time(NULL);
+        eekboard_context_service_use_layout(context, context->layout, time);
     }
 }
 
@@ -308,7 +310,8 @@ eekboard_context_service_set_overlay(EekboardContextService *context, const char
     if (g_strcmp0(context->layout->overlay_name, name)) {
         g_free(context->layout->overlay_name);
         context->layout->overlay_name = g_strdup(name);
-        eekboard_context_service_use_layout(context, context->layout);
+        uint32_t time = gdk_event_get_time(NULL);
+        eekboard_context_service_use_layout(context, context->layout, time);
     }
 }
 
@@ -322,14 +325,16 @@ EekboardContextService *eekboard_context_service_new(struct squeek_layout_state 
     EekboardContextService *context = g_object_new (EEKBOARD_TYPE_CONTEXT_SERVICE, NULL);
     context->layout = state;
     eekboard_context_service_update_settings_layout(context);
-    eekboard_context_service_use_layout(context, context->layout);
+    uint32_t time = gdk_event_get_time(NULL);
+    eekboard_context_service_use_layout(context, context->layout, time);
     return context;
 }
 
 void eekboard_context_service_set_submission(EekboardContextService *context, struct submission *submission) {
     context->priv->submission = submission;
     if (context->priv->submission) {
-        submission_set_keyboard(context->priv->submission, context->priv->keyboard);
+        uint32_t time = gdk_event_get_time(NULL);
+        submission_set_keyboard(context->priv->submission, context->priv->keyboard, time);
     }
 }
 
