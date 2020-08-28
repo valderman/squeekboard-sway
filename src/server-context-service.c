@@ -90,6 +90,11 @@ on_notify_unmap (GObject    *object,
 static uint32_t
 calculate_height(int32_t width)
 {
+    char* env_height = getenv("SQUEEKBOARD_HEIGHT");
+    if (env_height) {
+        return atoi(env_height);
+    }
+
     uint32_t height = 180;
     if (width < 360 && width > 0) {
         height = ((unsigned)width * 7 / 12); // to match 360×210
