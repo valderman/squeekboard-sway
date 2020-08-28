@@ -186,6 +186,7 @@ impl Submission {
             },
         };
 
+        self.modifiers_active.truncate(0);
         self.pressed.push((key_id, submit_action));
     }
     
