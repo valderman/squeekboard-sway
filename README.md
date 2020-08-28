@@ -1,9 +1,22 @@
-*squeekboard* - a Wayland virtual keyboard
-========================================
+squeekboard-sway
+================
 
 *Squeekboard* is a virtual keyboard supporting Wayland, built primarily for the *Librem 5* phone.
 
 It squeaks because some Rust got inside.
+
+*Squeekboard-Sway* is a small set of experimental modifications to Squeekboard.
+The modifications are intended to facilitate using the [Sway](https://swaywm.org) window manager
+with an on-screen keyboard.
+
+It adds the following features compared to upstream:
+
+* The height of the on-screen keyboard can be forced by setting the `SQUEEKBOARD_HEIGHT`
+    environment variable to the desired keyboard height (in pixels)
+* Shift and Mod4 (AKA super/logo/meta/windows key) are now valid modifier keys
+* Modifier keys are cleared after performing a modifier key combo (such as Mod4+Shift+q)
+* Swedish keyboard layout with Shift and Mod4 modifiers
+
 
 Features
 --------
